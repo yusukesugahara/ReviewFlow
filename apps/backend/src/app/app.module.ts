@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { ApplicationsModule } from './modules/applications/applications.module';
 import { ApprovalFlowsModule } from './modules/approval-flows/approval-flows.module';
 import { FormTemplatesModule } from './modules/form-templates/form-templates.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
@@ -78,6 +79,7 @@ const throttlerModule = ThrottlerModule.forRootAsync({
     InvitationsModule,
     FormTemplatesModule,
     ApprovalFlowsModule,
+    ApplicationsModule,
   ],
   providers: [
     AuditLogInterceptor,

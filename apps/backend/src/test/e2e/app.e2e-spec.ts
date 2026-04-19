@@ -44,6 +44,15 @@ type ApprovalFlowsListBody = {
     }[];
   };
 };
+type ApplicationCreateBody = { data?: { id?: string; status?: string } };
+type ApplicationsListJsonBody = {
+  data?: {
+    applications?: { id: string; status: string; applicantUserId?: string }[];
+  };
+};
+type ApplicationDetailBody = {
+  data?: { id?: string; status?: string; values?: Record<string, unknown> };
+};
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -521,5 +530,167 @@ describe('App (e2e)', () => {
     const flow = flows.find((f) => f.formTemplateId === tid);
     expect(flow?.name).toBe('経費申請フロー');
     expect(flow?.steps?.length).toBe(2);
+  });
+
+  it('applications: applicant creates draft, submits; approver sees queue', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'app-org-admin@e2e.test', password: 'password12' })
+      .expect(201);
+
+    const adminLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'app-org-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const adminTok =
+      (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const createdTpl = await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ name: '申請用フォーム' })
+      .expect(201);
+    const tplId = (createdTpl.body as FormTemplateCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post(`/form-templates/${tplId}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        fieldKey: 'title',
+        label: '件名',
+        fieldType: 'text',
+        required: true,
+        sortOrder: 1,
+        options: [],
+      })
+      .expect(201);
+
+    await request(http)
+      .post(`/form-templates/${tplId}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+
+    await request(http)
+      .post('/approval-flows')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        formTemplateId: tplId,
+        name: '単一承認者フロー',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: '承認',
+            approverRole: 'approver',
+            canReturn: false,
+          },
+        ],
+      })
+      .expect(201);
+
+    const invApp = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ email: 'app-submitter@e2e.test', role: 'applicant' })
+      .expect(201);
+    const invAppTok = (invApp.body as InviteCreateJsonBody).data?.token ?? '';
+
+    const invApr = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ email: 'app-approver@e2e.test', role: 'approver' })
+      .expect(201);
+    const invAprTok = (invApr.body as InviteCreateJsonBody).data?.token ?? '';
+
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: invAppTok,
+        name: 'Submitter',
+        password: 'password12',
+      })
+      .expect(200);
+
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: invAprTok,
+        name: 'Approver',
+        password: 'password12',
+      })
+      .expect(200);
+
+    const appLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'app-submitter@e2e.test', password: 'password12' })
+      .expect(200);
+    const appTok = (appLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const createdApp = await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok}`)
+      .send({
+        formTemplateId: tplId,
+        values: { title: '下書きタイトル' },
+      })
+      .expect(201);
+    const appId = (createdApp.body as ApplicationCreateBody).data?.id ?? '';
+    expect((createdApp.body as ApplicationCreateBody).data?.status).toBe(
+      'draft',
+    );
+
+    const listDraft = await request(http)
+      .get('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok}`)
+      .expect(200);
+    expect(
+      (listDraft.body as ApplicationsListJsonBody).data?.applications?.length,
+    ).toBe(1);
+
+    await request(http)
+      .post(`/applications/${appId}/submit`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok}`)
+      .expect(200);
+
+    const aprLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'app-approver@e2e.test', password: 'password12' })
+      .expect(200);
+    const aprTok = (aprLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const queue = await request(http)
+      .get('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${aprTok}`)
+      .expect(200);
+    const apps = (queue.body as ApplicationsListJsonBody).data?.applications ?? [];
+    expect(apps.length).toBe(1);
+    expect(apps[0]?.status).toBe('in_review');
+
+    const detail = await request(http)
+      .get(`/applications/${appId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${aprTok}`)
+      .expect(200);
+    expect((detail.body as ApplicationDetailBody).data?.values?.title).toBe(
+      '下書きタイトル',
+    );
   });
 });

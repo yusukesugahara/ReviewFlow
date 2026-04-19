@@ -95,6 +95,46 @@ export const ClientErrorCatalog = {
     status: HttpStatus.NOT_FOUND,
     message: 'Approval flow not found in this workspace',
   },
+  APPLICATION_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Application not found in this workspace',
+  },
+  APPLICATION_ACCESS_DENIED: {
+    status: HttpStatus.FORBIDDEN,
+    message: 'You cannot access this application',
+  },
+  APPLICATION_NOT_DRAFT: {
+    status: HttpStatus.CONFLICT,
+    message: 'Application is not in draft status',
+  },
+  APPLICATION_NOT_EDITABLE: {
+    status: HttpStatus.CONFLICT,
+    message: 'Only draft applications can be edited via this endpoint',
+  },
+  APPLICATION_FORM_NOT_PUBLISHED: {
+    status: HttpStatus.CONFLICT,
+    message: 'Applications can only be created from published form templates',
+  },
+  APPLICATION_NO_APPROVAL_FLOW: {
+    status: HttpStatus.CONFLICT,
+    message: 'No active approval flow exists for this form template',
+  },
+  APPLICATION_APPROVAL_FLOW_AMBIGUOUS: {
+    status: HttpStatus.CONFLICT,
+    message: 'Multiple active approval flows exist; specify approvalFlowId',
+  },
+  APPLICATION_FIELD_UNKNOWN: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Unknown field key in values payload',
+  },
+  APPLICATION_FIELD_VALUE_INVALID: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Field value does not match the field type',
+  },
+  APPLICATION_REQUIRED_FIELDS_MISSING: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Required fields must be filled before submit',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>;
 
 export type ClientErrorCode = keyof typeof ClientErrorCatalog;

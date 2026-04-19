@@ -23,12 +23,16 @@ describe('FormTemplatesService', () => {
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
       save: jest.fn(async (x: FormTemplate) => x),
-    };
+    } as unknown as jest.Mocked<
+      Pick<Repository<FormTemplate>, 'find' | 'findOne' | 'create' | 'save'>
+    >;
     fields = {
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
       save: jest.fn(async (x: FormField) => x),
-    };
+    } as unknown as jest.Mocked<
+      Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
+    >;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [

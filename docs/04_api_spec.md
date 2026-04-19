@@ -151,14 +151,18 @@ request:
 ## Applications
 
 ### GET /applications
-権限: applicant, approver, tenant_admin
+権限: applicant, approver, tenant_admin  
+- applicant: 自分の申請のみ  
+- approver: **in_review** かつ現在ステップの `approver_role` が `approver` のもののみ  
+- tenant_admin: テナント内の全申請
 
 ### POST /applications
-権限: applicant
+権限: applicant。`formTemplateId` は **published** のテンプレートのみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
 request:
 ```json
 {
   "formTemplateId": "form_1",
+  "approvalFlowId": "optional-flow-uuid",
   "values": {
     "expense_title": "出張交通費",
     "amount": 12000
@@ -175,8 +179,8 @@ response:
 
 ### PATCH /applications/:id
 権限: applicant
-- draft の場合は通常編集可能
-- returned の場合は correction_request_items 対象フィールドのみ更新可能
+- 現実装: **draft のみ**更新可能（`values` は field_key 単位でマージ）。
+- returned の場合は correction_request_items 対象フィールドのみ更新可能（別フェーズ）
 
 ### POST /applications/:id/submit
 権限: applicant

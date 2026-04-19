@@ -13,7 +13,8 @@ export type AuthNestPath =
   | "/invitations/accept"
   | "/users"
   | "/form-templates"
-  | "/approval-flows";
+  | "/approval-flows"
+  | "/applications";
 
 type ProxyHttpMethod = "GET" | "POST" | "PATCH";
 

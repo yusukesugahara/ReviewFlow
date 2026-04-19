@@ -2,6 +2,8 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { ApplicationFieldValue } from '../models/entities/application-field-value.entity';
+import { Application } from '../models/entities/application.entity';
 import { ApprovalFlow } from '../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../models/entities/approval-step.entity';
 import { FormField } from '../models/entities/form-field.entity';
@@ -24,6 +26,8 @@ export function buildTypeOrmOptions(
   const migrationsRun = !synchronize;
   const migrations = [join(__dirname, '..', 'migrations', '*.{js,ts}')];
   const entities = [
+    Application,
+    ApplicationFieldValue,
     ApprovalFlow,
     ApprovalStep,
     FormField,
