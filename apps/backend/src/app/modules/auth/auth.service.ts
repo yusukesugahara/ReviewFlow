@@ -85,6 +85,11 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
+  /** 招待受諾後など、既存ユーザーに対してログイン相当のトークンを返す */
+  issueTokensForUser(user: User) {
+    return this.issueTokens(user);
+  }
+
   private issueTokens(user: User) {
     const payload: AccessTokenPayload = {
       sub: user.id,

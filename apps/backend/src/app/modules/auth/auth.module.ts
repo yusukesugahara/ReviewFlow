@@ -36,5 +36,6 @@ const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },
   ],
+  exports: [AuthService],
 })
 export class AuthModule {}

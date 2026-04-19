@@ -34,6 +34,22 @@ export const ClientErrorCatalog = {
     status: HttpStatus.FORBIDDEN,
     message: 'Insufficient role for this resource',
   },
+  INVITATION_MEMBER_EXISTS: {
+    status: HttpStatus.CONFLICT,
+    message: 'A user with this email already exists in the workspace',
+  },
+  INVITATION_PENDING_EXISTS: {
+    status: HttpStatus.CONFLICT,
+    message: 'A pending invitation already exists for this email',
+  },
+  INVITATION_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Invitation not found',
+  },
+  INVITATION_NOT_ACCEPTABLE: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Invitation cannot be accepted',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>;
 
 export type ClientErrorCode = keyof typeof ClientErrorCatalog;

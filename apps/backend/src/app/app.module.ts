@@ -6,6 +6,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './modules/auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
+import { InvitationsModule } from './modules/invitations/invitations.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditLogInterceptor } from '../common/logging/audit-log.interceptor';
 import { buildTypeOrmOptions } from './typeorm-options.factory';
@@ -72,6 +73,7 @@ const throttlerModule = ThrottlerModule.forRootAsync({
     HealthModule,
     UsersModule,
     AuthModule,
+    InvitationsModule,
   ],
   providers: [
     AuditLogInterceptor,

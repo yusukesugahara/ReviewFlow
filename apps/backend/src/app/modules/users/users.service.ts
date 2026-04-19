@@ -23,4 +23,13 @@ export class UsersService {
       where: { email: email.toLowerCase() },
     });
   }
+
+  findByTenantAndEmail(
+    tenantId: string,
+    email: string,
+  ): Promise<User | null> {
+    return this.users.findOne({
+      where: { tenantId, email: email.toLowerCase() },
+    });
+  }
 }
