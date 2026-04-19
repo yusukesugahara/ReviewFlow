@@ -67,6 +67,9 @@ type CorrectionTargetsBody = {
     openCorrection?: { id: string; items?: { formFieldId: string; fieldKey: string; currentValue?: unknown }[] } | null;
   };
 };
+type ExportJobBody = {
+  data?: { id?: string; status?: string; filePath?: string | null };
+};
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -923,5 +926,147 @@ describe('App (e2e)', () => {
     expect(
       (afterResubmit.body as CorrectionTargetsBody).data?.openCorrection,
     ).toBeNull();
+  });
+
+  it('export-jobs: create status-filtered csv and download with expanded field columns', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'csv-admin@e2e.test', password: 'password12' })
+      .expect(201);
+
+    const adminLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'csv-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const adminTok = (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const tpl = await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ name: 'CSV対象フォーム' })
+      .expect(201);
+    const tplId = (tpl.body as FormTemplateCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post(`/form-templates/${tplId}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        fieldKey: 'expense_title',
+        label: '件名',
+        fieldType: 'text',
+        required: true,
+        sortOrder: 1,
+        options: [],
+      })
+      .expect(201);
+    await request(http)
+      .post(`/form-templates/${tplId}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        fieldKey: 'amount',
+        label: '金額',
+        fieldType: 'number',
+        required: true,
+        sortOrder: 2,
+        options: [],
+      })
+      .expect(201);
+    await request(http)
+      .post(`/form-templates/${tplId}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+
+    await request(http)
+      .post('/approval-flows')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        formTemplateId: tplId,
+        name: 'CSVフロー',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: '承認',
+            approverRole: 'tenant_admin',
+            canReturn: true,
+          },
+        ],
+      })
+      .expect(201);
+
+    const inv = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ email: 'csv-app@e2e.test', role: 'applicant' })
+      .expect(201);
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: (inv.body as InviteCreateJsonBody).data?.token ?? '',
+        password: 'password12',
+      })
+      .expect(200);
+
+    const appLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'csv-app@e2e.test', password: 'password12' })
+      .expect(200);
+    const appTok = (appLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const created = await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok}`)
+      .send({
+        formTemplateId: tplId,
+        values: { expense_title: '旅費精算', amount: 12000 },
+      })
+      .expect(201);
+    const appId = (created.body as ApplicationCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post(`/applications/${appId}/submit`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok}`)
+      .expect(200);
+
+    const jobCreated = await request(http)
+      .post('/export-jobs')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ status: 'in_review' })
+      .expect(201);
+    const jobId = (jobCreated.body as ExportJobBody).data?.id ?? '';
+    expect((jobCreated.body as ExportJobBody).data?.status).toBe('completed');
+
+    const job = await request(http)
+      .get(`/export-jobs/${jobId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    expect((job.body as ExportJobBody).data?.status).toBe('completed');
+
+    const download = await request(http)
+      .get(`/export-jobs/${jobId}/download`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    const csv = download.text;
+    expect(csv).toContain('expense_title');
+    expect(csv).toContain('amount');
+    expect(csv).toContain('旅費精算');
+    expect(csv).toContain('12000');
   });
 });

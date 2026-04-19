@@ -171,6 +171,18 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'Application is in an unexpected state for this operation',
   },
+  EXPORT_JOB_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Export job not found in this workspace',
+  },
+  EXPORT_JOB_NOT_READY: {
+    status: HttpStatus.CONFLICT,
+    message: 'Export job is not completed yet',
+  },
+  EXPORT_JOB_FILE_MISSING: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Exported CSV file is missing',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>;
 
 export type ClientErrorCode = keyof typeof ClientErrorCatalog;
