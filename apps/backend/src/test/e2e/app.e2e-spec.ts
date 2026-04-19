@@ -25,6 +25,12 @@ type InviteCreateJsonBody = {
 type UsersListJsonBody = {
   data?: { users?: { id: string; email: string; role: string }[] };
 };
+type FormTemplatesListBody = {
+  data?: { templates?: { id: string; name: string; status: string }[] };
+};
+type FormTemplateCreateBody = {
+  data?: { id: string; name: string; status: string };
+};
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -401,5 +407,63 @@ describe('App (e2e)', () => {
     expect((patchRes.body as { data?: { role?: string } }).data?.role).toBe(
       'approver',
     );
+  });
+
+  it('form-templates: create, add field, publish, list', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'form-admin@e2e.test', password: 'password12' })
+      .expect(201);
+
+    const login = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'form-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const tok = (login.body as LoginJsonBody).data?.access_token ?? '';
+
+    const created = await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .send({ name: '経費申請', description: 'desc' })
+      .expect(201);
+    const tid = (created.body as FormTemplateCreateBody).data?.id ?? '';
+    expect((created.body as FormTemplateCreateBody).data?.status).toBe('draft');
+
+    await request(http)
+      .post(`/form-templates/${tid}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .send({
+        fieldKey: 'title',
+        label: '件名',
+        fieldType: 'text',
+        required: true,
+        sortOrder: 1,
+        options: [],
+      })
+      .expect(201);
+
+    await request(http)
+      .post(`/form-templates/${tid}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+
+    const list = await request(http)
+      .get('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+    const templates =
+      (list.body as FormTemplatesListBody).data?.templates ?? [];
+    const one = templates.find((t) => t.id === tid);
+    expect(one?.status).toBe('published');
+    expect(one?.name).toBe('経費申請');
   });
 });

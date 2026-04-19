@@ -1,0 +1,67 @@
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  Index,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+  UpdateDateColumn,
+} from 'typeorm';
+import type { FormFieldTypeValue } from '../constants/form-field-type';
+import { Tenant } from './tenant.entity';
+import { FormTemplate } from './form-template.entity';
+
+@Entity('form_fields')
+@Index('UQ_form_fields_template_key', ['formTemplateId', 'fieldKey'], {
+  unique: true,
+})
+@Index('IDX_form_fields_tenant_template', ['tenantId', 'formTemplateId'])
+export class FormField {
+  @PrimaryGeneratedColumn('uuid')
+  id!: string;
+
+  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  tenantId!: string;
+
+  @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'tenant_id' })
+  tenant!: Tenant;
+
+  @Column({ name: 'form_template_id', type: 'varchar', length: 36 })
+  formTemplateId!: string;
+
+  @ManyToOne(() => FormTemplate, (t) => t.fields, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'form_template_id' })
+  formTemplate!: FormTemplate;
+
+  @Column({ name: 'field_key', type: 'varchar', length: 128 })
+  fieldKey!: string;
+
+  @Column({ type: 'varchar', length: 255 })
+  label!: string;
+
+  @Column({ name: 'field_type', type: 'varchar', length: 32 })
+  fieldType!: FormFieldTypeValue;
+
+  @Column({ default: false })
+  required!: boolean;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  placeholder!: string | null;
+
+  @Column({ name: 'help_text', type: 'varchar', length: 2000, nullable: true })
+  helpText!: string | null;
+
+  @Column({ name: 'options_json', type: 'json', nullable: true })
+  optionsJson!: unknown[] | null;
+
+  @Column({ name: 'sort_order', type: 'int' })
+  sortOrder!: number;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt!: Date;
+}

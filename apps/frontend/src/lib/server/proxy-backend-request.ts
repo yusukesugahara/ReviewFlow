@@ -11,7 +11,8 @@ export type AuthNestPath =
   | "/auth/admin/ping"
   | "/invitations"
   | "/invitations/accept"
-  | "/users";
+  | "/users"
+  | "/form-templates";
 
 type ProxyHttpMethod = "GET" | "POST" | "PATCH";
 

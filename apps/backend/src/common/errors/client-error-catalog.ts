@@ -66,6 +66,22 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'At least one tenant_admin must remain in the workspace',
   },
+  FORM_TEMPLATE_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Form template not found in this workspace',
+  },
+  FORM_TEMPLATE_IMMUTABLE: {
+    status: HttpStatus.CONFLICT,
+    message: 'Form template can only be edited while in draft status',
+  },
+  FORM_TEMPLATE_NOT_PUBLISHABLE: {
+    status: HttpStatus.CONFLICT,
+    message: 'Only draft form templates can be published',
+  },
+  FORM_FIELD_KEY_EXISTS: {
+    status: HttpStatus.CONFLICT,
+    message: 'A field with this key already exists on the template',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>;
 
 export type ClientErrorCode = keyof typeof ClientErrorCatalog;
