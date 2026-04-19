@@ -236,13 +236,23 @@ request:
 ## Export Jobs
 
 ### POST /export-jobs
-権限: tenant_admin
+権限: tenant_admin  
+request (任意フィルタ):
+```json
+{
+  "status": "in_review",
+  "formTemplateId": "optional-template-uuid"
+}
+```
+- CSV は **列展開方式**（申請共通固定列 + `form_fields.field_key` ごとの列）。
+- 値は `application_field_values.value_json` を列に展開（object/array は JSON 文字列）。
 
 ### GET /export-jobs/:id
 権限: tenant_admin
 
 ### GET /export-jobs/:id/download
-権限: tenant_admin
+権限: tenant_admin  
+`status=completed` のジョブのみダウンロード可能（`text/csv`）。
 
 ## Audit Logs
 
