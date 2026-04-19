@@ -20,5 +20,9 @@
 
 ## Git / タスク
 - 1タスク1PR 相当で進める
-- コミットメッセージは目的がわかる形にする
+- **コミットメッセージは [Conventional Commits](https://www.conventionalcommits.org/) に従う。**
+  - 形式: `<type>[optional scope][!]: <description>`（subject は命令形・現在形・英語が望ましい）
+  - よく使う `type` の例: `feat`, `fix`, `docs`, `chore`, `refactor`, `test`, `build`, `ci`
+  - 破壊的変更がある場合は、subject に `!` を付けるか、本文に `BREAKING CHANGE:` で理由と移行手順を書く
+  - 例: `feat(auth): add tenant-scoped login` / `fix(api): return 404 for missing application` / `docs: describe admin dashboard metrics`
 - 生成コードのレビュー前提で進める

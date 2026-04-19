@@ -6,8 +6,8 @@
 - /invitations/accept
 
 ## tenant_admin
-- /admin
-- /admin/members
+- /admin … ダッシュボード兼ハブ。**使用状況**（申請件数、平均差し戻し数、再申請（再提出）件数など）をテナント管理者向けに表示する。顧客の管理者が自組織の運用状況を把握するための画面。
+- /admin/members … メンバー一覧。**テナント管理者がユーザーを招待**する（メール送信または招待リンク発行など、手段は実装で決定）。
 - /admin/form-templates
 - /admin/form-templates/[id]
 - /admin/approval-flows
