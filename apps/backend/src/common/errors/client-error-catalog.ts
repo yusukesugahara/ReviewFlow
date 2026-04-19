@@ -10,6 +10,10 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'Email is already registered',
   },
+  AUTH_TENANT_REQUIRED: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Multiple accounts use this email; specify tenantId to log in',
+  },
   AUTH_INVALID_CREDENTIALS: {
     status: HttpStatus.UNAUTHORIZED,
     message: 'Invalid email or password',

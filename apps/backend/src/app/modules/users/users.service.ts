@@ -18,20 +18,9 @@ export class UsersService {
     return this.users.findOne({ where: { id } });
   }
 
-  findByEmail(email: string): Promise<User | null> {
-    return this.users.findOne({ where: { email: email.toLowerCase() } });
-  }
-
-  async create(
-    email: string,
-    passwordHash: string,
-    role = 'user',
-  ): Promise<User> {
-    const user = this.users.create({
-      email: email.toLowerCase(),
-      passwordHash,
-      role,
+  findAllByEmail(email: string): Promise<User[]> {
+    return this.users.find({
+      where: { email: email.toLowerCase() },
     });
-    return this.users.save(user);
   }
 }

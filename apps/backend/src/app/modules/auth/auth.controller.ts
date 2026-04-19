@@ -27,6 +27,7 @@ import {
   type AuthUserPayload,
 } from '../../../decorators/current-user.decorator';
 import { Roles } from '../../../decorators/roles.decorator';
+import { UserRole } from '../../../models/constants/user-role';
 import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
 
@@ -68,12 +69,13 @@ export class AuthController {
       id: user.id,
       email: user.email,
       roles: user.roles,
+      tenantId: user.tenantId,
     });
   }
 
   @AuthApi()
   @Get('admin/ping')
-  @Roles('admin')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
   @ApiOperation({ summary: '管理者のみ（403 = ロール不足）' })
   @ApiSuccessResponse(AdminPingResponseDto)
   adminPing(): SuccessResponse<AdminPingResponseDto> {

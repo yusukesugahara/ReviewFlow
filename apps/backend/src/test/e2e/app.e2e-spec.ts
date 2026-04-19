@@ -5,9 +5,12 @@ import { join } from 'node:path';
 import { json, urlencoded } from 'express';
 import request from 'supertest';
 import { App } from 'supertest/types';
+import { DataSource } from 'typeorm';
 import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
 import { requestContextMiddleware } from '../../common/logging/request-context.middleware';
+import { UserRole } from '../../models/constants/user-role';
+import { User } from '../../models/entities/user.entity';
 
 type ErrorJsonBody = { errorCode?: string };
 type LoginJsonBody = { data?: { access_token?: string } };
@@ -82,7 +85,7 @@ describe('App (e2e)', () => {
     });
   });
 
-  it('first registered user is admin; admin ping OK; second user gets 403', async () => {
+  it('first registered user is tenant_admin; admin ping OK; applicant gets 403', async () => {
     const http = app.getHttpServer();
     const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
 
@@ -91,7 +94,9 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .send({ email: 'admin@e2e.test', password: 'password12' })
       .expect(201);
-    expect((reg1.body as RegisterJsonBody).data?.user?.role).toBe('admin');
+    expect((reg1.body as RegisterJsonBody).data?.user?.role).toBe(
+      'tenant_admin',
+    );
 
     const login1 = await request(http)
       .post('/auth/login')
@@ -113,6 +118,12 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .send({ email: 'user@e2e.test', password: 'password12' })
       .expect(201);
+
+    const ds = app.get(DataSource);
+    await ds.getRepository(User).update(
+      { email: 'user@e2e.test' },
+      { role: UserRole.APPLICANT },
+    );
 
     const login2 = await request(http)
       .post('/auth/login')
@@ -205,7 +216,7 @@ describe('App (e2e)', () => {
     const body = me.body as MeJsonBody;
     expect(body.status).toBe(200);
     expect(body.data?.email).toBe('me@e2e.test');
-    expect(body.data?.roles).toEqual(['admin']);
+    expect(body.data?.roles).toEqual(['tenant_admin']);
     expect(typeof body.data?.id).toBe('string');
   });
 

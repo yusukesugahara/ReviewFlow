@@ -66,6 +66,7 @@ function isAuthMeSuccessJson(json: unknown): json is AuthMeSuccessJson {
   return (
     typeof d.id === "string" &&
     typeof d.email === "string" &&
+    typeof d.tenantId === "string" &&
     Array.isArray(d.roles) &&
     d.roles.every((r) => typeof r === "string")
   );

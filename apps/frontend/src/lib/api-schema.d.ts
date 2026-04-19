@@ -82,10 +82,16 @@ export interface components {
             /** @example user@example.com */
             email: string;
             /**
-             * @example user
+             * @example tenant_admin
              * @enum {string}
              */
-            role: "admin" | "user";
+            role:
+                | "platform_admin"
+                | "tenant_admin"
+                | "approver"
+                | "applicant";
+            /** @example uuid */
+            tenantId: string;
         };
         AuthIssueTokensResponseDto: {
             /** @description Nest が発行した JWT */
@@ -97,12 +103,16 @@ export interface components {
             email: string;
             /** @example password12 */
             password: string;
+            /** @example Acme Inc */
+            organizationName?: string;
         };
         LoginDto: {
             /** @example user@example.com */
             email: string;
             /** @example password12 */
             password: string;
+            /** Format: uuid */
+            tenantId?: string;
         };
         AuthMeResponseDto: {
             id: string;
@@ -113,6 +123,7 @@ export interface components {
              *     ]
              */
             roles: string[];
+            tenantId: string;
         };
         AdminPingResponseDto: {
             /** @example true */

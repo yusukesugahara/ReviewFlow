@@ -17,6 +17,7 @@ import { UsersService } from '../app/modules/users/users.service';
 export type AccessTokenPayload = {
   sub: string;
   email: string;
+  tenantId: string;
   role: string;
 };
 
@@ -41,6 +42,14 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
     if (user.role !== payload.role) {
       throw clientError(ClientErrorCodes.AUTH_JWT_UNAUTHORIZED);
     }
-    return { id: user.id, email: user.email, roles: [user.role] };
+    if (user.tenantId !== payload.tenantId) {
+      throw clientError(ClientErrorCodes.AUTH_JWT_UNAUTHORIZED);
+    }
+    return {
+      id: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      roles: [user.role],
+    };
   }
 }

@@ -1,30 +1,33 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getDataSourceToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes } from '../../../common/errors';
-import { AuthService } from './auth.service';
+import { UserRole } from '../../../models/constants/user-role';
+import { Tenant } from '../../../models/entities/tenant.entity';
+import { User } from '../../../models/entities/user.entity';
 import { UsersService } from '../users/users.service';
+import { AuthService } from './auth.service';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let users: jest.Mocked<
-    Pick<UsersService, 'findByEmail' | 'count' | 'create'>
-  >;
+  let users: jest.Mocked<Pick<UsersService, 'findAllByEmail'>>;
   let jwt: { sign: jest.Mock };
+  let dataSource: { transaction: jest.Mock };
 
   beforeEach(async () => {
     users = {
-      findByEmail: jest.fn(),
-      count: jest.fn(),
-      create: jest.fn(),
+      findAllByEmail: jest.fn(),
     };
     jwt = { sign: jest.fn().mockReturnValue('signed-jwt') };
+    dataSource = { transaction: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsersService, useValue: users },
         { provide: JwtService, useValue: jwt },
+        { provide: getDataSourceToken(), useValue: dataSource },
       ],
     }).compile();
 
@@ -33,30 +36,58 @@ describe('AuthService', () => {
 
   describe('register', () => {
     it('throws when email is already taken', async () => {
-      users.findByEmail.mockResolvedValue({
-        id: 'u1',
-        email: 'a@b.com',
-        passwordHash: 'h',
-        role: 'user',
-        createdAt: new Date(),
-      });
+      users.findAllByEmail.mockResolvedValue([
+        {
+          id: 'u1',
+          tenantId: 't1',
+          email: 'a@b.com',
+          passwordHash: 'h',
+          role: UserRole.TENANT_ADMIN,
+          name: null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User,
+      ]);
 
       await expect(
         service.register({ email: 'a@b.com', password: 'password12' }),
       ).rejects.toMatchObject({ errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN });
     });
 
-    it('first user becomes admin and receives token payload', async () => {
-      users.findByEmail.mockResolvedValue(null);
-      users.count.mockResolvedValue(0);
-      users.create.mockImplementation((email, hash, role = 'user') =>
-        Promise.resolve({
-          id: 'id-admin',
-          email: email.toLowerCase(),
-          passwordHash: hash,
-          role,
-          createdAt: new Date(),
+    it('creates tenant + tenant_admin and signs JWT with tenantId', async () => {
+      users.findAllByEmail.mockResolvedValue([]);
+      const tenantRepo = {
+        create: jest.fn((x: object) => ({ ...x })),
+        save: jest.fn(async (t: Tenant) => {
+          Object.assign(t, { id: 'tenant-1' });
+          return t;
         }),
+      };
+      const userRepo = {
+        create: jest.fn((x: object) => ({ ...x })),
+        save: jest.fn(async (u: User) => {
+          Object.assign(u, { id: 'id-admin' });
+          return u;
+        }),
+      };
+
+      const manager = {
+        getRepository: (entity: unknown) => {
+          if (entity === Tenant) {
+            return tenantRepo;
+          }
+          if (entity === User) {
+            return userRepo;
+          }
+          throw new Error('unexpected entity');
+        },
+      };
+
+      dataSource.transaction.mockImplementation(
+        async (fn: (m: typeof manager) => Promise<User>) => {
+          return fn(manager);
+        },
       );
 
       const out = await service.register({
@@ -64,55 +95,27 @@ describe('AuthService', () => {
         password: 'password12',
       });
 
-      expect(users.create).toHaveBeenCalledWith(
-        'First@Example.com',
-        expect.any(String),
-        'admin',
-      );
-      const [, passwordHash] = users.create.mock.calls[0];
-      await expect(
-        bcrypt.compare('password12', String(passwordHash)),
-      ).resolves.toBe(true);
+      expect(tenantRepo.save).toHaveBeenCalled();
+      expect(userRepo.save).toHaveBeenCalled();
       expect(jwt.sign).toHaveBeenCalledWith({
         sub: 'id-admin',
         email: 'first@example.com',
-        role: 'admin',
+        tenantId: 'tenant-1',
+        role: UserRole.TENANT_ADMIN,
       });
       expect(out.user).toEqual({
         id: 'id-admin',
         email: 'first@example.com',
-        role: 'admin',
+        role: UserRole.TENANT_ADMIN,
+        tenantId: 'tenant-1',
       });
       expect(out.access_token).toBe('signed-jwt');
-    });
-
-    it('second user gets role user', async () => {
-      users.findByEmail.mockResolvedValue(null);
-      users.count.mockResolvedValue(1);
-      users.create.mockResolvedValue({
-        id: 'id-u2',
-        email: 'u2@example.com',
-        passwordHash: 'h',
-        role: 'user',
-        createdAt: new Date(),
-      });
-
-      await service.register({
-        email: 'u2@example.com',
-        password: 'password12',
-      });
-
-      expect(users.create).toHaveBeenCalledWith(
-        'u2@example.com',
-        expect.any(String),
-        'user',
-      );
     });
   });
 
   describe('login', () => {
     it('throws when user does not exist', async () => {
-      users.findByEmail.mockResolvedValue(null);
+      users.findAllByEmail.mockResolvedValue([]);
       await expect(
         service.login({ email: 'x@y.com', password: 'password12' }),
       ).rejects.toMatchObject({
@@ -122,13 +125,19 @@ describe('AuthService', () => {
 
     it('throws when password does not match', async () => {
       const hash = await bcrypt.hash('correct', 4);
-      users.findByEmail.mockResolvedValue({
-        id: 'u1',
-        email: 'a@b.com',
-        passwordHash: hash,
-        role: 'user',
-        createdAt: new Date(),
-      });
+      users.findAllByEmail.mockResolvedValue([
+        {
+          id: 'u1',
+          tenantId: 't1',
+          email: 'a@b.com',
+          passwordHash: hash,
+          role: UserRole.APPLICANT,
+          name: null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User,
+      ]);
 
       await expect(
         service.login({ email: 'a@b.com', password: 'wrongpassword' }),
@@ -139,13 +148,19 @@ describe('AuthService', () => {
 
     it('returns tokens when credentials are valid', async () => {
       const hash = await bcrypt.hash('password12', 4);
-      users.findByEmail.mockResolvedValue({
-        id: 'u1',
-        email: 'a@b.com',
-        passwordHash: hash,
-        role: 'user',
-        createdAt: new Date(),
-      });
+      users.findAllByEmail.mockResolvedValue([
+        {
+          id: 'u1',
+          tenantId: 't1',
+          email: 'a@b.com',
+          passwordHash: hash,
+          role: UserRole.APPLICANT,
+          name: null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User,
+      ]);
 
       const out = await service.login({
         email: 'a@b.com',
@@ -156,7 +171,8 @@ describe('AuthService', () => {
       expect(out.user).toEqual({
         id: 'u1',
         email: 'a@b.com',
-        role: 'user',
+        role: UserRole.APPLICANT,
+        tenantId: 't1',
       });
     });
   });
