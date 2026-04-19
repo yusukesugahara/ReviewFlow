@@ -3,17 +3,32 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
+import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
+import { CorrectionRequestStatus } from '../../../models/constants/correction-request-status';
 import { FormFieldType } from '../../../models/constants/form-field-type';
 import { FormTemplateStatus } from '../../../models/constants/form-template-status';
 import { UserRole } from '../../../models/constants/user-role';
+import { ApplicationApproval } from '../../../models/entities/application-approval.entity';
 import { ApplicationFieldValue } from '../../../models/entities/application-field-value.entity';
 import { Application } from '../../../models/entities/application.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
+import { CorrectionRequestItem } from '../../../models/entities/correction-request-item.entity';
+import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
-import type { CreateApplicationDto, PatchApplicationDto } from './applications.dto';
-import { mapApplicationToDetail, mapApplicationToSummary } from './applications.mapper';
+import type {
+  ApproveApplicationDto,
+  CreateApplicationDto,
+  PatchApplicationDto,
+  RejectApplicationDto,
+  ReturnApplicationDto,
+} from './applications.dto';
+import {
+  mapApplicationToDetail,
+  mapApplicationToSummary,
+  mapCorrectionsList,
+} from './applications.mapper';
 
 @Injectable()
 export class ApplicationsService {
@@ -22,6 +37,12 @@ export class ApplicationsService {
     private readonly apps: Repository<Application>,
     @InjectRepository(ApplicationFieldValue)
     private readonly fieldValues: Repository<ApplicationFieldValue>,
+    @InjectRepository(ApplicationApproval)
+    private readonly approvals: Repository<ApplicationApproval>,
+    @InjectRepository(CorrectionRequest)
+    private readonly correctionRequests: Repository<CorrectionRequest>,
+    @InjectRepository(CorrectionRequestItem)
+    private readonly correctionItems: Repository<CorrectionRequestItem>,
     @InjectRepository(FormTemplate)
     private readonly templates: Repository<FormTemplate>,
     @InjectRepository(ApprovalFlow)
@@ -89,7 +110,26 @@ export class ApplicationsService {
     return step.approverRole === userRole;
   }
 
-  private assertCanRead(actor: AuthUserPayload, app: Application): void {
+  private canActorActOnReview(actor: AuthUserPayload, app: Application): boolean {
+    if (app.status !== ApplicationStatus.IN_REVIEW) {
+      return false;
+    }
+    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
+      return true;
+    }
+    if (
+      actor.roles.includes(UserRole.APPROVER) &&
+      !actor.roles.includes(UserRole.TENANT_ADMIN)
+    ) {
+      return this.approverCanActOn(app, UserRole.APPROVER);
+    }
+    return false;
+  }
+
+  private async assertCanRead(
+    actor: AuthUserPayload,
+    app: Application,
+  ): Promise<void> {
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return;
     }
@@ -102,6 +142,14 @@ export class ApplicationsService {
     ) {
       if (this.approverCanActOn(app, UserRole.APPROVER)) {
         return;
+      }
+      if (app.status !== ApplicationStatus.DRAFT) {
+        const participated = await this.approvals.count({
+          where: { applicationId: app.id, actedByUserId: actor.id },
+        });
+        if (participated > 0) {
+          return;
+        }
       }
     }
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
@@ -192,7 +240,7 @@ export class ApplicationsService {
     const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    this.assertCanRead(actor, row);
+    await this.assertCanRead(actor, row);
     return row;
   }
 
@@ -260,6 +308,18 @@ export class ApplicationsService {
     return this.getOneForActor(actor, newId);
   }
 
+  private async findOpenCorrection(
+    applicationId: string,
+  ): Promise<CorrectionRequest | null> {
+    return this.correctionRequests.findOne({
+      where: {
+        applicationId,
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items'],
+    });
+  }
+
   async patch(
     actor: AuthUserPayload,
     id: string,
@@ -276,9 +336,6 @@ export class ApplicationsService {
     if (!app) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
     }
-    if (app.status !== ApplicationStatus.DRAFT) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
-    }
 
     const template = await this.templates.findOne({
       where: { id: app.formTemplateId, tenantId: actor.tenantId },
@@ -290,6 +347,30 @@ export class ApplicationsService {
     const fieldsByKey = new Map(
       (template.fields ?? []).map((f) => [f.fieldKey, f]),
     );
+
+    if (app.status === ApplicationStatus.DRAFT) {
+      /* continue normal patch */
+    } else if (app.status === ApplicationStatus.RETURNED) {
+      const open = await this.findOpenCorrection(app.id);
+      if (!open?.items?.length) {
+        throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+      }
+      const allowed = new Set(open.items.map((i) => i.formFieldId));
+      for (const key of Object.keys(dto.values)) {
+        const field = fieldsByKey.get(key);
+        if (!field) {
+          throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
+        }
+        if (!allowed.has(field.id)) {
+          throw clientError(
+            ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
+          );
+        }
+        this.assertValueMatchesFieldType(field, dto.values[key]);
+      }
+    } else {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+    }
 
     for (const key of Object.keys(dto.values)) {
       const field = fieldsByKey.get(key);
@@ -379,6 +460,279 @@ export class ApplicationsService {
     await this.apps.save(app);
 
     return this.getOneForActor(actor, id);
+  }
+
+  async approve(
+    actor: AuthUserPayload,
+    id: string,
+    dto: ApproveApplicationDto,
+  ): Promise<Application> {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
+      detail: true,
+    });
+    if (!this.canActorActOnReview(actor, app)) {
+      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
+    }
+    if (app.status !== ApplicationStatus.IN_REVIEW) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_IN_REVIEW);
+    }
+
+    const steps = [...(app.approvalFlow?.steps ?? [])].sort(
+      (a, b) => a.stepOrder - b.stepOrder,
+    );
+    const cur = steps.find((s) => s.stepOrder === app.currentStepOrder);
+    if (!cur) {
+      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
+    }
+    const next = steps.find((s) => s.stepOrder === cur.stepOrder + 1);
+
+    const comment =
+      dto.comment?.trim().length ? dto.comment.trim() : null;
+
+    await this.apps.manager.transaction(async (em) => {
+      const approvalRepo = em.getRepository(ApplicationApproval);
+      const appRepo = em.getRepository(Application);
+      await approvalRepo.save(
+        approvalRepo.create({
+          tenantId: app.tenantId,
+          applicationId: app.id,
+          approvalStepId: cur.id,
+          actedByUserId: actor.id,
+          action: ApplicationApprovalAction.APPROVED,
+          comment,
+        }),
+      );
+      if (!next) {
+        app.status = ApplicationStatus.APPROVED;
+        app.currentStepOrder = null;
+      } else {
+        app.currentStepOrder = next.stepOrder;
+      }
+      await appRepo.save(app);
+    });
+
+    return this.getOneForActor(actor, id);
+  }
+
+  async reject(
+    actor: AuthUserPayload,
+    id: string,
+    dto: RejectApplicationDto,
+  ): Promise<Application> {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
+      detail: true,
+    });
+    if (!this.canActorActOnReview(actor, app)) {
+      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
+    }
+    if (app.status !== ApplicationStatus.IN_REVIEW) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_IN_REVIEW);
+    }
+
+    const steps = [...(app.approvalFlow?.steps ?? [])].sort(
+      (a, b) => a.stepOrder - b.stepOrder,
+    );
+    const cur = steps.find((s) => s.stepOrder === app.currentStepOrder);
+    if (!cur) {
+      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
+    }
+
+    const comment =
+      dto.comment?.trim().length ? dto.comment.trim() : null;
+
+    await this.apps.manager.transaction(async (em) => {
+      await em.getRepository(ApplicationApproval).save(
+        em.getRepository(ApplicationApproval).create({
+          tenantId: app.tenantId,
+          applicationId: app.id,
+          approvalStepId: cur.id,
+          actedByUserId: actor.id,
+          action: ApplicationApprovalAction.REJECTED,
+          comment,
+        }),
+      );
+      app.status = ApplicationStatus.REJECTED;
+      app.currentStepOrder = null;
+      await em.getRepository(Application).save(app);
+    });
+
+    return this.getOneForActor(actor, id);
+  }
+
+  async returnApplication(
+    actor: AuthUserPayload,
+    id: string,
+    dto: ReturnApplicationDto,
+  ): Promise<Application> {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
+      detail: true,
+    });
+    if (!this.canActorActOnReview(actor, app)) {
+      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
+    }
+    if (app.status !== ApplicationStatus.IN_REVIEW) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_IN_REVIEW);
+    }
+
+    const steps = [...(app.approvalFlow?.steps ?? [])].sort(
+      (a, b) => a.stepOrder - b.stepOrder,
+    );
+    const cur = steps.find((s) => s.stepOrder === app.currentStepOrder);
+    if (!cur) {
+      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
+    }
+    if (!cur.canReturn) {
+      throw clientError(ClientErrorCodes.APPLICATION_RETURN_NOT_ALLOWED);
+    }
+
+    const existingOpen = await this.findOpenCorrection(app.id);
+    if (existingOpen) {
+      throw clientError(ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN);
+    }
+
+    const template = await this.templates.findOne({
+      where: { id: app.formTemplateId, tenantId: actor.tenantId },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    }
+    const fieldIdsOnTemplate = new Set((template.fields ?? []).map((f) => f.id));
+
+    for (const f of dto.fields) {
+      if (!fieldIdsOnTemplate.has(f.fieldId)) {
+        throw clientError(ClientErrorCodes.APPLICATION_RETURN_FIELDS_INVALID);
+      }
+    }
+
+    const overall =
+      dto.overallComment?.trim().length ? dto.overallComment.trim() : null;
+
+    await this.apps.manager.transaction(async (em) => {
+      const approvalRepo = em.getRepository(ApplicationApproval);
+      const corrRepo = em.getRepository(CorrectionRequest);
+      const itemRepo = em.getRepository(CorrectionRequestItem);
+      const appRepo = em.getRepository(Application);
+
+      await approvalRepo.save(
+        approvalRepo.create({
+          tenantId: app.tenantId,
+          applicationId: app.id,
+          approvalStepId: cur.id,
+          actedByUserId: actor.id,
+          action: ApplicationApprovalAction.RETURNED,
+          comment: overall,
+        }),
+      );
+
+      const cr = await corrRepo.save(
+        corrRepo.create({
+          tenantId: app.tenantId,
+          applicationId: app.id,
+          requestedByUserId: actor.id,
+          status: CorrectionRequestStatus.OPEN,
+          overallComment: overall,
+          resolvedAt: null,
+        }),
+      );
+
+      for (const row of dto.fields) {
+        await itemRepo.save(
+          itemRepo.create({
+            tenantId: app.tenantId,
+            correctionRequestId: cr.id,
+            formFieldId: row.fieldId,
+            comment: row.comment?.trim().length ? row.comment.trim() : null,
+            isResolved: false,
+          }),
+        );
+      }
+
+      app.status = ApplicationStatus.RETURNED;
+      app.currentStepOrder = null;
+      await appRepo.save(app);
+    });
+
+    return this.getOneForActor(actor, id);
+  }
+
+  async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
+    const app = await this.apps.findOne({
+      where: {
+        id,
+        tenantId: actor.tenantId,
+        applicantUserId: actor.id,
+      },
+      relations: ['fieldValues'],
+    });
+    if (!app) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
+    }
+    if (app.status !== ApplicationStatus.RETURNED) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_RETURNED);
+    }
+
+    const open = await this.correctionRequests.findOne({
+      where: {
+        applicationId: app.id,
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items'],
+    });
+    if (!open) {
+      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
+    }
+
+    const template = await this.templates.findOne({
+      where: { id: app.formTemplateId, tenantId: actor.tenantId },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    }
+
+    await this.assertRequiredSatisfied(app, template.fields ?? []);
+    for (const fv of app.fieldValues ?? []) {
+      const field = (template.fields ?? []).find((x) => x.id === fv.formFieldId);
+      if (field) {
+        this.assertValueMatchesFieldType(field, fv.valueJson);
+      }
+    }
+
+    await this.apps.manager.transaction(async (em) => {
+      const corrRepo = em.getRepository(CorrectionRequest);
+      const itemRepo = em.getRepository(CorrectionRequestItem);
+      const appRepo = em.getRepository(Application);
+
+      open.status = CorrectionRequestStatus.RESOLVED;
+      open.resolvedAt = new Date();
+      await corrRepo.save(open);
+
+      for (const it of open.items ?? []) {
+        it.isResolved = true;
+        await itemRepo.save(it);
+      }
+
+      app.status = ApplicationStatus.IN_REVIEW;
+      app.currentStepOrder = 1;
+      await appRepo.save(app);
+    });
+
+    return this.getOneForActor(actor, id);
+  }
+
+  async getCorrectionsForActor(actor: AuthUserPayload, id: string) {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
+      detail: false,
+    });
+    await this.assertCanRead(actor, app);
+
+    const rows = await this.correctionRequests.find({
+      where: { applicationId: app.id, tenantId: actor.tenantId },
+      relations: ['items', 'items.formField'],
+      order: { createdAt: 'DESC' },
+    });
+    return mapCorrectionsList(rows);
   }
 
   toSummary(row: Application) {

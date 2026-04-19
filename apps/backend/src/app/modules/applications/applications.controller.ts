@@ -25,11 +25,15 @@ import { UserRole } from '../../../models/constants/user-role';
 import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
 import {
+  ApproveApplicationDto,
   ApplicationCreateResponseDto,
   ApplicationDetailDto,
   ApplicationsListResponseDto,
+  CorrectionsListResponseDto,
   CreateApplicationDto,
   PatchApplicationDto,
+  RejectApplicationDto,
+  ReturnApplicationDto,
 } from './applications.dto';
 import { ApplicationsService } from './applications.service';
 
@@ -89,6 +93,87 @@ export class ApplicationsController {
   }
 
   @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/approve')
+  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '承認（in_review の現在ステップ）' })
+  @ApiSuccessResponse(ApplicationDetailDto)
+  async approve(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ApproveApplicationDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<ApplicationDetailDto>> {
+    const row = await this.applications.approve(actor, id, dto);
+    return successResponse(this.applications.toDetail(row));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/return')
+  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '差し戻し',
+    description: '現在ステップの can_return が true のときのみ。correction_request を作成。',
+  })
+  @ApiSuccessResponse(ApplicationDetailDto)
+  async returnWithCorrection(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ReturnApplicationDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<ApplicationDetailDto>> {
+    const row = await this.applications.returnApplication(actor, id, dto);
+    return successResponse(this.applications.toDetail(row));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/reject')
+  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '却下' })
+  @ApiSuccessResponse(ApplicationDetailDto)
+  async reject(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RejectApplicationDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<ApplicationDetailDto>> {
+    const row = await this.applications.reject(actor, id, dto);
+    return successResponse(this.applications.toDetail(row));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/resubmit')
+  @Roles(UserRole.APPLICANT)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '再提出（returned → in_review）' })
+  @ApiSuccessResponse(ApplicationDetailDto)
+  async resubmit(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<ApplicationDetailDto>> {
+    const row = await this.applications.resubmit(actor, id);
+    return successResponse(this.applications.toDetail(row));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get(':id/corrections')
+  @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '差し戻し履歴（correction_requests）' })
+  @ApiSuccessResponse(CorrectionsListResponseDto)
+  async listCorrections(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<CorrectionsListResponseDto>> {
+    const data = await this.applications.getCorrectionsForActor(actor, id);
+    return successResponse(data);
+  }
+
+  @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id')
   @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
@@ -109,8 +194,8 @@ export class ApplicationsController {
   @Roles(UserRole.APPLICANT)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: '下書きの値更新',
-    description: 'status が draft のときのみ（returned の項目制限は別フェーズ）。',
+    summary: '値更新',
+    description: 'draft は全項目。returned はオープンな correction の対象フィールドのみ。',
   })
   @ApiSuccessResponse(ApplicationDetailDto)
   async patch(

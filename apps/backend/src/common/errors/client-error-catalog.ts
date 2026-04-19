@@ -135,6 +135,42 @@ export const ClientErrorCatalog = {
     status: HttpStatus.BAD_REQUEST,
     message: 'Required fields must be filled before submit',
   },
+  APPLICATION_NOT_IN_REVIEW: {
+    status: HttpStatus.CONFLICT,
+    message: 'Application is not awaiting approval',
+  },
+  APPLICATION_APPROVAL_FORBIDDEN: {
+    status: HttpStatus.FORBIDDEN,
+    message: 'You cannot approve or reject this application at this step',
+  },
+  APPLICATION_RETURN_NOT_ALLOWED: {
+    status: HttpStatus.CONFLICT,
+    message: 'Return is not allowed at this approval step',
+  },
+  APPLICATION_RETURN_FIELDS_INVALID: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Return payload must reference valid form fields on this template',
+  },
+  APPLICATION_CORRECTION_ALREADY_OPEN: {
+    status: HttpStatus.CONFLICT,
+    message: 'An open correction request already exists for this application',
+  },
+  APPLICATION_NOT_RETURNED: {
+    status: HttpStatus.CONFLICT,
+    message: 'Application is not in returned status',
+  },
+  APPLICATION_NO_OPEN_CORRECTION: {
+    status: HttpStatus.CONFLICT,
+    message: 'No open correction request to resolve',
+  },
+  APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'This field is not part of the open correction request',
+  },
+  APPLICATION_APPROVAL_STATE_INVALID: {
+    status: HttpStatus.CONFLICT,
+    message: 'Application is in an unexpected state for this operation',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>;
 
 export type ClientErrorCode = keyof typeof ClientErrorCatalog;

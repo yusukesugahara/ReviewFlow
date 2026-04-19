@@ -32,7 +32,12 @@ type FormTemplateCreateBody = {
   data?: { id: string; name: string; status: string };
 };
 type FormTemplateGetBody = {
-  data?: { id: string; name: string; status: string; fields?: unknown[] };
+  data?: {
+    id: string;
+    name: string;
+    status: string;
+    fields?: { id: string; fieldKey: string }[];
+  };
 };
 type ApprovalFlowsListBody = {
   data?: {
@@ -52,6 +57,9 @@ type ApplicationsListJsonBody = {
 };
 type ApplicationDetailBody = {
   data?: { id?: string; status?: string; values?: Record<string, unknown> };
+};
+type CorrectionsListBody = {
+  data?: { corrections?: { id: string; status: string; items?: { formFieldId: string }[] }[] };
 };
 
 describe('App (e2e)', () => {
@@ -691,6 +699,203 @@ describe('App (e2e)', () => {
       .expect(200);
     expect((detail.body as ApplicationDetailBody).data?.values?.title).toBe(
       '下書きタイトル',
+    );
+
+    await request(http)
+      .post(`/applications/${appId}/approve`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${aprTok}`)
+      .send({})
+      .expect(200);
+
+    const afterApprove = await request(http)
+      .get(`/applications/${appId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${aprTok}`)
+      .expect(200);
+    expect((afterApprove.body as ApplicationDetailBody).data?.status).toBe(
+      'approved',
+    );
+  });
+
+  it('applications: return, patch correction field, resubmit', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'ret-admin@e2e.test', password: 'password12' })
+      .expect(201);
+
+    const adminLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'ret-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const adminTok =
+      (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const tplRes = await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ name: '差し戻し用' })
+      .expect(201);
+    const tplId = (tplRes.body as FormTemplateCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post(`/form-templates/${tplId}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        fieldKey: 'note',
+        label: '備考',
+        fieldType: 'text',
+        required: true,
+        sortOrder: 1,
+        options: [],
+      })
+      .expect(201);
+
+    await request(http)
+      .post(`/form-templates/${tplId}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+
+    const tplDetail = await request(http)
+      .get(`/form-templates/${tplId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    const fieldId = (
+      tplDetail.body as FormTemplateGetBody
+    ).data?.fields?.find((f) => f.fieldKey === 'note')?.id;
+    expect(typeof fieldId).toBe('string');
+
+    await request(http)
+      .post('/approval-flows')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        formTemplateId: tplId,
+        name: '差し戻し可フロー',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: '承認',
+            approverRole: 'approver',
+            canReturn: true,
+          },
+        ],
+      })
+      .expect(201);
+
+    const invA = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ email: 'ret-app@e2e.test', role: 'applicant' })
+      .expect(201);
+    const invB = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ email: 'ret-apr@e2e.test', role: 'approver' })
+      .expect(201);
+
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: (invA.body as InviteCreateJsonBody).data?.token ?? '',
+        password: 'password12',
+      })
+      .expect(200);
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: (invB.body as InviteCreateJsonBody).data?.token ?? '',
+        password: 'password12',
+      })
+      .expect(200);
+
+    const appTok = (
+      await request(http)
+        .post('/auth/login')
+        .set(apiKey)
+        .send({ email: 'ret-app@e2e.test', password: 'password12' })
+        .expect(200)
+    ).body as LoginJsonBody;
+    const aprTokRet = (
+      await request(http)
+        .post('/auth/login')
+        .set(apiKey)
+        .send({ email: 'ret-apr@e2e.test', password: 'password12' })
+        .expect(200)
+    ).body as LoginJsonBody;
+
+    const appCreate = await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .send({
+        formTemplateId: tplId,
+        values: { note: 'v1' },
+      })
+      .expect(201);
+    const retAppId = (appCreate.body as ApplicationCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post(`/applications/${retAppId}/submit`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .expect(200);
+
+    await request(http)
+      .post(`/applications/${retAppId}/return`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${aprTokRet.data?.access_token ?? ''}`)
+      .send({
+        overallComment: '修正してください',
+        fields: [{ fieldId, comment: '内容を具体化' }],
+      })
+      .expect(200);
+
+    const corr = await request(http)
+      .get(`/applications/${retAppId}/corrections`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .expect(200);
+    expect(
+      (corr.body as CorrectionsListBody).data?.corrections?.length,
+    ).toBeGreaterThanOrEqual(1);
+
+    await request(http)
+      .patch(`/applications/${retAppId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .send({ values: { note: 'v2-fixed' } })
+      .expect(200);
+
+    await request(http)
+      .post(`/applications/${retAppId}/resubmit`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .expect(200);
+
+    const again = await request(http)
+      .get(`/applications/${retAppId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .expect(200);
+    expect((again.body as ApplicationDetailBody).data?.status).toBe(
+      'in_review',
+    );
+    expect((again.body as ApplicationDetailBody).data?.values?.note).toBe(
+      'v2-fixed',
     );
   });
 });

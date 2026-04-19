@@ -194,10 +194,12 @@ response:
 ## Approval Actions
 
 ### POST /applications/:id/approve
-権限: approver, tenant_admin
+権限: approver, tenant_admin  
+`in_review` のときのみ。現在ステップの `approver_role` が承認者ロールと一致する **approver**、または **tenant_admin**（いずれのステップでも可）。最終ステップ承認後は `approved`。任意 `comment`。
 
 ### POST /applications/:id/return
-権限: approver, tenant_admin
+権限: approver, tenant_admin  
+現在ステップの **`can_return` が true** のときのみ。`application_approvals`（action=returned）と **`correction_requests` / `correction_request_items`** を作成し、申請は `returned`。オープンな correction が既にある場合は 409。
 request:
 ```json
 {
@@ -216,13 +218,16 @@ request:
 ```
 
 ### POST /applications/:id/reject
-権限: approver, tenant_admin
+権限: approver, tenant_admin  
+`in_review` のみ。承認と同様の担当判定。申請は `rejected`。任意 `comment`。
 
 ### POST /applications/:id/resubmit
-権限: applicant
+権限: applicant  
+`returned` かつ **open** の `correction_request` があるときのみ。必須項目を再検証後、`returned` → `in_review`（先頭ステップから）。correction は `resolved`。
 
 ### GET /applications/:id/corrections
-権限: applicant, approver, tenant_admin
+権限: applicant, approver, tenant_admin  
+当該申請の correction_requests 一覧（items に `form_field_id` / `field_key`）。
 
 ## Export Jobs
 
