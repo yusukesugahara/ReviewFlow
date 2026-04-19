@@ -31,6 +31,19 @@ type FormTemplatesListBody = {
 type FormTemplateCreateBody = {
   data?: { id: string; name: string; status: string };
 };
+type FormTemplateGetBody = {
+  data?: { id: string; name: string; status: string; fields?: unknown[] };
+};
+type ApprovalFlowsListBody = {
+  data?: {
+    flows?: {
+      id: string;
+      name: string;
+      formTemplateId: string;
+      steps?: { stepOrder: number; stepName: string }[];
+    }[];
+  };
+};
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -465,5 +478,48 @@ describe('App (e2e)', () => {
     const one = templates.find((t) => t.id === tid);
     expect(one?.status).toBe('published');
     expect(one?.name).toBe('経費申請');
+
+    const got = await request(http)
+      .get(`/form-templates/${tid}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+    expect((got.body as FormTemplateGetBody).data?.id).toBe(tid);
+    expect((got.body as FormTemplateGetBody).data?.fields?.length).toBe(1);
+
+    await request(http)
+      .post('/approval-flows')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .send({
+        formTemplateId: tid,
+        name: '経費申請フロー',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: '一次承認',
+            approverRole: 'approver',
+            canReturn: true,
+          },
+          {
+            stepOrder: 2,
+            stepName: '最終承認',
+            approverRole: 'tenant_admin',
+            canReturn: true,
+          },
+        ],
+      })
+      .expect(201);
+
+    const flowsRes = await request(http)
+      .get('/approval-flows')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+    const flows = (flowsRes.body as ApprovalFlowsListBody).data?.flows ?? [];
+    expect(flows.length).toBeGreaterThanOrEqual(1);
+    const flow = flows.find((f) => f.formTemplateId === tid);
+    expect(flow?.name).toBe('経費申請フロー');
+    expect(flow?.steps?.length).toBe(2);
   });
 });

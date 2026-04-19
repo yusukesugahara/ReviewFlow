@@ -2,6 +2,8 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
+import { ApprovalFlow } from '../models/entities/approval-flow.entity';
+import { ApprovalStep } from '../models/entities/approval-step.entity';
 import { FormField } from '../models/entities/form-field.entity';
 import { FormTemplate } from '../models/entities/form-template.entity';
 import { Invitation } from '../models/entities/invitation.entity';
@@ -21,7 +23,15 @@ export function buildTypeOrmOptions(
   const synchronize = !isProd && !syncExplicitlyOff;
   const migrationsRun = !synchronize;
   const migrations = [join(__dirname, '..', 'migrations', '*.{js,ts}')];
-  const entities = [FormField, FormTemplate, Invitation, Tenant, User];
+  const entities = [
+    ApprovalFlow,
+    ApprovalStep,
+    FormField,
+    FormTemplate,
+    Invitation,
+    Tenant,
+    User,
+  ];
 
   if (isMysqlDriver(config.get<string>('DB_DRIVER'))) {
     const url = config.get<string>('DATABASE_URL');

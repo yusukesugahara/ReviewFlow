@@ -54,6 +54,21 @@ export class FormTemplatesController {
   }
 
   @AuthApi()
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get(':id')
+  @Roles(UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォームテンプレート取得（tenant_admin）' })
+  @ApiSuccessResponse(FormTemplateResponseDto)
+  async getOne(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
+    const row = await this.formTemplates.getOne(actor.tenantId, id);
+    return successResponse(this.formTemplates.toResponse(row));
+  }
+
+  @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post()
   @Roles(UserRole.TENANT_ADMIN)

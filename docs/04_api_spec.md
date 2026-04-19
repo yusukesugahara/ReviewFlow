@@ -85,6 +85,10 @@ request:
 ### GET /form-templates
 権限: tenant_admin
 
+### GET /form-templates/:id
+権限: tenant_admin  
+単一テンプレート（`fields` 含む）を返す。
+
 ### POST /form-templates
 権限: tenant_admin
 request:
@@ -116,8 +120,12 @@ request:
 
 ## Approval Flows
 
+### GET /approval-flows
+権限: tenant_admin  
+テナント内の承認フロー一覧（`steps` を `step_order` 昇順で含む）。
+
 ### POST /approval-flows
-権限: tenant_admin
+権限: tenant_admin。参照する `formTemplateId` のテンプレートは **published** であること。`steps[].stepOrder` は **1 からの連番**で重複不可。
 request:
 ```json
 {

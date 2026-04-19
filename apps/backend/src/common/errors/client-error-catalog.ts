@@ -82,6 +82,19 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'A field with this key already exists on the template',
   },
+  APPROVAL_FORM_TEMPLATE_NOT_PUBLISHED: {
+    status: HttpStatus.CONFLICT,
+    message: 'Approval flows can only be attached to published form templates',
+  },
+  APPROVAL_FLOW_STEPS_INVALID: {
+    status: HttpStatus.BAD_REQUEST,
+    message:
+      'Approval steps must have unique stepOrder values starting at 1 and contiguous',
+  },
+  APPROVAL_FLOW_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Approval flow not found in this workspace',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>;
 
 export type ClientErrorCode = keyof typeof ClientErrorCatalog;
