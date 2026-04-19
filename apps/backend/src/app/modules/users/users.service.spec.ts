@@ -1,6 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ClientErrorCodes } from '../../../common/errors';
+import { UserRole } from '../../../models/constants/user-role';
 import { User } from '../../../models/entities/user.entity';
 import { UsersService } from './users.service';
 
@@ -47,6 +49,93 @@ describe('UsersService', () => {
     await service.findByTenantAndEmail('tenant-1', 'User@Example.COM');
     expect(repo.findOne).toHaveBeenCalledWith({
       where: { tenantId: 'tenant-1', email: 'user@example.com' },
+    });
+  });
+
+  describe('updateRoleInTenant', () => {
+    it('forbids changing own role', async () => {
+      await expect(
+        service.updateRoleInTenant(
+          't1',
+          'same-id',
+          UserRole.APPROVER,
+          'same-id',
+        ),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.USER_ROLE_UPDATE_SELF_FORBIDDEN,
+      });
+    });
+
+    it('forbids platform_admin role', async () => {
+      await expect(
+        service.updateRoleInTenant(
+          't1',
+          'other-id',
+          UserRole.PLATFORM_ADMIN,
+          'actor-id',
+        ),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.USER_ROLE_NOT_ASSIGNABLE,
+      });
+    });
+
+    it('throws when user not in tenant', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(
+        service.updateRoleInTenant(
+          't1',
+          'missing',
+          UserRole.APPROVER,
+          'actor-id',
+        ),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
+      });
+    });
+
+    it('protects last tenant_admin from demotion', async () => {
+      const adminUser = {
+        id: 'u-admin',
+        tenantId: 't1',
+        role: UserRole.TENANT_ADMIN,
+      } as User;
+      repo.findOne.mockResolvedValue(adminUser);
+      repo.count.mockResolvedValue(1);
+
+      await expect(
+        service.updateRoleInTenant(
+          't1',
+          'u-admin',
+          UserRole.APPLICANT,
+          'actor-id',
+        ),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.LAST_TENANT_ADMIN_PROTECTED,
+      });
+    });
+
+    it('saves new role when allowed', async () => {
+      const approver = {
+        id: 'u-ap',
+        tenantId: 't1',
+        role: UserRole.APPROVER,
+        email: 'a@b.com',
+        name: null,
+        isActive: true,
+        createdAt: new Date(),
+      } as User;
+      repo.findOne.mockResolvedValue(approver);
+      repo.save.mockImplementation(async (u: User) => u);
+
+      const out = await service.updateRoleInTenant(
+        't1',
+        'u-ap',
+        UserRole.APPLICANT,
+        'actor-id',
+      );
+
+      expect(out.role).toBe(UserRole.APPLICANT);
+      expect(repo.save).toHaveBeenCalled();
     });
   });
 });

@@ -22,6 +22,9 @@ type MeJsonBody = {
 type InviteCreateJsonBody = {
   data?: { token?: string; email?: string; role?: string; expiresAt?: string };
 };
+type UsersListJsonBody = {
+  data?: { users?: { id: string; email: string; role: string }[] };
+};
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -337,6 +340,66 @@ describe('App (e2e)', () => {
       .expect(403);
     expect((forbidden.body as ErrorJsonBody).errorCode).toBe(
       'AUTH_FORBIDDEN_ROLE',
+    );
+  });
+
+  it('GET /users lists tenant members; PATCH role updates member', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'list-admin@e2e.test', password: 'password12' })
+      .expect(201);
+
+    const adminLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'list-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const adminTok =
+      (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const list1 = await request(http)
+      .get('/users')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    expect((list1.body as UsersListJsonBody).data?.users?.length).toBe(1);
+
+    const inv = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ email: 'list-member@e2e.test', role: 'applicant' })
+      .expect(201);
+    const invTok = (inv.body as InviteCreateJsonBody).data?.token ?? '';
+
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({ token: invTok, password: 'password12' })
+      .expect(200);
+
+    const list2 = await request(http)
+      .get('/users')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    const users = (list2.body as UsersListJsonBody).data?.users ?? [];
+    expect(users.length).toBe(2);
+    const member = users.find((u) => u.email === 'list-member@e2e.test');
+    expect(member?.role).toBe('applicant');
+
+    const patchRes = await request(http)
+      .patch(`/users/${member?.id}/role`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ role: 'approver' })
+      .expect(200);
+    expect((patchRes.body as { data?: { role?: string } }).data?.role).toBe(
+      'approver',
     );
   });
 });

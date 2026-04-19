@@ -62,6 +62,24 @@ request:
 }
 ```
 
+## Users（テナントスコープ）
+
+### GET /users
+権限: tenant_admin  
+同一テナント内のユーザー一覧（`password_hash` は返さない）。
+
+### PATCH /users/:id/role
+権限: tenant_admin  
+request:
+```json
+{
+  "role": "approver"
+}
+```
+- 付与可能な `role` は `tenant_admin` / `approver` / `applicant`（`platform_admin` は不可）。
+- 自分自身のロールは変更不可。
+- **最後の 1 人の tenant_admin** を他ロールへ落とすことは不可。
+
 ## Form Templates
 
 ### GET /form-templates

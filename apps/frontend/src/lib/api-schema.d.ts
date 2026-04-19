@@ -106,6 +106,42 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** テナント内ユーザー一覧（tenant_admin） */
+        get: operations["UsersController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** テナント内ユーザーのロール変更（tenant_admin） */
+        patch: operations["UsersController_updateRole"];
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -181,6 +217,21 @@ export interface components {
             token: string;
             name?: string;
             password: string;
+        };
+        TenantUserSummaryDto: {
+            id: string;
+            email: string;
+            name: string | null;
+            role: string;
+            isActive: boolean;
+            createdAt: string;
+        };
+        TenantUsersListResponseDto: {
+            users: components["schemas"]["TenantUserSummaryDto"][];
+        };
+        UpdateUserRoleDto: {
+            /** @enum {string} */
+            role: "tenant_admin" | "approver" | "applicant";
         };
         ErrorResponseDto: {
             /**
@@ -387,6 +438,64 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["AuthIssueTokensResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    UsersController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["TenantUsersListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    UsersController_updateRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateUserRoleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["TenantUserSummaryDto"];
                     };
                 };
             };

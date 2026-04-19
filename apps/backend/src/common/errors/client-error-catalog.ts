@@ -50,6 +50,22 @@ export const ClientErrorCatalog = {
     status: HttpStatus.BAD_REQUEST,
     message: 'Invitation cannot be accepted',
   },
+  TENANT_USER_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'User not found in this workspace',
+  },
+  USER_ROLE_UPDATE_SELF_FORBIDDEN: {
+    status: HttpStatus.FORBIDDEN,
+    message: 'Cannot change your own role from this endpoint',
+  },
+  USER_ROLE_NOT_ASSIGNABLE: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Role cannot be assigned via this API',
+  },
+  LAST_TENANT_ADMIN_PROTECTED: {
+    status: HttpStatus.CONFLICT,
+    message: 'At least one tenant_admin must remain in the workspace',
+  },
 } as const satisfies Record<string, { status: HttpStatus; message: string }>;
 
 export type ClientErrorCode = keyof typeof ClientErrorCatalog;

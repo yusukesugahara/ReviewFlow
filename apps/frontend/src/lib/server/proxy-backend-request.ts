@@ -10,15 +10,16 @@ export type AuthNestPath =
   | "/auth/me"
   | "/auth/admin/ping"
   | "/invitations"
-  | "/invitations/accept";
+  | "/invitations/accept"
+  | "/users";
 
-type ProxyHttpMethod = "GET" | "POST";
+type ProxyHttpMethod = "GET" | "POST" | "PATCH";
 
 /**
- * ブラウザは同オリジンの `/api/auth/*` のみ叩き、サーバー側で Nest に転送する（INTERNAL_API_KEY はここでのみ付与）。
+ * Nest の任意パスへ転送（INTERNAL_API_KEY はここでのみ付与）。
  */
-export async function proxyBackendRequest(
-  nestPath: AuthNestPath,
+export async function proxyBackendRequestTo(
+  nestPath: string,
   req: Request,
 ): Promise<NextResponse> {
   const env = getServerAuthEnv();
@@ -49,6 +50,14 @@ export async function proxyBackendRequest(
   return out;
 }
 
+/** 固定パス向け（型で許可パスを絞る） */
+export async function proxyBackendRequest(
+  nestPath: AuthNestPath,
+  req: Request,
+): Promise<NextResponse> {
+  return proxyBackendRequestTo(nestPath, req);
+}
+
 export function createAuthProxyRouteHandler(
   method: ProxyHttpMethod,
   nestPath: AuthNestPath,
@@ -57,6 +66,6 @@ export function createAuthProxyRouteHandler(
     if (req.method !== method) {
       return NextResponse.json({ message: "Method Not Allowed" }, { status: 405 });
     }
-    return proxyBackendRequest(nestPath, req);
+    return proxyBackendRequestTo(nestPath, req);
   };
 }
