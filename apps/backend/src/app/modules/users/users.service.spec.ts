@@ -41,4 +41,12 @@ describe('UsersService', () => {
       where: { email: 'user@example.com' },
     });
   });
+
+  it('findByTenantAndEmail queries lowercase email', async () => {
+    repo.findOne.mockResolvedValue(null);
+    await service.findByTenantAndEmail('tenant-1', 'User@Example.COM');
+    expect(repo.findOne).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', email: 'user@example.com' },
+    });
+  });
 });

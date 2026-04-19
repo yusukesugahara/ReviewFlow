@@ -17,7 +17,10 @@ type LoginJsonBody = { data?: { access_token?: string } };
 type RegisterJsonBody = { data?: { user?: { role?: string; id?: string } } };
 type MeJsonBody = {
   status?: number;
-  data?: { id?: string; email?: string; roles?: string[] };
+  data?: { id?: string; email?: string; roles?: string[]; tenantId?: string };
+};
+type InviteCreateJsonBody = {
+  data?: { token?: string; email?: string; role?: string; expiresAt?: string };
 };
 
 describe('App (e2e)', () => {
@@ -236,5 +239,104 @@ describe('App (e2e)', () => {
       .send({ email: 'not-an-email', password: 'password12' })
       .expect(400);
     expect(res.body).toHaveProperty('statusCode', 400);
+  });
+
+  it('POST /invitations then accept creates member with JWT', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'inv-admin@e2e.test', password: 'password12' })
+      .expect(201);
+
+    const loginAdmin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'inv-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const adminToken =
+      (loginAdmin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const created = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminToken}`)
+      .send({ email: 'inv-member@e2e.test', role: 'applicant' })
+      .expect(201);
+
+    const inviteBody = created.body as InviteCreateJsonBody;
+    expect(inviteBody.data?.email).toBe('inv-member@e2e.test');
+    expect(typeof inviteBody.data?.token).toBe('string');
+    expect(inviteBody.data?.token?.length).toBeGreaterThanOrEqual(32);
+
+    const accepted = await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: inviteBody.data?.token,
+        name: 'Invited Member',
+        password: 'password12',
+      })
+      .expect(200);
+
+    const memberToken =
+      (accepted.body as LoginJsonBody).data?.access_token ?? '';
+    expect(memberToken.length).toBeGreaterThan(10);
+
+    const me = await request(http)
+      .post('/auth/me')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${memberToken}`)
+      .expect(200);
+    const meBody = me.body as MeJsonBody;
+    expect(meBody.data?.email).toBe('inv-member@e2e.test');
+    expect(meBody.data?.roles).toEqual(['applicant']);
+  });
+
+  it('POST /invitations returns 403 for applicant', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'inv-org-admin@e2e.test', password: 'password12' })
+      .expect(201);
+
+    const adminLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'inv-org-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const adminTok =
+      (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const invRes = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ email: 'inv-applicant@e2e.test', role: 'applicant' })
+      .expect(201);
+    const tok = (invRes.body as InviteCreateJsonBody).data?.token ?? '';
+
+    const accLogin = await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({ token: tok, password: 'password12' })
+      .expect(200);
+    const applicantTok =
+      (accLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const forbidden = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${applicantTok}`)
+      .send({ email: 'inv-should-fail@e2e.test', role: 'approver' })
+      .expect(403);
+    expect((forbidden.body as ErrorJsonBody).errorCode).toBe(
+      'AUTH_FORBIDDEN_ROLE',
+    );
   });
 });

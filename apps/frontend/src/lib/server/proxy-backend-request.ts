@@ -8,7 +8,9 @@ export type AuthNestPath =
   | "/auth/register"
   | "/auth/login"
   | "/auth/me"
-  | "/auth/admin/ping";
+  | "/auth/admin/ping"
+  | "/invitations"
+  | "/invitations/accept";
 
 type ProxyHttpMethod = "GET" | "POST";
 

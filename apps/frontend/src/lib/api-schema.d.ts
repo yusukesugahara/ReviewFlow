@@ -72,6 +72,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/invitations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** メンバー招待（tenant_admin） */
+        post: operations["InvitationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/invitations/accept": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 招待受諾（JWT 未保有） */
+        post: operations["InvitationsController_accept"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
@@ -128,6 +162,25 @@ export interface components {
         AdminPingResponseDto: {
             /** @example true */
             ok: boolean;
+        };
+        CreateInvitationDto: {
+            email: string;
+            /** @enum {string} */
+            role: "tenant_admin" | "approver" | "applicant";
+        };
+        CreateInvitationResponseDto: {
+            id: string;
+            /** 受諾 API に渡すワンタイムトークン */
+            token: string;
+            email: string;
+            role: string;
+            /** ISO 8601 */
+            expiresAt: string;
+        };
+        AcceptInvitationDto: {
+            token: string;
+            name?: string;
+            password: string;
         };
         ErrorResponseDto: {
             /**
@@ -273,6 +326,67 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["AdminPingResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    InvitationsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvitationDto"];
+            };
+        };
+        responses: {
+            /** @description Created */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["CreateInvitationResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    InvitationsController_accept: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AcceptInvitationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["AuthIssueTokensResponseDto"];
                     };
                 };
             };
