@@ -1,0 +1,54 @@
+services:
+  # 例: `docker compose --profile mysql up` で起動。backend に DB_DRIVER=mysql 等を渡すこと。
+  mysql:
+    profiles: ["mysql"]
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: app
+      MYSQL_USER: app
+      MYSQL_PASSWORD: app
+      MYSQL_ROOT_PASSWORD: rootchange
+    volumes:
+      - backend-mysql:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-prootchange"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  backend:
+    build:
+      context: ./apps/backend
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
+      JWT_SECRET: ${JWT_SECRET:-docker-jwt-secret-at-least-32-characters-long}
+      CORS_ORIGIN: http://localhost:3001
+      DB_PATH: /data/sqlite.db
+    volumes:
+      - backend-sqlite:/data
+
+  frontend:
+    build:
+      context: ./apps/frontend
+      args:
+        NEXT_PUBLIC_API_URL: http://localhost:3000
+    ports:
+      - "3001:3000"
+    depends_on:
+      - backend
+    environment:
+      NODE_ENV: production
+      NEXT_PUBLIC_API_URL: http://localhost:3000
+      INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
+      INTERNAL_API_ORIGIN: http://backend:3000
+
+volumes:
+  backend-sqlite:
+  backend-mysql:

@@ -1,0 +1,11 @@
+node_modules
+.next
+.git
+*.md
+.env
+.env.*
+playwright-report
+test-results
+e2e
+.cache
+src/node_modules
