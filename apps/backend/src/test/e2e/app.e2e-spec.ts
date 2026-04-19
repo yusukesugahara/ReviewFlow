@@ -61,6 +61,12 @@ type ApplicationDetailBody = {
 type CorrectionsListBody = {
   data?: { corrections?: { id: string; status: string; items?: { formFieldId: string }[] }[] };
 };
+type CorrectionTargetsBody = {
+  data?: {
+    applicationStatus?: string;
+    openCorrection?: { id: string; items?: { formFieldId: string; fieldKey: string; currentValue?: unknown }[] } | null;
+  };
+};
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -873,6 +879,17 @@ describe('App (e2e)', () => {
       (corr.body as CorrectionsListBody).data?.corrections?.length,
     ).toBeGreaterThanOrEqual(1);
 
+    const targets = await request(http)
+      .get(`/applications/${retAppId}/correction-targets`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .expect(200);
+    const tgt = targets.body as CorrectionTargetsBody;
+    expect(tgt.data?.applicationStatus).toBe('returned');
+    expect(tgt.data?.openCorrection?.items?.length).toBe(1);
+    expect(tgt.data?.openCorrection?.items?.[0]?.fieldKey).toBe('note');
+    expect(tgt.data?.openCorrection?.items?.[0]?.currentValue).toBe('v1');
+
     await request(http)
       .patch(`/applications/${retAppId}`)
       .set(apiKey)
@@ -897,5 +914,14 @@ describe('App (e2e)', () => {
     expect((again.body as ApplicationDetailBody).data?.values?.note).toBe(
       'v2-fixed',
     );
+
+    const afterResubmit = await request(http)
+      .get(`/applications/${retAppId}/correction-targets`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .expect(200);
+    expect(
+      (afterResubmit.body as CorrectionTargetsBody).data?.openCorrection,
+    ).toBeNull();
   });
 });

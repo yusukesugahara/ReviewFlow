@@ -135,6 +135,64 @@ export class CorrectionsListResponseDto {
   corrections!: CorrectionRequestResponseDto[];
 }
 
+/** 修正フォーム用: オープンな correction と対象フィールド＋現在値 */
+export class CorrectionTargetItemResponseDto {
+  @ApiProperty()
+  itemId!: string;
+
+  @ApiProperty()
+  formFieldId!: string;
+
+  @ApiProperty()
+  fieldKey!: string;
+
+  @ApiProperty()
+  label!: string;
+
+  @ApiProperty()
+  fieldType!: string;
+
+  @ApiProperty()
+  required!: boolean;
+
+  @ApiPropertyOptional({ nullable: true })
+  comment!: string | null;
+
+  @ApiPropertyOptional({
+    description: 'application_field_values.value_json に相当',
+  })
+  currentValue!: unknown;
+}
+
+export class OpenCorrectionTargetsDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  overallComment!: string | null;
+
+  @ApiProperty()
+  createdAt!: string;
+
+  @ApiProperty({ type: [CorrectionTargetItemResponseDto] })
+  items!: CorrectionTargetItemResponseDto[];
+}
+
+export class CorrectionTargetsResponseDto {
+  @ApiProperty()
+  applicationId!: string;
+
+  @ApiProperty()
+  applicationStatus!: string;
+
+  @ApiPropertyOptional({
+    type: OpenCorrectionTargetsDto,
+    nullable: true,
+    description: 'オープンな correction が無いとき null',
+  })
+  openCorrection!: OpenCorrectionTargetsDto | null;
+}
+
 export class ApplicationCreateResponseDto {
   @ApiProperty()
   id!: string;

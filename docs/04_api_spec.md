@@ -227,7 +227,11 @@ request:
 
 ### GET /applications/:id/corrections
 権限: applicant, approver, tenant_admin  
-当該申請の correction_requests 一覧（items に `form_field_id` / `field_key`）。
+当該申請の correction_requests 一覧（items に `form_field_id` / `field_key`）。履歴用。
+
+### GET /applications/:id/correction-targets
+権限: applicant, approver, tenant_admin  
+**修正対象取得**（Phase 7）。`applicationStatus` と、**最新の `open` の correction_request** 1件分（無ければ `openCorrection: null`）。各 item に `field_key` / `label` / `fieldType` / `required` / 項目コメント / **`currentValue`**（申請の現在値）を含める。
 
 ## Export Jobs
 

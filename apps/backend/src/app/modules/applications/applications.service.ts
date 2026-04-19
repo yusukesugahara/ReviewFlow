@@ -19,6 +19,7 @@ import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
 import type {
   ApproveApplicationDto,
+  CorrectionTargetsResponseDto,
   CreateApplicationDto,
   PatchApplicationDto,
   RejectApplicationDto,
@@ -733,6 +734,66 @@ export class ApplicationsService {
       order: { createdAt: 'DESC' },
     });
     return mapCorrectionsList(rows);
+  }
+
+  async getCorrectionTargetsForActor(
+    actor: AuthUserPayload,
+    applicationId: string,
+  ): Promise<CorrectionTargetsResponseDto> {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, applicationId, {
+      detail: true,
+    });
+    await this.assertCanRead(actor, app);
+
+    const opens = await this.correctionRequests.find({
+      where: {
+        applicationId: app.id,
+        tenantId: actor.tenantId,
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items', 'items.formField'],
+      order: { createdAt: 'DESC' },
+    });
+    const open = opens[0] ?? null;
+
+    if (!open) {
+      return {
+        applicationId: app.id,
+        applicationStatus: app.status,
+        openCorrection: null,
+      };
+    }
+
+    const valueByFieldId = new Map(
+      (app.fieldValues ?? []).map((v) => [v.formFieldId, v.valueJson]),
+    );
+
+    const items = (open.items ?? []).map((it) => {
+      const ff = it.formField;
+      return {
+        itemId: it.id,
+        formFieldId: it.formFieldId,
+        fieldKey: ff?.fieldKey ?? '',
+        label: ff?.label ?? '',
+        fieldType: ff?.fieldType ?? '',
+        required: ff?.required ?? false,
+        comment: it.comment,
+        currentValue: valueByFieldId.has(it.formFieldId)
+          ? valueByFieldId.get(it.formFieldId)
+          : null,
+      };
+    });
+
+    return {
+      applicationId: app.id,
+      applicationStatus: app.status,
+      openCorrection: {
+        id: open.id,
+        overallComment: open.overallComment,
+        createdAt: open.createdAt.toISOString(),
+        items,
+      },
+    };
   }
 
   toSummary(row: Application) {

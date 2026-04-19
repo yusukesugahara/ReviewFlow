@@ -22,8 +22,11 @@
 - correction_request_items 作成
 - application.status = returned
 
+### GET /applications/:id/correction-targets
+- 修正フォーム用: **最新の open** `correction_request` と、対象フィールドのメタ＋**現在値**（`currentValue`）を返す（無ければ `openCorrection: null`）
+
 ### GET /applications/:id/corrections
-- 最新の open correction_request を返す
+- 差し戻し**履歴**（複数 correction の一覧）
 
 ### POST /applications/:id/resubmit
 - 必須修正項目を満たしていれば再提出

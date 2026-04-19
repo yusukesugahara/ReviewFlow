@@ -30,6 +30,7 @@ import {
   ApplicationDetailDto,
   ApplicationsListResponseDto,
   CorrectionsListResponseDto,
+  CorrectionTargetsResponseDto,
   CreateApplicationDto,
   PatchApplicationDto,
   RejectApplicationDto,
@@ -160,10 +161,35 @@ export class ApplicationsController {
 
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get(':id/correction-targets')
+  @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '修正対象取得（オープンな correction + 現在値）',
+    description:
+      'returned 時の入力支援用。最新の status=open の correction_request を1件分まとめて返す（無ければ openCorrection は null）。',
+  })
+  @ApiSuccessResponse(CorrectionTargetsResponseDto)
+  async getCorrectionTargets(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<CorrectionTargetsResponseDto>> {
+    const data = await this.applications.getCorrectionTargetsForActor(
+      actor,
+      id,
+    );
+    return successResponse(data);
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id/corrections')
   @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '差し戻し履歴（correction_requests）' })
+  @ApiOperation({
+    summary: '差し戻し履歴（correction_requests）',
+    description: 'テナント内の当該申請に紐づく correction を新しい順で一覧。',
+  })
   @ApiSuccessResponse(CorrectionsListResponseDto)
   async listCorrections(
     @Param('id', ParseUUIDPipe) id: string,
