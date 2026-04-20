@@ -1,7 +1,9 @@
 import './globals.css';
 import type { Metadata } from 'next';
 import type { ReactNode } from 'react';
+import Link from 'next/link';
 import { LogoutForm } from './logout/logout-form';
+import { getCurrentSessionUser } from '@/lib/server/session';
 
 export const metadata: Metadata = {
   title: 'Frontend App',
@@ -13,6 +15,7 @@ type RootLayoutProps = {
 };
 
 export default function RootLayout({ children }: RootLayoutProps) {
+  const mePromise = getCurrentSessionUser();
   return (
     <html lang="ja">
       <body>
@@ -24,10 +27,27 @@ export default function RootLayout({ children }: RootLayoutProps) {
             borderBottom: '1px solid #eee',
           }}
         >
-          <LogoutForm />
+          <HeaderUser mePromise={mePromise} />
         </header>
         {children}
       </body>
     </html>
+  );
+}
+
+async function HeaderUser({
+  mePromise,
+}: {
+  mePromise: ReturnType<typeof getCurrentSessionUser>;
+}) {
+  const me = await mePromise;
+  if (!me) {
+    return <Link href="/login">ログイン</Link>;
+  }
+  return (
+    <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+      <span>{me.email}</span>
+      <LogoutForm />
+    </div>
   );
 }
