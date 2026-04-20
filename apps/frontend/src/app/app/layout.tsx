@@ -1,6 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+export const dynamic = "force-dynamic";
+
 type ApplicantLayoutProps = {
   children: ReactNode;
 };
