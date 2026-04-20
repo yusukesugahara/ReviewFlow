@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { renderFieldValue } from "@/lib/form-field-value";
 
 type ApplicationDetail = {
   id: string;
@@ -24,60 +25,6 @@ type CorrectionTargetItem = {
   fieldKey: string;
   label: string;
 };
-
-type FieldOption = { value: string; label: string };
-
-function normalizeFieldOptions(options: unknown[] | null | undefined): FieldOption[] {
-  if (!Array.isArray(options)) {
-    return [];
-  }
-  return options
-    .map((opt) => {
-      if (typeof opt === "string") {
-        return { value: opt, label: opt };
-      }
-      if (opt && typeof opt === "object") {
-        const rec = opt as Record<string, unknown>;
-        const value = rec.value;
-        const label = rec.label;
-        if (typeof value === "string" && typeof label === "string") {
-          return { value, label };
-        }
-      }
-      return null;
-    })
-    .filter((v): v is FieldOption => v !== null);
-}
-
-function renderValue(field: FormField, value: unknown): string {
-  if (value === null || value === undefined) {
-    return "-";
-  }
-  if (field.fieldType === "checkbox") {
-    if (!Array.isArray(value)) {
-      return "-";
-    }
-    const opts = normalizeFieldOptions(field.options);
-    const asStrings = value.filter((v): v is string => typeof v === "string");
-    if (opts.length === 0) {
-      return asStrings.join(", ");
-    }
-    const labels = asStrings.map((v) => opts.find((o) => o.value === v)?.label ?? v);
-    return labels.join(", ");
-  }
-  if (typeof value === "string" || typeof value === "number") {
-    const opts = normalizeFieldOptions(field.options);
-    if (
-      opts.length > 0 &&
-      (field.fieldType === "select" || field.fieldType === "radio") &&
-      typeof value === "string"
-    ) {
-      return opts.find((o) => o.value === value)?.label ?? value;
-    }
-    return String(value);
-  }
-  return JSON.stringify(value);
-}
 
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
@@ -197,7 +144,7 @@ export default async function ReviewApplicationDetailPage({
                 <div style={{ fontWeight: 600 }}>
                   {field.label} ({field.fieldKey})
                 </div>
-                <div>{renderValue(field, app.values[field.fieldKey])}</div>
+                <div>{renderFieldValue(field, app.values[field.fieldKey])}</div>
                 {isCorrectionTarget ? (
                   <small style={{ color: "#9a3412" }}>現在の差し戻し対象項目です</small>
                 ) : null}
