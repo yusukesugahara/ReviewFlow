@@ -1,11 +1,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import {
+  DynamicFieldInput,
+  readDynamicValuesFromFormData,
+  type DynamicFormField,
+} from "../_components/dynamic-fields";
 
 type FormTemplate = {
   id: string;
   name: string;
   status: string;
+  fields: DynamicFormField[];
 };
 
 type ApprovalFlow = {
@@ -24,23 +30,24 @@ function unwrapData<T>(raw: unknown): T {
 
 async function createApplicationAction(formData: FormData): Promise<void> {
   "use server";
-  const formTemplateId = formData.get("formTemplateId");
+  const formTemplateId = formData.get("selectedFormTemplateId");
   const approvalFlowId = formData.get("approvalFlowId");
-  const valuesJson = formData.get("valuesJson");
-  if (typeof formTemplateId !== "string" || typeof valuesJson !== "string") {
+  const fieldsJson = formData.get("selectedFormFieldsJson");
+  if (typeof formTemplateId !== "string" || typeof fieldsJson !== "string") {
     redirect("/app/applications/new?error=invalid_input");
   }
 
-  let values: Record<string, unknown>;
+  let fields: DynamicFormField[];
   try {
-    const parsed: unknown = JSON.parse(valuesJson);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
-      throw new Error("values must be object");
+    const parsed: unknown = JSON.parse(fieldsJson);
+    if (!Array.isArray(parsed)) {
+      throw new Error("fields must be array");
     }
-    values = parsed as Record<string, unknown>;
+    fields = parsed as DynamicFormField[];
   } catch {
-    redirect("/app/applications/new?error=invalid_json");
+    redirect("/app/applications/new?error=invalid_fields");
   }
+  const values = readDynamicValuesFromFormData(fields, formData);
 
   const created = await backendAuthFetchJson("/applications", {
     method: "POST",
@@ -59,7 +66,7 @@ async function createApplicationAction(formData: FormData): Promise<void> {
 }
 
 type PageProps = {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; templateId?: string }>;
 };
 
 export default async function NewApplicationPage({ searchParams }: PageProps) {
@@ -69,25 +76,28 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
   const templatesRaw = await backendAuthFetchJson("/form-templates");
   const templates = unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
   const publishedTemplates = templates.filter((t) => t.status === "published");
+  const selectedTemplateId =
+    params.templateId ?? publishedTemplates[0]?.id ?? "";
+  const selectedTemplate =
+    publishedTemplates.find((t) => t.id === selectedTemplateId) ?? null;
 
   const flowsRaw = await backendAuthFetchJson("/approval-flows");
   const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
+  const selectableFlows = flows.filter((f) => f.formTemplateId === selectedTemplateId);
 
   return (
     <section style={{ display: "grid", gap: 12 }}>
       <h2 style={{ margin: 0 }}>申請作成</h2>
-      <p style={{ margin: 0 }}>
-        values は `field_key` をキーにした JSON で入力します（例: {"{"}"amount{"}"}: 1200）。
-      </p>
+      <p style={{ margin: 0 }}>フォーム定義に沿って入力し、下書き申請を作成します。</p>
       {error ? (
         <p style={{ margin: 0, color: "#b91c1c" }}>
-          入力エラーです。JSON 形式と必須項目を確認してください。
+          入力エラーです。必須項目と入力形式を確認してください。
         </p>
       ) : null}
-      <form action={createApplicationAction} style={{ display: "grid", gap: 8 }}>
+      <form method="GET" style={{ display: "grid", gap: 8 }}>
         <label style={{ display: "grid", gap: 4 }}>
           <span>フォームテンプレート</span>
-          <select name="formTemplateId" required defaultValue="">
+          <select name="templateId" defaultValue={selectedTemplateId} required>
             <option value="" disabled>
               公開済みフォームを選択
             </option>
@@ -98,28 +108,37 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
             ))}
           </select>
         </label>
+        <button type="submit">フォームを読み込む</button>
+      </form>
+      {selectedTemplate ? (
+        <form action={createApplicationAction} style={{ display: "grid", gap: 8 }}>
+          <input type="hidden" name="selectedFormTemplateId" value={selectedTemplate.id} />
+          <input
+            type="hidden"
+            name="selectedFormFieldsJson"
+            value={JSON.stringify(selectedTemplate.fields)}
+          />
         <label style={{ display: "grid", gap: 4 }}>
           <span>承認フロー（任意）</span>
           <select name="approvalFlowId" defaultValue="">
             <option value="">自動選択</option>
-            {flows.map((flow) => (
+            {selectableFlows.map((flow) => (
               <option key={flow.id} value={flow.id}>
-                {flow.name} ({flow.formTemplateId})
+                {flow.name}
               </option>
             ))}
           </select>
         </label>
-        <label style={{ display: "grid", gap: 4 }}>
-          <span>values (JSON)</span>
-          <textarea
-            name="valuesJson"
-            rows={10}
-            defaultValue={`{\n  "title": "出張交通費",\n  "amount": 12000\n}`}
-            required
-          />
-        </label>
-        <button type="submit">申請を作成</button>
-      </form>
+          <div style={{ display: "grid", gap: 10 }}>
+            {selectedTemplate.fields.map((field) => (
+              <DynamicFieldInput key={field.id} field={field} value={undefined} />
+            ))}
+          </div>
+          <button type="submit">申請を作成</button>
+        </form>
+      ) : (
+        <p>公開済みフォームがありません。</p>
+      )}
     </section>
   );
 }

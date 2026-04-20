@@ -1,6 +1,11 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import {
+  DynamicFieldInput,
+  readDynamicValuesFromFormData,
+  type DynamicFormField,
+} from "../../_components/dynamic-fields";
 
 type ApplicationDetail = {
   id: string;
@@ -9,13 +14,7 @@ type ApplicationDetail = {
   values: Record<string, unknown>;
 };
 
-type FormField = {
-  id: string;
-  fieldKey: string;
-  label: string;
-  fieldType: string;
-  required: boolean;
-};
+type FormField = DynamicFormField;
 
 type CorrectionTargetItem = {
   fieldKey: string;
@@ -31,17 +30,13 @@ function unwrapData<T>(raw: unknown): T {
 
 async function patchApplicationAction(
   applicationId: string,
+  fields: FormField[],
   editableFieldKeys: string[],
   formData: FormData,
 ): Promise<void> {
   "use server";
-  const values: Record<string, unknown> = {};
-  for (const key of editableFieldKeys) {
-    const raw = formData.get(`field:${key}`);
-    if (typeof raw === "string") {
-      values[key] = raw;
-    }
-  }
+  const editableSet = new Set(editableFieldKeys);
+  const values = readDynamicValuesFromFormData(fields, formData, editableSet);
 
   await backendAuthFetchJson(`/applications/${applicationId}`, {
     method: "PATCH",
@@ -91,7 +86,7 @@ export default async function ApplicationEditPage({
             ? "差し戻し対象の項目のみ編集できます。"
             : "下書き申請を編集できます。"}
         </p>
-        <form action={patchApplicationAction.bind(null, id, editableFieldKeys)}>
+        <form action={patchApplicationAction.bind(null, id, fields, editableFieldKeys)}>
           <div style={{ display: "grid", gap: 10 }}>
             {fields.map((field) => {
               const disabled =
@@ -101,23 +96,17 @@ export default async function ApplicationEditPage({
                 (item) => item.fieldKey === field.fieldKey,
               )?.comment;
               return (
-                <label
+                <DynamicFieldInput
                   key={field.id}
-                  style={{ display: "grid", gap: 4, opacity: disabled ? 0.55 : 1 }}
-                >
-                  <span>
-                    {field.label}
-                    {field.required ? " *" : ""}
-                  </span>
-                  <input
-                    name={`field:${field.fieldKey}`}
-                    defaultValue={typeof defaultValue === "string" ? defaultValue : ""}
-                    disabled={disabled}
-                  />
-                  {targetComment ? (
-                    <small style={{ color: "#9a3412" }}>差し戻しコメント: {targetComment}</small>
-                  ) : null}
-                </label>
+                  field={field}
+                  value={defaultValue}
+                  disabled={disabled}
+                  afterInput={
+                    targetComment ? (
+                      <small style={{ color: "#9a3412" }}>差し戻しコメント: {targetComment}</small>
+                    ) : undefined
+                  }
+                />
               );
             })}
           </div>
