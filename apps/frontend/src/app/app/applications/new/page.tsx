@@ -6,6 +6,9 @@ import {
   readDynamicValuesFromFormData,
   type DynamicFormField,
 } from "../_components/dynamic-fields";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 type FormTemplate = {
   id: string;
@@ -86,59 +89,104 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
   const selectableFlows = flows.filter((f) => f.formTemplateId === selectedTemplateId);
 
   return (
-    <section style={{ display: "grid", gap: 12 }}>
-      <h2 style={{ margin: 0 }}>申請作成</h2>
-      <p style={{ margin: 0 }}>フォーム定義に沿って入力し、下書き申請を作成します。</p>
-      {error ? (
-        <p style={{ margin: 0, color: "#b91c1c" }}>
-          入力エラーです。必須項目と入力形式を確認してください。
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">申請作成</h2>
+        <p className="text-muted-foreground">
+          フォーム定義に沿って入力し、下書き申請を作成します
         </p>
+      </div>
+
+      {error ? (
+        <Card className="border-destructive/50">
+          <CardContent className="pt-6">
+            <p className="text-destructive">
+              入力エラーです。必須項目と入力形式を確認してください。
+            </p>
+          </CardContent>
+        </Card>
       ) : null}
-      <form method="GET" style={{ display: "grid", gap: 8 }}>
-        <label style={{ display: "grid", gap: 4 }}>
-          <span>フォームテンプレート</span>
-          <select name="templateId" defaultValue={selectedTemplateId} required>
-            <option value="" disabled>
-              公開済みフォームを選択
-            </option>
-            {publishedTemplates.map((t) => (
-              <option key={t.id} value={t.id}>
-                {t.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <button type="submit">フォームを読み込む</button>
-      </form>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>1. フォームテンプレート選択</CardTitle>
+          <CardDescription>使用するフォームを選択してください</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form method="GET" className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="templateId">フォームテンプレート</Label>
+              <select
+                id="templateId"
+                name="templateId"
+                defaultValue={selectedTemplateId}
+                required
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="" disabled>
+                  公開済みフォームを選択
+                </option>
+                {publishedTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button type="submit">フォームを読み込む</Button>
+          </form>
+        </CardContent>
+      </Card>
+
       {selectedTemplate ? (
-        <form action={createApplicationAction} style={{ display: "grid", gap: 8 }}>
-          <input type="hidden" name="selectedFormTemplateId" value={selectedTemplate.id} />
-          <input
-            type="hidden"
-            name="selectedFormFieldsJson"
-            value={JSON.stringify(selectedTemplate.fields)}
-          />
-        <label style={{ display: "grid", gap: 4 }}>
-          <span>承認フロー（任意）</span>
-          <select name="approvalFlowId" defaultValue="">
-            <option value="">自動選択</option>
-            {selectableFlows.map((flow) => (
-              <option key={flow.id} value={flow.id}>
-                {flow.name}
-              </option>
-            ))}
-          </select>
-        </label>
-          <div style={{ display: "grid", gap: 10 }}>
-            {selectedTemplate.fields.map((field) => (
-              <DynamicFieldInput key={field.id} field={field} value={undefined} />
-            ))}
-          </div>
-          <button type="submit">申請を作成</button>
-        </form>
+        <Card>
+          <CardHeader>
+            <CardTitle>2. 申請内容入力</CardTitle>
+            <CardDescription>{selectedTemplate.name}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={createApplicationAction} className="space-y-6">
+              <input type="hidden" name="selectedFormTemplateId" value={selectedTemplate.id} />
+              <input
+                type="hidden"
+                name="selectedFormFieldsJson"
+                value={JSON.stringify(selectedTemplate.fields)}
+              />
+
+              <div className="space-y-2">
+                <Label htmlFor="approvalFlowId">承認フロー（任意）</Label>
+                <select
+                  id="approvalFlowId"
+                  name="approvalFlowId"
+                  defaultValue=""
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">自動選択</option>
+                  {selectableFlows.map((flow) => (
+                    <option key={flow.id} value={flow.id}>
+                      {flow.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-4">
+                {selectedTemplate.fields.map((field) => (
+                  <DynamicFieldInput key={field.id} field={field} value={undefined} />
+                ))}
+              </div>
+
+              <Button type="submit" size="lg">申請を作成</Button>
+            </form>
+          </CardContent>
+        </Card>
       ) : (
-        <p>公開済みフォームがありません。</p>
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">公開済みフォームがありません</p>
+          </CardContent>
+        </Card>
       )}
-    </section>
+    </div>
   );
 }

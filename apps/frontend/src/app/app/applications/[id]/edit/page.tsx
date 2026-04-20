@@ -6,6 +6,8 @@ import {
   readDynamicValuesFromFormData,
   type DynamicFormField,
 } from "../../_components/dynamic-fields";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 
 type ApplicationDetail = {
   id: string;
@@ -57,7 +59,13 @@ export default async function ApplicationEditPage({
     const appRaw = await backendAuthFetchJson(`/applications/${id}`);
     const app = unwrapData<ApplicationDetail>(appRaw);
     if (!(app.status === "draft" || app.status === "returned")) {
-      return <p>この申請は編集できません。</p>;
+      return (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-destructive">この申請は編集できません</p>
+          </CardContent>
+        </Card>
+      );
     }
 
     const templateRaw = await backendAuthFetchJson(`/form-templates/${app.formTemplateId}`);
@@ -79,47 +87,74 @@ export default async function ApplicationEditPage({
       .map((f) => f.fieldKey);
 
     return (
-      <section style={{ display: "grid", gap: 12 }}>
-        <h2 style={{ margin: 0 }}>申請編集</h2>
-        <p style={{ margin: 0 }}>
-          {app.status === "returned"
-            ? "差し戻し対象の項目のみ編集できます。"
-            : "下書き申請を編集できます。"}
-        </p>
-        <form action={patchApplicationAction.bind(null, id, fields, editableFieldKeys)}>
-          <div style={{ display: "grid", gap: 10 }}>
-            {fields.map((field) => {
-              const disabled =
-                app.status === "returned" && !returnedEditable.has(field.fieldKey);
-              const defaultValue = app.values[field.fieldKey];
-              const targetComment = targetItems.find(
-                (item) => item.fieldKey === field.fieldKey,
-              )?.comment;
-              return (
-                <DynamicFieldInput
-                  key={field.id}
-                  field={field}
-                  value={defaultValue}
-                  disabled={disabled}
-                  afterInput={
-                    targetComment ? (
-                      <small style={{ color: "#9a3412" }}>差し戻しコメント: {targetComment}</small>
-                    ) : undefined
-                  }
-                />
-              );
-            })}
-          </div>
-          <button type="submit" style={{ marginTop: 12 }}>
-            保存する
-          </button>
-        </form>
-      </section>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">申請編集</h2>
+          <p className="text-muted-foreground">
+            {app.status === "returned"
+              ? "差し戻し対象の項目のみ編集できます"
+              : "下書き申請を編集できます"}
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>申請内容</CardTitle>
+            <CardDescription>
+              {app.status === "returned"
+                ? "差し戻されたフィールドを修正してください"
+                : "すべてのフィールドを編集できます"}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <form action={patchApplicationAction.bind(null, id, fields, editableFieldKeys)} className="space-y-4">
+              {fields.map((field) => {
+                const disabled =
+                  app.status === "returned" && !returnedEditable.has(field.fieldKey);
+                const defaultValue = app.values[field.fieldKey];
+                const targetComment = targetItems.find(
+                  (item) => item.fieldKey === field.fieldKey,
+                )?.comment;
+                return (
+                  <DynamicFieldInput
+                    key={field.id}
+                    field={field}
+                    value={defaultValue}
+                    disabled={disabled}
+                    afterInput={
+                      targetComment ? (
+                        <p className="text-sm text-amber-700 bg-amber-50 p-2 rounded-md border border-amber-200">
+                          差し戻しコメント: {targetComment}
+                        </p>
+                      ) : undefined
+                    }
+                  />
+                );
+              })}
+              <Button type="submit" size="lg">
+                保存する
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     );
   } catch (error) {
     if (error instanceof BackendHttpError) {
-      return <p>申請編集画面の取得に失敗しました（status: {error.status}）</p>;
+      return (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-destructive">申請編集画面の取得に失敗しました（status: {error.status}）</p>
+          </CardContent>
+        </Card>
+      );
     }
-    return <p>申請編集画面の取得に失敗しました</p>;
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-destructive">申請編集画面の取得に失敗しました</p>
+        </CardContent>
+      </Card>
+    );
   }
 }

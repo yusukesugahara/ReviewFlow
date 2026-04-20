@@ -2,6 +2,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
 import { getCurrentSessionUser } from "@/lib/server/session";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 type ExportJob = {
   id: string;
@@ -32,6 +35,19 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
+function getJobStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case "completed":
+      return "default";
+    case "processing":
+      return "secondary";
+    case "failed":
+      return "destructive";
+    default:
+      return "outline";
+  }
+}
+
 type ExportJobsPageProps = {
   searchParams?: Promise<{ jobId?: string }>;
 };
@@ -55,25 +71,60 @@ export default async function ExportJobsPage({ searchParams }: ExportJobsPagePro
   }
 
   return (
-    <section style={{ display: "grid", gap: 12 }}>
-      <h2 style={{ margin: 0 }}>CSVジョブ</h2>
-      <p style={{ margin: 0 }}>
-        現行APIは一覧を持たないため、最新ジョブを都度作成して状態を確認します。
-      </p>
-      <form action={createExportJobAction}>
-        <button type="submit">新しいCSVジョブを作成</button>
-      </form>
-      {errorText ? <p>{errorText}</p> : null}
-      {latestJob ? (
-        <div>
-          <div>ID: {latestJob.id}</div>
-          <div>Status: {latestJob.status}</div>
-          <div>Created: {new Date(latestJob.createdAt).toLocaleString()}</div>
-          {latestJob.status === "completed" ? (
-            <a href={`/api/export-jobs/${latestJob.id}/download`}>CSVをダウンロード</a>
-          ) : null}
-        </div>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">CSVエクスポート</h2>
+        <p className="text-muted-foreground">
+          申請データをCSV形式でエクスポートできます
+        </p>
+      </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>新しいジョブ作成</CardTitle>
+          <CardDescription>
+            申請データの全件エクスポートジョブを作成します
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createExportJobAction}>
+            <Button type="submit">新しいCSVジョブを作成</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      {errorText ? (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-destructive">{errorText}</p>
+          </CardContent>
+        </Card>
       ) : null}
-    </section>
+
+      {latestJob ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>最新ジョブ</CardTitle>
+            <CardDescription>ジョブID: {latestJob.id}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium">ステータス:</span>
+              <Badge variant={getJobStatusVariant(latestJob.status)}>
+                {latestJob.status}
+              </Badge>
+            </div>
+            <div className="text-sm text-muted-foreground">
+              作成日時: {new Date(latestJob.createdAt).toLocaleString("ja-JP")}
+            </div>
+            {latestJob.status === "completed" ? (
+              <Button asChild>
+                <a href={`/api/export-jobs/${latestJob.id}/download`}>CSVをダウンロード</a>
+              </Button>
+            ) : null}
+          </CardContent>
+        </Card>
+      ) : null}
+    </div>
   );
 }

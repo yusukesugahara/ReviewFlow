@@ -1,6 +1,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 type FormTemplate = {
   id: string;
@@ -81,51 +87,133 @@ export default async function AdminApprovalFlowsPage() {
   const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
 
   return (
-    <section style={{ display: "grid", gap: 14 }}>
-      <h2 style={{ margin: 0 }}>承認フロー作成</h2>
-      <form action={createApprovalFlowAction} style={{ display: "grid", gap: 8 }}>
-        <select name="formTemplateId" required defaultValue="">
-          <option value="" disabled>
-            公開済みフォームを選択
-          </option>
-          {publishedTemplates.map((t) => (
-            <option key={t.id} value={t.id}>
-              {t.name}
-            </option>
-          ))}
-        </select>
-        <input name="name" placeholder="フロー名（例: 経費申請フロー）" required />
-        <label style={{ display: "grid", gap: 4 }}>
-          <span>ステップ定義（1行: stepName,approver|tenant_admin,true|false）</span>
-          <textarea
-            name="stepLines"
-            rows={5}
-            defaultValue={"一次承認,approver,true\n最終承認,tenant_admin,false"}
-            required
-          />
-        </label>
-        <button type="submit">承認フロー作成</button>
-      </form>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">承認フロー作成</h2>
+        <p className="text-muted-foreground">
+          申請の承認フローを定義します
+        </p>
+      </div>
 
-      <section style={{ display: "grid", gap: 8 }}>
-        <h3 style={{ marginBottom: 0 }}>既存フロー</h3>
-        <ul>
-          {flows.map((flow) => (
-            <li key={flow.id}>
-              {flow.name} ({flow.isActive ? "active" : "inactive"}) / template:{" "}
-              {flow.formTemplateId}
-              <ul>
-                {flow.steps.map((step) => (
-                  <li key={step.id}>
-                    {step.stepOrder}. {step.stepName} ({step.approverRole}) return:
-                    {step.canReturn ? "yes" : "no"}
-                  </li>
+      <Card>
+        <CardHeader>
+          <CardTitle>新しい承認フロー作成</CardTitle>
+          <CardDescription>
+            公開済みのフォームテンプレートに対して承認フローを作成します
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createApprovalFlowAction} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="formTemplateId">フォームテンプレート</Label>
+              <select
+                id="formTemplateId"
+                name="formTemplateId"
+                required
+                defaultValue=""
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="" disabled>
+                  公開済みフォームを選択
+                </option>
+                {publishedTemplates.map((t) => (
+                  <option key={t.id} value={t.id}>
+                    {t.name}
+                  </option>
                 ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-      </section>
-    </section>
+              </select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="name">フロー名</Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="例: 経費申請承認フロー"
+                required
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="stepLines">ステップ定義</Label>
+              <p className="text-sm text-muted-foreground">
+                1行につき1ステップを定義します。形式: ステップ名,ロール(approver/tenant_admin),差し戻し可否(true/false)
+              </p>
+              <Textarea
+                id="stepLines"
+                name="stepLines"
+                rows={5}
+                defaultValue="一次承認,approver,true\n最終承認,tenant_admin,false"
+                required
+                className="font-mono text-sm"
+              />
+              <p className="text-xs text-muted-foreground">
+                例: 一次承認,approver,true
+              </p>
+            </div>
+
+            <Button type="submit">承認フロー作成</Button>
+          </form>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>既存の承認フロー</CardTitle>
+          <CardDescription>
+            {flows.length}個の承認フローが定義されています
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {flows.length === 0 ? (
+            <p className="text-center text-muted-foreground py-8">
+              承認フローがまだありません
+            </p>
+          ) : (
+            <div className="space-y-4">
+              {flows.map((flow) => (
+                <div key={flow.id} className="border rounded-lg p-4 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <h3 className="font-semibold text-lg">{flow.name}</h3>
+                    <div className="flex gap-2">
+                      <Badge variant={flow.isActive ? "default" : "secondary"}>
+                        {flow.isActive ? "有効" : "無効"}
+                      </Badge>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground font-mono">
+                    Template ID: {flow.formTemplateId.slice(0, 12)}...
+                  </p>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">承認ステップ:</p>
+                    <div className="space-y-1">
+                      {flow.steps.map((step) => (
+                        <div
+                          key={step.id}
+                          className="flex items-center gap-2 text-sm pl-4 py-1"
+                        >
+                          <Badge variant="outline" className="w-8 text-center">
+                            {step.stepOrder}
+                          </Badge>
+                          <span className="font-medium">{step.stepName}</span>
+                          <Badge variant="secondary" className="text-xs">
+                            {step.approverRole === "tenant_admin" ? "管理者" : "承認者"}
+                          </Badge>
+                          {step.canReturn ? (
+                            <Badge variant="outline" className="text-xs">
+                              差し戻し可
+                            </Badge>
+                          ) : null}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
   );
 }

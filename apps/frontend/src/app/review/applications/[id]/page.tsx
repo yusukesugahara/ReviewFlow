@@ -2,6 +2,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
 import { renderFieldValue } from "@/lib/form-field-value";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 type ApplicationDetail = {
   id: string;
@@ -31,6 +37,32 @@ function unwrapData<T>(raw: unknown): T {
     throw new Error("invalid success envelope");
   }
   return (raw as { data: T }).data;
+}
+
+function getStatusBadgeVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case "approved":
+      return "default";
+    case "in_review":
+      return "secondary";
+    case "returned":
+    case "rejected":
+      return "destructive";
+    default:
+      return "outline";
+  }
+}
+
+function getStatusLabel(status: string): string {
+  const labels: Record<string, string> = {
+    draft: "下書き",
+    submitted: "提出済み",
+    in_review: "レビュー中",
+    returned: "差し戻し",
+    approved: "承認",
+    rejected: "却下",
+  };
+  return labels[status] ?? status;
 }
 
 async function approveAction(applicationId: string, formData: FormData): Promise<void> {
@@ -118,107 +150,221 @@ export default async function ReviewApplicationDetailPage({
     const fieldMap = fields.map((f) => ({ id: f.id, key: f.fieldKey }));
 
     return (
-      <section style={{ display: "grid", gap: 12 }}>
-        <h2 style={{ margin: 0 }}>レビュー詳細</h2>
-        <div>ID: {app.id}</div>
-        <div>Status: {app.status}</div>
-        <div>Applicant: {app.applicantUserId}</div>
-        <div>Current Step: {app.currentStepOrder ?? "-"}</div>
-
-        <h3 style={{ marginBottom: 0 }}>入力値</h3>
-        <div style={{ display: "grid", gap: 8 }}>
-          {fields.map((field) => {
-            const isCorrectionTarget = openItems.some(
-              (item) => item.formFieldId === field.id || item.fieldKey === field.fieldKey,
-            );
-            return (
-              <div
-                key={field.id}
-                style={{
-                  border: "1px solid #ddd",
-                  borderRadius: 6,
-                  padding: 8,
-                  background: isCorrectionTarget ? "#fff7ed" : "transparent",
-                }}
-              >
-                <div style={{ fontWeight: 600 }}>
-                  {field.label} ({field.fieldKey})
-                </div>
-                <div>{renderFieldValue(field, app.values[field.fieldKey])}</div>
-                {isCorrectionTarget ? (
-                  <small style={{ color: "#9a3412" }}>現在の差し戻し対象項目です</small>
-                ) : null}
-              </div>
-            );
-          })}
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">レビュー詳細</h2>
+            <p className="text-muted-foreground">ID: {app.id.slice(0, 12)}...</p>
+          </div>
+          <Badge variant={getStatusBadgeVariant(app.status)} className="text-base px-4 py-2">
+            {getStatusLabel(app.status)}
+          </Badge>
         </div>
 
-        {app.status === "in_review" ? (
-          <>
-            <form action={approveAction.bind(null, app.id)} style={{ display: "grid", gap: 8 }}>
-              <h3 style={{ marginBottom: 0 }}>承認</h3>
-              <textarea name="comment" placeholder="任意コメント" rows={3} />
-              <button type="submit">承認する</button>
-            </form>
+        <Card>
+          <CardHeader>
+            <CardTitle>基本情報</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">申請者ID</span>
+              <span className="font-mono">{app.applicantUserId.slice(0, 12)}...</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">現在のステップ</span>
+              <span>{app.currentStepOrder ?? "-"}</span>
+            </div>
+          </CardContent>
+        </Card>
 
-            <form action={rejectAction.bind(null, app.id)} style={{ display: "grid", gap: 8 }}>
-              <h3 style={{ marginBottom: 0 }}>却下</h3>
-              <textarea name="comment" placeholder="任意コメント" rows={3} />
-              <button type="submit">却下する</button>
-            </form>
-
-            <form
-              action={returnAction.bind(null, app.id, fieldMap)}
-              style={{ display: "grid", gap: 8 }}
-            >
-              <h3 style={{ marginBottom: 0 }}>差し戻し</h3>
-              <textarea name="overallComment" placeholder="全体コメント（任意）" rows={3} />
-              <div style={{ display: "grid", gap: 8 }}>
-                {fields.map((field) => (
-                  <label
-                    key={field.id}
-                    style={{
-                      display: "grid",
-                      gap: 4,
-                      border: "1px solid #ddd",
-                      borderRadius: 6,
-                      padding: 8,
-                    }}
-                  >
-                    <span>
-                      <input type="checkbox" name={`return:${field.id}`} />
-                      {` ${field.label} (${field.fieldKey})`}
+        <Card>
+          <CardHeader>
+            <CardTitle>申請内容</CardTitle>
+            <CardDescription>入力された値を確認できます</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {fields.map((field) => {
+              const isCorrectionTarget = openItems.some(
+                (item) => item.formFieldId === field.id || item.fieldKey === field.fieldKey,
+              );
+              return (
+                <div
+                  key={field.id}
+                  className={`p-4 rounded-lg border ${
+                    isCorrectionTarget ? "bg-amber-50 border-amber-200" : "bg-muted/30"
+                  }`}
+                >
+                  <div className="font-semibold text-sm mb-2 flex items-center gap-2">
+                    {field.label}
+                    <span className="font-mono text-xs text-muted-foreground">
+                      ({field.fieldKey})
                     </span>
-                    <input
-                      name={`comment:${field.id}`}
-                      placeholder="この項目への差し戻しコメント（任意）"
+                  </div>
+                  <div className="text-base">
+                    {renderFieldValue(field, app.values[field.fieldKey])}
+                  </div>
+                  {isCorrectionTarget ? (
+                    <p className="text-xs text-amber-700 mt-2 font-medium">
+                      ⚠️ 差し戻し対象項目です
+                    </p>
+                  ) : null}
+                </div>
+              );
+            })}
+          </CardContent>
+        </Card>
+
+        {app.status === "in_review" ? (
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-green-700">✓ 承認</CardTitle>
+                <CardDescription>この申請を承認します</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={approveAction.bind(null, app.id)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="approve-comment">コメント（任意）</Label>
+                    <Textarea
+                      id="approve-comment"
+                      name="comment"
+                      placeholder="承認コメント"
+                      rows={3}
                     />
-                  </label>
-                ))}
-              </div>
-              <button type="submit">差し戻す</button>
-            </form>
-          </>
+                  </div>
+                  <Button type="submit" className="w-full">承認する</Button>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-red-700">✕ 却下</CardTitle>
+                <CardDescription>この申請を却下します</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={rejectAction.bind(null, app.id)} className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="reject-comment">コメント（任意）</Label>
+                    <Textarea
+                      id="reject-comment"
+                      name="comment"
+                      placeholder="却下理由"
+                      rows={3}
+                    />
+                  </div>
+                  <Button type="submit" variant="destructive" className="w-full">却下する</Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        ) : null}
+
+        {app.status === "in_review" ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-amber-700">↩ 差し戻し</CardTitle>
+              <CardDescription>
+                特定のフィールドに対して修正を依頼します
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form action={returnAction.bind(null, app.id, fieldMap)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="overallComment">全体コメント（任意）</Label>
+                  <Textarea
+                    id="overallComment"
+                    name="overallComment"
+                    placeholder="差し戻しの全体的な理由や説明"
+                    rows={3}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>差し戻し対象フィールド</Label>
+                  <div className="space-y-3">
+                    {fields.map((field) => (
+                      <div key={field.id} className="border rounded-lg p-3 space-y-2">
+                        <div className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            id={`return:${field.id}`}
+                            name={`return:${field.id}`}
+                            className="h-4 w-4 rounded border-gray-300"
+                          />
+                          <Label
+                            htmlFor={`return:${field.id}`}
+                            className="font-medium cursor-pointer"
+                          >
+                            {field.label}
+                            <span className="font-mono text-xs text-muted-foreground ml-2">
+                              ({field.fieldKey})
+                            </span>
+                          </Label>
+                        </div>
+                        <Input
+                          name={`comment:${field.id}`}
+                          placeholder="この項目への個別コメント（任意）"
+                          className="text-sm"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Button type="submit" variant="outline" className="w-full">
+                  差し戻す
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
         ) : null}
 
         {openItems.length > 0 ? (
-          <section>
-            <h3 style={{ marginBottom: 0 }}>現在オープン中の修正対象</h3>
-            <ul>
-              {openItems.map((item) => (
-                <li key={`${item.formFieldId}-${item.fieldKey}`}>
-                  {item.label} ({item.fieldKey})
-                </li>
-              ))}
-            </ul>
-          </section>
+          <Card>
+            <CardHeader>
+              <CardTitle>現在オープン中の修正対象</CardTitle>
+              <CardDescription>
+                {openItems.length}個のフィールドが差し戻し対象となっています
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ul className="space-y-2">
+                {openItems.map((item) => (
+                  <li
+                    key={`${item.formFieldId}-${item.fieldKey}`}
+                    className="flex items-center gap-2 p-2 border-l-2 border-amber-400 pl-3"
+                  >
+                    <Badge variant="outline">{item.label}</Badge>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      ({item.fieldKey})
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </CardContent>
+          </Card>
         ) : null}
-      </section>
+      </div>
     );
   } catch (error) {
     if (error instanceof BackendHttpError) {
-      return <p>レビュー詳細の取得に失敗しました（status: {error.status}）</p>;
+      return (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-destructive">
+              レビュー詳細の取得に失敗しました（status: {error.status}）
+            </p>
+          </CardContent>
+        </Card>
+      );
     }
-    return <p>レビュー詳細の取得に失敗しました</p>;
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-destructive">レビュー詳細の取得に失敗しました</p>
+        </CardContent>
+      </Card>
+    );
   }
 }

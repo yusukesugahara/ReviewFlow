@@ -1,4 +1,8 @@
 import type { ReactNode } from "react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
 
 export type DynamicFormField = {
   id: string;
@@ -98,35 +102,41 @@ export function DynamicFieldInput({
     ? value.filter((x): x is string => typeof x === "string")
     : [];
 
-  const commonLabel = (
-    <span>
-      {field.label}
-      {field.required ? " *" : ""}
-    </span>
-  );
-
   if (field.fieldType === "textarea") {
     return (
-      <label style={{ display: "grid", gap: 4, opacity: disabled ? 0.55 : 1 }}>
-        {commonLabel}
-        <textarea
+      <div className={cn("space-y-2", disabled && "opacity-50")}>
+        <Label htmlFor={name}>
+          {field.label}
+          {field.required ? <span className="text-destructive ml-1">*</span> : null}
+        </Label>
+        <Textarea
+          id={name}
           name={name}
           defaultValue={stringValue}
           placeholder={field.placeholder ?? ""}
           rows={4}
           disabled={disabled}
         />
-        {field.helpText ? <small>{field.helpText}</small> : null}
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
-      </label>
+      </div>
     );
   }
 
   if (field.fieldType === "select") {
     return (
-      <label style={{ display: "grid", gap: 4, opacity: disabled ? 0.55 : 1 }}>
-        {commonLabel}
-        <select name={name} defaultValue={stringValue} disabled={disabled}>
+      <div className={cn("space-y-2", disabled && "opacity-50")}>
+        <Label htmlFor={name}>
+          {field.label}
+          {field.required ? <span className="text-destructive ml-1">*</span> : null}
+        </Label>
+        <select
+          id={name}
+          name={name}
+          defaultValue={stringValue}
+          disabled={disabled}
+          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+        >
           <option value="">選択してください</option>
           {options.map((opt) => (
             <option key={`${field.id}-${opt.value}`} value={opt.value}>
@@ -134,68 +144,90 @@ export function DynamicFieldInput({
             </option>
           ))}
         </select>
-        {field.helpText ? <small>{field.helpText}</small> : null}
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
-      </label>
+      </div>
     );
   }
 
   if (field.fieldType === "radio") {
     return (
-      <fieldset style={{ display: "grid", gap: 4, opacity: disabled ? 0.55 : 1 }}>
-        <legend>{commonLabel}</legend>
-        {options.map((opt) => (
-          <label key={`${field.id}-${opt.value}`}>
-            <input
-              type="radio"
-              name={name}
-              value={opt.value}
-              defaultChecked={stringValue === opt.value}
-              disabled={disabled}
-            />{" "}
-            {opt.label}
-          </label>
-        ))}
-        {field.helpText ? <small>{field.helpText}</small> : null}
+      <div className={cn("space-y-2", disabled && "opacity-50")}>
+        <Label>
+          {field.label}
+          {field.required ? <span className="text-destructive ml-1">*</span> : null}
+        </Label>
+        <div className="space-y-2">
+          {options.map((opt) => (
+            <div key={`${field.id}-${opt.value}`} className="flex items-center space-x-2">
+              <input
+                type="radio"
+                id={`${name}-${opt.value}`}
+                name={name}
+                value={opt.value}
+                defaultChecked={stringValue === opt.value}
+                disabled={disabled}
+                className="h-4 w-4 border-gray-300"
+              />
+              <Label htmlFor={`${name}-${opt.value}`} className="font-normal">
+                {opt.label}
+              </Label>
+            </div>
+          ))}
+        </div>
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
-      </fieldset>
+      </div>
     );
   }
 
   if (field.fieldType === "checkbox") {
     return (
-      <fieldset style={{ display: "grid", gap: 4, opacity: disabled ? 0.55 : 1 }}>
-        <legend>{commonLabel}</legend>
-        {options.map((opt) => (
-          <label key={`${field.id}-${opt.value}`}>
-            <input
-              type="checkbox"
-              name={name}
-              value={opt.value}
-              defaultChecked={selectedValues.includes(opt.value)}
-              disabled={disabled}
-            />{" "}
-            {opt.label}
-          </label>
-        ))}
-        {field.helpText ? <small>{field.helpText}</small> : null}
+      <div className={cn("space-y-2", disabled && "opacity-50")}>
+        <Label>
+          {field.label}
+          {field.required ? <span className="text-destructive ml-1">*</span> : null}
+        </Label>
+        <div className="space-y-2">
+          {options.map((opt) => (
+            <div key={`${field.id}-${opt.value}`} className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id={`${name}-${opt.value}`}
+                name={name}
+                value={opt.value}
+                defaultChecked={selectedValues.includes(opt.value)}
+                disabled={disabled}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor={`${name}-${opt.value}`} className="font-normal">
+                {opt.label}
+              </Label>
+            </div>
+          ))}
+        </div>
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
-      </fieldset>
+      </div>
     );
   }
 
   return (
-    <label style={{ display: "grid", gap: 4, opacity: disabled ? 0.55 : 1 }}>
-      {commonLabel}
-      <input
+    <div className={cn("space-y-2", disabled && "opacity-50")}>
+      <Label htmlFor={name}>
+        {field.label}
+        {field.required ? <span className="text-destructive ml-1">*</span> : null}
+      </Label>
+      <Input
+        id={name}
         name={name}
         type={field.fieldType === "number" ? "number" : field.fieldType === "date" ? "date" : "text"}
         defaultValue={stringValue}
         placeholder={field.placeholder ?? ""}
         disabled={disabled}
       />
-      {field.helpText ? <small>{field.helpText}</small> : null}
+      {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
       {afterInput}
-    </label>
+    </div>
   );
 }

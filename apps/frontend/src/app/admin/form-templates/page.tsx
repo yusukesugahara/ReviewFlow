@@ -1,6 +1,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import Link from "next/link";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type FormField = {
   id: string;
@@ -93,77 +100,223 @@ export default async function AdminFormTemplatesPage({ searchParams }: PageProps
     templates.find((t) => t.id === selectedTemplateId) ?? templates.at(0) ?? null;
 
   return (
-    <section style={{ display: "grid", gap: 14 }}>
-      <h2 style={{ margin: 0 }}>フォーム作成</h2>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-3xl font-bold tracking-tight">フォームテンプレート作成</h2>
+        <p className="text-muted-foreground">
+          申請フォームのテンプレートを作成し、フィールドを定義します
+        </p>
+      </div>
 
-      <form action={createTemplateAction} style={{ display: "grid", gap: 8 }}>
-        <h3 style={{ marginBottom: 0 }}>1. テンプレート作成</h3>
-        <input name="name" placeholder="テンプレート名（例: 経費申請）" required />
-        <input name="description" placeholder="説明（任意）" />
-        <button type="submit">テンプレート作成</button>
-      </form>
+      <Card>
+        <CardHeader>
+          <CardTitle>1. 新しいテンプレート作成</CardTitle>
+          <CardDescription>まずテンプレートを作成します</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <form action={createTemplateAction} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">テンプレート名</Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="例: 経費申請フォーム"
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="description">説明（任意）</Label>
+              <Input
+                id="description"
+                name="description"
+                placeholder="このテンプレートの説明"
+              />
+            </div>
+            <Button type="submit">テンプレート作成</Button>
+          </form>
+        </CardContent>
+      </Card>
 
-      <section style={{ display: "grid", gap: 8 }}>
-        <h3 style={{ marginBottom: 0 }}>2. 既存テンプレート</h3>
-        {templates.length === 0 ? <p>テンプレートがありません。</p> : null}
-        <ul>
-          {templates.map((t) => (
-            <li key={t.id}>
-              <a href={`/admin/form-templates?templateId=${encodeURIComponent(t.id)}`}>
-                {t.name} ({t.status})
-              </a>
-            </li>
-          ))}
-        </ul>
-      </section>
+      <Card>
+        <CardHeader>
+          <CardTitle>2. 既存テンプレート</CardTitle>
+          <CardDescription>編集するテンプレートを選択してください</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {templates.length === 0 ? (
+            <p className="text-center text-muted-foreground py-4">テンプレートがありません</p>
+          ) : (
+            <div className="space-y-2">
+              {templates.map((t) => (
+                <Link
+                  key={t.id}
+                  href={`/admin/form-templates?templateId=${encodeURIComponent(t.id)}`}
+                  className={`flex items-center justify-between p-3 rounded-lg border transition-colors hover:bg-accent ${
+                    selected?.id === t.id ? "bg-accent border-primary" : ""
+                  }`}
+                >
+                  <span className="font-medium">{t.name}</span>
+                  <Badge variant={t.status === "published" ? "default" : "outline"}>
+                    {t.status === "published" ? "公開済み" : "下書き"}
+                  </Badge>
+                </Link>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {selected ? (
         <>
-          <form action={addFieldAction.bind(null, selected.id)} style={{ display: "grid", gap: 8 }}>
-            <h3 style={{ marginBottom: 0 }}>3. フィールド追加: {selected.name}</h3>
-            <input name="fieldKey" placeholder="field key (例: amount)" required />
-            <input name="label" placeholder="ラベル (例: 金額)" required />
-            <select name="fieldType" defaultValue="text">
-              <option value="text">text</option>
-              <option value="textarea">textarea</option>
-              <option value="number">number</option>
-              <option value="date">date</option>
-              <option value="select">select</option>
-              <option value="radio">radio</option>
-              <option value="checkbox">checkbox</option>
-            </select>
-            <label>
-              <input type="checkbox" name="required" /> 必須
-            </label>
-            <input
-              name="sortOrder"
-              type="number"
-              defaultValue={selected.fields.length}
-              min={0}
-              step={1}
-            />
-            <button type="submit">フィールド追加</button>
-          </form>
+          <Card>
+            <CardHeader>
+              <CardTitle>3. フィールド追加: {selected.name}</CardTitle>
+              <CardDescription>テンプレートにフィールドを追加します</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form action={addFieldAction.bind(null, selected.id)} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fieldKey">フィールドキー</Label>
+                    <Input
+                      id="fieldKey"
+                      name="fieldKey"
+                      placeholder="例: amount"
+                      required
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="label">ラベル</Label>
+                    <Input
+                      id="label"
+                      name="label"
+                      placeholder="例: 金額"
+                      required
+                    />
+                  </div>
+                </div>
 
-          <section style={{ display: "grid", gap: 8 }}>
-            <h3 style={{ marginBottom: 0 }}>4. フィールド一覧</h3>
-            <ul>
-              {selected.fields.map((field) => (
-                <li key={field.id}>
-                  [{field.sortOrder}] {field.label} ({field.fieldKey}) / {field.fieldType}
-                  {field.required ? " *" : ""}
-                </li>
-              ))}
-            </ul>
-          </section>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="fieldType">フィールドタイプ</Label>
+                    <select
+                      id="fieldType"
+                      name="fieldType"
+                      defaultValue="text"
+                      className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    >
+                      <option value="text">テキスト</option>
+                      <option value="textarea">複数行テキスト</option>
+                      <option value="number">数値</option>
+                      <option value="date">日付</option>
+                      <option value="select">選択</option>
+                      <option value="radio">ラジオボタン</option>
+                      <option value="checkbox">チェックボックス</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="sortOrder">並び順</Label>
+                    <Input
+                      id="sortOrder"
+                      name="sortOrder"
+                      type="number"
+                      defaultValue={selected.fields.length}
+                      min={0}
+                      step={1}
+                    />
+                  </div>
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="required"
+                    name="required"
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="required" className="font-normal">必須項目にする</Label>
+                </div>
+
+                <Button type="submit">フィールド追加</Button>
+              </form>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>4. フィールド一覧</CardTitle>
+              <CardDescription>
+                {selected.fields.length}個のフィールドが定義されています
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {selected.fields.length === 0 ? (
+                <p className="text-center text-muted-foreground py-4">
+                  フィールドがまだありません
+                </p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-16">順序</TableHead>
+                      <TableHead>ラベル</TableHead>
+                      <TableHead>キー</TableHead>
+                      <TableHead>タイプ</TableHead>
+                      <TableHead>必須</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {selected.fields.map((field) => (
+                      <TableRow key={field.id}>
+                        <TableCell className="font-medium">{field.sortOrder}</TableCell>
+                        <TableCell>{field.label}</TableCell>
+                        <TableCell className="font-mono text-xs">{field.fieldKey}</TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{field.fieldType}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          {field.required ? (
+                            <Badge variant="destructive">必須</Badge>
+                          ) : (
+                            <Badge variant="secondary">任意</Badge>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
 
           {selected.status === "draft" ? (
-            <form action={publishTemplateAction.bind(null, selected.id)}>
-              <button type="submit">5. 公開する</button>
-            </form>
-          ) : null}
+            <Card>
+              <CardHeader>
+                <CardTitle>5. テンプレート公開</CardTitle>
+                <CardDescription>
+                  フィールド定義が完了したら、テンプレートを公開できます
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <form action={publishTemplateAction.bind(null, selected.id)}>
+                  <Button type="submit" size="lg">公開する</Button>
+                </form>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-2">
+                  <Badge>公開済み</Badge>
+                  <span className="text-sm text-muted-foreground">
+                    このテンプレートは既に公開されています
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </>
       ) : null}
-    </section>
+    </div>
   );
 }

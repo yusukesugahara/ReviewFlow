@@ -12,11 +12,18 @@
     "test:e2e:install": "playwright install chromium"
   },
   "dependencies": {
+    "@radix-ui/react-label": "^2.1.8",
+    "@radix-ui/react-select": "^2.2.6",
+    "@radix-ui/react-slot": "^1.2.4",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.8.0",
     "next": "^16.2.2",
     "openapi-fetch": "^0.17.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "server-only": "^0.0.1",
+    "tailwind-merge": "^3.5.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
