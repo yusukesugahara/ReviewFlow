@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
 
 type ApplicationRow = {
@@ -38,6 +39,9 @@ export default async function ApplicantApplicationsPage() {
                 <td>{r.status}</td>
                 <td>{r.formTemplateId}</td>
                 <td>{new Date(r.createdAt).toLocaleString()}</td>
+                <td>
+                  <Link href={`/app/applications/${r.id}`}>詳細</Link>
+                </td>
               </tr>
             ))}
           </tbody>
