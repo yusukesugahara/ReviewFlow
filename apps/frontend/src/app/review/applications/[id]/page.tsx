@@ -15,6 +15,8 @@ type FormField = {
   id: string;
   fieldKey: string;
   label: string;
+  fieldType: string;
+  options?: unknown[] | null;
 };
 
 type CorrectionTargetItem = {
@@ -22,6 +24,60 @@ type CorrectionTargetItem = {
   fieldKey: string;
   label: string;
 };
+
+type FieldOption = { value: string; label: string };
+
+function normalizeFieldOptions(options: unknown[] | null | undefined): FieldOption[] {
+  if (!Array.isArray(options)) {
+    return [];
+  }
+  return options
+    .map((opt) => {
+      if (typeof opt === "string") {
+        return { value: opt, label: opt };
+      }
+      if (opt && typeof opt === "object") {
+        const rec = opt as Record<string, unknown>;
+        const value = rec.value;
+        const label = rec.label;
+        if (typeof value === "string" && typeof label === "string") {
+          return { value, label };
+        }
+      }
+      return null;
+    })
+    .filter((v): v is FieldOption => v !== null);
+}
+
+function renderValue(field: FormField, value: unknown): string {
+  if (value === null || value === undefined) {
+    return "-";
+  }
+  if (field.fieldType === "checkbox") {
+    if (!Array.isArray(value)) {
+      return "-";
+    }
+    const opts = normalizeFieldOptions(field.options);
+    const asStrings = value.filter((v): v is string => typeof v === "string");
+    if (opts.length === 0) {
+      return asStrings.join(", ");
+    }
+    const labels = asStrings.map((v) => opts.find((o) => o.value === v)?.label ?? v);
+    return labels.join(", ");
+  }
+  if (typeof value === "string" || typeof value === "number") {
+    const opts = normalizeFieldOptions(field.options);
+    if (
+      opts.length > 0 &&
+      (field.fieldType === "select" || field.fieldType === "radio") &&
+      typeof value === "string"
+    ) {
+      return opts.find((o) => o.value === value)?.label ?? value;
+    }
+    return String(value);
+  }
+  return JSON.stringify(value);
+}
 
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
@@ -123,17 +179,32 @@ export default async function ReviewApplicationDetailPage({
         <div>Current Step: {app.currentStepOrder ?? "-"}</div>
 
         <h3 style={{ marginBottom: 0 }}>入力値</h3>
-        <pre
-          style={{
-            margin: 0,
-            padding: 12,
-            border: "1px solid #ddd",
-            borderRadius: 6,
-            overflowX: "auto",
-          }}
-        >
-          {JSON.stringify(app.values, null, 2)}
-        </pre>
+        <div style={{ display: "grid", gap: 8 }}>
+          {fields.map((field) => {
+            const isCorrectionTarget = openItems.some(
+              (item) => item.formFieldId === field.id || item.fieldKey === field.fieldKey,
+            );
+            return (
+              <div
+                key={field.id}
+                style={{
+                  border: "1px solid #ddd",
+                  borderRadius: 6,
+                  padding: 8,
+                  background: isCorrectionTarget ? "#fff7ed" : "transparent",
+                }}
+              >
+                <div style={{ fontWeight: 600 }}>
+                  {field.label} ({field.fieldKey})
+                </div>
+                <div>{renderValue(field, app.values[field.fieldKey])}</div>
+                {isCorrectionTarget ? (
+                  <small style={{ color: "#9a3412" }}>現在の差し戻し対象項目です</small>
+                ) : null}
+              </div>
+            );
+          })}
+        </div>
 
         {app.status === "in_review" ? (
           <>
