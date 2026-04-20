@@ -70,6 +70,9 @@ type CorrectionTargetsBody = {
 type ExportJobBody = {
   data?: { id?: string; status?: string; filePath?: string | null };
 };
+type AuditLogsListBody = {
+  data?: { logs?: { id: string; actionType: string; targetType: string }[] };
+};
 
 describe('App (e2e)', () => {
   let app: INestApplication<App>;
@@ -1068,5 +1071,37 @@ describe('App (e2e)', () => {
     expect(csv).toContain('amount');
     expect(csv).toContain('旅費精算');
     expect(csv).toContain('12000');
+  });
+
+  it('audit-logs: tenant_admin can read persisted audit entries', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'audit-admin@e2e.test', password: 'password12' })
+      .expect(201);
+    const login = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'audit-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const tok = (login.body as LoginJsonBody).data?.access_token ?? '';
+
+    await request(http)
+      .get('/users')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+
+    const logs = await request(http)
+      .get('/audit-logs')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+    const rows = (logs.body as AuditLogsListBody).data?.logs ?? [];
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows.some((x) => x.targetType === 'users')).toBe(true);
   });
 });

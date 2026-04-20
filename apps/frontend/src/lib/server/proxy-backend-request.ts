@@ -15,7 +15,8 @@ export type AuthNestPath =
   | "/form-templates"
   | "/approval-flows"
   | "/applications"
-  | "/export-jobs";
+  | "/export-jobs"
+  | "/audit-logs";
 
 type ProxyHttpMethod = "GET" | "POST" | "PATCH";
 

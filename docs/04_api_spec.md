@@ -257,4 +257,10 @@ request (任意フィルタ):
 ## Audit Logs
 
 ### GET /audit-logs
-権限: tenant_admin
+権限: tenant_admin  
+query:
+- `limit`（任意, 1..200, 既定 50）
+- `actionType`（任意, 前方一致）
+
+レスポンスは `tenant_id` スコープで `created_at` 降順。  
+各要素は `actionType` / `targetType` / `targetId` / `metadataJson` / `createdAt` を返す。

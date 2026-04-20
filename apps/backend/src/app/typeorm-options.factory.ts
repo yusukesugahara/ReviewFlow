@@ -5,6 +5,7 @@ import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { ApplicationApproval } from '../models/entities/application-approval.entity';
 import { ApplicationFieldValue } from '../models/entities/application-field-value.entity';
 import { Application } from '../models/entities/application.entity';
+import { AuditLog } from '../models/entities/audit-log.entity';
 import { CorrectionRequestItem } from '../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../models/entities/correction-request.entity';
 import { ApprovalFlow } from '../models/entities/approval-flow.entity';
@@ -33,6 +34,7 @@ export function buildTypeOrmOptions(
     Application,
     ApplicationApproval,
     ApplicationFieldValue,
+    AuditLog,
     CorrectionRequest,
     CorrectionRequestItem,
     ExportJob,

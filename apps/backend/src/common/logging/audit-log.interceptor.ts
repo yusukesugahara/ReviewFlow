@@ -9,11 +9,15 @@ import { PinoLogger } from 'nestjs-pino';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { BaseError } from '../../utils/errors/base.error';
 import { ServerErrorCodes } from '../errors/server-error-catalog';
+import { AuditLogsService } from '../../app/modules/audit-logs/audit-logs.service';
 import type { RequestWithContext } from './request-context.middleware';
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
-  constructor(private readonly logger: PinoLogger) {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly auditLogs: AuditLogsService,
+  ) {
     this.logger.setContext(AuditLogInterceptor.name);
   }
 
@@ -106,9 +110,41 @@ export class AuditLogInterceptor implements NestInterceptor {
     };
     if (success) {
       this.logger.info(log, 'audit');
+    } else {
+      this.logger.warn(log, 'audit');
+    }
+
+    const tenantId = req.user?.tenantId;
+    if (!tenantId || typeof tenantId !== 'string') {
       return;
     }
 
-    this.logger.warn(log, 'audit');
+    const segments = (req.path ?? req.url ?? '/')
+      .split('?')[0]
+      .split('/')
+      .filter((s) => s.length > 0);
+    const targetType = segments[0] ?? 'unknown';
+    const targetId = segments[1] ?? null;
+    const actionType = `${req.method.toUpperCase()}:${targetType}`;
+
+    void this.auditLogs.create({
+      tenantId,
+      actorUserId: userId,
+      actionType,
+      targetType,
+      targetId,
+      metadataJson: {
+        method: req.method,
+        path: req.originalUrl ?? req.url,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startedAt,
+        requestId: log.requestId,
+        role,
+        ip,
+        userAgent,
+        success,
+        ...(success ? {} : { errorCode }),
+      },
+    });
   }
 }
