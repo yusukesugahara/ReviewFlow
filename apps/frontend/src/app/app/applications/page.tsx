@@ -23,6 +23,7 @@ export default async function ApplicantApplicationsPage() {
     return (
       <section style={{ display: "grid", gap: 12 }}>
         <h2 style={{ margin: 0 }}>自分の申請</h2>
+        <Link href="/app/applications/new">新しい申請を作成</Link>
         <table style={{ borderCollapse: "collapse", width: "100%" }}>
           <thead>
             <tr>

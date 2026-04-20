@@ -11,6 +11,7 @@ export default function ApplicantLayout({ children }: ApplicantLayoutProps) {
       <h1 style={{ margin: 0 }}>申請ポータル</h1>
       <nav style={{ display: "flex", gap: 12 }}>
         <Link href="/app/applications">申請一覧</Link>
+        <Link href="/app/applications/new">新規申請</Link>
       </nav>
       {children}
     </main>
