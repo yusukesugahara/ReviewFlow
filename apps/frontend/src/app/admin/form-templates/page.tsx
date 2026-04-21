@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { ApplicationSetupSubnav } from "../_components/application-setup-subnav";
 
 type FormField = {
   id: string;
@@ -101,6 +102,7 @@ export default async function AdminFormTemplatesPage({ searchParams }: PageProps
 
   return (
     <div className="space-y-6">
+      <ApplicationSetupSubnav />
       <div>
         <h2 className="text-3xl font-bold tracking-tight">フォームテンプレート作成</h2>
         <p className="text-muted-foreground">

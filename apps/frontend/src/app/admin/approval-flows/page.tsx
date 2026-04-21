@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ApprovalStepsBuilder } from "../_components/approval-steps-builder";
+import { ApplicationSetupSubnav } from "../_components/application-setup-subnav";
+import { ApprovalFlowSelector } from "../_components/approval-flow-selector";
 
 type FormTemplate = {
   id: string;
@@ -88,6 +90,7 @@ export default async function AdminApprovalFlowsPage() {
 
   return (
     <div className="space-y-6">
+      <ApplicationSetupSubnav />
       <div>
         <h2 className="text-3xl font-bold tracking-tight">承認フロー作成</h2>
         <p className="text-muted-foreground">
@@ -180,53 +183,7 @@ export default async function AdminApprovalFlowsPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {flows.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              承認フローがまだありません
-            </p>
-          ) : (
-            <div className="space-y-4">
-              {flows.map((flow) => (
-                <div key={flow.id} className="border rounded-lg p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="font-semibold text-lg">{flow.name}</h3>
-                    <div className="flex gap-2">
-                      <Badge variant={flow.isActive ? "default" : "secondary"}>
-                        {flow.isActive ? "有効" : "無効"}
-                      </Badge>
-                    </div>
-                  </div>
-                  <p className="text-sm text-muted-foreground font-mono">
-                    Template ID: {flow.formTemplateId.slice(0, 12)}...
-                  </p>
-                  <div className="space-y-2">
-                    <p className="text-sm font-medium">承認ステップ:</p>
-                    <div className="space-y-1">
-                      {flow.steps.map((step) => (
-                        <div
-                          key={step.id}
-                          className="flex items-center gap-2 text-sm pl-4 py-1"
-                        >
-                          <Badge variant="outline" className="w-8 text-center">
-                            {step.stepOrder}
-                          </Badge>
-                          <span className="font-medium">{step.stepName}</span>
-                          <Badge variant="secondary" className="text-xs">
-                            {step.approverRole === "tenant_admin" ? "管理者" : "承認者"}
-                          </Badge>
-                          {step.canReturn ? (
-                            <Badge variant="outline" className="text-xs">
-                              差し戻し可
-                            </Badge>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
+          <ApprovalFlowSelector flows={flows} />
         </CardContent>
       </Card>
     </div>
