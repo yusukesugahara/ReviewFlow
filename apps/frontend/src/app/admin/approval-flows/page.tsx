@@ -5,8 +5,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import { ApprovalStepsBuilder } from "../_components/approval-steps-builder";
 
 type FormTemplate = {
   id: string;
@@ -95,6 +95,31 @@ export default async function AdminApprovalFlowsPage() {
         </p>
       </div>
 
+      <Card className="border-slate-200 bg-slate-50/80">
+        <CardHeader>
+          <CardTitle className="text-base">使い方ガイド</CardTitle>
+          <CardDescription>
+            初めての方は次の手順で入力してください
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ol className="space-y-3 text-sm text-slate-700">
+            <li className="rounded-lg border border-slate-200 bg-white p-3">
+              <span className="font-medium">1.</span>{" "}
+              フォームテンプレートを選択し、フロー名を入力します。
+            </li>
+            <li className="rounded-lg border border-slate-200 bg-white p-3">
+              <span className="font-medium">2.</span>{" "}
+              ステップ名・ロール・差し戻し可否を指定して「ステップ追加」を押します。
+            </li>
+            <li className="rounded-lg border border-slate-200 bg-white p-3">
+              <span className="font-medium">3.</span>{" "}
+              カードをドラッグ&ドロップ（または上下ボタン）で順序調整し、作成ボタンで保存します。
+            </li>
+          </ol>
+        </CardContent>
+      </Card>
+
       <Card>
         <CardHeader>
           <CardTitle>新しい承認フロー作成</CardTitle>
@@ -135,21 +160,11 @@ export default async function AdminApprovalFlowsPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="stepLines">ステップ定義</Label>
+              <Label>ステップ定義</Label>
               <p className="text-sm text-muted-foreground">
-                1行につき1ステップを定義します。形式: ステップ名,ロール(approver/tenant_admin),差し戻し可否(true/false)
+                カードを追加して、ドラッグ&ドロップまたは上下ボタンで順番を調整できます。
               </p>
-              <Textarea
-                id="stepLines"
-                name="stepLines"
-                rows={5}
-                defaultValue="一次承認,approver,true\n最終承認,tenant_admin,false"
-                required
-                className="font-mono text-sm"
-              />
-              <p className="text-xs text-muted-foreground">
-                例: 一次承認,approver,true
-              </p>
+              <ApprovalStepsBuilder />
             </div>
 
             <Button type="submit">承認フロー作成</Button>
