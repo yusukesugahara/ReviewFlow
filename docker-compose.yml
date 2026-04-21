@@ -26,6 +26,7 @@ services:
       - "3000:3000"
     environment:
       NODE_ENV: production
+      ENABLE_SWAGGER: "1"
       PORT: "3000"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
       JWT_SECRET: ${JWT_SECRET:-docker-jwt-secret-at-least-32-characters-long}
