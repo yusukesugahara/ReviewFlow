@@ -28,6 +28,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           <Link className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" href="/admin">ダッシュボード</Link>
           <Link className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" href="/admin/application-setup">申請作成</Link>
           <Link className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" href="/admin/applications">申請一覧</Link>
+          <Link className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400" href="/admin/invitations">ユーザー招待</Link>
         </nav>
         <aside className="hidden w-[240px] shrink-0 self-start overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg md:sticky md:top-24 md:block lg:w-[260px]">
           <div className="border-b border-slate-800 px-4 py-3 text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -37,6 +38,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <AdminNavLink href="/admin">ダッシュボード</AdminNavLink>
             <AdminNavLink href="/admin/application-setup">申請作成</AdminNavLink>
             <AdminNavLink href="/admin/applications">申請一覧</AdminNavLink>
+            <AdminNavLink href="/admin/invitations">ユーザー招待</AdminNavLink>
             <AdminNavLink href="/admin/export-jobs">CSVジョブ</AdminNavLink>
             <AdminNavLink href="/admin/audit-logs">監査ログ</AdminNavLink>
           </nav>
