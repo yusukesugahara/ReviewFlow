@@ -1,27 +1,192 @@
 @import "tailwindcss";
 
+@theme {
+  --radius: 0.75rem;
+}
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Apple-inspired classic design colors */
+    --background: 0 0% 96.5%;
+    --foreground: 0 0% 13%;
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 0 0% 13%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 221.2 83.2% 53.3%;
-    --radius: 0.5rem;
+    --popover-foreground: 0 0% 13%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 13%;
+    --muted: 210 17% 93%;
+    --muted-foreground: 0 0% 45%;
+    --accent: 211 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 211 100% 50%;
+
+    /* Apple-inspired Color Palette - Blue */
+    --blue-50: 211 100% 96%;
+    --blue-100: 211 100% 91%;
+    --blue-200: 211 100% 82%;
+    --blue-300: 211 100% 70%;
+    --blue-400: 211 100% 60%;
+    --blue-500: 211 100% 50%;
+    --blue-600: 211 100% 43%;
+    --blue-700: 211 100% 36%;
+    --blue-800: 211 100% 29%;
+    --blue-900: 211 100% 22%;
+
+    /* Apple-inspired Color Palette - Green */
+    --green-50: 152 68% 96%;
+    --green-100: 152 68% 90%;
+    --green-200: 152 68% 80%;
+    --green-300: 152 68% 65%;
+    --green-400: 152 68% 52%;
+    --green-500: 152 78% 42%;
+    --green-600: 152 83% 35%;
+    --green-700: 152 85% 28%;
+    --green-800: 152 87% 22%;
+    --green-900: 152 90% 17%;
+
+    /* Apple-inspired Color Palette - Red */
+    --red-50: 4 90% 96%;
+    --red-100: 4 90% 90%;
+    --red-200: 4 90% 80%;
+    --red-300: 4 90% 70%;
+    --red-400: 4 90% 64%;
+    --red-500: 4 90% 58%;
+    --red-600: 4 90% 48%;
+    --red-700: 4 90% 38%;
+    --red-800: 4 90% 30%;
+    --red-900: 4 90% 23%;
+
+    /* Apple-inspired Color Palette - Orange */
+    --orange-50: 28 100% 96%;
+    --orange-100: 28 100% 90%;
+    --orange-200: 28 100% 80%;
+    --orange-300: 28 100% 68%;
+    --orange-400: 28 100% 58%;
+    --orange-500: 28 100% 50%;
+    --orange-600: 28 100% 43%;
+    --orange-700: 28 100% 36%;
+    --orange-800: 28 100% 29%;
+    --orange-900: 28 100% 22%;
+
+    /* Apple-inspired Color Palette - Purple */
+    --purple-50: 281 100% 97%;
+    --purple-100: 281 100% 93%;
+    --purple-200: 281 100% 86%;
+    --purple-300: 281 85% 75%;
+    --purple-400: 281 78% 65%;
+    --purple-500: 281 70% 55%;
+    --purple-600: 281 65% 47%;
+    --purple-700: 281 68% 39%;
+    --purple-800: 281 70% 31%;
+    --purple-900: 281 73% 24%;
+
+    /* Apple-inspired Color Palette - Gray */
+    --gray-50: 0 0% 98%;
+    --gray-100: 0 0% 96%;
+    --gray-200: 0 0% 90%;
+    --gray-300: 0 0% 82%;
+    --gray-400: 0 0% 64%;
+    --gray-500: 0 0% 45%;
+    --gray-600: 0 0% 32%;
+    --gray-700: 0 0% 23%;
+    --gray-800: 0 0% 15%;
+    --gray-900: 0 0% 10%;
+  }
+
+  .dark {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 14%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 14%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 211 100% 50%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 18%;
+    --muted-foreground: 0 0% 65%;
+    --accent: 211 100% 50%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 4 90% 58%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 211 100% 50%;
+
+    /* Dark mode adjustments for color palette */
+    --blue-50: 211 100% 22%;
+    --blue-100: 211 100% 29%;
+    --blue-200: 211 100% 36%;
+    --blue-300: 211 100% 43%;
+    --blue-400: 211 100% 50%;
+    --blue-500: 211 100% 60%;
+    --blue-600: 211 100% 70%;
+    --blue-700: 211 100% 82%;
+    --blue-800: 211 100% 91%;
+    --blue-900: 211 100% 96%;
+
+    --green-50: 152 90% 17%;
+    --green-100: 152 87% 22%;
+    --green-200: 152 85% 28%;
+    --green-300: 152 83% 35%;
+    --green-400: 152 78% 42%;
+    --green-500: 152 68% 52%;
+    --green-600: 152 68% 65%;
+    --green-700: 152 68% 80%;
+    --green-800: 152 68% 90%;
+    --green-900: 152 68% 96%;
+
+    --red-50: 4 90% 23%;
+    --red-100: 4 90% 30%;
+    --red-200: 4 90% 38%;
+    --red-300: 4 90% 48%;
+    --red-400: 4 90% 58%;
+    --red-500: 4 90% 64%;
+    --red-600: 4 90% 70%;
+    --red-700: 4 90% 80%;
+    --red-800: 4 90% 90%;
+    --red-900: 4 90% 96%;
+
+    --orange-50: 28 100% 22%;
+    --orange-100: 28 100% 29%;
+    --orange-200: 28 100% 36%;
+    --orange-300: 28 100% 43%;
+    --orange-400: 28 100% 50%;
+    --orange-500: 28 100% 58%;
+    --orange-600: 28 100% 68%;
+    --orange-700: 28 100% 80%;
+    --orange-800: 28 100% 90%;
+    --orange-900: 28 100% 96%;
+
+    --purple-50: 281 73% 24%;
+    --purple-100: 281 70% 31%;
+    --purple-200: 281 68% 39%;
+    --purple-300: 281 65% 47%;
+    --purple-400: 281 70% 55%;
+    --purple-500: 281 78% 65%;
+    --purple-600: 281 85% 75%;
+    --purple-700: 281 100% 86%;
+    --purple-800: 281 100% 93%;
+    --purple-900: 281 100% 97%;
+
+    --gray-50: 0 0% 10%;
+    --gray-100: 0 0% 15%;
+    --gray-200: 0 0% 23%;
+    --gray-300: 0 0% 32%;
+    --gray-400: 0 0% 45%;
+    --gray-500: 0 0% 64%;
+    --gray-600: 0 0% 82%;
+    --gray-700: 0 0% 90%;
+    --gray-800: 0 0% 96%;
+    --gray-900: 0 0% 98%;
   }
 
   * {
@@ -32,5 +197,7 @@
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 }

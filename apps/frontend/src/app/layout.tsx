@@ -21,14 +21,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
     <html lang="ja" suppressHydrationWarning>
       <body className="min-h-screen bg-background font-sans antialiased">
         <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-          <div className="container flex h-14 max-w-screen-2xl items-center justify-between">
+          <div className="mx-auto flex h-14 w-full max-w-7xl items-center justify-between px-6">
             <Link href="/" className="flex items-center space-x-2">
-              <span className="text-xl font-bold">ReviewFlow</span>
+              <span className="text-xl font-bold tracking-tight">ReviewFlow</span>
             </Link>
             <HeaderUser mePromise={mePromise} />
           </div>
         </header>
-        {children}
+        <div className="min-h-[calc(100vh-3.5rem)]">{children}</div>
       </body>
     </html>
   );

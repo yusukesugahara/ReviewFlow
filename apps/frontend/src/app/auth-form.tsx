@@ -101,122 +101,147 @@ export function AuthForm({
   };
 
   return (
-    <main className="flex min-h-[calc(100dvh-60px)] items-center justify-center bg-gradient-to-b from-background to-muted/20 px-4 py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {!apiReachable ? (
-            <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
-              API サーバーに接続できません。バックエンドの起動と環境変数を確認してください。
-            </div>
-          ) : null}
+    <main className="min-h-[calc(100dvh-60px)] bg-slate-50 px-4 py-8 md:py-12">
+      <div className="mx-auto grid w-full max-w-6xl items-stretch gap-6 lg:grid-cols-[1.1fr_1fr]">
+        <section className="hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm lg:flex lg:flex-col lg:justify-between">
+          <div className="space-y-4">
+            <p className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-700">
+              ReviewFlow
+            </p>
+            <h2 className="text-3xl font-semibold leading-tight text-slate-900">
+              申請業務を
+              <br />
+              シンプルに管理する
+            </h2>
+            <p className="max-w-md text-sm leading-6 text-slate-600">
+              申請作成、承認、監査ログまでを一つのフローに統合。必要な情報をすぐに見つけられる実務向けUIです。
+            </p>
+          </div>
+          <ul className="space-y-3 text-sm text-slate-600">
+            <li>・役割ごとの画面で迷わない導線</li>
+            <li>・入力エラーをリアルタイムに明示</li>
+            <li>・承認ステータスを即座に可視化</li>
+          </ul>
+        </section>
 
-          <form
-            className="space-y-4"
-            onSubmit={(e) => {
-              e.preventDefault();
-              void onSubmit();
-            }}
-            noValidate
-          >
-            {state.formError ? (
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                {state.formError}
+        <Card className="w-full border-slate-200 bg-white shadow-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-slate-900">{title}</CardTitle>
+            <CardDescription className="text-slate-600">{description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!apiReachable ? (
+              <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                API サーバーに接続できません。バックエンドの起動と環境変数を確認してください。
               </div>
             ) : null}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">メールアドレス</Label>
-              <Input
-                type="email"
-                id="email"
-                name="email"
-                value={state.email}
-                onChange={(e) =>
-                  setState((s) => ({
-                    ...s,
-                    email: e.target.value,
-                    fieldErrors: { ...s.fieldErrors, email: undefined },
-                    formError: "",
-                  }))
-                }
-                required
-                autoComplete="email"
-                autoCapitalize="none"
-                spellCheck={false}
-                disabled={disabled}
-                aria-invalid={!!state.fieldErrors.email}
-                aria-describedby={state.fieldErrors.email ? emailErrorId : undefined}
-                className={cn(
-                  state.fieldErrors.email && "border-destructive focus-visible:ring-destructive"
-                )}
-              />
-              {state.fieldErrors.email ? (
-                <p id={emailErrorId} className="text-sm text-destructive" role="alert">
-                  {state.fieldErrors.email.join("、")}
-                </p>
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                void onSubmit();
+              }}
+              noValidate
+            >
+              {state.formError ? (
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  {state.formError}
+                </div>
               ) : null}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">パスワード</Label>
-              <Input
-                type="password"
-                id="password"
-                name="password"
-                value={state.password}
-                onChange={(e) =>
-                  setState((s) => ({
-                    ...s,
-                    password: e.target.value,
-                    fieldErrors: { ...s.fieldErrors, password: undefined },
-                    formError: "",
-                  }))
-                }
-                required
-                minLength={8}
-                autoComplete={passwordAutoComplete}
-                disabled={disabled}
-                aria-invalid={!!state.fieldErrors.password}
-                aria-describedby={[
-                  passwordHint ? passwordHintId : "",
-                  state.fieldErrors.password ? passwordErrorId : "",
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                className={cn(
-                  state.fieldErrors.password && "border-destructive focus-visible:ring-destructive"
-                )}
-              />
-              {passwordHint ? (
-                <p id={passwordHintId} className="text-xs text-muted-foreground">
-                  {passwordHint}
-                </p>
-              ) : null}
-              {state.fieldErrors.password ? (
-                <p id={passwordErrorId} className="text-sm text-destructive" role="alert">
-                  {state.fieldErrors.password.join("、")}
-                </p>
-              ) : null}
-            </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">メールアドレス</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={state.email}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      email: e.target.value,
+                      fieldErrors: { ...s.fieldErrors, email: undefined },
+                      formError: "",
+                    }))
+                  }
+                  required
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={disabled}
+                  aria-invalid={!!state.fieldErrors.email}
+                  aria-describedby={state.fieldErrors.email ? emailErrorId : undefined}
+                  className={cn(
+                    "h-11 border-slate-300 focus-visible:ring-violet-500",
+                    state.fieldErrors.email && "border-destructive focus-visible:ring-destructive"
+                  )}
+                />
+                {state.fieldErrors.email ? (
+                  <p id={emailErrorId} className="text-sm text-destructive" role="alert">
+                    {state.fieldErrors.email.join("、")}
+                  </p>
+                ) : null}
+              </div>
 
-            <Button type="submit" className="w-full" disabled={disabled} aria-busy={state.loading}>
-              {state.loading ? submittingLabel : submitLabel}
-            </Button>
-          </form>
-        </CardContent>
-        <CardFooter className="flex flex-col space-y-2">
-          <div className="text-center text-sm text-muted-foreground">
-            {switchText}
-            <Link href={switchHref} className="ml-1 font-medium text-primary hover:underline">
-              {switchLabel}
-            </Link>
-          </div>
-        </CardFooter>
-      </Card>
+              <div className="space-y-2">
+                <Label htmlFor="password">パスワード</Label>
+                <Input
+                  type="password"
+                  id="password"
+                  name="password"
+                  value={state.password}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      password: e.target.value,
+                      fieldErrors: { ...s.fieldErrors, password: undefined },
+                      formError: "",
+                    }))
+                  }
+                  required
+                  minLength={8}
+                  autoComplete={passwordAutoComplete}
+                  disabled={disabled}
+                  aria-invalid={!!state.fieldErrors.password}
+                  aria-describedby={[
+                    passwordHint ? passwordHintId : "",
+                    state.fieldErrors.password ? passwordErrorId : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  className={cn(
+                    "h-11 border-slate-300 focus-visible:ring-violet-500",
+                    state.fieldErrors.password && "border-destructive focus-visible:ring-destructive"
+                  )}
+                />
+                {passwordHint ? (
+                  <p id={passwordHintId} className="text-xs text-muted-foreground">
+                    {passwordHint}
+                  </p>
+                ) : null}
+                {state.fieldErrors.password ? (
+                  <p id={passwordErrorId} className="text-sm text-destructive" role="alert">
+                    {state.fieldErrors.password.join("、")}
+                  </p>
+                ) : null}
+              </div>
+
+              <Button type="submit" className="h-11 w-full" disabled={disabled} aria-busy={state.loading}>
+                {state.loading ? submittingLabel : submitLabel}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <div className="text-center text-sm text-muted-foreground">
+              {switchText}
+              <Link href={switchHref} className="ml-1 font-medium text-primary hover:underline">
+                {switchLabel}
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
+      </div>
     </main>
   );
 }

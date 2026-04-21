@@ -1,5 +1,8 @@
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { MetricCard } from "./_components/metric-card";
 
 type AppSummary = { id: string; status: string; applicantUserId: string };
 type CorrectionEntry = { id: string };
@@ -33,20 +36,42 @@ export default async function AdminDashboardPage() {
       totalApplications > 0 ? correctionCount / totalApplications : 0;
 
     return (
-      <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">ダッシュボード</h2>
-          <p className="text-muted-foreground">
+      <div className="space-y-10">
+        <div className="space-y-2">
+          <h2 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">ダッシュボード</h2>
+          <p className="max-w-2xl text-[15px] leading-6 text-slate-600 md:text-[16px]">
             テナント全体の利用状況を確認できます
           </p>
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                申請件数
-              </CardTitle>
+        <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+            <div>
+              <h3 className="text-base font-semibold text-slate-900">主要アクション</h3>
+              <p className="text-sm text-slate-600">主要業務へ1クリックで移動できます。</p>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button asChild size="sm">
+                <Link href="/admin/form-templates">フォーム新規作成</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/admin/approval-flows">承認フロー作成</Link>
+              </Button>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/admin/applications">申請一覧を見る</Link>
+              </Button>
+            </div>
+          </div>
+        </section>
+
+        <div className="grid gap-5 md:grid-cols-3">
+          <MetricCard
+            title="申請件数"
+            value={totalApplications}
+            description="全ての申請数"
+            toneClassName="bg-violet-100"
+            iconClassName="text-violet-600"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -55,25 +80,21 @@ export default async function AdminDashboardPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
+                className="h-full w-full"
               >
                 <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
                 <circle cx="9" cy="7" r="4" />
                 <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
               </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{totalApplications}</div>
-              <p className="text-xs text-muted-foreground">
-                全ての申請数
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                平均差し戻し数
-              </CardTitle>
+            }
+          />
+          <MetricCard
+            title="平均差し戻し数"
+            value={avgReturns.toFixed(2)}
+            description="1申請あたりの平均"
+            toneClassName="bg-indigo-100"
+            iconClassName="text-indigo-600"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -82,24 +103,20 @@ export default async function AdminDashboardPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
+                className="h-full w-full"
               >
                 <rect width="20" height="14" x="2" y="5" rx="2" />
                 <path d="M2 10h20" />
               </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{avgReturns.toFixed(2)}</div>
-              <p className="text-xs text-muted-foreground">
-                1申請あたりの平均
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">
-                再提出件数
-              </CardTitle>
+            }
+          />
+          <MetricCard
+            title="再提出件数"
+            value={resubmitCount}
+            description="差し戻し後レビュー中"
+            toneClassName="bg-sky-100"
+            iconClassName="text-sky-700"
+            icon={
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
@@ -108,37 +125,37 @@ export default async function AdminDashboardPage() {
                 strokeLinecap="round"
                 strokeLinejoin="round"
                 strokeWidth="2"
-                className="h-4 w-4 text-muted-foreground"
+                className="h-full w-full"
               >
                 <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
               </svg>
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{resubmitCount}</div>
-              <p className="text-xs text-muted-foreground">
-                差し戻し後レビュー中
-              </p>
-            </CardContent>
-          </Card>
+            }
+          />
         </div>
       </div>
     );
   } catch (error) {
     if (error instanceof BackendHttpError) {
       return (
-        <Card>
+        <Card className="border-rose-200 bg-rose-50">
           <CardContent className="pt-6">
-            <p className="text-destructive">
+            <p className="text-sm font-medium text-rose-700">
               ダッシュボードの取得に失敗しました（status: {error.status}）
+            </p>
+            <p className="mt-1 text-xs text-rose-600">
+              通信状況を確認してから再読み込みしてください。
             </p>
           </CardContent>
         </Card>
       );
     }
     return (
-      <Card>
+      <Card className="border-rose-200 bg-rose-50">
         <CardContent className="pt-6">
-          <p className="text-destructive">ダッシュボードの取得に失敗しました</p>
+          <p className="text-sm font-medium text-rose-700">ダッシュボードの取得に失敗しました</p>
+          <p className="mt-1 text-xs text-rose-600">
+            時間を置いて再度お試しください。
+          </p>
         </CardContent>
       </Card>
     );
