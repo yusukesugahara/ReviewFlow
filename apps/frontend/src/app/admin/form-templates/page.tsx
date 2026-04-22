@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApplicationSetupSubnav } from "../_components/application-setup-subnav";
+import { ApprovalStepsBuilder } from "../_components/approval-steps-builder";
 
 type FormField = {
   id: string;
@@ -33,26 +34,20 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
-async function createTemplateAction(formData: FormData): Promise<void> {
-  "use server";
-  const name = formData.get("name");
-  const description = formData.get("description");
-  if (typeof name !== "string" || name.trim().length === 0) {
-    return;
-  }
-  const created = await backendAuthFetchJson("/form-templates", {
-    method: "POST",
-    body: {
-      name: name.trim(),
-      description:
-        typeof description === "string" && description.trim().length > 0
-          ? description.trim()
-          : undefined,
-    },
+function parseSteps(stepLines: string) {
+  const lines = stepLines
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line) => line.length > 0);
+  return lines.map((line, index) => {
+    const [stepNameRaw, roleRaw, canReturnRaw] = line.split(",").map((v) => v?.trim() ?? "");
+    return {
+      stepOrder: index + 1,
+      stepName: stepNameRaw || `Step ${index + 1}`,
+      approverRole: roleRaw === "tenant_admin" ? "tenant_admin" : "approver",
+      canReturn: canReturnRaw === "true",
+    };
   });
-  const template = unwrapData<{ id: string }>(created);
-  revalidatePath("/admin/form-templates");
-  redirect(`/admin/form-templates?templateId=${encodeURIComponent(template.id)}`);
 }
 
 async function addFieldAction(templateId: string, formData: FormData): Promise<void> {
@@ -73,6 +68,31 @@ async function addFieldAction(templateId: string, formData: FormData): Promise<v
     method: "POST",
     body: { fieldKey, label, fieldType, required, sortOrder },
   });
+  revalidatePath("/admin/form-templates");
+  redirect(`/admin/form-templates?templateId=${encodeURIComponent(templateId)}`);
+}
+
+async function createApprovalFlowAction(templateId: string, formData: FormData): Promise<void> {
+  "use server";
+  const name = formData.get("name");
+  const stepLines = formData.get("stepLines");
+  if (typeof name !== "string" || typeof stepLines !== "string") {
+    return;
+  }
+  const steps = parseSteps(stepLines);
+  if (name.trim().length === 0 || steps.length === 0) {
+    return;
+  }
+
+  await backendAuthFetchJson("/approval-flows", {
+    method: "POST",
+    body: {
+      formTemplateId: templateId,
+      name: name.trim(),
+      steps,
+    },
+  });
+  revalidatePath("/admin/approval-flows");
   revalidatePath("/admin/form-templates");
   redirect(`/admin/form-templates?templateId=${encodeURIComponent(templateId)}`);
 }
@@ -104,75 +124,34 @@ export default async function AdminFormTemplatesPage({ searchParams }: PageProps
     <div className="space-y-6">
       <ApplicationSetupSubnav />
       <div>
-        <h2 className="text-3xl font-bold tracking-tight">フォームテンプレート作成</h2>
+        <h2 className="text-3xl font-bold tracking-tight">フォーム作成</h2>
         <p className="text-muted-foreground">
-          申請フォームのテンプレートを作成し、フィールドを定義します
+          申請フォームに必要な基本項目とフィールドを定義します
         </p>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>1. 新しいテンプレート作成</CardTitle>
-          <CardDescription>まずテンプレートを作成します</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form action={createTemplateAction} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name">テンプレート名</Label>
-              <Input
-                id="name"
-                name="name"
-                placeholder="例: 経費申請フォーム"
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="description">説明（任意）</Label>
-              <Input
-                id="description"
-                name="description"
-                placeholder="このテンプレートの説明"
-              />
-            </div>
-            <Button type="submit">テンプレート作成</Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>2. 既存テンプレート</CardTitle>
-          <CardDescription>編集するテンプレートを選択してください</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {templates.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">テンプレートがありません</p>
-          ) : (
-            <div className="space-y-2">
-              {templates.map((t) => (
-                <Link
-                  key={t.id}
-                  href={`/admin/form-templates?templateId=${encodeURIComponent(t.id)}`}
-                  className={`flex items-center justify-between p-3 rounded-lg border transition-colors hover:bg-accent ${
-                    selected?.id === t.id ? "bg-accent border-primary" : ""
-                  }`}
-                >
-                  <span className="font-medium">{t.name}</span>
-                  <Badge variant={t.status === "published" ? "default" : "outline"}>
-                    {t.status === "published" ? "公開済み" : "下書き"}
-                  </Badge>
-                </Link>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
 
       {selected ? (
         <>
           <Card>
             <CardHeader>
-              <CardTitle>3. フィールド追加: {selected.name}</CardTitle>
+              <CardTitle>1. フォーム基本情報</CardTitle>
+              <CardDescription>フォーム名と概要項目を確認します</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="formName">フォーム名</Label>
+                <Input id="formName" value={selected.name} readOnly />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="summaryItem">概要項目</Label>
+                <Input id="summaryItem" value="概要" readOnly />
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>2. フィールド追加: {selected.name}</CardTitle>
               <CardDescription>テンプレートにフィールドを追加します</CardDescription>
             </CardHeader>
             <CardContent>
@@ -246,7 +225,7 @@ export default async function AdminFormTemplatesPage({ searchParams }: PageProps
 
           <Card>
             <CardHeader>
-              <CardTitle>4. フィールド一覧</CardTitle>
+              <CardTitle>3. フィールド一覧</CardTitle>
               <CardDescription>
                 {selected.fields.length}個のフィールドが定義されています
               </CardDescription>
@@ -291,6 +270,42 @@ export default async function AdminFormTemplatesPage({ searchParams }: PageProps
             </CardContent>
           </Card>
 
+          <Card>
+            <CardHeader>
+              <CardTitle>4. 承認フロー</CardTitle>
+              <CardDescription>
+                この画面内で承認フローを簡単に設定できます
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form action={createApprovalFlowAction.bind(null, selected.id)} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="approvalFlowName">フロー名</Label>
+                  <Input
+                    id="approvalFlowName"
+                    name="name"
+                    placeholder="例: 経費申請承認フロー"
+                    defaultValue={`${selected.name} 承認フロー`}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>承認ステップ</Label>
+                  <p className="text-sm text-muted-foreground">
+                    ステップを追加して順番を整えたら保存してください
+                  </p>
+                  <ApprovalStepsBuilder />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button type="submit">承認フローを保存</Button>
+                  <Button asChild variant="outline">
+                    <Link href="/admin/approval-flows">詳細設定画面へ</Link>
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+
           {selected.status === "draft" ? (
             <Card>
               <CardHeader>
@@ -318,7 +333,18 @@ export default async function AdminFormTemplatesPage({ searchParams }: PageProps
             </Card>
           )}
         </>
-      ) : null}
+      ) : (
+        <Card>
+          <CardContent className="space-y-3 py-6">
+            <p className="text-center text-muted-foreground">テンプレートがありません</p>
+            <div className="text-center">
+              <Button asChild variant="outline">
+                <Link href="/admin/template-management">フォーム管理画面へ</Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

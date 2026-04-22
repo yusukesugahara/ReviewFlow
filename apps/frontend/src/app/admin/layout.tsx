@@ -19,7 +19,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             <p className="text-xs text-slate-500">ReviewFlow Admin Workspace</p>
           </div>
           <Button asChild size="sm" className="hidden md:inline-flex">
-            <Link href="/admin/form-templates">新規フォーム作成</Link>
+            <Link href="/admin/template-management">フォーム管理</Link>
           </Button>
         </div>
       </div>
