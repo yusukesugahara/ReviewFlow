@@ -34,20 +34,20 @@ export default async function AdminTemplateManagementPage({ searchParams }: Page
       <div>
         <h2 className="text-3xl font-bold tracking-tight">フォーム管理</h2>
         <p className="text-muted-foreground">
-          テンプレートの作成と一覧管理を行い、必要なテンプレートをフォーム作成画面で編集します
+          申請の作成と一覧管理を行い、設定内容を確認します
         </p>
       </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>1. テンプレート一覧</CardTitle>
+          <CardTitle>1. 申請一覧</CardTitle>
           <CardDescription>
-            登録済みテンプレートの状態確認とフォーム編集画面への遷移ができます
+            登録済み申請フォームの状態確認と詳細画面への遷移ができます
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {templates.length === 0 ? (
-            <p className="text-center text-muted-foreground py-4">テンプレートがありません</p>
+            <p className="text-center text-muted-foreground py-4">申請フォームがありません</p>
           ) : (
             <div className="space-y-2">
               {templates.map((template) => (
@@ -69,12 +69,6 @@ export default async function AdminTemplateManagementPage({ searchParams }: Page
                       className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
                     >
                       フォーム詳細
-                    </Link>
-                    <Link
-                      href={`/admin/form-templates?templateId=${encodeURIComponent(template.id)}`}
-                      className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-[13px] font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
-                    >
-                      フォーム作成で編集
                     </Link>
                   </div>
                 </div>

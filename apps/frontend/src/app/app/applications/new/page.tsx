@@ -65,11 +65,12 @@ async function createApplicationAction(formData: FormData): Promise<void> {
   });
   const app = unwrapData<{ id: string }>(created);
   revalidatePath("/app/applications");
-  redirect(`/app/applications/${app.id}`);
+  revalidatePath(`/app/applications/${app.id}`);
+  redirect("/app/applications");
 }
 
 type PageProps = {
-  searchParams?: Promise<{ error?: string; templateId?: string }>;
+  searchParams?: Promise<{ error?: string }>;
 };
 
 export default async function NewApplicationPage({ searchParams }: PageProps) {
@@ -79,10 +80,8 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
   const templatesRaw = await backendAuthFetchJson("/form-templates");
   const templates = unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
   const publishedTemplates = templates.filter((t) => t.status === "published");
-  const selectedTemplateId =
-    params.templateId ?? publishedTemplates[0]?.id ?? "";
-  const selectedTemplate =
-    publishedTemplates.find((t) => t.id === selectedTemplateId) ?? null;
+  const selectedTemplate = publishedTemplates.at(0) ?? null;
+  const selectedTemplateId = selectedTemplate?.id ?? "";
 
   const flowsRaw = await backendAuthFetchJson("/approval-flows");
   const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
@@ -107,42 +106,13 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
         </Card>
       ) : null}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>1. フォームテンプレート選択</CardTitle>
-          <CardDescription>使用するフォームを選択してください</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form method="GET" className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="templateId">フォームテンプレート</Label>
-              <select
-                id="templateId"
-                name="templateId"
-                defaultValue={selectedTemplateId}
-                required
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="" disabled>
-                  公開済みフォームを選択
-                </option>
-                {publishedTemplates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <Button type="submit">フォームを読み込む</Button>
-          </form>
-        </CardContent>
-      </Card>
-
       {selectedTemplate ? (
         <Card>
           <CardHeader>
-            <CardTitle>2. 申請内容入力</CardTitle>
-            <CardDescription>{selectedTemplate.name}</CardDescription>
+            <CardTitle>申請内容入力</CardTitle>
+            <CardDescription>
+              {selectedTemplate.name} の入力フォームで新規申請を作成します
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form action={createApplicationAction} className="space-y-6">
@@ -183,7 +153,9 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
       ) : (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">公開済みフォームがありません</p>
+            <p className="text-center text-muted-foreground">
+              利用可能な申請フォームがありません。管理者に新規フォームの設定を依頼してください。
+            </p>
           </CardContent>
         </Card>
       )}

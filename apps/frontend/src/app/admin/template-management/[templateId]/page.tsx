@@ -56,11 +56,6 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
           <Button asChild variant="outline">
             <Link href="/admin/template-management">フォーム管理へ戻る</Link>
           </Button>
-          <Button asChild>
-            <Link href={`/admin/form-templates?templateId=${encodeURIComponent(template.id)}`}>
-              フォーム作成で編集
-            </Link>
-          </Button>
         </div>
       </div>
 

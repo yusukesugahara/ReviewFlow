@@ -8,7 +8,6 @@ export function ApplicationSetupSubnav() {
   const pathname = usePathname();
 
   const isTemplateManagement = pathname.startsWith("/admin/template-management");
-  const isFormTemplates = pathname.startsWith("/admin/form-templates");
   const isApprovalFlows = pathname.startsWith("/admin/approval-flows");
 
   return (
@@ -23,17 +22,6 @@ export function ApplicationSetupSubnav() {
         )}
       >
         フォーム管理
-      </Link>
-      <Link
-        href="/admin/form-templates"
-        className={cn(
-          "rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-          isFormTemplates
-            ? "bg-violet-100 text-violet-700"
-            : "text-slate-600 hover:bg-slate-100 hover:text-slate-900"
-        )}
-      >
-        フォーム作成
       </Link>
       <Link
         href="/admin/approval-flows"
