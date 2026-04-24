@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { BackendHttpError, backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -132,10 +132,21 @@ async function moveFieldAction(
   direction: "up" | "down"
 ): Promise<void> {
   "use server";
-  await backendAuthFetchJson(`/form-templates/${templateId}/fields/${fieldId}/move`, {
-    method: "POST",
-    body: { direction },
-  });
+  try {
+    await backendAuthFetchJson(`/form-templates/${templateId}/fields/${fieldId}/move`, {
+      method: "POST",
+      body: { direction },
+    });
+  } catch (error) {
+    if (
+      error instanceof BackendHttpError &&
+      (error.status === 404 || error.status === 409)
+    ) {
+      revalidatePath("/admin/application-setup");
+      redirect("/admin/application-setup");
+    }
+    throw error;
+  }
   revalidatePath("/admin/application-setup");
   redirect("/admin/application-setup");
 }
@@ -180,7 +191,8 @@ export default async function AdminApplicationSetupPage() {
   const templates = unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
   const flowsRaw = await backendAuthFetchJson("/approval-flows");
   const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
-  const selected = templates.at(0) ?? null;
+  const selected = templates.find((template) => template.status === "draft") ?? templates.at(0) ?? null;
+  const isDraftSelected = selected?.status === "draft";
   const hasFields = (selected?.fields.length ?? 0) > 0;
   const hasApprovalFlow =
     selected != null && flows.some((flow) => flow.formTemplateId === selected.id);
@@ -216,101 +228,112 @@ export default async function AdminApplicationSetupPage() {
 
           {selected ? (
             <div className="space-y-4 rounded-lg border p-4">
-              <form action={addFieldAction.bind(null, selected.id)}>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-16">順序</TableHead>
-                      <TableHead>ラベル</TableHead>
-                      <TableHead>キー</TableHead>
-                      <TableHead>タイプ</TableHead>
-                      <TableHead>必須</TableHead>
-                      <TableHead className="w-20">削除</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {selected.fields.map((field, index) => (
-                      <TableRow key={field.id}>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className="w-6 text-right font-medium">{field.sortOrder}</span>
+              {!isDraftSelected ? (
+                <p className="text-sm text-slate-600">
+                  公開済みテンプレートは編集できません。編集するには下書きテンプレートを選択してください。
+                </p>
+              ) : null}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="w-16">順序</TableHead>
+                    <TableHead>ラベル</TableHead>
+                    <TableHead>キー</TableHead>
+                    <TableHead>タイプ</TableHead>
+                    <TableHead>必須</TableHead>
+                    <TableHead className="w-20">削除</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selected.fields.map((field, index) => (
+                    <TableRow key={field.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <span className="w-6 text-right font-medium">{field.sortOrder}</span>
+                          <form action={moveFieldAction.bind(null, selected.id, field.id, "up")}>
                             <Button
                               type="submit"
-                              formAction={moveFieldAction.bind(null, selected.id, field.id, "up")}
                               formNoValidate
                               variant="outline"
                               size="sm"
-                              disabled={index === 0}
+                              disabled={!isDraftSelected || index === 0}
                             >
                               ↑
                             </Button>
+                          </form>
+                          <form action={moveFieldAction.bind(null, selected.id, field.id, "down")}>
                             <Button
                               type="submit"
-                              formAction={moveFieldAction.bind(null, selected.id, field.id, "down")}
                               formNoValidate
                               variant="outline"
                               size="sm"
-                              disabled={index === selected.fields.length - 1}
+                              disabled={!isDraftSelected || index === selected.fields.length - 1}
                             >
                               ↓
                             </Button>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Input value={field.label} readOnly />
-                        </TableCell>
-                        <TableCell>
-                          <Input value={field.fieldKey} readOnly className="font-mono text-xs" />
-                        </TableCell>
-                        <TableCell>
-                          <select
-                            defaultValue={field.fieldType}
-                            name={`fieldType_${field.id}`}
-                            className="flex h-9 w-full rounded-md border border-input bg-slate-50 px-3 py-1 text-sm shadow-sm"
-                          >
-                            <option value="text">テキスト</option>
-                            <option value="textarea">複数行テキスト</option>
-                            <option value="number">数値</option>
-                            <option value="date">日付</option>
-                            <option value="select">選択</option>
-                            <option value="radio">ラジオボタン</option>
-                            <option value="checkbox">チェックボックス</option>
-                          </select>
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center justify-end">
-                            <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                              <input
-                                type="checkbox"
-                                name={`required_${field.id}`}
-                                defaultChecked={field.required}
-                                className="h-4 w-4 rounded border-gray-300"
-                              />
-                              必須
-                            </label>
-                          </div>
-                        </TableCell>
-                        <TableCell>
+                          </form>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Input value={field.label} readOnly />
+                      </TableCell>
+                      <TableCell>
+                        <Input value={field.fieldKey} readOnly className="font-mono text-xs" />
+                      </TableCell>
+                      <TableCell>
+                        <select
+                          defaultValue={field.fieldType}
+                          name={`fieldType_${field.id}`}
+                          className="flex h-9 w-full rounded-md border border-input bg-slate-50 px-3 py-1 text-sm shadow-sm"
+                        >
+                          <option value="text">テキスト</option>
+                          <option value="textarea">複数行テキスト</option>
+                          <option value="number">数値</option>
+                          <option value="date">日付</option>
+                          <option value="select">選択</option>
+                          <option value="radio">ラジオボタン</option>
+                          <option value="checkbox">チェックボックス</option>
+                        </select>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center justify-end">
+                          <label className="inline-flex items-center gap-2 text-sm text-slate-600">
+                            <input
+                              type="checkbox"
+                              name={`required_${field.id}`}
+                              defaultChecked={field.required}
+                              className="h-4 w-4 rounded border-gray-300"
+                            />
+                            必須
+                          </label>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <form action={deleteFieldAction.bind(null, selected.id, field.id)}>
                           <Button
                             type="submit"
-                            formAction={deleteFieldAction.bind(null, selected.id, field.id)}
                             formNoValidate
                             variant="destructive"
                             size="sm"
+                            disabled={!isDraftSelected}
                           >
                             削除
                           </Button>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                        </form>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              <form action={addFieldAction.bind(null, selected.id)}>
                 <input type="hidden" name="sortOrder" value={nextSortOrder} />
                 <input type="hidden" name="label" value="テンプレート" />
                 <input type="hidden" name="fieldType" value="text" />
                 <input type="hidden" name="required" value="on" />
                 <div className="mt-3 flex justify-end">
-                  <Button type="submit">追加</Button>
+                  <Button type="submit" disabled={!isDraftSelected}>
+                    追加
+                  </Button>
                 </div>
               </form>
             </div>

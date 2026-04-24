@@ -119,12 +119,15 @@ export class FormTemplatesService {
       return;
     }
 
-    const fromField = rows[fromIndex];
-    const toField = rows[toIndex];
-    const temp = fromField.sortOrder;
-    fromField.sortOrder = toField.sortOrder;
-    toField.sortOrder = temp;
-    await this.fields.save([fromField, toField]);
+    const [target] = rows.splice(fromIndex, 1);
+    rows.splice(toIndex, 0, target);
+
+    // sortOrder が過去データで重複/欠番でも、毎回 0..N-1 に正規化して保存する。
+    const normalized = rows.map((field, index) => {
+      field.sortOrder = index;
+      return field;
+    });
+    await this.fields.save(normalized);
   }
 
   async deleteField(
