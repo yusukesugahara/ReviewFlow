@@ -13,6 +13,10 @@ type ApplicationRow = {
   createdAt: string;
 };
 
+type PageProps = {
+  searchParams?: Promise<{ status?: string }>;
+};
+
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
     throw new Error("invalid success envelope");
@@ -46,11 +50,16 @@ function getStatusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-export default async function AdminApplicationsPage() {
+export default async function AdminApplicationsPage({ searchParams }: PageProps) {
   try {
+    const params = (await searchParams) ?? {};
+    const activeStatus = params.status === "draft" ? "draft" : "published";
     const raw = await backendAuthFetchJson("/applications");
     const rows =
       unwrapData<{ applications?: ApplicationRow[] }>(raw).applications ?? [];
+    const publishedRows = rows.filter((row) => row.status !== "draft");
+    const draftRows = rows.filter((row) => row.status === "draft");
+    const visibleRows = activeStatus === "draft" ? draftRows : publishedRows;
 
     return (
       <div className="space-y-6">
@@ -68,9 +77,37 @@ export default async function AdminApplicationsPage() {
               {rows.length}件の申請があります
             </CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin/applications?status=published"
+                className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
+                  activeStatus === "published"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                公開済み ({publishedRows.length})
+              </Link>
+              <Link
+                href="/admin/applications?status=draft"
+                className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
+                  activeStatus === "draft"
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+                }`}
+              >
+                下書き ({draftRows.length})
+              </Link>
+            </div>
             {rows.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">申請はまだありません</p>
+            ) : visibleRows.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {activeStatus === "draft"
+                  ? "下書きの申請はありません"
+                  : "公開済みの申請はありません"}
+              </p>
             ) : (
               <Table>
                 <TableHeader>
@@ -83,7 +120,7 @@ export default async function AdminApplicationsPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((r) => (
+                  {visibleRows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(r.status)}>
