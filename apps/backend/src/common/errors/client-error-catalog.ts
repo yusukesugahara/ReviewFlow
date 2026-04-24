@@ -82,6 +82,10 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'A field with this key already exists on the template',
   },
+  FORM_FIELD_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Form field not found on this template',
+  },
   APPROVAL_FORM_TEMPLATE_NOT_PUBLISHED: {
     status: HttpStatus.CONFLICT,
     message: 'Approval flows can only be attached to published form templates',

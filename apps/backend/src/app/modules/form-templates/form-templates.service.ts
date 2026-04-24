@@ -5,7 +5,11 @@ import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { FormTemplateStatus } from '../../../models/constants/form-template-status';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
-import type { CreateFormFieldDto, CreateFormTemplateDto } from './form-templates.dto';
+import type {
+  CreateFormFieldDto,
+  CreateFormTemplateDto,
+  UpdateFormFieldSettingsDto,
+} from './form-templates.dto';
 import { mapFormFieldToDto, mapFormTemplateToDto } from './form-templates.mapper';
 
 @Injectable()
@@ -92,6 +96,80 @@ export class FormTemplatesService {
       sortOrder: dto.sortOrder,
     });
     return this.fields.save(row);
+  }
+
+  async moveField(
+    tenantId: string,
+    templateId: string,
+    fieldId: string,
+    direction: 'up' | 'down',
+  ): Promise<void> {
+    await this.findDraftTemplateOrThrow(tenantId, templateId);
+    const rows = await this.fields.find({
+      where: { tenantId, formTemplateId: templateId },
+      order: { sortOrder: 'ASC', createdAt: 'ASC' },
+    });
+    const fromIndex = rows.findIndex((f) => f.id === fieldId);
+    if (fromIndex < 0) {
+      throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
+    }
+
+    const toIndex = direction === 'up' ? fromIndex - 1 : fromIndex + 1;
+    if (toIndex < 0 || toIndex >= rows.length) {
+      return;
+    }
+
+    const fromField = rows[fromIndex];
+    const toField = rows[toIndex];
+    const temp = fromField.sortOrder;
+    fromField.sortOrder = toField.sortOrder;
+    toField.sortOrder = temp;
+    await this.fields.save([fromField, toField]);
+  }
+
+  async deleteField(
+    tenantId: string,
+    templateId: string,
+    fieldId: string,
+  ): Promise<void> {
+    await this.findDraftTemplateOrThrow(tenantId, templateId);
+    const target = await this.fields.findOne({
+      where: { id: fieldId, tenantId, formTemplateId: templateId },
+    });
+    if (!target) {
+      throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
+    }
+    await this.fields.remove(target);
+
+    const remaining = await this.fields.find({
+      where: { tenantId, formTemplateId: templateId },
+      order: { sortOrder: 'ASC', createdAt: 'ASC' },
+    });
+    const normalized = remaining.map((field, index) => {
+      field.sortOrder = index;
+      return field;
+    });
+    if (normalized.length > 0) {
+      await this.fields.save(normalized);
+    }
+  }
+
+  async updateFieldSettings(
+    tenantId: string,
+    templateId: string,
+    fieldId: string,
+    dto: UpdateFormFieldSettingsDto,
+  ): Promise<void> {
+    await this.findDraftTemplateOrThrow(tenantId, templateId);
+    const target = await this.fields.findOne({
+      where: { id: fieldId, tenantId, formTemplateId: templateId },
+    });
+    if (!target) {
+      throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
+    }
+    target.fieldType = dto.fieldType;
+    target.required = dto.required;
+    await this.fields.save(target);
   }
 
   async publish(tenantId: string, templateId: string): Promise<FormTemplate> {

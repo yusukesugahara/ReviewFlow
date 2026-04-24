@@ -1,16 +1,71 @@
 {
   "openapi": "3.0.0",
   "paths": {
-    "/auth/register": {
-      "post": {
-        "operationId": "AuthController_register",
+    "/users": {
+      "get": {
+        "operationId": "UsersController_list",
         "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TenantUsersListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "テナント内ユーザー一覧（tenant_admin）",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/{id}/role": {
+      "patch": {
+        "operationId": "UsersController_updateRole",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/RegisterDto"
+                "$ref": "#/components/schemas/UpdateUserRoleDto"
               }
             }
           }
@@ -35,15 +90,45 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/AuthIssueTokensResponseDto"
+                      "$ref": "#/components/schemas/TenantUserSummaryDto"
                     }
                   }
                 }
               }
             }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
           },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "テナント内ユーザーのロール変更（tenant_admin）",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/auth/register": {
+      "post": {
+        "operationId": "AuthController_register",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterDto"
+              }
+            }
+          }
+        },
+        "responses": {
           "201": {
-            "description": "Created",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -225,6 +310,73 @@
         ]
       }
     },
+    "/audit-logs": {
+      "get": {
+        "operationId": "AuditLogsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "actionType",
+            "required": false,
+            "in": "query",
+            "description": "action_type で前方一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AuditLogsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "監査ログ一覧（tenant_admin）",
+        "tags": [
+          "audit-logs"
+        ]
+      }
+    },
     "/invitations": {
       "post": {
         "operationId": "InvitationsController_create",
@@ -241,7 +393,7 @@
         },
         "responses": {
           "201": {
-            "description": "Created",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
@@ -334,9 +486,9 @@
         ]
       }
     },
-    "/users": {
+    "/form-templates": {
       "get": {
-        "operationId": "UsersController_list",
+        "operationId": "FormTemplatesController_list",
         "parameters": [],
         "responses": {
           "200": {
@@ -358,7 +510,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/TenantUsersListResponseDto"
+                      "$ref": "#/components/schemas/FormTemplatesListResponseDto"
                     }
                   }
                 }
@@ -374,23 +526,131 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザー一覧（tenant_admin）",
+        "summary": "フォームテンプレート一覧（tenant_admin）",
         "tags": [
-          "users"
+          "form-templates"
+        ]
+      },
+      "post": {
+        "operationId": "FormTemplatesController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateFormTemplateDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォームテンプレート作成（下書き）",
+        "tags": [
+          "form-templates"
         ]
       }
     },
-    "/users/{id}/role": {
-      "patch": {
-        "operationId": "UsersController_updateRole",
+    "/form-templates/{id}": {
+      "get": {
+        "operationId": "FormTemplatesController_getOne",
         "parameters": [
           {
             "name": "id",
-            "in": "path",
             "required": true,
+            "in": "path",
             "schema": {
-              "type": "string",
-              "format": "uuid"
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォームテンプレート取得（tenant_admin）",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
+    "/form-templates/{id}/fields": {
+      "post": {
+        "operationId": "FormTemplatesController_addField",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
             }
           }
         ],
@@ -399,7 +659,80 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/UpdateUserRoleDto"
+                "$ref": "#/components/schemas/CreateFormFieldDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormFieldResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォーム項目追加（下書きのみ）",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
+    "/form-templates/{id}/fields/{fieldId}/move": {
+      "post": {
+        "operationId": "FormTemplatesController_moveField",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fieldId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MoveFormFieldDto"
               }
             }
           }
@@ -424,7 +757,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/TenantUserSummaryDto"
+                      "$ref": "#/components/schemas/FormTemplateResponseDto"
                     }
                   }
                 }
@@ -440,9 +773,1082 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザーのロール変更（tenant_admin）",
+        "summary": "フォーム項目の並び順変更（下書きのみ）",
         "tags": [
-          "users"
+          "form-templates"
+        ]
+      }
+    },
+    "/form-templates/{id}/fields/{fieldId}/delete": {
+      "post": {
+        "operationId": "FormTemplatesController_deleteField",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fieldId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォーム項目削除（下書きのみ）",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
+    "/form-templates/{id}/fields/{fieldId}/settings": {
+      "post": {
+        "operationId": "FormTemplatesController_updateFieldSettings",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fieldId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFormFieldSettingsDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォーム項目設定更新（下書きのみ）",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
+    "/form-templates/{id}/publish": {
+      "post": {
+        "operationId": "FormTemplatesController_publish",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォームテンプレート公開（draft → published）",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
+    "/approval-flows": {
+      "get": {
+        "operationId": "ApprovalFlowsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalFlowsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "承認フロー一覧（tenant_admin）",
+        "tags": [
+          "approval-flows"
+        ]
+      },
+      "post": {
+        "description": "参照するフォームテンプレートは published である必要があります。stepOrder は 1 から連番で重複不可。",
+        "operationId": "ApprovalFlowsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApprovalFlowDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalFlowResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "承認フロー作成（tenant_admin）",
+        "tags": [
+          "approval-flows"
+        ]
+      }
+    },
+    "/applications": {
+      "get": {
+        "operationId": "ApplicationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "申請一覧（ロールに応じたスコープ）",
+        "tags": [
+          "applications"
+        ]
+      },
+      "post": {
+        "description": "公開済みフォームのみ。有効な承認フローが複数ある場合は approvalFlowId を指定。",
+        "operationId": "ApplicationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationCreateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "申請作成（下書き）",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/submit": {
+      "post": {
+        "operationId": "ApplicationsController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "提出（draft → in_review）",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/approve": {
+      "post": {
+        "operationId": "ApplicationsController_approve",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ApproveApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "承認（in_review の現在ステップ）",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/return": {
+      "post": {
+        "description": "現在ステップの can_return が true のときのみ。correction_request を作成。",
+        "operationId": "ApplicationsController_returnWithCorrection",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReturnApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "差し戻し",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/reject": {
+      "post": {
+        "operationId": "ApplicationsController_reject",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RejectApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "却下",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/resubmit": {
+      "post": {
+        "operationId": "ApplicationsController_resubmit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "再提出（returned → in_review）",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/correction-targets": {
+      "get": {
+        "description": "returned 時の入力支援用。最新の status=open の correction_request を1件分まとめて返す（無ければ openCorrection は null）。",
+        "operationId": "ApplicationsController_getCorrectionTargets",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CorrectionTargetsResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "修正対象取得（オープンな correction + 現在値）",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/corrections": {
+      "get": {
+        "description": "テナント内の当該申請に紐づく correction を新しい順で一覧。",
+        "operationId": "ApplicationsController_listCorrections",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CorrectionsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "差し戻し履歴（correction_requests）",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}": {
+      "get": {
+        "operationId": "ApplicationsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "申請詳細（field_key → 値）",
+        "tags": [
+          "applications"
+        ]
+      },
+      "patch": {
+        "description": "draft は全項目。returned はオープンな correction の対象フィールドのみ。",
+        "operationId": "ApplicationsController_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "値更新",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/export-jobs": {
+      "post": {
+        "operationId": "ExportJobsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateExportJobDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ExportJobResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "CSV 出力ジョブ作成（tenant_admin）",
+        "tags": [
+          "export-jobs"
+        ]
+      }
+    },
+    "/export-jobs/{id}": {
+      "get": {
+        "operationId": "ExportJobsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ExportJobResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "CSV 出力ジョブ状態取得",
+        "tags": [
+          "export-jobs"
+        ]
+      }
+    },
+    "/export-jobs/{id}/download": {
+      "get": {
+        "operationId": "ExportJobsController_download",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "CSV ダウンロード（completed のみ）",
+        "tags": [
+          "export-jobs"
         ]
       }
     }
@@ -469,6 +1875,68 @@
       }
     },
     "schemas": {
+      "TenantUserSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "object"
+          },
+          "role": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "name",
+          "role",
+          "isActive",
+          "createdAt"
+        ]
+      },
+      "TenantUsersListResponseDto": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/TenantUserSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "users"
+        ]
+      },
+      "UpdateUserRoleDto": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string",
+            "example": "approver",
+            "enum": [
+              "tenant_admin",
+              "approver",
+              "applicant"
+            ]
+          }
+        },
+        "required": [
+          "role"
+        ]
+      },
       "AuthUserSummaryDto": {
         "type": "object",
         "properties": {
@@ -535,7 +2003,6 @@
           "organizationName": {
             "type": "string",
             "example": "Acme Inc",
-            "maxLength": 120,
             "description": "新規テナント名（省略時は既定のワークスペース名）"
           }
         },
@@ -558,7 +2025,6 @@
           },
           "tenantId": {
             "type": "string",
-            "format": "uuid",
             "description": "同一メールで複数テナントに所属する場合に指定（`docs/08_auth_and_multitenant.md`）"
           }
         },
@@ -609,25 +2075,52 @@
           "ok"
         ]
       },
-      "CreateInvitationDto": {
+      "AuditLogItemDto": {
         "type": "object",
         "properties": {
-          "email": {
-            "type": "string",
-            "format": "email"
+          "id": {
+            "type": "string"
           },
-          "role": {
-            "type": "string",
-            "enum": [
-              "tenant_admin",
-              "approver",
-              "applicant"
-            ]
+          "actorUserId": {
+            "type": "object",
+            "nullable": true
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "object",
+            "nullable": true
+          },
+          "metadataJson": {
+            "type": "object"
+          },
+          "createdAt": {
+            "type": "string"
           }
         },
         "required": [
-          "email",
-          "role"
+          "id",
+          "actionType",
+          "targetType",
+          "createdAt"
+        ]
+      },
+      "AuditLogsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogItemDto"
+            }
+          }
+        },
+        "required": [
+          "logs"
         ]
       },
       "CreateInvitationResponseDto": {
@@ -648,7 +2141,6 @@
           },
           "expiresAt": {
             "type": "string",
-            "format": "date-time",
             "description": "ISO 8601"
           }
         },
@@ -660,18 +2152,42 @@
           "expiresAt"
         ]
       },
+      "CreateInvitationDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "member@example.com"
+          },
+          "role": {
+            "type": "string",
+            "example": "approver",
+            "enum": [
+              "tenant_admin",
+              "approver",
+              "applicant"
+            ]
+          }
+        },
+        "required": [
+          "email",
+          "role"
+        ]
+      },
       "AcceptInvitationDto": {
         "type": "object",
         "properties": {
           "token": {
             "type": "string",
-            "minLength": 32
+            "description": "招待作成時に発行された token"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "example": "山田 太郎"
           },
           "password": {
             "type": "string",
+            "example": "password12",
             "minLength": 8,
             "maxLength": 72
           }
@@ -681,67 +2197,788 @@
           "password"
         ]
       },
-      "TenantUserSummaryDto": {
+      "FormFieldResponseDto": {
         "type": "object",
         "properties": {
           "id": {
             "type": "string"
           },
-          "email": {
+          "fieldKey": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "fieldType": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "placeholder": {
+            "type": "object"
+          },
+          "helpText": {
+            "type": "object"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          },
+          "sortOrder": {
+            "type": "number"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "fieldKey",
+          "label",
+          "fieldType",
+          "required",
+          "sortOrder",
+          "createdAt"
+        ]
+      },
+      "FormTemplateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
             "type": "string"
           },
           "name": {
-            "type": "string",
-            "nullable": true
+            "type": "string"
           },
-          "role": {
+          "description": {
+            "type": "object"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published",
+              "archived"
+            ]
+          },
+          "createdByUserId": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormFieldResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "status",
+          "createdByUserId",
+          "fields",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "FormTemplatesListResponseDto": {
+        "type": "object",
+        "properties": {
+          "templates": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FormTemplateResponseDto"
+            }
+          }
+        },
+        "required": [
+          "templates"
+        ]
+      },
+      "CreateFormTemplateDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "経費申請"
+          },
+          "description": {
+            "type": "string",
+            "example": "経費精算用"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
+      "CreateFormFieldDto": {
+        "type": "object",
+        "properties": {
+          "fieldKey": {
+            "type": "string",
+            "example": "expense_title"
+          },
+          "label": {
+            "type": "string",
+            "example": "件名"
+          },
+          "fieldType": {
+            "type": "string",
+            "example": "text",
+            "enum": [
+              "text",
+              "textarea",
+              "number",
+              "date",
+              "select",
+              "radio",
+              "checkbox"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "helpText": {
+            "type": "string"
+          },
+          "sortOrder": {
+            "type": "number",
+            "example": 1
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
+          }
+        },
+        "required": [
+          "fieldKey",
+          "label",
+          "fieldType",
+          "required",
+          "sortOrder"
+        ]
+      },
+      "MoveFormFieldDto": {
+        "type": "object",
+        "properties": {
+          "direction": {
+            "type": "string",
+            "example": "up",
+            "enum": [
+              "up",
+              "down"
+            ]
+          }
+        },
+        "required": [
+          "direction"
+        ]
+      },
+      "UpdateFormFieldSettingsDto": {
+        "type": "object",
+        "properties": {
+          "fieldType": {
+            "type": "string",
+            "example": "text",
+            "enum": [
+              "text",
+              "textarea",
+              "number",
+              "date",
+              "select",
+              "radio",
+              "checkbox"
+            ]
+          },
+          "required": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "fieldType",
+          "required"
+        ]
+      },
+      "ApprovalStepResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stepOrder": {
+            "type": "number"
+          },
+          "stepName": {
+            "type": "string"
+          },
+          "approverRole": {
+            "type": "string"
+          },
+          "canReturn": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "stepOrder",
+          "stepName",
+          "approverRole",
+          "canReturn",
+          "createdAt"
+        ]
+      },
+      "ApprovalFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "formTemplateId": {
+            "type": "string"
+          },
+          "name": {
             "type": "string"
           },
           "isActive": {
             "type": "boolean"
           },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalStepResponseDto"
+            }
+          },
           "createdAt": {
-            "type": "string",
-            "format": "date-time"
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
           }
         },
         "required": [
           "id",
-          "email",
-          "role",
+          "formTemplateId",
+          "name",
           "isActive",
-          "createdAt"
+          "steps",
+          "createdAt",
+          "updatedAt"
         ]
       },
-      "TenantUsersListResponseDto": {
+      "ApprovalFlowsListResponseDto": {
         "type": "object",
         "properties": {
-          "users": {
+          "flows": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/TenantUserSummaryDto"
+              "$ref": "#/components/schemas/ApprovalFlowResponseDto"
             }
           }
         },
         "required": [
-          "users"
+          "flows"
         ]
       },
-      "UpdateUserRoleDto": {
+      "CreateApprovalFlowStepDto": {
         "type": "object",
         "properties": {
-          "role": {
+          "stepOrder": {
+            "type": "number",
+            "example": 1
+          },
+          "stepName": {
+            "type": "string",
+            "example": "一次承認"
+          },
+          "approverRole": {
             "type": "string",
             "enum": [
               "tenant_admin",
-              "approver",
-              "applicant"
+              "approver"
+            ]
+          },
+          "canReturn": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "stepOrder",
+          "stepName",
+          "approverRole",
+          "canReturn"
+        ]
+      },
+      "CreateApprovalFlowDto": {
+        "type": "object",
+        "properties": {
+          "formTemplateId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "経費申請フロー"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateApprovalFlowStepDto"
+            }
+          }
+        },
+        "required": [
+          "formTemplateId",
+          "name",
+          "steps"
+        ]
+      },
+      "ApplicationSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "formTemplateId": {
+            "type": "string"
+          },
+          "approvalFlowId": {
+            "type": "string"
+          },
+          "applicantUserId": {
+            "type": "string"
+          },
+          "currentStepOrder": {
+            "type": "object",
+            "nullable": true
+          },
+          "submittedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "formTemplateId",
+          "approvalFlowId",
+          "applicantUserId",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ApplicationsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "applications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "applications"
+        ]
+      },
+      "ApplicationCreateResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status"
+        ]
+      },
+      "CreateApplicationDto": {
+        "type": "object",
+        "properties": {
+          "formTemplateId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "approvalFlowId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "公開テンプレートに有効な承認フローが複数あるときは必須。1件のみなら省略可。"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "expense_title": "出張交通費",
+              "amount": 12000
+            }
+          }
+        },
+        "required": [
+          "formTemplateId"
+        ]
+      },
+      "ApplicationDetailDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "formTemplateId": {
+            "type": "string"
+          },
+          "approvalFlowId": {
+            "type": "string"
+          },
+          "applicantUserId": {
+            "type": "string"
+          },
+          "currentStepOrder": {
+            "type": "object",
+            "nullable": true
+          },
+          "submittedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "field_key → 値"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "formTemplateId",
+          "approvalFlowId",
+          "applicantUserId",
+          "createdAt",
+          "updatedAt",
+          "values"
+        ]
+      },
+      "ApproveApplicationDto": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string",
+            "description": "任意コメント（監査用）"
+          }
+        }
+      },
+      "ReturnFieldItemDto": {
+        "type": "object",
+        "properties": {
+          "fieldId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "form_fields.id"
+          },
+          "comment": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "fieldId"
+        ]
+      },
+      "ReturnApplicationDto": {
+        "type": "object",
+        "properties": {
+          "overallComment": {
+            "type": "string"
+          },
+          "fields": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ReturnFieldItemDto"
+            }
+          }
+        },
+        "required": [
+          "fields"
+        ]
+      },
+      "RejectApplicationDto": {
+        "type": "object",
+        "properties": {
+          "comment": {
+            "type": "string"
+          }
+        }
+      },
+      "CorrectionTargetItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "itemId": {
+            "type": "string"
+          },
+          "formFieldId": {
+            "type": "string"
+          },
+          "fieldKey": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "fieldType": {
+            "type": "string"
+          },
+          "required": {
+            "type": "boolean"
+          },
+          "comment": {
+            "type": "object",
+            "nullable": true
+          },
+          "currentValue": {
+            "type": "object",
+            "description": "application_field_values.value_json に相当"
+          }
+        },
+        "required": [
+          "itemId",
+          "formFieldId",
+          "fieldKey",
+          "label",
+          "fieldType",
+          "required"
+        ]
+      },
+      "OpenCorrectionTargetsDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "overallComment": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrectionTargetItemResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "createdAt",
+          "items"
+        ]
+      },
+      "CorrectionTargetsResponseDto": {
+        "type": "object",
+        "properties": {
+          "applicationId": {
+            "type": "string"
+          },
+          "applicationStatus": {
+            "type": "string"
+          },
+          "openCorrection": {
+            "nullable": true,
+            "description": "オープンな correction が無いとき null",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/OpenCorrectionTargetsDto"
+              }
             ]
           }
         },
         "required": [
-          "role"
+          "applicationId",
+          "applicationStatus"
         ]
+      },
+      "CorrectionRequestItemResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "formFieldId": {
+            "type": "string"
+          },
+          "fieldKey": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "object",
+            "nullable": true
+          },
+          "isResolved": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "formFieldId",
+          "fieldKey",
+          "isResolved",
+          "createdAt"
+        ]
+      },
+      "CorrectionRequestResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "overallComment": {
+            "type": "object",
+            "nullable": true
+          },
+          "resolvedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "items": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrectionRequestItemResponseDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt",
+          "items"
+        ]
+      },
+      "CorrectionsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "corrections": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CorrectionRequestResponseDto"
+            }
+          }
+        },
+        "required": [
+          "corrections"
+        ]
+      },
+      "PatchApplicationDto": {
+        "type": "object",
+        "properties": {
+          "values": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。"
+          }
+        },
+        "required": [
+          "values"
+        ]
+      },
+      "ExportJobResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "filterJson": {
+            "type": "object"
+          },
+          "filePath": {
+            "type": "object"
+          },
+          "startedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "finishedAt": {
+            "type": "object",
+            "nullable": true
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "status",
+          "createdAt"
+        ]
+      },
+      "CreateExportJobDto": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "submitted",
+              "in_review",
+              "returned",
+              "approved",
+              "rejected"
+            ]
+          },
+          "formTemplateId": {
+            "type": "string",
+            "format": "uuid"
+          }
+        }
       },
       "ErrorResponseDto": {
         "type": "object",

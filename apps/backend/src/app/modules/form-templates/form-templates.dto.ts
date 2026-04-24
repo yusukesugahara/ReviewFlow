@@ -134,3 +134,21 @@ export class CreateFormFieldDto {
   @IsArray()
   options?: unknown[];
 }
+
+export class MoveFormFieldDto {
+  @ApiProperty({ example: 'up', enum: ['up', 'down'] })
+  @IsString()
+  @IsIn(['up', 'down'])
+  direction!: 'up' | 'down';
+}
+
+export class UpdateFormFieldSettingsDto {
+  @ApiProperty({ example: 'text', enum: FORM_FIELD_TYPES })
+  @IsString()
+  @IsIn(FORM_FIELD_TYPES)
+  fieldType!: (typeof FORM_FIELD_TYPES)[number];
+
+  @ApiProperty()
+  @IsBoolean()
+  required!: boolean;
+}

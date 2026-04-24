@@ -27,8 +27,10 @@ import {
   CreateFormFieldDto,
   CreateFormTemplateDto,
   FormFieldResponseDto,
+  MoveFormFieldDto,
   FormTemplateResponseDto,
   FormTemplatesListResponseDto,
+  UpdateFormFieldSettingsDto,
 } from './form-templates.dto';
 import { FormTemplatesService } from './form-templates.service';
 
@@ -102,6 +104,59 @@ export class FormTemplatesController {
   ): Promise<SuccessResponse<FormFieldResponseDto>> {
     const field = await this.formTemplates.addField(actor.tenantId, id, dto);
     return successResponse(this.formTemplates.fieldToDto(field));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Post(':id/fields/:fieldId/move')
+  @Roles(UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォーム項目の並び順変更（下書きのみ）' })
+  @ApiSuccessResponse(FormTemplateResponseDto)
+  async moveField(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('fieldId', ParseUUIDPipe) fieldId: string,
+    @Body() dto: MoveFormFieldDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
+    await this.formTemplates.moveField(actor.tenantId, id, fieldId, dto.direction);
+    const full = await this.formTemplates.getOne(actor.tenantId, id);
+    return successResponse(this.formTemplates.toResponse(full));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Post(':id/fields/:fieldId/delete')
+  @Roles(UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォーム項目削除（下書きのみ）' })
+  @ApiSuccessResponse(FormTemplateResponseDto)
+  async deleteField(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('fieldId', ParseUUIDPipe) fieldId: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
+    await this.formTemplates.deleteField(actor.tenantId, id, fieldId);
+    const full = await this.formTemplates.getOne(actor.tenantId, id);
+    return successResponse(this.formTemplates.toResponse(full));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Post(':id/fields/:fieldId/settings')
+  @Roles(UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォーム項目設定更新（下書きのみ）' })
+  @ApiSuccessResponse(FormTemplateResponseDto)
+  async updateFieldSettings(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('fieldId', ParseUUIDPipe) fieldId: string,
+    @Body() dto: UpdateFormFieldSettingsDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
+    await this.formTemplates.updateFieldSettings(actor.tenantId, id, fieldId, dto);
+    const full = await this.formTemplates.getOne(actor.tenantId, id);
+    return successResponse(this.formTemplates.toResponse(full));
   }
 
   @AuthApi()
