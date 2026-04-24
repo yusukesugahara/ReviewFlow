@@ -120,6 +120,12 @@ async function publishTemplateAction(templateId: string): Promise<void> {
   redirect("/admin/application-setup");
 }
 
+async function keepDraftAction(): Promise<void> {
+  "use server";
+  revalidatePath("/admin/application-setup");
+  redirect("/admin/application-setup");
+}
+
 async function moveFieldAction(
   templateId: string,
   fieldId: string,
@@ -139,21 +145,6 @@ async function deleteFieldAction(templateId: string, fieldId: string): Promise<v
   await backendAuthFetchJson(`/form-templates/${templateId}/fields/${fieldId}/delete`, {
     method: "POST",
     body: {},
-  });
-  revalidatePath("/admin/application-setup");
-  redirect("/admin/application-setup");
-}
-
-async function updateFieldSettingsAction(templateId: string, fieldId: string, formData: FormData): Promise<void> {
-  "use server";
-  const fieldTypeRaw = formData.get(`fieldType_${fieldId}`);
-  const required = formData.get(`required_${fieldId}`) === "on";
-  if (typeof fieldTypeRaw !== "string" || fieldTypeRaw.length === 0) {
-    return;
-  }
-  await backendAuthFetchJson(`/form-templates/${templateId}/fields/${fieldId}/settings`, {
-    method: "POST",
-    body: { fieldType: fieldTypeRaw, required },
   });
   revalidatePath("/admin/application-setup");
   redirect("/admin/application-setup");
@@ -194,8 +185,6 @@ export default async function AdminApplicationSetupPage() {
   const hasApprovalFlow =
     selected != null && flows.some((flow) => flow.formTemplateId === selected.id);
   const canPublish = hasFields && hasApprovalFlow;
-  const selectedFlowCount =
-    selected == null ? 0 : flows.filter((flow) => flow.formTemplateId === selected.id).length;
   const nextSortOrder =
     selected == null
       ? 0
@@ -223,7 +212,6 @@ export default async function AdminApplicationSetupPage() {
               <Label htmlFor="templateName">申請名</Label>
               <Input id="templateName" name="name" placeholder="例: 経費申請" required />
             </div>
-            <Button type="submit">申請作成</Button>
           </form>
 
           {selected ? (
@@ -290,7 +278,7 @@ export default async function AdminApplicationSetupPage() {
                           </select>
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center justify-end gap-2">
+                          <div className="flex items-center justify-end">
                             <label className="inline-flex items-center gap-2 text-sm text-slate-600">
                               <input
                                 type="checkbox"
@@ -300,15 +288,6 @@ export default async function AdminApplicationSetupPage() {
                               />
                               必須
                             </label>
-                            <Button
-                              type="submit"
-                              formAction={updateFieldSettingsAction.bind(null, selected.id, field.id)}
-                              formNoValidate
-                              variant="outline"
-                              size="sm"
-                            >
-                              更新
-                            </Button>
                           </div>
                         </TableCell>
                         <TableCell>
@@ -342,22 +321,11 @@ export default async function AdminApplicationSetupPage() {
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-xl">2. 承認フロー設定</CardTitle>
-          <CardDescription>この申請で使う承認フローを1つ以上作成します。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           {selected ? (
-            <>
-              <p className="text-sm text-slate-600">作成済み承認フロー: {selectedFlowCount}件</p>
-              <form action={createApprovalFlowAction.bind(null, selected.id)} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">フロー名</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    placeholder="例: 経費申請承認フロー"
-                    required
-                  />
-                </div>
+            <form action={createApprovalFlowAction.bind(null, selected.id)} className="space-y-4">
+              <input type="hidden" name="name" value={`${selected.name} 承認フロー`} />
                 <div className="space-y-2">
                   <Label>承認ステップ</Label>
                   <p className="text-sm text-muted-foreground">
@@ -365,13 +333,7 @@ export default async function AdminApplicationSetupPage() {
                   </p>
                   <ApprovalStepsBuilder />
                 </div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button type="submit">
-                    承認フローを保存
-                  </Button>
-                </div>
-              </form>
-            </>
+            </form>
           ) : (
             <p className="text-sm text-slate-600">先に申請名を作成してください。</p>
           )}
@@ -404,7 +366,10 @@ export default async function AdminApplicationSetupPage() {
                     公開するには、フォーム項目を1件以上追加し、承認フローを1件以上作成してください。
                   </p>
                 ) : null}
-                <form action={publishTemplateAction.bind(null, selected.id)}>
+                <form action={publishTemplateAction.bind(null, selected.id)} className="flex items-center gap-2">
+                  <Button type="submit" formAction={keepDraftAction} variant="secondary">
+                    下書き
+                  </Button>
                   <Button type="submit" variant="outline" disabled={!canPublish}>
                     申請公開
                   </Button>
