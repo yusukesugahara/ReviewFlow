@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { OrderMoveButtons } from "./order-move-buttons";
 
 type ApproverRole = "approver" | "tenant_admin";
 
@@ -163,26 +164,14 @@ export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps
                   </div>
                 </div>
                 <div className="mt-3 flex gap-2">
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => moveStep(index, index - 1)}
-                    disabled={index === 0}
-                  >
-                    上へ
-                  </Button>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => moveStep(index, index + 1)}
-                    disabled={index === steps.length - 1}
-                  >
-                    下へ
-                  </Button>
+                  <OrderMoveButtons
+                    canMoveUp={index !== 0}
+                    canMoveDown={index !== steps.length - 1}
+                    onMoveUp={() => moveStep(index, index - 1)}
+                    onMoveDown={() => moveStep(index, index + 1)}
+                  />
                   <Button type="button" variant="destructive" size="sm" onClick={() => removeStep(step.id)}>
-                    削除
+                    ×
                   </Button>
                 </div>
               </div>

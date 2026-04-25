@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApprovalStepsBuilder } from "../_components/approval-steps-builder";
+import { OrderMoveButtons } from "../_components/order-move-buttons";
 
 type FormField = {
   id: string;
@@ -251,26 +252,20 @@ export default async function AdminApplicationSetupPage() {
                         <div className="flex items-center gap-2">
                           <span className="w-6 text-right font-medium">{field.sortOrder}</span>
                           <form action={moveFieldAction.bind(null, selected.id, field.id, "up")}>
-                            <Button
-                              type="submit"
-                              formNoValidate
-                              variant="outline"
-                              size="sm"
-                              disabled={!isDraftSelected || index === 0}
-                            >
-                              ↑
-                            </Button>
+                            <OrderMoveButtons
+                              canMoveUp={isDraftSelected && index !== 0}
+                              canMoveDown={false}
+                              moveUpType="submit"
+                              moveDownLabel=""
+                            />
                           </form>
                           <form action={moveFieldAction.bind(null, selected.id, field.id, "down")}>
-                            <Button
-                              type="submit"
-                              formNoValidate
-                              variant="outline"
-                              size="sm"
-                              disabled={!isDraftSelected || index === selected.fields.length - 1}
-                            >
-                              ↓
-                            </Button>
+                            <OrderMoveButtons
+                              canMoveUp={false}
+                              canMoveDown={isDraftSelected && index !== selected.fields.length - 1}
+                              moveDownType="submit"
+                              moveUpLabel=""
+                            />
                           </form>
                         </div>
                       </TableCell>
@@ -317,7 +312,7 @@ export default async function AdminApplicationSetupPage() {
                             size="sm"
                             disabled={!isDraftSelected}
                           >
-                            削除
+                            ×
                           </Button>
                         </form>
                       </TableCell>
