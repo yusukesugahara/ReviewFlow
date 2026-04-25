@@ -170,8 +170,17 @@ export class FormTemplatesService {
     if (!target) {
       throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
     }
+    if (dto.label !== undefined && dto.label.trim().length > 0) {
+      target.label = dto.label.trim();
+    }
     target.fieldType = dto.fieldType;
     target.required = dto.required;
+    target.placeholder = dto.placeholder?.trim().length
+      ? dto.placeholder.trim()
+      : null;
+    target.helpText = dto.helpText?.trim().length ? dto.helpText.trim() : null;
+    target.optionsJson =
+      dto.options !== undefined && dto.options !== null ? dto.options : null;
     await this.fields.save(target);
   }
 

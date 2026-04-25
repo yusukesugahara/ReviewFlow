@@ -2391,6 +2391,10 @@
       "UpdateFormFieldSettingsDto": {
         "type": "object",
         "properties": {
+          "label": {
+            "type": "string",
+            "example": "件名"
+          },
           "fieldType": {
             "type": "string",
             "example": "text",
@@ -2406,6 +2410,18 @@
           },
           "required": {
             "type": "boolean"
+          },
+          "placeholder": {
+            "type": "string"
+          },
+          "helpText": {
+            "type": "string"
+          },
+          "options": {
+            "type": "array",
+            "items": {
+              "type": "object"
+            }
           }
         },
         "required": [

@@ -143,6 +143,13 @@ export class MoveFormFieldDto {
 }
 
 export class UpdateFormFieldSettingsDto {
+  @ApiPropertyOptional({ example: '件名' })
+  @IsOptional()
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  label?: string;
+
   @ApiProperty({ example: 'text', enum: FORM_FIELD_TYPES })
   @IsString()
   @IsIn(FORM_FIELD_TYPES)
@@ -151,4 +158,21 @@ export class UpdateFormFieldSettingsDto {
   @ApiProperty()
   @IsBoolean()
   required!: boolean;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  placeholder?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  helpText?: string;
+
+  @ApiPropertyOptional({ type: 'array', items: { type: 'object' } })
+  @IsOptional()
+  @IsArray()
+  options?: unknown[];
 }

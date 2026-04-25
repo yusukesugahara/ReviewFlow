@@ -6,9 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ApprovalStepsBuilder } from "../_components/approval-steps-builder";
-import { OrderMoveButtons } from "../_components/order-move-buttons";
+import { AddFieldForm, FormFieldEditor } from "../_components/form-field-editor";
 
 type FormField = {
   id: string;
@@ -16,6 +15,9 @@ type FormField = {
   label: string;
   fieldType: string;
   required: boolean;
+  placeholder?: string | null;
+  helpText?: string | null;
+  options?: unknown[] | null;
   sortOrder: number;
 };
 
@@ -52,6 +54,21 @@ function parseSteps(stepLines: string) {
       canReturn: canReturnRaw === "true",
     };
   });
+}
+
+function parseOptions(optionsText: FormDataEntryValue | null) {
+  if (typeof optionsText !== "string") {
+    return [];
+  }
+  return optionsText
+    .split("\n")
+    .map((line) => line.trim())
+    .filter((line, index, all) => line.length > 0 && all.indexOf(line) === index)
+    .map((line) => ({ label: line, value: line }));
+}
+
+function readsOptions(fieldType: string): boolean {
+  return fieldType === "select" || fieldType === "radio" || fieldType === "checkbox";
 }
 
 async function createTemplateAction(formData: FormData): Promise<void> {
@@ -103,10 +120,55 @@ async function addFieldAction(templateId: string, formData: FormData): Promise<v
       label: resolvedLabel,
       fieldType,
       required,
+      placeholder:
+        typeof formData.get("placeholder") === "string"
+          ? String(formData.get("placeholder")).trim()
+          : undefined,
+      helpText:
+        typeof formData.get("helpText") === "string"
+          ? String(formData.get("helpText")).trim()
+          : undefined,
+      options: readsOptions(fieldType) ? parseOptions(formData.get("optionsText")) : [],
       sortOrder: Number(formData.get("sortOrder") ?? "0"),
     },
   });
   revalidatePath("/admin/application-setup");
+  redirect("/admin/application-setup");
+}
+
+async function updateFieldSettingsAction(
+  templateId: string,
+  fieldId: string,
+  formData: FormData
+): Promise<void> {
+  "use server";
+  const fieldType = formData.get("fieldType");
+  if (typeof fieldType !== "string") {
+    return;
+  }
+
+  await backendAuthFetchJson(`/form-templates/${templateId}/fields/${fieldId}/settings`, {
+    method: "POST",
+    body: {
+      label:
+        typeof formData.get("label") === "string"
+          ? String(formData.get("label")).trim()
+          : undefined,
+      fieldType,
+      required: formData.get("required") === "on",
+      placeholder:
+        typeof formData.get("placeholder") === "string"
+          ? String(formData.get("placeholder")).trim()
+          : undefined,
+      helpText:
+        typeof formData.get("helpText") === "string"
+          ? String(formData.get("helpText")).trim()
+          : undefined,
+      options: readsOptions(fieldType) ? parseOptions(formData.get("optionsText")) : [],
+    },
+  });
+  revalidatePath("/admin/application-setup");
+  revalidatePath(`/admin/template-management/${templateId}`);
   redirect("/admin/application-setup");
 }
 
@@ -225,6 +287,9 @@ export default async function AdminApplicationSetupPage() {
               <Label htmlFor="templateName">申請名</Label>
               <Input id="templateName" name="name" placeholder="例: 経費申請" required />
             </div>
+            <div className="flex justify-end">
+              <Button type="submit">申請名を作成</Button>
+            </div>
           </form>
 
           {selected ? (
@@ -234,103 +299,32 @@ export default async function AdminApplicationSetupPage() {
                   公開済みテンプレートは編集できません。編集するには下書きテンプレートを選択してください。
                 </p>
               ) : null}
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">順序</TableHead>
-                    <TableHead>ラベル</TableHead>
-                    <TableHead>キー</TableHead>
-                    <TableHead>タイプ</TableHead>
-                    <TableHead>必須</TableHead>
-                    <TableHead className="w-20">削除</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {selected.fields.map((field, index) => (
-                    <TableRow key={field.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <span className="w-6 text-right font-medium">{field.sortOrder}</span>
-                          <form action={moveFieldAction.bind(null, selected.id, field.id, "up")}>
-                            <OrderMoveButtons
-                              canMoveUp={isDraftSelected && index !== 0}
-                              canMoveDown={false}
-                              moveUpType="submit"
-                              moveDownLabel=""
-                            />
-                          </form>
-                          <form action={moveFieldAction.bind(null, selected.id, field.id, "down")}>
-                            <OrderMoveButtons
-                              canMoveUp={false}
-                              canMoveDown={isDraftSelected && index !== selected.fields.length - 1}
-                              moveDownType="submit"
-                              moveUpLabel=""
-                            />
-                          </form>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Input value={field.label} readOnly />
-                      </TableCell>
-                      <TableCell>
-                        <Input value={field.fieldKey} readOnly className="font-mono text-xs" />
-                      </TableCell>
-                      <TableCell>
-                        <select
-                          defaultValue={field.fieldType}
-                          name={`fieldType_${field.id}`}
-                          className="flex h-9 w-full rounded-md border border-input bg-slate-50 px-3 py-1 text-sm shadow-sm"
-                        >
-                          <option value="text">テキスト</option>
-                          <option value="textarea">複数行テキスト</option>
-                          <option value="number">数値</option>
-                          <option value="date">日付</option>
-                          <option value="select">選択</option>
-                          <option value="radio">ラジオボタン</option>
-                          <option value="checkbox">チェックボックス</option>
-                        </select>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center justify-end">
-                          <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                            <input
-                              type="checkbox"
-                              name={`required_${field.id}`}
-                              defaultChecked={field.required}
-                              className="h-4 w-4 rounded border-gray-300"
-                            />
-                            必須
-                          </label>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <form action={deleteFieldAction.bind(null, selected.id, field.id)}>
-                          <Button
-                            type="submit"
-                            formNoValidate
-                            variant="destructive"
-                            size="sm"
-                            disabled={!isDraftSelected}
-                          >
-                            ×
-                          </Button>
-                        </form>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-              <form action={addFieldAction.bind(null, selected.id)}>
-                <input type="hidden" name="sortOrder" value={nextSortOrder} />
-                <input type="hidden" name="label" value="テンプレート" />
-                <input type="hidden" name="fieldType" value="text" />
-                <input type="hidden" name="required" value="on" />
-                <div className="mt-3 flex justify-end">
-                  <Button type="submit" disabled={!isDraftSelected}>
-                    追加
-                  </Button>
-                </div>
-              </form>
+              <div className="space-y-3">
+                {selected.fields.length === 0 ? (
+                  <p className="rounded-lg border border-dashed py-6 text-center text-sm text-slate-600">
+                    まだフォーム項目がありません。
+                  </p>
+                ) : (
+                  selected.fields.map((field, index) => (
+                    <FormFieldEditor
+                      key={field.id}
+                      field={field}
+                      index={index}
+                      total={selected.fields.length}
+                      disabled={!isDraftSelected}
+                      updateAction={updateFieldSettingsAction.bind(null, selected.id, field.id)}
+                      deleteAction={deleteFieldAction.bind(null, selected.id, field.id)}
+                      moveUpAction={moveFieldAction.bind(null, selected.id, field.id, "up")}
+                      moveDownAction={moveFieldAction.bind(null, selected.id, field.id, "down")}
+                    />
+                  ))
+                )}
+              </div>
+              <AddFieldForm
+                action={addFieldAction.bind(null, selected.id)}
+                nextSortOrder={nextSortOrder}
+                disabled={!isDraftSelected}
+              />
             </div>
           ) : null}
         </CardContent>

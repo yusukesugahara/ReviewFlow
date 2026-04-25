@@ -109,15 +109,16 @@ export function DynamicFieldInput({
           {field.label}
           {field.required ? <span className="text-destructive ml-1">*</span> : null}
         </Label>
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         <Textarea
           id={name}
           name={name}
           defaultValue={stringValue}
           placeholder={field.placeholder ?? ""}
-          rows={4}
+          rows={7}
+          className="min-h-40"
           disabled={disabled}
         />
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
       </div>
     );
@@ -130,6 +131,7 @@ export function DynamicFieldInput({
           {field.label}
           {field.required ? <span className="text-destructive ml-1">*</span> : null}
         </Label>
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         <select
           id={name}
           name={name}
@@ -144,7 +146,6 @@ export function DynamicFieldInput({
             </option>
           ))}
         </select>
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
       </div>
     );
@@ -157,6 +158,7 @@ export function DynamicFieldInput({
           {field.label}
           {field.required ? <span className="text-destructive ml-1">*</span> : null}
         </Label>
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         <div className="space-y-2">
           {options.map((opt) => (
             <div key={`${field.id}-${opt.value}`} className="flex items-center space-x-2">
@@ -175,7 +177,6 @@ export function DynamicFieldInput({
             </div>
           ))}
         </div>
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
       </div>
     );
@@ -188,6 +189,7 @@ export function DynamicFieldInput({
           {field.label}
           {field.required ? <span className="text-destructive ml-1">*</span> : null}
         </Label>
+        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         <div className="space-y-2">
           {options.map((opt) => (
             <div key={`${field.id}-${opt.value}`} className="flex items-center space-x-2">
@@ -206,7 +208,6 @@ export function DynamicFieldInput({
             </div>
           ))}
         </div>
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
         {afterInput}
       </div>
     );
@@ -218,6 +219,7 @@ export function DynamicFieldInput({
         {field.label}
         {field.required ? <span className="text-destructive ml-1">*</span> : null}
       </Label>
+      {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
       <Input
         id={name}
         name={name}
@@ -226,7 +228,6 @@ export function DynamicFieldInput({
         placeholder={field.placeholder ?? ""}
         disabled={disabled}
       />
-      {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
       {afterInput}
     </div>
   );
