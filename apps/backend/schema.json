@@ -1016,7 +1016,7 @@
         ]
       },
       "post": {
-        "description": "参照するフォームテンプレートは published である必要があります。stepOrder は 1 から連番で重複不可。",
+        "description": "参照するフォームテンプレートは同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。",
         "operationId": "ApprovalFlowsController_create",
         "parameters": [],
         "requestBody": {

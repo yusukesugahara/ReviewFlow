@@ -57,7 +57,7 @@ export class ApprovalFlowsController {
   @ApiOperation({
     summary: '承認フロー作成（tenant_admin）',
     description:
-      '参照するフォームテンプレートは published である必要があります。stepOrder は 1 から連番で重複不可。',
+      '参照するフォームテンプレートは同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。',
   })
   @ApiSuccessResponseCreated(ApprovalFlowResponseDto)
   async create(

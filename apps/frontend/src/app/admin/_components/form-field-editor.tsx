@@ -294,7 +294,7 @@ export function FormFieldEditor({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
         <div className="min-w-0 space-y-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-slate-500">#{field.sortOrder}</span>
+            <span className="text-sm font-medium text-slate-500">#{index + 1}</span>
             <span className="font-medium text-slate-900">{field.label}</span>
           </div>
         </div>
@@ -401,8 +401,7 @@ export function AddFieldForm({ action, nextSortOrder, disabled }: AddFieldFormPr
             name="label"
             value={label}
             onChange={(event) => setLabel(event.target.value)}
-            placeholder="例: 承認結果"
-            required
+            placeholder={`例: 承認結果（空欄ならフォーム${nextSortOrder + 1}）`}
             disabled={disabled}
           />
         </div>
@@ -434,7 +433,7 @@ export function AddFieldForm({ action, nextSortOrder, disabled }: AddFieldFormPr
       />
       <FieldPreview
         fieldType={fieldType}
-        label={label}
+        label={label || `フォーム${nextSortOrder + 1}`}
         required={required}
         placeholder={placeholder}
         helpText={helpText}

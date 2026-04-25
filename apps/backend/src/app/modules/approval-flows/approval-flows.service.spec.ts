@@ -27,14 +27,14 @@ describe('ApprovalFlowsService', () => {
         transaction: jest.fn(async (fn: (em: unknown) => Promise<void>) => {
           const flowRepo = {
             create: jest.fn((x: object) => ({ ...x, id: 'flow-new' })),
-            save: jest.fn(async (x: ApprovalFlow & { id?: string }) => ({
+            save: jest.fn((x: ApprovalFlow & { id?: string }) => ({
               ...x,
               id: x.id ?? 'flow-new',
             })),
           };
           const stepRepo = {
             create: jest.fn((x: object) => ({ ...x })),
-            save: jest.fn(async (x: unknown) => x),
+            save: jest.fn((x: unknown) => x),
           };
           await fn({
             getRepository: (entity: unknown) => {
@@ -62,12 +62,28 @@ describe('ApprovalFlowsService', () => {
     service = module.get(ApprovalFlowsService);
   });
 
-  it('create rejects when template is draft', async () => {
+  it('create allows draft template so setup can define flow before publish', async () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
       status: FormTemplateStatus.DRAFT,
     } as FormTemplate);
+    flows.findOne.mockResolvedValue({
+      id: 'flow-new',
+      tenantId: 'ten1',
+      formTemplateId: 't1',
+      name: 'F',
+      isActive: true,
+      steps: [
+        {
+          id: 'step-1',
+          stepOrder: 1,
+          stepName: 'S1',
+          approverRole: UserRole.APPROVER,
+          canReturn: false,
+        },
+      ],
+    } as ApprovalFlow);
 
     await expect(
       service.create('ten1', {
@@ -82,8 +98,9 @@ describe('ApprovalFlowsService', () => {
           },
         ],
       }),
-    ).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.APPROVAL_FORM_TEMPLATE_NOT_PUBLISHED,
+    ).resolves.toMatchObject({
+      id: 'flow-new',
+      formTemplateId: 't1',
     });
   });
 

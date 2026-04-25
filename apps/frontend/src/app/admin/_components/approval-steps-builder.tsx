@@ -20,23 +20,19 @@ type ApprovalStepsBuilderProps = {
   defaultSteps?: StepItem[];
 };
 
-function createStepId() {
-  return `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
 export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps) {
   const [steps, setSteps] = useState<StepItem[]>(
     defaultSteps && defaultSteps.length > 0
       ? defaultSteps
       : [
           {
-            id: createStepId(),
+            id: "step-1",
             stepName: "一次承認",
             approverRole: "approver",
             canReturn: true,
           },
           {
-            id: createStepId(),
+            id: "step-2",
             stepName: "最終承認",
             approverRole: "tenant_admin",
             canReturn: false,
@@ -58,7 +54,7 @@ export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps
     setSteps((prev) => [
       ...prev,
       {
-        id: createStepId(),
+        id: `step-${nextIndex}`,
         stepName: `承認ステップ${nextIndex}`,
         approverRole: "approver",
         canReturn: true,

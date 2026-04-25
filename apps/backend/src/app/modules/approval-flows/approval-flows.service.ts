@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
-import { FormTemplateStatus } from '../../../models/constants/form-template-status';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
@@ -38,8 +37,8 @@ export class ApprovalFlowsService {
       throw clientError(ClientErrorCodes.APPROVAL_FLOW_STEPS_INVALID);
     }
     const sorted = [...dto.steps].sort((a, b) => a.stepOrder - b.stepOrder);
-    for (let i = 0; i < sorted.length; i += 1) {
-      if (sorted[i]!.stepOrder !== i + 1) {
+    for (const [index, step] of sorted.entries()) {
+      if (step.stepOrder !== index + 1) {
         throw clientError(ClientErrorCodes.APPROVAL_FLOW_STEPS_INVALID);
       }
     }
@@ -57,11 +56,10 @@ export class ApprovalFlowsService {
     if (!tpl) {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
-    if (tpl.status !== FormTemplateStatus.PUBLISHED) {
-      throw clientError(ClientErrorCodes.APPROVAL_FORM_TEMPLATE_NOT_PUBLISHED);
-    }
 
-    const sortedSteps = [...dto.steps].sort((a, b) => a.stepOrder - b.stepOrder);
+    const sortedSteps = [...dto.steps].sort(
+      (a, b) => a.stepOrder - b.stepOrder,
+    );
 
     let newFlowId = '';
     await this.flows.manager.transaction(async (em) => {
