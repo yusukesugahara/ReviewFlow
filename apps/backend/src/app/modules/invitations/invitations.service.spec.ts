@@ -8,6 +8,7 @@ import { UserRole } from '../../../models/constants/user-role';
 import { Invitation } from '../../../models/entities/invitation.entity';
 import { User } from '../../../models/entities/user.entity';
 import { AuthService } from '../auth/auth.service';
+import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
 import { InvitationsService } from './invitations.service';
 
@@ -17,22 +18,26 @@ describe('InvitationsService', () => {
     findOne: jest.Mock;
     create: jest.Mock;
     save: jest.Mock;
+    delete: jest.Mock;
   };
   let dataSource: { transaction: jest.Mock };
   let usersService: {
     findByTenantAndEmail: jest.Mock;
   };
   let authService: { issueTokensForUser: jest.Mock };
+  let mailService: { sendInvitationEmail: jest.Mock };
 
   beforeEach(async () => {
     invitationsRepo = {
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
       save: jest.fn(async (row: Invitation) => row),
+      delete: jest.fn(),
     };
     dataSource = { transaction: jest.fn() };
     usersService = { findByTenantAndEmail: jest.fn() };
     authService = { issueTokensForUser: jest.fn() };
+    mailService = { sendInvitationEmail: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -41,6 +46,7 @@ describe('InvitationsService', () => {
         { provide: DataSource, useValue: dataSource },
         { provide: UsersService, useValue: usersService },
         { provide: AuthService, useValue: authService },
+        { provide: MailService, useValue: mailService },
       ],
     }).compile();
 
@@ -106,6 +112,38 @@ describe('InvitationsService', () => {
       expect(out.email).toBe('new@y.com');
       expect(out.token.length).toBe(64);
       expect(typeof out.expiresAt).toBe('string');
+      expect(mailService.sendInvitationEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'new@y.com',
+          invitedByEmail: 'a@t.com',
+          role: UserRole.APPLICANT,
+        }),
+      );
+    });
+
+    it('rolls back invitation when mail delivery fails', async () => {
+      usersService.findByTenantAndEmail.mockResolvedValue(null);
+      invitationsRepo.findOne.mockResolvedValue(null);
+      invitationsRepo.save.mockResolvedValue({
+        id: 'inv-1',
+        tenantId: 'tenant-1',
+        email: 'new@y.com',
+        role: UserRole.APPLICANT,
+        token: 't'.repeat(64),
+        expiresAt: new Date(Date.now() + 60_000),
+      });
+      mailService.sendInvitationEmail.mockRejectedValue(new Error('smtp down'));
+
+      await expect(
+        service.create(
+          { email: 'New@Y.com', role: UserRole.APPLICANT },
+          actor,
+        ),
+      ).rejects.toMatchObject({
+        status: 500,
+      });
+
+      expect(invitationsRepo.delete).toHaveBeenCalledWith('inv-1');
     });
   });
 

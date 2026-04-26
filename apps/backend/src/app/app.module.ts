@@ -15,6 +15,7 @@ import { InvitationsModule } from './modules/invitations/invitations.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditLogInterceptor } from '../common/logging/audit-log.interceptor';
 import { buildTypeOrmOptions } from './typeorm-options.factory';
+import { MailModule } from './modules/mail/mail.module';
 
 /*
  * データベースモジュール（`DB_DRIVER`: 省略時 sqlite / `mysql` で MySQL）
@@ -79,6 +80,7 @@ const throttlerModule = ThrottlerModule.forRootAsync({
     UsersModule,
     AuthModule,
     AuditLogsModule,
+    MailModule,
     InvitationsModule,
     FormTemplatesModule,
     ApprovalFlowsModule,
