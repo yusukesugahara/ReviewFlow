@@ -1,4 +1,7 @@
-import type { FormFieldResponseDto, FormTemplateResponseDto } from './form-templates.dto';
+import type {
+  FormFieldResponseDto,
+  FormTemplateResponseDto,
+} from './form-templates.dto';
 import type { FormField } from '../../../models/entities/form-field.entity';
 import type { FormTemplate } from '../../../models/entities/form-template.entity';
 
@@ -18,7 +21,9 @@ export function mapFormFieldToDto(f: FormField): FormFieldResponseDto {
 }
 
 export function mapFormTemplateToDto(t: FormTemplate): FormTemplateResponseDto {
-  const fields = (t.fields ?? []).slice().sort((a, b) => a.sortOrder - b.sortOrder);
+  const fields = (t.fields ?? [])
+    .slice()
+    .sort((a, b) => a.sortOrder - b.sortOrder);
   return {
     id: t.id,
     name: t.name,

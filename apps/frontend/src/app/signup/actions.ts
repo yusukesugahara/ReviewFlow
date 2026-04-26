@@ -6,7 +6,7 @@ import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { errorMessageFromBody, postAuthRegister } from "@/lib/server/auth-api";
 import { persistAccessTokenCookie } from "../login/actions";
 
-export type SignupSchema = AuthCredentials;
+export type SignupSchema = AuthCredentials & { next?: string };
 
 /**
  * 認証エラーメッセージを取得する

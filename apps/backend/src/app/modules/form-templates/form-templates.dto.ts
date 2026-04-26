@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsArray,
   IsBoolean,
+  IsEmail,
   IsIn,
   IsInt,
   IsOptional,
@@ -175,4 +176,15 @@ export class UpdateFormFieldSettingsDto {
   @IsOptional()
   @IsArray()
   options?: unknown[];
+}
+
+export class RequestFormAccessDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email!: string;
+}
+
+export class RequestFormAccessResponseDto {
+  @ApiProperty({ example: true })
+  accepted!: true;
 }

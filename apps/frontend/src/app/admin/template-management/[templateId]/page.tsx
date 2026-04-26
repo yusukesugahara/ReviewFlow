@@ -48,7 +48,7 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const applicationPath = `/app/applications/new?templateId=${encodeURIComponent(template.id)}`;
+  const applicationPath = `/apply/${encodeURIComponent(template.id)}`;
   const applicationUrl = host ? `${protocol}://${host}${applicationPath}` : applicationPath;
 
   return (
@@ -78,7 +78,7 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
             </Badge>
           </div>
           <div className="space-y-2">
-            <span className="text-sm text-muted-foreground">申請URL:</span>
+            <span className="text-sm text-muted-foreground">申請受付URL:</span>
             {template.status === "published" ? (
               <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 md:flex-row md:items-center md:justify-between">
                 <p className="break-all font-mono text-sm text-slate-700">{applicationUrl}</p>

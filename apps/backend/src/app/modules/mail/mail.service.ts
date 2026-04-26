@@ -15,6 +15,13 @@ type InvitationMailInput = {
   acceptToken: string;
   expiresAtIso: string;
   role: string;
+  nextPath?: string;
+};
+
+type ApplicationAccessMailInput = {
+  to: string;
+  applicationPath: string;
+  templateName: string;
 };
 
 @Injectable()
@@ -25,11 +32,10 @@ export class MailService {
   constructor(private readonly configService: ConfigService) {}
 
   async sendInvitationEmail(input: InvitationMailInput): Promise<void> {
-    const frontendBaseUrl =
-      this.configService.get<string>('FRONTEND_BASE_URL') ?? 'http://localhost:3001';
-    const acceptUrl = `${frontendBaseUrl.replace(/\/$/, '')}/invitations/accept?token=${encodeURIComponent(
-      input.acceptToken,
-    )}`;
+    const acceptUrl = this.buildFrontendUrl('/invitations/accept', {
+      token: input.acceptToken,
+      ...(input.nextPath ? { next: input.nextPath } : {}),
+    });
 
     await this.send({
       to: input.to,
@@ -51,6 +57,29 @@ export class MailService {
     });
   }
 
+  async sendApplicationAccessEmail(
+    input: ApplicationAccessMailInput,
+  ): Promise<void> {
+    const loginUrl = this.buildFrontendUrl('/login', {
+      next: input.applicationPath,
+    });
+
+    await this.send({
+      to: input.to,
+      subject: `ReviewFlow ${input.templateName} の申請案内`,
+      text: [
+        `${input.templateName} の申請案内です。`,
+        '以下のURLからログインすると、対象フォームを開けます。',
+        `ログインURL: ${loginUrl}`,
+      ].join('\n'),
+      html: [
+        `<p>${this.escapeHtml(input.templateName)} の申請案内です。</p>`,
+        '<p>以下のURLからログインすると、対象フォームを開けます。</p>',
+        `<p><a href="${this.escapeHtml(loginUrl)}">申請フォームを開く</a></p>`,
+      ].join(''),
+    });
+  }
+
   async send(input: SendMailInput): Promise<void> {
     if (!this.isMailEnabled()) {
       this.logger.debug(`mail disabled; skipped delivery to ${input.to}`);
@@ -59,7 +88,8 @@ export class MailService {
 
     const transporter = this.getTransporter();
     const from = this.getRequired('MAIL_FROM');
-    const replyTo = this.configService.get<string>('MAIL_REPLY_TO') || undefined;
+    const replyTo =
+      this.configService.get<string>('MAIL_REPLY_TO') || undefined;
 
     await transporter.sendMail({
       from,
@@ -89,7 +119,9 @@ export class MailService {
       provider === 'smtp'
         ? nodemailer.createTransport({
             host: this.getRequired('MAIL_SMTP_HOST'),
-            port: Number(this.configService.get<string>('MAIL_SMTP_PORT') ?? 587),
+            port: Number(
+              this.configService.get<string>('MAIL_SMTP_PORT') ?? 587,
+            ),
             secure: this.getBoolean('MAIL_SMTP_SECURE', false),
             auth: {
               user: this.getRequired('MAIL_SMTP_USER'),
@@ -133,6 +165,22 @@ export class MailService {
       return fallback;
     }
     return value === '1' || value.toLowerCase() === 'true';
+  }
+
+  private buildFrontendUrl(
+    path: string,
+    params?: Record<string, string>,
+  ): string {
+    const frontendBaseUrl =
+      this.configService.get<string>('FRONTEND_BASE_URL') ??
+      'http://localhost:3001';
+    const url = new URL(path, frontendBaseUrl.replace(/\/$/, '') + '/');
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        url.searchParams.set(key, value);
+      });
+    }
+    return url.toString();
   }
 
   private escapeHtml(value: string): string {

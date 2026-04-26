@@ -11,6 +11,7 @@ import {
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
+  Api,
   AuthApi,
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
@@ -30,6 +31,8 @@ import {
   MoveFormFieldDto,
   FormTemplateResponseDto,
   FormTemplatesListResponseDto,
+  RequestFormAccessDto,
+  RequestFormAccessResponseDto,
   UpdateFormFieldSettingsDto,
 } from './form-templates.dto';
 import { FormTemplatesService } from './form-templates.service';
@@ -119,7 +122,12 @@ export class FormTemplatesController {
     @Body() dto: MoveFormFieldDto,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    await this.formTemplates.moveField(actor.tenantId, id, fieldId, dto.direction);
+    await this.formTemplates.moveField(
+      actor.tenantId,
+      id,
+      fieldId,
+      dto.direction,
+    );
     const full = await this.formTemplates.getOne(actor.tenantId, id);
     return successResponse(this.formTemplates.toResponse(full));
   }
@@ -154,7 +162,12 @@ export class FormTemplatesController {
     @Body() dto: UpdateFormFieldSettingsDto,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    await this.formTemplates.updateFieldSettings(actor.tenantId, id, fieldId, dto);
+    await this.formTemplates.updateFieldSettings(
+      actor.tenantId,
+      id,
+      fieldId,
+      dto,
+    );
     const full = await this.formTemplates.getOne(actor.tenantId, id);
     return successResponse(this.formTemplates.toResponse(full));
   }
@@ -173,5 +186,18 @@ export class FormTemplatesController {
     await this.formTemplates.publish(actor.tenantId, id);
     const full = await this.formTemplates.getOne(actor.tenantId, id);
     return successResponse(this.formTemplates.toResponse(full));
+  }
+
+  @Api()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post(':id/request-access')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォーム案内メール送信（公開）' })
+  @ApiSuccessResponse(RequestFormAccessResponseDto)
+  async requestAccess(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: RequestFormAccessDto,
+  ): Promise<SuccessResponse<RequestFormAccessResponseDto>> {
+    return successResponse(await this.formTemplates.requestAccess(id, dto));
   }
 }

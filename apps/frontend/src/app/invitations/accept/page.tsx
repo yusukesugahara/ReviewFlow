@@ -10,6 +10,7 @@ async function acceptInvitationAction(formData: FormData): Promise<void> {
   const token = formData.get("token");
   const name = formData.get("name");
   const password = formData.get("password");
+  const next = formData.get("next");
   if (typeof token !== "string" || typeof password !== "string") {
     redirect("/invitations/accept?error=invalid_input");
   }
@@ -29,19 +30,32 @@ async function acceptInvitationAction(formData: FormData): Promise<void> {
   });
 
   if (!res.ok) {
-    redirect("/invitations/accept?error=accept_failed");
+    redirect(
+      `/invitations/accept?error=accept_failed${
+        typeof next === "string" && next.length > 0
+          ? `&next=${encodeURIComponent(next)}`
+          : ""
+      }`,
+    );
   }
-  redirect("/login");
+  redirect(
+    `/login${
+      typeof next === "string" && next.length > 0
+        ? `?next=${encodeURIComponent(next)}`
+        : ""
+    }`,
+  );
 }
 
 type PageProps = {
-  searchParams?: Promise<{ token?: string; error?: string }>;
+  searchParams?: Promise<{ token?: string; error?: string; next?: string }>;
 };
 
 export default async function InvitationAcceptPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const presetToken = params.token ?? "";
   const error = params.error;
+  const next = params.next ?? "";
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
       <Card className="w-full max-w-md">
@@ -60,6 +74,7 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
             </div>
           ) : null}
           <form action={acceptInvitationAction} className="space-y-4">
+            <input type="hidden" name="next" value={next} />
             <div className="space-y-2">
               <Label htmlFor="token">
                 招待トークン

@@ -5,9 +5,10 @@ import { login } from "./actions";
 
 type LoginViewProps = {
   apiReachable: boolean;
+  next?: string;
 };
 
-export const LoginView = ({ apiReachable }: LoginViewProps) => {
+export const LoginView = ({ apiReachable, next }: LoginViewProps) => {
   return (
     <AuthForm
       apiReachable={apiReachable}
@@ -20,6 +21,7 @@ export const LoginView = ({ apiReachable }: LoginViewProps) => {
       switchHref="/signup"
       switchLabel="新規登録"
       submit={login}
+      next={next}
       fallbackErrorMessage="ログインに失敗しました"
     />
   );

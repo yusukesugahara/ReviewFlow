@@ -29,7 +29,7 @@ export function PublishedApplicationUrlModal({
     if (!templateId) {
       return "";
     }
-    return `/app/applications/new?templateId=${encodeURIComponent(templateId)}`;
+    return `/apply/${encodeURIComponent(templateId)}`;
   }, [templateId]);
 
   const applicationUrl = origin && applicationPath ? `${origin}${applicationPath}` : applicationPath;
@@ -44,7 +44,7 @@ export function PublishedApplicationUrlModal({
         <div className="border-b border-slate-200 px-6 py-4">
           <h3 className="text-lg font-semibold text-slate-900">申請URLを発行しました</h3>
           <p className="mt-1 text-sm text-slate-600">
-            このURLをユーザーに共有すると、対象の申請フォームを直接開けます。
+            このURLをユーザーに共有すると、メールアドレス入力後に申請フォームの案内を送れます。
           </p>
         </div>
         <div className="space-y-4 px-6 py-5">

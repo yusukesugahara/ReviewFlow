@@ -970,6 +970,68 @@
         ]
       }
     },
+    "/form-templates/{id}/request-access": {
+      "post": {
+        "operationId": "FormTemplatesController_requestAccess",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestFormAccessDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/RequestFormAccessResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "フォーム案内メール送信（公開）",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
     "/approval-flows": {
       "get": {
         "operationId": "ApprovalFlowsController_list",
@@ -2427,6 +2489,30 @@
         "required": [
           "fieldType",
           "required"
+        ]
+      },
+      "RequestFormAccessResponseDto": {
+        "type": "object",
+        "properties": {
+          "accepted": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "accepted"
+        ]
+      },
+      "RequestFormAccessDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          }
+        },
+        "required": [
+          "email"
         ]
       },
       "ApprovalStepResponseDto": {

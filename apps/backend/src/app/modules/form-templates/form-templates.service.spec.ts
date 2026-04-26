@@ -83,7 +83,9 @@ describe('FormTemplatesService', () => {
         required: true,
         sortOrder: 0,
       }),
-    ).rejects.toMatchObject({ errorCode: ClientErrorCodes.FORM_TEMPLATE_IMMUTABLE });
+    ).rejects.toMatchObject({
+      errorCode: ClientErrorCodes.FORM_TEMPLATE_IMMUTABLE,
+    });
   });
 
   it('publish rejects when not draft', async () => {

@@ -29,7 +29,8 @@ type AuthFormProps = {
   switchText: string;
   switchHref: "/login" | "/signup";
   switchLabel: string;
-  submit: (params: { email: string; password: string }) => Promise<FormActionResponse<void>>;
+  submit: (params: { email: string; password: string; next?: string }) => Promise<FormActionResponse<void>>;
+  next?: string;
   fallbackErrorMessage: string;
 };
 
@@ -45,6 +46,7 @@ export function AuthForm({
   switchHref,
   switchLabel,
   submit,
+  next,
   fallbackErrorMessage,
 }: AuthFormProps) {
   const formId = useId();
@@ -68,7 +70,7 @@ export function AuthForm({
     }
     setState((s) => ({ ...s, loading: true }));
     try {
-      const result = await submit({ email: state.email, password: state.password });
+      const result = await submit({ email: state.email, password: state.password, next });
       if ("fieldErrors" in result && result.fieldErrors) {
         setState((s) => ({
           ...s,

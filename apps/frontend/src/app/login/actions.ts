@@ -8,7 +8,17 @@ import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
 import { errorMessageFromBody, postAuthLogin } from "@/lib/server/auth-api";
 
-export type LoginSchema = AuthCredentials;
+export type LoginSchema = AuthCredentials & { next?: string };
+
+function resolveSafeNextPath(next?: string): string {
+  if (!next || !next.startsWith("/")) {
+    return "/";
+  }
+  if (next.startsWith("//")) {
+    return "/";
+  }
+  return next;
+}
 
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
   return errorMessageFromBody(result.body);
@@ -76,5 +86,5 @@ export async function login(params: LoginSchema): Promise<FormActionResponse<voi
   }
 
   await persistAccessTokenCookie(auth.accessToken);
-  redirect("/");
+  redirect(resolveSafeNextPath(params.next));
 }
