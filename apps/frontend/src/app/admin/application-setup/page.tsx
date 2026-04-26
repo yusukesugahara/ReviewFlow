@@ -34,6 +34,7 @@ type PageProps = {
   searchParams?: Promise<{
     setupError?: string;
     setupStatus?: string;
+    publishedTemplateId?: string;
   }>;
 };
 
@@ -262,7 +263,11 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
 
   revalidatePath("/admin/application-setup");
   redirect(
-    `/admin/application-setup?setupStatus=${resolvedIntent === "publish" ? "published" : "draft_saved"}`,
+    `/admin/application-setup?setupStatus=${resolvedIntent === "publish" ? "published" : "draft_saved"}${
+      resolvedIntent === "publish"
+        ? `&publishedTemplateId=${encodeURIComponent(createdId)}`
+        : ""
+    }`,
   );
 }
 
@@ -270,6 +275,7 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
   const params = (await searchParams) ?? {};
   const errorMessage = setupErrorMessage(params.setupError);
   const statusMessage = setupStatusMessage(params.setupStatus);
+  const publishedTemplateId = params.setupStatus === "published" ? params.publishedTemplateId : null;
 
   return (
     <div className="space-y-8">
@@ -284,6 +290,7 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
         action={submitApplicationSetupAction}
         errorMessage={errorMessage}
         statusMessage={statusMessage}
+        publishedTemplateId={publishedTemplateId}
       />
     </div>
   );

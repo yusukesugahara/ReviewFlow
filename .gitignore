@@ -11,3 +11,5 @@ coverage
 .idea
 .vscode
 apps/frontend/test-results/*
+
+*.tsbuildinfo

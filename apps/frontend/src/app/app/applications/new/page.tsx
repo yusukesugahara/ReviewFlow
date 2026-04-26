@@ -70,7 +70,7 @@ async function createApplicationAction(formData: FormData): Promise<void> {
 }
 
 type PageProps = {
-  searchParams?: Promise<{ error?: string }>;
+  searchParams?: Promise<{ error?: string; templateId?: string }>;
 };
 
 export default async function NewApplicationPage({ searchParams }: PageProps) {
@@ -80,7 +80,10 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
   const templatesRaw = await backendAuthFetchJson("/form-templates");
   const templates = unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
   const publishedTemplates = templates.filter((t) => t.status === "published");
-  const selectedTemplate = publishedTemplates.at(0) ?? null;
+  const selectedTemplate =
+    publishedTemplates.find((template) => template.id === params.templateId) ??
+    publishedTemplates.at(0) ??
+    null;
   const selectedTemplateId = selectedTemplate?.id ?? "";
 
   const flowsRaw = await backendAuthFetchJson("/approval-flows");

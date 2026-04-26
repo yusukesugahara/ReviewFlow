@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApprovalStepsBuilder } from "./approval-steps-builder";
 import { OrderMoveButtons } from "./order-move-buttons";
+import { PublishedApplicationUrlModal } from "./published-application-url-modal";
 
 type FieldType = "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox";
 
@@ -26,6 +27,7 @@ type ApplicationSetupDraftFormProps = {
   action: (formData: FormData) => void | Promise<void>;
   errorMessage?: string | null;
   statusMessage?: string | null;
+  publishedTemplateId?: string | null;
 };
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -127,6 +129,7 @@ export function ApplicationSetupDraftForm({
   action,
   errorMessage,
   statusMessage,
+  publishedTemplateId,
 }: ApplicationSetupDraftFormProps) {
   const [fields, setFields] = useState<DraftField[]>([createDefaultField(0)]);
 
@@ -154,6 +157,10 @@ export function ApplicationSetupDraftForm({
 
   return (
     <form action={action} className="space-y-8">
+      <PublishedApplicationUrlModal
+        open={Boolean(publishedTemplateId)}
+        templateId={publishedTemplateId ?? undefined}
+      />
       <input type="hidden" name="fieldsJson" value={fieldsJson} />
 
       {errorMessage ? (
