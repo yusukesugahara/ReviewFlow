@@ -1,10 +1,12 @@
 import Link from "next/link";
+import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { CopyButton } from "../../_components/copy-button";
 
 type FormField = {
   id: string;
@@ -35,6 +37,9 @@ type PageProps = {
 
 export default async function AdminTemplateDetailPage({ params }: PageProps) {
   const { templateId } = await params;
+  const requestHeaders = await headers();
+  const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
   const raw = await backendAuthFetchJson("/form-templates");
   const templates = unwrapData<{ templates?: FormTemplate[] }>(raw).templates ?? [];
   const template = templates.find((item) => item.id === templateId);
@@ -42,6 +47,9 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
   if (!template) {
     notFound();
   }
+
+  const applicationPath = `/app/applications/new?templateId=${encodeURIComponent(template.id)}`;
+  const applicationUrl = host ? `${protocol}://${host}${applicationPath}` : applicationPath;
 
   return (
     <div className="space-y-6">
@@ -68,6 +76,19 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
             <Badge variant={template.status === "published" ? "default" : "outline"}>
               {template.status === "published" ? "公開済み" : "下書き"}
             </Badge>
+          </div>
+          <div className="space-y-2">
+            <span className="text-sm text-muted-foreground">申請URL:</span>
+            {template.status === "published" ? (
+              <div className="flex flex-col gap-2 rounded-lg border border-slate-200 bg-slate-50 p-3 md:flex-row md:items-center md:justify-between">
+                <p className="break-all font-mono text-sm text-slate-700">{applicationUrl}</p>
+                <CopyButton value={applicationUrl} />
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                公開後に申請用URLが利用できます。
+              </p>
+            )}
           </div>
           <p className="text-sm text-muted-foreground">テンプレートID: {template.id}</p>
         </CardContent>
