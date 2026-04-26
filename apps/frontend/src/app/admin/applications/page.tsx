@@ -15,7 +15,7 @@ type FormTemplateRow = {
 type ApplicationRow = {
   id: string;
   status: string;
-  applicantUserId: string;
+  applicantEmail: string;
   formTemplateId: string;
   createdAt: string;
 };
@@ -196,7 +196,7 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
                         </Badge>
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {r.applicantUserId.slice(0, 8)}...
+                        {r.applicantEmail}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
                         {r.formTemplateId.slice(0, 8)}...

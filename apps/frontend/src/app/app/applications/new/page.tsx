@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { backendApplicantFetchJson } from "@/lib/server/backend-applicant-fetch";
 import {
   DynamicFieldInput,
   readDynamicValuesFromFormData,
@@ -52,7 +52,7 @@ async function createApplicationAction(formData: FormData): Promise<void> {
   }
   const values = readDynamicValuesFromFormData(fields, formData);
 
-  const created = await backendAuthFetchJson("/applications", {
+  const created = await backendApplicantFetchJson("/public/applications", {
     method: "POST",
     body: {
       formTemplateId,
@@ -77,16 +77,11 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const error = params.error;
 
-  const templatesRaw = await backendAuthFetchJson("/form-templates");
-  const templates = unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
-  const publishedTemplates = templates.filter((t) => t.status === "published");
-  const selectedTemplate =
-    publishedTemplates.find((template) => template.id === params.templateId) ??
-    publishedTemplates.at(0) ??
-    null;
+  const templateRaw = await backendApplicantFetchJson("/form-templates/public/current");
+  const selectedTemplate = unwrapData<FormTemplate>(templateRaw);
   const selectedTemplateId = selectedTemplate?.id ?? "";
 
-  const flowsRaw = await backendAuthFetchJson("/approval-flows");
+  const flowsRaw = await backendApplicantFetchJson("/form-templates/public/current/approval-flows");
   const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
   const selectableFlows = flows.filter((f) => f.formTemplateId === selectedTemplateId);
 
@@ -153,15 +148,7 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
             </form>
           </CardContent>
         </Card>
-      ) : (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-center text-muted-foreground">
-              利用可能な申請フォームがありません。管理者に新規フォームの設定を依頼してください。
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      ) : null}
     </div>
   );
 }

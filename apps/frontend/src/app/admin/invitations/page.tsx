@@ -68,7 +68,7 @@ export default async function AdminInvitationsPage({ searchParams }: PageProps) 
       <div>
         <h2 className="text-3xl font-bold tracking-tight">ユーザー招待</h2>
         <p className="text-muted-foreground">
-          招待URLを発行して、申請者・承認者・管理者を追加できます
+          招待URLを発行して、承認者・管理者を追加できます
         </p>
       </div>
 
@@ -91,7 +91,6 @@ export default async function AdminInvitationsPage({ searchParams }: PageProps) 
                 defaultValue="approver"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm"
               >
-                <option value="applicant">applicant（申請者）</option>
                 <option value="approver">approver（承認者）</option>
                 <option value="tenant_admin">tenant_admin（管理者）</option>
               </select>

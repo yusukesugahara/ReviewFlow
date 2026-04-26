@@ -13,7 +13,7 @@ type ApplicationDetail = {
   id: string;
   status: string;
   formTemplateId: string;
-  applicantUserId: string;
+  applicantEmail: string;
   currentStepOrder: number | null;
   values: Record<string, unknown>;
 };
@@ -167,8 +167,8 @@ export default async function ReviewApplicationDetailPage({
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">申請者ID</span>
-              <span className="font-mono">{app.applicantUserId.slice(0, 12)}...</span>
+              <span className="text-muted-foreground">申請者メール</span>
+              <span className="font-mono">{app.applicantEmail}</span>
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">現在のステップ</span>

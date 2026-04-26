@@ -12,5 +12,6 @@ import { ApprovalFlowsService } from './approval-flows.service';
   ],
   controllers: [ApprovalFlowsController],
   providers: [ApprovalFlowsService],
+  exports: [ApprovalFlowsService],
 })
 export class ApprovalFlowsModule {}

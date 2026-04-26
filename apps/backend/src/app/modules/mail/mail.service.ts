@@ -20,8 +20,8 @@ type InvitationMailInput = {
 
 type ApplicationAccessMailInput = {
   to: string;
-  applicationPath: string;
   templateName: string;
+  accessToken: string;
 };
 
 @Injectable()
@@ -60,8 +60,8 @@ export class MailService {
   async sendApplicationAccessEmail(
     input: ApplicationAccessMailInput,
   ): Promise<void> {
-    const loginUrl = this.buildFrontendUrl('/login', {
-      next: input.applicationPath,
+    const accessUrl = this.buildFrontendUrl('/apply/access', {
+      token: input.accessToken,
     });
 
     await this.send({
@@ -69,13 +69,13 @@ export class MailService {
       subject: `ReviewFlow ${input.templateName} の申請案内`,
       text: [
         `${input.templateName} の申請案内です。`,
-        '以下のURLからログインすると、対象フォームを開けます。',
-        `ログインURL: ${loginUrl}`,
+        '以下のURLから申請フォームを開いてください。',
+        `申請URL: ${accessUrl}`,
       ].join('\n'),
       html: [
         `<p>${this.escapeHtml(input.templateName)} の申請案内です。</p>`,
-        '<p>以下のURLからログインすると、対象フォームを開けます。</p>',
-        `<p><a href="${this.escapeHtml(loginUrl)}">申請フォームを開く</a></p>`,
+        '<p>以下のURLから申請フォームを開いてください。</p>',
+        `<p><a href="${this.escapeHtml(accessUrl)}">申請フォームを開く</a></p>`,
       ].join(''),
     });
   }

@@ -7,11 +7,15 @@ import { CorrectionRequestItem } from '../../../models/entities/correction-reque
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { AuthModule } from '../auth/auth.module';
+import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
+import { PublicApplicationsController } from './public-applications.controller';
 
 @Module({
   imports: [
+    AuthModule,
     TypeOrmModule.forFeature([
       Application,
       ApplicationApproval,
@@ -22,7 +26,7 @@ import { ApplicationsService } from './applications.service';
       ApprovalFlow,
     ]),
   ],
-  controllers: [ApplicationsController],
-  providers: [ApplicationsService],
+  controllers: [ApplicationsController, PublicApplicationsController],
+  providers: [ApplicationsService, ApplicantAccessGuard],
 })
 export class ApplicationsModule {}

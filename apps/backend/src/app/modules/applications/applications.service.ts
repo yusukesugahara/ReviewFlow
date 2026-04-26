@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
+import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
@@ -30,6 +31,8 @@ import {
   mapApplicationToSummary,
   mapCorrectionsList,
 } from './applications.mapper';
+
+type ApplicantSession = ApplicantAccessTokenPayload;
 
 @Injectable()
 export class ApplicationsService {
@@ -134,9 +137,6 @@ export class ApplicationsService {
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return;
     }
-    if (app.applicantUserId === actor.id) {
-      return;
-    }
     if (
       actor.roles.includes(UserRole.APPROVER) &&
       !actor.roles.includes(UserRole.TENANT_ADMIN)
@@ -154,6 +154,19 @@ export class ApplicationsService {
       }
     }
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+  }
+
+  private assertApplicantOwns(
+    actor: ApplicantSession,
+    app: Application,
+  ): void {
+    if (
+      app.tenantId !== actor.tenantId ||
+      app.formTemplateId !== actor.templateId ||
+      app.applicantEmail !== actor.email
+    ) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
   }
 
   private async resolveActiveFlow(
@@ -228,8 +241,16 @@ export class ApplicationsService {
       });
       return rows.filter((a) => this.approverCanActOn(a, UserRole.APPROVER));
     }
+    throw clientError(ClientErrorCodes.AUTH_FORBIDDEN_ROLE);
+  }
+
+  async listForApplicant(actor: ApplicantSession): Promise<Application[]> {
     return this.apps.find({
-      where: { tenantId: actor.tenantId, applicantUserId: actor.id },
+      where: {
+        tenantId: actor.tenantId,
+        formTemplateId: actor.templateId,
+        applicantEmail: actor.email,
+      },
       order: { createdAt: 'DESC' },
     });
   }
@@ -245,12 +266,24 @@ export class ApplicationsService {
     return row;
   }
 
-  async create(
-    actor: AuthUserPayload,
+  async getOneForApplicant(
+    actor: ApplicantSession,
+    id: string,
+  ): Promise<Application> {
+    const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
+      detail: true,
+    });
+    this.assertApplicantOwns(actor, row);
+    return row;
+  }
+
+  private async createInternal(
+    tenantId: string,
+    applicantEmail: string,
     dto: CreateApplicationDto,
   ): Promise<Application> {
     const template = await this.templates.findOne({
-      where: { id: dto.formTemplateId, tenantId: actor.tenantId },
+      where: { id: dto.formTemplateId, tenantId },
       relations: ['fields'],
     });
     if (!template) {
@@ -272,19 +305,15 @@ export class ApplicationsService {
       this.assertValueMatchesFieldType(field, values[key]);
     }
 
-    const flow = await this.resolveActiveFlow(
-      actor.tenantId,
-      template.id,
-      dto.approvalFlowId,
-    );
+    const flow = await this.resolveActiveFlow(tenantId, template.id, dto.approvalFlowId);
 
     let newId = '';
     await this.apps.manager.transaction(async (em) => {
       const appRepo = em.getRepository(Application);
       const valRepo = em.getRepository(ApplicationFieldValue);
       const app = appRepo.create({
-        tenantId: actor.tenantId,
-        applicantUserId: actor.id,
+        tenantId,
+        applicantEmail,
         formTemplateId: template.id,
         approvalFlowId: flow.id,
         status: ApplicationStatus.DRAFT,
@@ -297,7 +326,7 @@ export class ApplicationsService {
         const field = fieldsByKey.get(key)!;
         await valRepo.save(
           valRepo.create({
-            tenantId: actor.tenantId,
+            tenantId,
             applicationId: saved.id,
             formFieldId: field.id,
             valueJson: val,
@@ -306,7 +335,45 @@ export class ApplicationsService {
       }
     });
 
-    return this.getOneForActor(actor, newId);
+    const created = await this.loadApplicationOrThrow(tenantId, newId, {
+      detail: true,
+    });
+    return created;
+  }
+
+  async create(
+    actor: AuthUserPayload,
+    dto: CreateApplicationDto,
+  ): Promise<Application> {
+    return this.createInternal(actor.tenantId, actor.email, dto);
+  }
+
+  async createForApplicant(
+    actor: ApplicantSession,
+    dto: CreateApplicationDto,
+  ): Promise<Application> {
+    if (dto.formTemplateId !== actor.templateId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    return this.createInternal(actor.tenantId, actor.email, dto);
+  }
+
+  private async loadApplicantEditableApplication(
+    actor: { tenantId: string; email: string },
+    id: string,
+  ): Promise<Application> {
+    const app = await this.apps.findOne({
+      where: {
+        id,
+        tenantId: actor.tenantId,
+        applicantEmail: actor.email,
+      },
+      relations: ['fieldValues'],
+    });
+    if (!app) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
+    }
+    return app;
   }
 
   private async findOpenCorrection(
@@ -326,17 +393,7 @@ export class ApplicationsService {
     id: string,
     dto: PatchApplicationDto,
   ): Promise<Application> {
-    const app = await this.apps.findOne({
-      where: {
-        id,
-        tenantId: actor.tenantId,
-        applicantUserId: actor.id,
-      },
-      relations: ['fieldValues'],
-    });
-    if (!app) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
+    const app = await this.loadApplicantEditableApplication(actor, id);
 
     const template = await this.templates.findOne({
       where: { id: app.formTemplateId, tenantId: actor.tenantId },
@@ -404,6 +461,75 @@ export class ApplicationsService {
     return this.getOneForActor(actor, id);
   }
 
+  async patchForApplicant(
+    actor: ApplicantSession,
+    id: string,
+    dto: PatchApplicationDto,
+  ): Promise<Application> {
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    if (app.formTemplateId !== actor.templateId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+
+    const template = await this.templates.findOne({
+      where: { id: app.formTemplateId, tenantId: actor.tenantId },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    }
+    const fieldsByKey = new Map(
+      (template.fields ?? []).map((f) => [f.fieldKey, f]),
+    );
+
+    if (app.status === ApplicationStatus.RETURNED) {
+      const open = await this.findOpenCorrection(app.id);
+      if (!open?.items?.length) {
+        throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+      }
+      const allowed = new Set(open.items.map((i) => i.formFieldId));
+      for (const key of Object.keys(dto.values)) {
+        const field = fieldsByKey.get(key);
+        if (!field) {
+          throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
+        }
+        if (!allowed.has(field.id)) {
+          throw clientError(
+            ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
+          );
+        }
+      }
+    } else if (app.status !== ApplicationStatus.DRAFT) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+    }
+
+    for (const [key, val] of Object.entries(dto.values)) {
+      const field = fieldsByKey.get(key);
+      if (!field) {
+        throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
+      }
+      this.assertValueMatchesFieldType(field, val);
+      const existing = await this.fieldValues.findOne({
+        where: { applicationId: app.id, formFieldId: field.id },
+      });
+      if (existing) {
+        existing.valueJson = val;
+        await this.fieldValues.save(existing);
+      } else {
+        await this.fieldValues.save(
+          this.fieldValues.create({
+            tenantId: actor.tenantId,
+            applicationId: app.id,
+            formFieldId: field.id,
+            valueJson: val,
+          }),
+        );
+      }
+    }
+
+    return this.getOneForApplicant(actor, id);
+  }
+
   private async assertRequiredSatisfied(
     app: Application,
     fields: FormField[],
@@ -424,17 +550,7 @@ export class ApplicationsService {
   }
 
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
-    const app = await this.apps.findOne({
-      where: {
-        id,
-        tenantId: actor.tenantId,
-        applicantUserId: actor.id,
-      },
-      relations: ['fieldValues'],
-    });
-    if (!app) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
+    const app = await this.loadApplicantEditableApplication(actor, id);
     if (app.status !== ApplicationStatus.DRAFT) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_DRAFT);
     }
@@ -461,6 +577,42 @@ export class ApplicationsService {
     await this.apps.save(app);
 
     return this.getOneForActor(actor, id);
+  }
+
+  async submitForApplicant(
+    actor: ApplicantSession,
+    id: string,
+  ): Promise<Application> {
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    if (app.formTemplateId !== actor.templateId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    if (app.status !== ApplicationStatus.DRAFT) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_DRAFT);
+    }
+
+    const template = await this.templates.findOne({
+      where: { id: app.formTemplateId, tenantId: actor.tenantId },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    }
+
+    await this.assertRequiredSatisfied(app, template.fields ?? []);
+    for (const fv of app.fieldValues ?? []) {
+      const field = (template.fields ?? []).find((x) => x.id === fv.formFieldId);
+      if (field) {
+        this.assertValueMatchesFieldType(field, fv.valueJson);
+      }
+    }
+
+    app.status = ApplicationStatus.IN_REVIEW;
+    app.currentStepOrder = 1;
+    app.submittedAt = new Date();
+    await this.apps.save(app);
+
+    return this.getOneForApplicant(actor, id);
   }
 
   async approve(
@@ -658,17 +810,7 @@ export class ApplicationsService {
   }
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
-    const app = await this.apps.findOne({
-      where: {
-        id,
-        tenantId: actor.tenantId,
-        applicantUserId: actor.id,
-      },
-      relations: ['fieldValues'],
-    });
-    if (!app) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
+    const app = await this.loadApplicantEditableApplication(actor, id);
     if (app.status !== ApplicationStatus.RETURNED) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_RETURNED);
     }
@@ -722,11 +864,86 @@ export class ApplicationsService {
     return this.getOneForActor(actor, id);
   }
 
+  async resubmitForApplicant(
+    actor: ApplicantSession,
+    id: string,
+  ): Promise<Application> {
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    if (app.formTemplateId !== actor.templateId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    if (app.status !== ApplicationStatus.RETURNED) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_RETURNED);
+    }
+
+    const open = await this.correctionRequests.findOne({
+      where: {
+        applicationId: app.id,
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items'],
+    });
+    if (!open) {
+      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
+    }
+
+    const template = await this.templates.findOne({
+      where: { id: app.formTemplateId, tenantId: actor.tenantId },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    }
+
+    await this.assertRequiredSatisfied(app, template.fields ?? []);
+    for (const fv of app.fieldValues ?? []) {
+      const field = (template.fields ?? []).find((x) => x.id === fv.formFieldId);
+      if (field) {
+        this.assertValueMatchesFieldType(field, fv.valueJson);
+      }
+    }
+
+    await this.apps.manager.transaction(async (em) => {
+      const corrRepo = em.getRepository(CorrectionRequest);
+      const itemRepo = em.getRepository(CorrectionRequestItem);
+      const appRepo = em.getRepository(Application);
+
+      open.status = CorrectionRequestStatus.RESOLVED;
+      open.resolvedAt = new Date();
+      await corrRepo.save(open);
+
+      for (const it of open.items ?? []) {
+        it.isResolved = true;
+        await itemRepo.save(it);
+      }
+
+      app.status = ApplicationStatus.IN_REVIEW;
+      app.currentStepOrder = 1;
+      await appRepo.save(app);
+    });
+
+    return this.getOneForApplicant(actor, id);
+  }
+
   async getCorrectionsForActor(actor: AuthUserPayload, id: string) {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: false,
     });
     await this.assertCanRead(actor, app);
+
+    const rows = await this.correctionRequests.find({
+      where: { applicationId: app.id, tenantId: actor.tenantId },
+      relations: ['items', 'items.formField'],
+      order: { createdAt: 'DESC' },
+    });
+    return mapCorrectionsList(rows);
+  }
+
+  async getCorrectionsForApplicant(actor: ApplicantSession, id: string) {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
+      detail: false,
+    });
+    this.assertApplicantOwns(actor, app);
 
     const rows = await this.correctionRequests.find({
       where: { applicationId: app.id, tenantId: actor.tenantId },
@@ -744,6 +961,66 @@ export class ApplicationsService {
       detail: true,
     });
     await this.assertCanRead(actor, app);
+
+    const opens = await this.correctionRequests.find({
+      where: {
+        applicationId: app.id,
+        tenantId: actor.tenantId,
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items', 'items.formField'],
+      order: { createdAt: 'DESC' },
+    });
+    const open = opens[0] ?? null;
+
+    if (!open) {
+      return {
+        applicationId: app.id,
+        applicationStatus: app.status,
+        openCorrection: null,
+      };
+    }
+
+    const valueByFieldId = new Map(
+      (app.fieldValues ?? []).map((v) => [v.formFieldId, v.valueJson]),
+    );
+
+    const items = (open.items ?? []).map((it) => {
+      const ff = it.formField;
+      return {
+        itemId: it.id,
+        formFieldId: it.formFieldId,
+        fieldKey: ff?.fieldKey ?? '',
+        label: ff?.label ?? '',
+        fieldType: ff?.fieldType ?? '',
+        required: ff?.required ?? false,
+        comment: it.comment,
+        currentValue: valueByFieldId.has(it.formFieldId)
+          ? valueByFieldId.get(it.formFieldId)
+          : null,
+      };
+    });
+
+    return {
+      applicationId: app.id,
+      applicationStatus: app.status,
+      openCorrection: {
+        id: open.id,
+        overallComment: open.overallComment,
+        createdAt: open.createdAt.toISOString(),
+        items,
+      },
+    };
+  }
+
+  async getCorrectionTargetsForApplicant(
+    actor: ApplicantSession,
+    applicationId: string,
+  ): Promise<CorrectionTargetsResponseDto> {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, applicationId, {
+      detail: true,
+    });
+    this.assertApplicantOwns(actor, app);
 
     const opens = await this.correctionRequests.find({
       where: {

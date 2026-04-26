@@ -1,6 +1,9 @@
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import {
+  backendApplicantFetchJson,
+  ApplicantBackendHttpError,
+} from "@/lib/server/backend-applicant-fetch";
 import {
   DynamicFieldInput,
   readDynamicValuesFromFormData,
@@ -40,7 +43,7 @@ async function patchApplicationAction(
   const editableSet = new Set(editableFieldKeys);
   const values = readDynamicValuesFromFormData(fields, formData, editableSet);
 
-  await backendAuthFetchJson(`/applications/${applicationId}`, {
+  await backendApplicantFetchJson(`/public/applications/${applicationId}`, {
     method: "PATCH",
     body: { values },
   });
@@ -56,7 +59,7 @@ export default async function ApplicationEditPage({
 }) {
   const { id } = await params;
   try {
-    const appRaw = await backendAuthFetchJson(`/applications/${id}`);
+    const appRaw = await backendApplicantFetchJson(`/public/applications/${id}`);
     const app = unwrapData<ApplicationDetail>(appRaw);
     if (!(app.status === "draft" || app.status === "returned")) {
       return (
@@ -68,10 +71,12 @@ export default async function ApplicationEditPage({
       );
     }
 
-    const templateRaw = await backendAuthFetchJson(`/form-templates/${app.formTemplateId}`);
+    const templateRaw = await backendApplicantFetchJson("/form-templates/public/current");
     const fields = unwrapData<{ fields?: FormField[] }>(templateRaw).fields ?? [];
 
-    const targetsRaw = await backendAuthFetchJson(`/applications/${id}/correction-targets`);
+    const targetsRaw = await backendApplicantFetchJson(
+      `/public/applications/${id}/correction-targets`,
+    );
     const targetItems =
       unwrapData<{ openCorrection?: { items?: CorrectionTargetItem[] } | null }>(targetsRaw)
         .openCorrection?.items ?? [];
@@ -140,7 +145,7 @@ export default async function ApplicationEditPage({
       </div>
     );
   } catch (error) {
-    if (error instanceof BackendHttpError) {
+    if (error instanceof ApplicantBackendHttpError) {
       return (
         <Card>
           <CardContent className="pt-6">

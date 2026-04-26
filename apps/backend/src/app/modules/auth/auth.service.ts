@@ -12,6 +12,13 @@ import type { AccessTokenPayload } from '../../../strategies/jwt.strategy';
 import { UsersService } from '../users/users.service';
 import type { LoginDto, RegisterDto } from './auth.dto';
 
+export type ApplicantAccessTokenPayload = {
+  kind: 'applicant_access';
+  tenantId: string;
+  email: string;
+  templateId: string;
+};
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -88,6 +95,33 @@ export class AuthService {
   /** 招待受諾後など、既存ユーザーに対してログイン相当のトークンを返す */
   issueTokensForUser(user: User) {
     return this.issueTokens(user);
+  }
+
+  issueApplicantAccessToken(input: {
+    tenantId: string;
+    email: string;
+    templateId: string;
+  }): string {
+    const payload: ApplicantAccessTokenPayload = {
+      kind: 'applicant_access',
+      tenantId: input.tenantId,
+      email: input.email,
+      templateId: input.templateId,
+    };
+    return this.jwtService.sign(payload);
+  }
+
+  verifyApplicantAccessToken(token: string): ApplicantAccessTokenPayload {
+    const payload = this.jwtService.verify<ApplicantAccessTokenPayload>(token);
+    if (
+      payload.kind !== 'applicant_access' ||
+      !payload.tenantId ||
+      !payload.email ||
+      !payload.templateId
+    ) {
+      throw clientError(ClientErrorCodes.AUTH_JWT_UNAUTHORIZED);
+    }
+    return payload;
   }
 
   private issueTokens(user: User) {

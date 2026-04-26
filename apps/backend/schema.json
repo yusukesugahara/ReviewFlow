@@ -1032,6 +1032,92 @@
         ]
       }
     },
+    "/form-templates/public/current": {
+      "get": {
+        "operationId": "FormTemplatesController_getCurrentForApplicant",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請用の現在テンプレート取得",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
+    "/form-templates/public/current/approval-flows": {
+      "get": {
+        "operationId": "FormTemplatesController_listCurrentFlowsForApplicant",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalFlowsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請用の有効な承認フロー一覧",
+        "tags": [
+          "form-templates"
+        ]
+      }
+    },
     "/approval-flows": {
       "get": {
         "operationId": "ApprovalFlowsController_list",
@@ -1771,6 +1857,463 @@
         ]
       }
     },
+    "/public/applications/session": {
+      "get": {
+        "operationId": "PublicApplicationsController_session",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicantSessionResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請セッション情報",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications": {
+      "get": {
+        "operationId": "PublicApplicationsController_list",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請一覧",
+        "tags": [
+          "public-applications"
+        ]
+      },
+      "post": {
+        "operationId": "PublicApplicationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationCreateResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請作成（下書き）",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}": {
+      "get": {
+        "operationId": "PublicApplicationsController_getOne",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請詳細",
+        "tags": [
+          "public-applications"
+        ]
+      },
+      "patch": {
+        "operationId": "PublicApplicationsController_patch",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請更新",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}/submit": {
+      "post": {
+        "operationId": "PublicApplicationsController_submit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請提出",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}/resubmit": {
+      "post": {
+        "operationId": "PublicApplicationsController_resubmit",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請再提出",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}/correction-targets": {
+      "get": {
+        "operationId": "PublicApplicationsController_correctionTargets",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CorrectionTargetsResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請の修正対象取得",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}/corrections": {
+      "get": {
+        "operationId": "PublicApplicationsController_corrections",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/CorrectionsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請の差し戻し履歴",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
     "/export-jobs": {
       "post": {
         "operationId": "ExportJobsController_create",
@@ -1990,8 +2533,7 @@
             "example": "approver",
             "enum": [
               "tenant_admin",
-              "approver",
-              "applicant"
+              "approver"
             ]
           }
         },
@@ -2226,8 +2768,7 @@
             "example": "approver",
             "enum": [
               "tenant_admin",
-              "approver",
-              "applicant"
+              "approver"
             ]
           }
         },
@@ -2667,7 +3208,7 @@
           "approvalFlowId": {
             "type": "string"
           },
-          "applicantUserId": {
+          "applicantEmail": {
             "type": "string"
           },
           "currentStepOrder": {
@@ -2690,7 +3231,7 @@
           "status",
           "formTemplateId",
           "approvalFlowId",
-          "applicantUserId",
+          "applicantEmail",
           "createdAt",
           "updatedAt"
         ]
@@ -2764,7 +3305,7 @@
           "approvalFlowId": {
             "type": "string"
           },
-          "applicantUserId": {
+          "applicantEmail": {
             "type": "string"
           },
           "currentStepOrder": {
@@ -2792,7 +3333,7 @@
           "status",
           "formTemplateId",
           "approvalFlowId",
-          "applicantUserId",
+          "applicantEmail",
           "createdAt",
           "updatedAt",
           "values"
@@ -3028,6 +3569,10 @@
         "required": [
           "values"
         ]
+      },
+      "ApplicantSessionResponseDto": {
+        "type": "object",
+        "properties": {}
       },
       "ExportJobResponseDto": {
         "type": "object",

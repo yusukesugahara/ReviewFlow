@@ -11,7 +11,7 @@ async function requestAccessAction(formData: FormData): Promise<void> {
   const email = formData.get("email");
 
   if (typeof templateId !== "string" || typeof email !== "string" || email.trim().length === 0) {
-    redirect("/login");
+    redirect(`/apply/${encodeURIComponent(String(templateId ?? ""))}?error=invalid_input`);
   }
 
   const env = getServerAuthEnv();

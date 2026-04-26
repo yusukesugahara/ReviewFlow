@@ -215,7 +215,7 @@ export class ApplicationSummaryDto {
   approvalFlowId!: string;
 
   @ApiProperty()
-  applicantUserId!: string;
+  applicantEmail!: string;
 
   @ApiPropertyOptional({ nullable: true })
   currentStepOrder!: number | null;

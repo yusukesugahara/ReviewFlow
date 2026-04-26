@@ -10,7 +10,7 @@ type TenantUserSummary = {
   id: string;
   email: string;
   name: string | null;
-  role: "tenant_admin" | "approver" | "applicant" | string;
+  role: "tenant_admin" | "approver" | string;
   isActive: boolean;
   createdAt: string;
 };
@@ -28,8 +28,6 @@ function roleLabel(role: string) {
       return "管理者";
     case "approver":
       return "承認者";
-    case "applicant":
-      return "申請者";
     default:
       return role;
   }
@@ -107,12 +105,11 @@ export default async function AdminUsersPage() {
                           <select
                             name="role"
                             defaultValue={user.role}
-                            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                          >
-                            <option value="tenant_admin">管理者</option>
-                            <option value="approver">承認者</option>
-                            <option value="applicant">申請者</option>
-                          </select>
+                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                        >
+                          <option value="tenant_admin">管理者</option>
+                          <option value="approver">承認者</option>
+                        </select>
                           <Button size="sm" type="submit" variant="outline">
                             更新
                           </Button>

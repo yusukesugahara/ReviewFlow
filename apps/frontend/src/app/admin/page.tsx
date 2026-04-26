@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MetricCard } from "./_components/metric-card";
 
-type AppSummary = { id: string; status: string; applicantUserId: string };
+type AppSummary = { id: string; status: string; applicantEmail: string };
 type CorrectionEntry = { id: string };
 
 function unwrapData<T>(raw: unknown): T {

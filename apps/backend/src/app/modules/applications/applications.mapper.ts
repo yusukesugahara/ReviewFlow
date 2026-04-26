@@ -14,7 +14,7 @@ export function mapApplicationToSummary(row: Application): ApplicationSummaryDto
     status: row.status,
     formTemplateId: row.formTemplateId,
     approvalFlowId: row.approvalFlowId,
-    applicantUserId: row.applicantUserId,
+    applicantEmail: row.applicantEmail,
     currentStepOrder: row.currentStepOrder,
     submittedAt: row.submittedAt ? row.submittedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),

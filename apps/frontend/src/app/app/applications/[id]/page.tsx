@@ -1,7 +1,10 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import {
+  backendApplicantFetchJson,
+  ApplicantBackendHttpError,
+} from "@/lib/server/backend-applicant-fetch";
 import { renderFieldValue } from "@/lib/form-field-value";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -77,7 +80,7 @@ function getStatusLabel(status: string): string {
 
 async function submitAction(applicationId: string): Promise<void> {
   "use server";
-  await backendAuthFetchJson(`/applications/${applicationId}/submit`, {
+  await backendApplicantFetchJson(`/public/applications/${applicationId}/submit`, {
     method: "POST",
     body: {},
   });
@@ -87,7 +90,7 @@ async function submitAction(applicationId: string): Promise<void> {
 
 async function resubmitAction(applicationId: string): Promise<void> {
   "use server";
-  await backendAuthFetchJson(`/applications/${applicationId}/resubmit`, {
+  await backendApplicantFetchJson(`/public/applications/${applicationId}/resubmit`, {
     method: "POST",
     body: {},
   });
@@ -102,15 +105,15 @@ export default async function ApplicationDetailPage({
 }) {
   const { id } = await params;
   try {
-    const detailRaw = await backendAuthFetchJson(`/applications/${id}`);
+    const detailRaw = await backendApplicantFetchJson(`/public/applications/${id}`);
     const app = unwrapData<ApplicationDetail>(detailRaw);
-    const templateRaw = await backendAuthFetchJson(`/form-templates/${app.formTemplateId}`);
+    const templateRaw = await backendApplicantFetchJson("/form-templates/public/current");
     const fields = unwrapData<{ fields?: FormField[] }>(templateRaw).fields ?? [];
-    const correctionsRaw = await backendAuthFetchJson(`/applications/${id}/corrections`);
+    const correctionsRaw = await backendApplicantFetchJson(`/public/applications/${id}/corrections`);
     const corrections =
       unwrapData<{ corrections?: Correction[] }>(correctionsRaw).corrections ?? [];
-    const correctionTargetsRaw = await backendAuthFetchJson(
-      `/applications/${id}/correction-targets`,
+    const correctionTargetsRaw = await backendApplicantFetchJson(
+      `/public/applications/${id}/correction-targets`,
     );
     const openItems =
       unwrapData<{ openCorrection?: { items?: CorrectionTargetItem[] } | null }>(
@@ -261,7 +264,7 @@ export default async function ApplicationDetailPage({
       </div>
     );
   } catch (error) {
-    if (error instanceof BackendHttpError) {
+    if (error instanceof ApplicantBackendHttpError) {
       return (
         <Card>
           <CardContent className="pt-6">

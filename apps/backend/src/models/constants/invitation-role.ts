@@ -4,7 +4,6 @@ import { UserRole } from './user-role';
 export const InvitationAssignableRole = {
   TENANT_ADMIN: UserRole.TENANT_ADMIN,
   APPROVER: UserRole.APPROVER,
-  APPLICANT: UserRole.APPLICANT,
 } as const;
 
 export type InvitationAssignableRoleValue =
@@ -13,5 +12,4 @@ export type InvitationAssignableRoleValue =
 export const INVITATION_ASSIGNABLE_ROLES: InvitationAssignableRoleValue[] = [
   InvitationAssignableRole.TENANT_ADMIN,
   InvitationAssignableRole.APPROVER,
-  InvitationAssignableRole.APPLICANT,
 ];

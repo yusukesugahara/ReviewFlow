@@ -4,17 +4,16 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { randomBytes } from 'node:crypto';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { FormTemplateStatus } from '../../../models/constants/form-template-status';
-import { InvitationStatus } from '../../../models/constants/invitation-status';
-import { UserRole } from '../../../models/constants/user-role';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
-import { Invitation } from '../../../models/entities/invitation.entity';
-import { User } from '../../../models/entities/user.entity';
 import { MailService } from '../mail/mail.service';
+import {
+  AuthService,
+  type ApplicantAccessTokenPayload,
+} from '../auth/auth.service';
 import type {
   CreateFormFieldDto,
   CreateFormTemplateDto,
@@ -26,8 +25,6 @@ import {
   mapFormTemplateToDto,
 } from './form-templates.mapper';
 
-const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
-
 @Injectable()
 export class FormTemplatesService {
   private readonly logger = new Logger(FormTemplatesService.name);
@@ -37,11 +34,8 @@ export class FormTemplatesService {
     private readonly templates: Repository<FormTemplate>,
     @InjectRepository(FormField)
     private readonly fields: Repository<FormField>,
-    @InjectRepository(Invitation)
-    private readonly invitations: Repository<Invitation>,
-    @InjectRepository(User)
-    private readonly users: Repository<User>,
     private readonly mailService: MailService,
+    private readonly authService: AuthService,
   ) {}
 
   async listByTenant(tenantId: string): Promise<FormTemplate[]> {
@@ -231,6 +225,23 @@ export class FormTemplatesService {
     return t;
   }
 
+  async getPublishedTemplateForApplicant(
+    actor: ApplicantAccessTokenPayload,
+  ): Promise<FormTemplate> {
+    const template = await this.templates.findOne({
+      where: {
+        id: actor.templateId,
+        tenantId: actor.tenantId,
+        status: FormTemplateStatus.PUBLISHED,
+      },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    }
+    return template;
+  }
+
   async requestAccess(templateId: string, dto: RequestFormAccessDto) {
     const template = await this.templates.findOne({
       where: { id: templateId, status: FormTemplateStatus.PUBLISHED },
@@ -240,57 +251,19 @@ export class FormTemplatesService {
     }
 
     const email = dto.email.toLowerCase();
-    const applicationPath = `/app/applications/new?templateId=${encodeURIComponent(template.id)}`;
-    const existingUser = await this.users.findOne({
-      where: { tenantId: template.tenantId, email },
+    const accessToken = this.authService.issueApplicantAccessToken({
+      tenantId: template.tenantId,
+      email,
+      templateId: template.id,
     });
-    let createdInvitationId: string | null = null;
 
     try {
-      if (existingUser) {
-        await this.mailService.sendApplicationAccessEmail({
-          to: email,
-          applicationPath,
-          templateName: template.name,
-        });
-        return { accepted: true as const };
-      }
-
-      let invitation = await this.invitations.findOne({
-        where: {
-          tenantId: template.tenantId,
-          email,
-          status: InvitationStatus.PENDING,
-        },
-      });
-      if (!invitation) {
-        invitation = this.invitations.create({
-          tenantId: template.tenantId,
-          email,
-          role: UserRole.APPLICANT,
-          token: randomBytes(32).toString('hex'),
-          status: InvitationStatus.PENDING,
-          invitedByUserId: template.createdByUserId,
-          expiresAt: new Date(Date.now() + INVITE_TTL_MS),
-        });
-        invitation = await this.invitations.save(invitation);
-        createdInvitationId = invitation.id;
-      }
-
-      await this.mailService.sendInvitationEmail({
-        to: invitation.email,
-        invitedByEmail: 'ReviewFlow',
-        acceptToken: invitation.token,
-        expiresAtIso: invitation.expiresAt.toISOString(),
-        role: invitation.role,
-        nextPath: applicationPath,
+      await this.mailService.sendApplicationAccessEmail({
+        to: email,
+        templateName: template.name,
+        accessToken,
       });
     } catch (error) {
-      if (createdInvitationId) {
-        await this.invitations
-          .delete(createdInvitationId)
-          .catch(() => undefined);
-      }
       this.logger.error(
         `failed to send form access email for template ${template.id} to ${email}`,
         error instanceof Error ? error.stack : undefined,

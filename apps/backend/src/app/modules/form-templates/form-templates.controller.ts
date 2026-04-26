@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Post,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -16,12 +17,15 @@ import {
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
 } from '../../decorators';
+import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
+import { CurrentApplicantSession } from '../../../decorators/current-applicant-session.decorator';
 import {
   CurrentUser,
   type AuthUserPayload,
 } from '../../../decorators/current-user.decorator';
 import { Roles } from '../../../decorators/roles.decorator';
 import { UserRole } from '../../../models/constants/user-role';
+import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
 import {
@@ -36,11 +40,16 @@ import {
   UpdateFormFieldSettingsDto,
 } from './form-templates.dto';
 import { FormTemplatesService } from './form-templates.service';
+import { ApprovalFlowsService } from '../approval-flows/approval-flows.service';
+import { ApprovalFlowsListResponseDto } from '../approval-flows/approval-flows.dto';
 
 @ApiTags('form-templates')
 @Controller('form-templates')
 export class FormTemplatesController {
-  constructor(private readonly formTemplates: FormTemplatesService) {}
+  constructor(
+    private readonly formTemplates: FormTemplatesService,
+    private readonly approvalFlows: ApprovalFlowsService,
+  ) {}
 
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
@@ -199,5 +208,35 @@ export class FormTemplatesController {
     @Body() dto: RequestFormAccessDto,
   ): Promise<SuccessResponse<RequestFormAccessResponseDto>> {
     return successResponse(await this.formTemplates.requestAccess(id, dto));
+  }
+
+  @Api()
+  @UseGuards(ApplicantAccessGuard)
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get('public/current')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '公開申請用の現在テンプレート取得' })
+  @ApiSuccessResponse(FormTemplateResponseDto)
+  async getCurrentForApplicant(
+    @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
+  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
+    const row = await this.formTemplates.getPublishedTemplateForApplicant(actor);
+    return successResponse(this.formTemplates.toResponse(row));
+  }
+
+  @Api()
+  @UseGuards(ApplicantAccessGuard)
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get('public/current/approval-flows')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '公開申請用の有効な承認フロー一覧' })
+  @ApiSuccessResponse(ApprovalFlowsListResponseDto)
+  async listCurrentFlowsForApplicant(
+    @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
+  ): Promise<SuccessResponse<ApprovalFlowsListResponseDto>> {
+    const rows = await this.approvalFlows.listActiveForApplicant(actor);
+    return successResponse({
+      flows: rows.map((row) => this.approvalFlows.toDto(row)),
+    });
   }
 }

@@ -1,5 +1,8 @@
 import Link from "next/link";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import {
+  backendApplicantFetchJson,
+  ApplicantBackendHttpError,
+} from "@/lib/server/backend-applicant-fetch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -47,7 +50,7 @@ function getStatusLabel(status: string): string {
 
 export default async function ApplicantApplicationsPage() {
   try {
-    const raw = await backendAuthFetchJson("/applications");
+    const raw = await backendApplicantFetchJson("/public/applications");
     const rows =
       unwrapData<{ applications?: ApplicationRow[] }>(raw).applications ?? [];
     return (
@@ -118,7 +121,7 @@ export default async function ApplicantApplicationsPage() {
       </div>
     );
   } catch (error) {
-    if (error instanceof BackendHttpError) {
+    if (error instanceof ApplicantBackendHttpError) {
       return (
         <Card>
           <CardContent className="pt-6">

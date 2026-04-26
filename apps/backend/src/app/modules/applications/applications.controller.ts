@@ -46,7 +46,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get()
-  @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '申請一覧（ロールに応じたスコープ）' })
   @ApiSuccessResponse(ApplicationsListResponseDto)
@@ -162,7 +162,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id/correction-targets')
-  @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '修正対象取得（オープンな correction + 現在値）',
@@ -184,7 +184,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id/corrections')
-  @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '差し戻し履歴（correction_requests）',
@@ -202,7 +202,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id')
-  @Roles(UserRole.APPLICANT, UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '申請詳細（field_key → 値）' })
   @ApiSuccessResponse(ApplicationDetailDto)
