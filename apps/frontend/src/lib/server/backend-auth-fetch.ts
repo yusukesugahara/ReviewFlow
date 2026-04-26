@@ -14,7 +14,7 @@ export class BackendHttpError extends Error {
 }
 
 type BackendAuthFetchOptions = {
-  method?: "GET" | "POST" | "PATCH";
+  method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
 };
 
@@ -42,7 +42,11 @@ export async function backendAuthFetchJson(
 
   const body: unknown = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new BackendHttpError(res.status, body, `backend request failed: ${path}`);
+    throw new BackendHttpError(
+      res.status,
+      body,
+      `backend request failed: ${path}`,
+    );
   }
   return body;
 }

@@ -52,7 +52,7 @@ export class UsersController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get()
-  @Roles(UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'テナント内ユーザー一覧（tenant_admin）' })
   @ApiSuccessResponse(TenantUsersListResponseDto)

@@ -1,8 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
-import { UserRole, type UserRoleValue } from '../../../models/constants/user-role';
+import {
+  UserRole,
+  type UserRoleValue,
+} from '../../../models/constants/user-role';
 import { User } from '../../../models/entities/user.entity';
 
 @Injectable()
@@ -26,10 +29,7 @@ export class UsersService {
     });
   }
 
-  findByTenantAndEmail(
-    tenantId: string,
-    email: string,
-  ): Promise<User | null> {
+  findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.users.findOne({
       where: { tenantId, email: email.toLowerCase() },
     });
@@ -42,6 +42,16 @@ export class UsersService {
   findAllByTenant(tenantId: string): Promise<User[]> {
     return this.users.find({
       where: { tenantId },
+      order: { createdAt: 'ASC' },
+    });
+  }
+
+  findAllByIdsInTenant(tenantId: string, ids: string[]): Promise<User[]> {
+    if (!ids.length) {
+      return Promise.resolve([]);
+    }
+    return this.users.find({
+      where: { tenantId, id: In(ids) },
       order: { createdAt: 'ASC' },
     });
   }

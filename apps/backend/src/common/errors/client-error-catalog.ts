@@ -66,6 +66,30 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'At least one tenant_admin must remain in the workspace',
   },
+  GROUP_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'Space not found in this workspace',
+  },
+  GROUP_NAME_EXISTS: {
+    status: HttpStatus.CONFLICT,
+    message: 'A space with this name already exists in the workspace',
+  },
+  GROUP_MEMBER_EXISTS: {
+    status: HttpStatus.CONFLICT,
+    message: 'User is already a member of this space',
+  },
+  GROUP_MEMBER_NOT_FOUND: {
+    status: HttpStatus.NOT_FOUND,
+    message: 'User is not a member of this space',
+  },
+  GROUP_ADMIN_REQUIRED: {
+    status: HttpStatus.FORBIDDEN,
+    message: 'Space admin permission is required',
+  },
+  LAST_GROUP_ADMIN_PROTECTED: {
+    status: HttpStatus.CONFLICT,
+    message: 'At least one space admin must remain in the space',
+  },
   FORM_TEMPLATE_NOT_FOUND: {
     status: HttpStatus.NOT_FOUND,
     message: 'Form template not found in this workspace',

@@ -11,6 +11,7 @@ import { ApplicationsModule } from './modules/applications/applications.module';
 import { ApprovalFlowsModule } from './modules/approval-flows/approval-flows.module';
 import { ExportJobsModule } from './modules/export-jobs/export-jobs.module';
 import { FormTemplatesModule } from './modules/form-templates/form-templates.module';
+import { GroupsModule } from './modules/groups/groups.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditLogInterceptor } from '../common/logging/audit-log.interceptor';
@@ -83,6 +84,7 @@ const throttlerModule = ThrottlerModule.forRootAsync({
     MailModule,
     InvitationsModule,
     FormTemplatesModule,
+    GroupsModule,
     ApprovalFlowsModule,
     ApplicationsModule,
     ExportJobsModule,

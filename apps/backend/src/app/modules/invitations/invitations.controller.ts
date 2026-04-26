@@ -1,10 +1,4 @@
-import {
-  Body,
-  Controller,
-  HttpCode,
-  HttpStatus,
-  Post,
-} from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
@@ -38,8 +32,8 @@ export class InvitationsController {
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Roles(UserRole.TENANT_ADMIN)
-  @ApiOperation({ summary: 'メンバー招待（tenant_admin）' })
+  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
+  @ApiOperation({ summary: 'メンバー招待（tenant_admin / platform_admin）' })
   @ApiSuccessResponseCreated(CreateInvitationResponseDto)
   async create(
     @Body() dto: CreateInvitationDto,

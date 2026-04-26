@@ -13,6 +13,8 @@ import { ApprovalStep } from '../models/entities/approval-step.entity';
 import { ExportJob } from '../models/entities/export-job.entity';
 import { FormField } from '../models/entities/form-field.entity';
 import { FormTemplate } from '../models/entities/form-template.entity';
+import { GroupMember } from '../models/entities/group-member.entity';
+import { Group } from '../models/entities/group.entity';
 import { Invitation } from '../models/entities/invitation.entity';
 import { Tenant } from '../models/entities/tenant.entity';
 import { User } from '../models/entities/user.entity';
@@ -42,6 +44,8 @@ export function buildTypeOrmOptions(
     ApprovalStep,
     FormField,
     FormTemplate,
+    Group,
+    GroupMember,
     Invitation,
     Tenant,
     User,
