@@ -33,6 +33,7 @@ type FieldPayload = {
 type PageProps = {
   searchParams?: Promise<{
     setupError?: string;
+    setupStatus?: string;
   }>;
 };
 
@@ -168,6 +169,17 @@ function setupErrorMessage(error?: string): string | null {
   }
 }
 
+function setupStatusMessage(status?: string): string | null {
+  switch (status) {
+    case "draft_saved":
+      return "下書きを保存しました。";
+    case "published":
+      return "申請を公開しました。";
+    default:
+      return null;
+  }
+}
+
 async function submitApplicationSetupAction(formData: FormData): Promise<void> {
   "use server";
 
@@ -243,29 +255,21 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
       error.status === 409
     ) {
       revalidatePath("/admin/application-setup");
-      revalidatePath("/admin/template-management");
-      redirect(
-        `/admin/template-management?status=draft&createdId=${encodeURIComponent(
-          createdId,
-        )}&setupError=approval_flow_requires_publish`,
-      );
+      redirect("/admin/application-setup?setupError=approval_flow_requires_publish");
     }
     redirect("/admin/application-setup?setupError=save_failed");
   }
 
   revalidatePath("/admin/application-setup");
-  revalidatePath("/admin/template-management");
-  revalidatePath("/admin/approval-flows");
   redirect(
-    `/admin/template-management?status=${resolvedIntent === "publish" ? "published" : "draft"}&createdId=${encodeURIComponent(
-      createdId,
-    )}`,
+    `/admin/application-setup?setupStatus=${resolvedIntent === "publish" ? "published" : "draft_saved"}`,
   );
 }
 
 export default async function AdminApplicationSetupPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const errorMessage = setupErrorMessage(params.setupError);
+  const statusMessage = setupStatusMessage(params.setupStatus);
 
   return (
     <div className="space-y-8">
@@ -279,6 +283,7 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
       <ApplicationSetupDraftForm
         action={submitApplicationSetupAction}
         errorMessage={errorMessage}
+        statusMessage={statusMessage}
       />
     </div>
   );

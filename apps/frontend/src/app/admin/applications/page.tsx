@@ -5,6 +5,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
+type FormTemplateRow = {
+  id: string;
+  name: string;
+  status: string;
+  createdAt?: string;
+};
+
 type ApplicationRow = {
   id: string;
   status: string;
@@ -54,27 +61,35 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
   try {
     const params = (await searchParams) ?? {};
     const activeStatus = params.status === "draft" ? "draft" : "published";
-    const raw = await backendAuthFetchJson("/applications");
-    const rows =
-      unwrapData<{ applications?: ApplicationRow[] }>(raw).applications ?? [];
-    const publishedRows = rows.filter((row) => row.status !== "draft");
-    const draftRows = rows.filter((row) => row.status === "draft");
-    const visibleRows = activeStatus === "draft" ? draftRows : publishedRows;
+    const [templatesRaw, applicationsRaw] = await Promise.all([
+      backendAuthFetchJson("/form-templates"),
+      backendAuthFetchJson("/applications"),
+    ]);
+
+    const templates =
+      unwrapData<{ templates?: FormTemplateRow[] }>(templatesRaw).templates ?? [];
+    const applicationRows =
+      unwrapData<{ applications?: ApplicationRow[] }>(applicationsRaw).applications ?? [];
+
+    const publishedTemplates = templates.filter((row) => row.status === "published");
+    const draftTemplates = templates.filter((row) => row.status !== "published");
+    const visibleTemplates =
+      activeStatus === "draft" ? draftTemplates : publishedTemplates;
 
     return (
       <div className="space-y-6">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
           <p className="text-muted-foreground">
-            テナント内のすべての申請を管理できます
+            申請作成画面で作成した申請定義と、提出済みの申請を確認できます
           </p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>申請</CardTitle>
+            <CardTitle>申請作成一覧</CardTitle>
             <CardDescription>
-              {rows.length}件の申請があります
+              {templates.length}件の申請定義があります
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -87,7 +102,7 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
                     : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                公開済み ({publishedRows.length})
+                申請 ({publishedTemplates.length})
               </Link>
               <Link
                 href="/admin/applications?status=draft"
@@ -97,17 +112,70 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
                     : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                下書き ({draftRows.length})
+                下書き ({draftTemplates.length})
               </Link>
             </div>
-            {rows.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">申請はまだありません</p>
-            ) : visibleRows.length === 0 ? (
+            {templates.length === 0 ? (
+              <p className="py-8 text-center text-muted-foreground">申請作成データはまだありません</p>
+            ) : visibleTemplates.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
                 {activeStatus === "draft"
-                  ? "下書きの申請はありません"
+                  ? "下書きはありません"
                   : "公開済みの申請はありません"}
               </p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>申請名</TableHead>
+                    <TableHead>ステータス</TableHead>
+                    <TableHead>作成日時</TableHead>
+                    <TableHead className="text-right">操作</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {visibleTemplates.map((template) => (
+                    <TableRow key={template.id}>
+                      <TableCell>
+                        <div className="font-medium text-slate-900">{template.name}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={template.status === "published" ? "default" : "outline"}>
+                          {template.status === "published" ? "公開済み" : "下書き"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {template.createdAt
+                          ? new Date(template.createdAt).toLocaleString("ja-JP")
+                          : "-"}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button asChild variant="ghost" size="sm">
+                          <Link
+                            href={`/admin/template-management/${encodeURIComponent(template.id)}`}
+                          >
+                            詳細
+                          </Link>
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>提出済み申請一覧</CardTitle>
+            <CardDescription>
+              {applicationRows.length}件の提出済み申請があります
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {applicationRows.length === 0 ? (
+              <p className="py-8 text-center text-muted-foreground">提出済み申請はまだありません</p>
             ) : (
               <Table>
                 <TableHeader>
@@ -120,7 +188,7 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleRows.map((r) => (
+                  {applicationRows.map((r) => (
                     <TableRow key={r.id}>
                       <TableCell>
                         <Badge variant={getStatusBadgeVariant(r.status)}>

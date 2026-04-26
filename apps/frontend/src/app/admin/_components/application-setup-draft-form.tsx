@@ -25,6 +25,7 @@ export type DraftField = {
 type ApplicationSetupDraftFormProps = {
   action: (formData: FormData) => void | Promise<void>;
   errorMessage?: string | null;
+  statusMessage?: string | null;
 };
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -122,7 +123,11 @@ function FieldPreview({ field, index }: { field: DraftField; index: number }) {
   );
 }
 
-export function ApplicationSetupDraftForm({ action, errorMessage }: ApplicationSetupDraftFormProps) {
+export function ApplicationSetupDraftForm({
+  action,
+  errorMessage,
+  statusMessage,
+}: ApplicationSetupDraftFormProps) {
   const [fields, setFields] = useState<DraftField[]>([createDefaultField(0)]);
 
   const fieldsJson = useMemo(() => JSON.stringify(fields), [fields]);
@@ -154,6 +159,12 @@ export function ApplicationSetupDraftForm({ action, errorMessage }: ApplicationS
       {errorMessage ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {errorMessage}
+        </p>
+      ) : null}
+
+      {statusMessage ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
+          {statusMessage}
         </p>
       ) : null}
 

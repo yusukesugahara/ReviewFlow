@@ -52,10 +52,7 @@ export default async function AdminDashboardPage() {
             </div>
             <div className="flex flex-wrap gap-2">
               <Button asChild size="sm">
-                <Link href="/admin/template-management">フォーム管理</Link>
-              </Button>
-              <Button asChild size="sm" variant="outline">
-                <Link href="/admin/approval-flows">承認フロー作成</Link>
+                <Link href="/admin/application-setup">申請作成</Link>
               </Button>
               <Button asChild size="sm" variant="outline">
                 <Link href="/admin/applications">申請一覧を見る</Link>

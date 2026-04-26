@@ -5,7 +5,6 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { ApplicationSetupSubnav } from "../../_components/application-setup-subnav";
 
 type FormField = {
   id: string;
@@ -46,7 +45,6 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <ApplicationSetupSubnav />
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">フォーム詳細</h2>
@@ -54,7 +52,7 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline">
-            <Link href="/admin/template-management">フォーム管理へ戻る</Link>
+            <Link href="/admin/application-setup">申請作成へ戻る</Link>
           </Button>
         </div>
       </div>
