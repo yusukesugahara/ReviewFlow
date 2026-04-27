@@ -4,20 +4,20 @@ import { AdminNavLink } from "./_components/admin-nav-link";
 
 export const dynamic = "force-dynamic";
 
-type AdminLayoutProps = {
+type RootSpaceLayoutProps = {
   children: ReactNode;
 };
 
-export default function AdminLayout({ children }: AdminLayoutProps) {
+export default function RootSpaceLayout({ children }: RootSpaceLayoutProps) {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col bg-slate-50">
       <div className="border-b border-slate-200 bg-white/90 backdrop-blur-xl">
         <div className="mx-auto flex h-16 w-full max-w-7xl items-center px-6">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-slate-900">
-              管理者コンソール
+              スペース管理コンソール
             </h1>
-            <p className="text-xs text-slate-500">ReviewFlow Admin Workspace</p>
+            <p className="text-xs text-slate-500">ReviewFlow Space Workspace</p>
           </div>
         </div>
       </div>
@@ -47,18 +47,6 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           >
             ユーザー一覧
           </Link>
-          <Link
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-            href="/admin/spaces"
-          >
-            スペース管理
-          </Link>
-          <Link
-            className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-            href="/admin/invitations"
-          >
-            ユーザー招待
-          </Link>
         </nav>
         <aside className="hidden w-[240px] shrink-0 self-start overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg md:sticky md:top-24 md:block lg:w-[260px]">
           <div className="border-b border-slate-800 px-4 py-3 text-xs font-medium uppercase tracking-wide text-slate-400">
@@ -71,16 +59,12 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </AdminNavLink>
             <AdminNavLink href="/space/applications">申請一覧</AdminNavLink>
             <AdminNavLink href="/space/users">ユーザー一覧</AdminNavLink>
-            <AdminNavLink href="/admin/spaces">スペース管理</AdminNavLink>
-            <AdminNavLink href="/admin/invitations">ユーザー招待</AdminNavLink>
-            <AdminNavLink href="/admin/export-jobs">CSVジョブ</AdminNavLink>
-            <AdminNavLink href="/admin/audit-logs">監査ログ</AdminNavLink>
           </nav>
         </aside>
         <main className="relative flex w-full flex-col overflow-hidden">
           <div className="mx-auto w-full max-w-5xl">{children}</div>
           <footer className="mt-10 border-t border-slate-200 py-5 text-xs text-slate-500">
-            <p>ReviewFlow Admin ・ ヘルプ: support@reviewflow.local</p>
+            <p>ReviewFlow Space ・ ヘルプ: support@reviewflow.local</p>
           </footer>
         </main>
       </div>

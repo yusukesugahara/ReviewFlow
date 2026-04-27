@@ -1,30 +1,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import {
   backendAuthFetchJson,
   BackendHttpError,
 } from "@/lib/server/backend-auth-fetch";
 import { SpaceManagementHeader } from "./_components/space-management-header";
+import { SpaceList } from "./_components/space-list";
 
-type GroupSummary = {
+export type GroupSummary = {
   id: string;
   name: string;
   description: string | null;
@@ -33,7 +18,7 @@ type GroupSummary = {
   updatedAt: string;
 };
 
-type GroupMemberSummary = {
+export type GroupMemberSummary = {
   id: string;
   groupId: string;
   userId: string;
@@ -53,7 +38,7 @@ type TenantUserSummary = {
   createdAt: string;
 };
 
-type AvailableUserSummary = {
+export type AvailableUserSummary = {
   id: string;
   email: string;
   name: string | null;
@@ -66,8 +51,36 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
-function groupRoleLabel(role: string) {
-  return role === "admin" ? "スペース管理者" : "スペースユーザー";
+function spaceErrorMessage(error: unknown, fallback: string) {
+  if (!(error instanceof BackendHttpError)) {
+    return fallback;
+  }
+
+  const body = error.body;
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+
+  if (error.status === 403) {
+    return "この操作を実行する権限がありません";
+  }
+  if (error.status === 409) {
+    return "同じ名前のスペース、または既存のメンバーと重複しています";
+  }
+  if (error.status === 400) {
+    return "入力内容を確認してください";
+  }
+  return `${fallback}（status: ${error.status}）`;
+}
+
+function redirectWithSpaceError(error: unknown, fallback: string): never {
+  const nextParams = new URLSearchParams({
+    error: spaceErrorMessage(error, fallback),
+  });
+  redirect(`/admin/spaces?${nextParams.toString()}`);
 }
 
 async function createSpaceAction(formData: FormData): Promise<void> {
@@ -82,15 +95,19 @@ async function createSpaceAction(formData: FormData): Promise<void> {
     return;
   }
 
-  await backendAuthFetchJson("/groups", {
-    method: "POST",
-    body: {
-      name: name.trim(),
-      description:
-        typeof description === "string" ? description.trim() : undefined,
-      adminUserIds,
-    },
-  });
+  try {
+    await backendAuthFetchJson("/groups", {
+      method: "POST",
+      body: {
+        name: name.trim(),
+        description:
+          typeof description === "string" ? description.trim() : undefined,
+        adminUserIds,
+      },
+    });
+  } catch (error) {
+    redirectWithSpaceError(error, "スペースの作成に失敗しました");
+  }
 
   revalidatePath("/admin/spaces");
   redirect("/admin/spaces");
@@ -108,10 +125,49 @@ async function addMemberAction(
     return;
   }
 
-  await backendAuthFetchJson(`/groups/${groupId}/members`, {
-    method: "POST",
-    body: { userId, role },
-  });
+  try {
+    await backendAuthFetchJson(`/groups/${groupId}/members`, {
+      method: "POST",
+      body: { userId, role },
+    });
+  } catch (error) {
+    redirectWithSpaceError(error, "スペースメンバーの追加に失敗しました");
+  }
+
+  revalidatePath("/admin/spaces");
+  redirect("/admin/spaces");
+}
+
+async function inviteSpaceMemberAction(
+  groupId: string,
+  formData: FormData,
+): Promise<void> {
+  "use server";
+  const email = formData.get("email");
+  const tenantRole = formData.get("tenantRole");
+  const groupRole = formData.get("groupRole");
+
+  if (
+    typeof email !== "string" ||
+    typeof tenantRole !== "string" ||
+    typeof groupRole !== "string"
+  ) {
+    return;
+  }
+
+  try {
+    await backendAuthFetchJson("/invitations", {
+      method: "POST",
+      body: {
+        email: email.trim(),
+        role: tenantRole,
+        groupId,
+        groupRole,
+      },
+    });
+  } catch (error) {
+    redirectWithSpaceError(error, "スペース招待の作成に失敗しました");
+  }
 
   revalidatePath("/admin/spaces");
   redirect("/admin/spaces");
@@ -129,10 +185,14 @@ async function updateMemberRoleAction(
     return;
   }
 
-  await backendAuthFetchJson(`/groups/${groupId}/members/${userId}/role`, {
-    method: "PATCH",
-    body: { role },
-  });
+  try {
+    await backendAuthFetchJson(`/groups/${groupId}/members/${userId}/role`, {
+      method: "PATCH",
+      body: { role },
+    });
+  } catch (error) {
+    redirectWithSpaceError(error, "スペースロールの更新に失敗しました");
+  }
 
   revalidatePath("/admin/spaces");
   redirect("/admin/spaces");
@@ -143,16 +203,37 @@ async function removeMemberAction(
   userId: string,
 ): Promise<void> {
   "use server";
-  await backendAuthFetchJson(`/groups/${groupId}/members/${userId}`, {
-    method: "DELETE",
-  });
+  try {
+    await backendAuthFetchJson(`/groups/${groupId}/members/${userId}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    redirectWithSpaceError(error, "スペースメンバーの削除に失敗しました");
+  }
+  revalidatePath("/admin/spaces");
+  redirect("/admin/spaces");
+}
+
+async function leaveSpaceAction(groupId: string): Promise<void> {
+  "use server";
+  try {
+    await backendAuthFetchJson(`/groups/${groupId}/members/me`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    redirectWithSpaceError(error, "スペースからの退出に失敗しました");
+  }
   revalidatePath("/admin/spaces");
   redirect("/admin/spaces");
 }
 
 async function removeSpaceAction(groupId: string): Promise<void> {
   "use server";
-  await backendAuthFetchJson(`/groups/${groupId}`, { method: "DELETE" });
+  try {
+    await backendAuthFetchJson(`/groups/${groupId}`, { method: "DELETE" });
+  } catch (error) {
+    redirectWithSpaceError(error, "スペースの削除に失敗しました");
+  }
   revalidatePath("/admin/spaces");
   redirect("/admin/spaces");
 }
@@ -187,14 +268,23 @@ async function fetchAvailableUsers(
   }
 }
 
-export default async function AdminSpacesPage() {
+type PageProps = {
+  searchParams?: Promise<{
+    error?: string;
+  }>;
+};
+
+export default async function AdminSpacesPage({ searchParams }: PageProps) {
+  const params = (await searchParams) ?? {};
   const me = await getCurrentSessionUser();
   const isSystemAdmin = me?.roles.includes("platform_admin") ?? false;
+  const canCreateSpace =
+    isSystemAdmin || (me?.roles.includes("tenant_admin") ?? false);
 
   try {
     const [groupsRaw, usersRaw] = await Promise.all([
       backendAuthFetchJson("/groups"),
-      isSystemAdmin ? backendAuthFetchJson("/users") : Promise.resolve(null),
+      canCreateSpace ? backendAuthFetchJson("/users") : Promise.resolve(null),
     ]);
     const groups =
       unwrapData<{ groups?: GroupSummary[] }>(groupsRaw).groups ?? [];
@@ -216,157 +306,53 @@ export default async function AdminSpacesPage() {
     return (
       <div className="space-y-6">
         <SpaceManagementHeader
-          canCreateSpace={isSystemAdmin}
+          canCreateSpace={canCreateSpace}
           users={users}
           createSpaceAction={createSpaceAction}
         />
 
-        <div className="space-y-4">
-          {groups.length === 0 ? (
-            <Card>
-              <CardContent className="py-8 text-center text-muted-foreground">
-                スペースが見つかりません
-              </CardContent>
-            </Card>
-          ) : (
-            groups.map((group) => {
+        {params.error ? (
+          <Card className="border-red-200 bg-red-50/40">
+            <CardContent className="pt-6">
+              <p className="text-sm font-medium text-red-700">
+                {params.error}
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {groups.length === 0 ? (
+          <Card>
+            <CardContent className="py-8 text-center text-muted-foreground">
+              スペースが見つかりません
+            </CardContent>
+          </Card>
+        ) : (
+          <SpaceList
+            spaces={groups.map((group) => {
               const members = membersByGroup.get(group.id) ?? [];
-              const addableUsers = availableUsersByGroup.get(group.id) ?? [];
-
-              return (
-                <Card key={group.id}>
-                  <CardHeader className="gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <CardTitle>{group.name}</CardTitle>
-                      <CardDescription>
-                        {group.description ?? "説明は設定されていません"}
-                      </CardDescription>
-                    </div>
-                    {isSystemAdmin ? (
-                      <form action={removeSpaceAction.bind(null, group.id)}>
-                        <Button size="sm" type="submit" variant="outline">
-                          削除
-                        </Button>
-                      </form>
-                    ) : null}
-                  </CardHeader>
-                  <CardContent className="space-y-5">
-                    <form
-                      action={addMemberAction.bind(null, group.id)}
-                      className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_160px_auto]"
-                    >
-                      <select
-                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                        name="userId"
-                        required
-                      >
-                        <option value="">追加するユーザーを選択</option>
-                        {addableUsers.map((user) => (
-                          <option key={user.id} value={user.id}>
-                            {user.name ?? user.email} / {user.email}
-                          </option>
-                        ))}
-                      </select>
-                      <select
-                        className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                        name="role"
-                        defaultValue="user"
-                      >
-                        <option value="user">ユーザー</option>
-                        <option value="admin">管理者</option>
-                      </select>
-                      <Button size="sm" type="submit">
-                        追加
-                      </Button>
-                    </form>
-
-                    {members.length === 0 ? (
-                      <p className="py-4 text-center text-sm text-muted-foreground">
-                        メンバーを表示できません
-                      </p>
-                    ) : (
-                      <Table>
-                        <TableHeader>
-                          <TableRow>
-                            <TableHead>名前</TableHead>
-                            <TableHead>メール</TableHead>
-                            <TableHead>スペースロール</TableHead>
-                            <TableHead className="text-right">操作</TableHead>
-                          </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                          {members.map((member) => (
-                            <TableRow key={member.id}>
-                              <TableCell className="font-medium">
-                                {member.name ?? "-"}
-                              </TableCell>
-                              <TableCell className="font-mono text-xs">
-                                {member.email}
-                              </TableCell>
-                              <TableCell>
-                                <Badge
-                                  variant={
-                                    member.role === "admin"
-                                      ? "default"
-                                      : "outline"
-                                  }
-                                >
-                                  {groupRoleLabel(member.role)}
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="space-x-2 text-right">
-                                <form
-                                  action={updateMemberRoleAction.bind(
-                                    null,
-                                    group.id,
-                                    member.userId,
-                                  )}
-                                  className="inline-flex items-center gap-2"
-                                >
-                                  <select
-                                    name="role"
-                                    defaultValue={member.role}
-                                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                                  >
-                                    <option value="user">ユーザー</option>
-                                    <option value="admin">管理者</option>
-                                  </select>
-                                  <Button
-                                    size="sm"
-                                    type="submit"
-                                    variant="outline"
-                                  >
-                                    更新
-                                  </Button>
-                                </form>
-                                <form
-                                  action={removeMemberAction.bind(
-                                    null,
-                                    group.id,
-                                    member.userId,
-                                  )}
-                                  className="inline-flex"
-                                >
-                                  <Button
-                                    size="sm"
-                                    type="submit"
-                                    variant="outline"
-                                  >
-                                    外す
-                                  </Button>
-                                </form>
-                              </TableCell>
-                            </TableRow>
-                          ))}
-                        </TableBody>
-                      </Table>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            })
-          )}
-        </div>
+              return {
+                group,
+                members,
+                addableUsers: availableUsersByGroup.get(group.id) ?? [],
+                canManageSpace:
+                  isSystemAdmin ||
+                  members.some(
+                    (member) =>
+                      member.userId === me?.id && member.role === "admin",
+                  ),
+              };
+            })}
+            currentUserId={me?.id ?? null}
+            isSystemAdmin={isSystemAdmin}
+            addMemberAction={addMemberAction}
+            inviteSpaceMemberAction={inviteSpaceMemberAction}
+            updateMemberRoleAction={updateMemberRoleAction}
+            removeMemberAction={removeMemberAction}
+            leaveSpaceAction={leaveSpaceAction}
+            removeSpaceAction={removeSpaceAction}
+          />
+        )}
       </div>
     );
   } catch (error) {

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
 
-export default function AdminRootRedirectPage() {
+export default function RootSpaceRedirectPage() {
   redirect("/space");
 }

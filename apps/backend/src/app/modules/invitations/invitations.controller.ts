@@ -11,8 +11,6 @@ import {
   CurrentUser,
   type AuthUserPayload,
 } from '../../../decorators/current-user.decorator';
-import { Roles } from '../../../decorators/roles.decorator';
-import { UserRole } from '../../../models/constants/user-role';
 import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
 import { AuthIssueTokensResponseDto } from '../auth/auth.dto';
@@ -32,8 +30,9 @@ export class InvitationsController {
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
-  @ApiOperation({ summary: 'メンバー招待（tenant_admin / platform_admin）' })
+  @ApiOperation({
+    summary: 'メンバー招待（tenant_admin / platform_admin / space admin）',
+  })
   @ApiSuccessResponseCreated(CreateInvitationResponseDto)
   async create(
     @Body() dto: CreateInvitationDto,

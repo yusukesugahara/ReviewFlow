@@ -4,7 +4,10 @@ import { randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import { DataSource, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
+import { GroupMemberRole } from '../../../models/constants/group-member-role';
 import { InvitationStatus } from '../../../models/constants/invitation-status';
+import { GroupMember } from '../../../models/entities/group-member.entity';
+import { Group } from '../../../models/entities/group.entity';
 import { Invitation } from '../../../models/entities/invitation.entity';
 import { User } from '../../../models/entities/user.entity';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
@@ -52,6 +55,30 @@ export class InvitationsService {
       throw clientError(ClientErrorCodes.INVITATION_PENDING_EXISTS);
     }
 
+    if (dto.groupId) {
+      const group = await this.dataSource.getRepository(Group).findOne({
+        where: { id: dto.groupId, tenantId },
+      });
+      if (!group) {
+        throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
+      }
+      if (!this.canCreateTenantInvitation(actor)) {
+        const member = await this.dataSource.getRepository(GroupMember).findOne({
+          where: {
+            tenantId,
+            groupId: dto.groupId,
+            userId: actor.id,
+            role: GroupMemberRole.ADMIN,
+          },
+        });
+        if (!member) {
+          throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
+        }
+      }
+    } else if (!this.canCreateTenantInvitation(actor)) {
+      throw clientError(ClientErrorCodes.AUTH_FORBIDDEN_ROLE);
+    }
+
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
 
@@ -59,6 +86,10 @@ export class InvitationsService {
       tenantId,
       email,
       role: dto.role,
+      groupId: dto.groupId ?? null,
+      groupRole: dto.groupId
+        ? (dto.groupRole ?? GroupMemberRole.USER)
+        : null,
       token,
       status: InvitationStatus.PENDING,
       invitedByUserId: actor.id,
@@ -90,6 +121,8 @@ export class InvitationsService {
       token: saved.token,
       email: saved.email,
       role: saved.role,
+      groupId: saved.groupId,
+      groupRole: saved.groupRole,
       expiresAt: saved.expiresAt.toISOString(),
     };
   }
@@ -101,6 +134,8 @@ export class InvitationsService {
     const user = await this.dataSource.transaction(async (manager) => {
       const invRepo = manager.getRepository(Invitation);
       const userRepo = manager.getRepository(User);
+      const groupRepo = manager.getRepository(Group);
+      const memberRepo = manager.getRepository(GroupMember);
 
       const inv = await invRepo.findOne({ where: { token: dto.token } });
       if (!inv) {
@@ -130,6 +165,25 @@ export class InvitationsService {
       });
       await userRepo.save(newUser);
 
+      if (inv.groupId) {
+        const group = await groupRepo.findOne({
+          where: { id: inv.groupId, tenantId: inv.tenantId },
+        });
+        if (!group) {
+          throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
+        }
+
+        await memberRepo.save(
+          memberRepo.create({
+            tenantId: inv.tenantId,
+            groupId: inv.groupId,
+            userId: newUser.id,
+            role: inv.groupRole ?? GroupMemberRole.USER,
+            invitedByUserId: inv.invitedByUserId,
+          }),
+        );
+      }
+
       inv.status = InvitationStatus.ACCEPTED;
       await invRepo.save(inv);
 
@@ -137,5 +191,12 @@ export class InvitationsService {
     });
 
     return this.authService.issueTokensForUser(user);
+  }
+
+  private canCreateTenantInvitation(actor: AuthUserPayload): boolean {
+    return (
+      actor.roles.includes('tenant_admin') ||
+      actor.roles.includes('platform_admin')
+    );
   }
 }

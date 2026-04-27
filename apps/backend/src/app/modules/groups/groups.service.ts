@@ -201,6 +201,17 @@ export class GroupsService {
     await this.members.delete(member.id);
   }
 
+  async leave(groupId: string, actor: AuthUserPayload): Promise<void> {
+    await this.findGroupInTenant(groupId, actor.tenantId);
+
+    const member = await this.findMember(groupId, actor.id, actor.tenantId);
+    if (member.role === GroupMemberRole.ADMIN) {
+      await this.assertAnotherAdminRemains(groupId, actor.tenantId, actor.id);
+    }
+
+    await this.members.delete(member.id);
+  }
+
   private async findGroupInTenant(
     groupId: string,
     tenantId: string,

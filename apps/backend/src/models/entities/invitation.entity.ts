@@ -9,7 +9,9 @@ import {
 } from 'typeorm';
 import type { InvitationStatusValue } from '../constants/invitation-status';
 import { InvitationStatus } from '../constants/invitation-status';
+import type { GroupMemberRoleValue } from '../constants/group-member-role';
 import type { UserRoleValue } from '../constants/user-role';
+import { Group } from './group.entity';
 import { Tenant } from './tenant.entity';
 import { User } from './user.entity';
 
@@ -31,6 +33,21 @@ export class Invitation {
 
   @Column({ type: 'varchar', length: 32 })
   role!: UserRoleValue;
+
+  @Column({ name: 'group_id', type: 'varchar', length: 36, nullable: true })
+  groupId!: string | null;
+
+  @ManyToOne(() => Group, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'group_id' })
+  group!: Group | null;
+
+  @Column({
+    name: 'group_role',
+    type: 'varchar',
+    length: 32,
+    nullable: true,
+  })
+  groupRole!: GroupMemberRoleValue | null;
 
   @Column({ type: 'varchar', length: 64, unique: true })
   token!: string;

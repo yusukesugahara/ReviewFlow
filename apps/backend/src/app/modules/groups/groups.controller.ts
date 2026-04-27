@@ -98,9 +98,9 @@ export class GroupsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post()
-  @Roles(UserRole.PLATFORM_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'スペース作成（platform_admin）' })
+  @ApiOperation({ summary: 'スペース作成（tenant_admin / platform_admin）' })
   @ApiSuccessResponseCreated(GroupSummaryDto)
   async create(
     @Body() dto: CreateGroupDto,
@@ -193,6 +193,20 @@ export class GroupsController {
       actor,
     );
     return successResponse(toMemberSummary(member));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Delete(':groupId/members/me')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'スペースから退出（参加中ユーザー）',
+  })
+  async leave(
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<void> {
+    await this.groupsService.leave(groupId, actor);
   }
 
   @AuthApi()

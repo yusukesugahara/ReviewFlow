@@ -427,7 +427,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "メンバー招待（tenant_admin / platform_admin）",
+        "summary": "メンバー招待（tenant_admin / platform_admin / space admin）",
         "tags": [
           "invitations"
         ]
@@ -1313,7 +1313,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース作成（platform_admin）",
+        "summary": "スペース作成（tenant_admin / platform_admin）",
         "tags": [
           "groups"
         ]
@@ -1592,6 +1592,38 @@
           }
         ],
         "summary": "スペース管理者/ユーザ設定（platform_admin / space admin）",
+        "tags": [
+          "groups"
+        ]
+      }
+    },
+    "/groups/{groupId}/members/me": {
+      "delete": {
+        "operationId": "GroupsController_leave",
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "スペースから退出（参加中ユーザー）",
         "tags": [
           "groups"
         ]
@@ -3161,6 +3193,14 @@
           "role": {
             "type": "string"
           },
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupRole": {
+            "type": "string",
+            "nullable": true
+          },
           "expiresAt": {
             "type": "string",
             "description": "ISO 8601"
@@ -3188,6 +3228,19 @@
               "tenant_admin",
               "approver"
             ]
+          },
+          "groupId": {
+            "type": "string",
+            "description": "招待受諾時に参加させるスペースID"
+          },
+          "groupRole": {
+            "type": "string",
+            "example": "user",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "description": "スペース参加時のロール"
           }
         },
         "required": [

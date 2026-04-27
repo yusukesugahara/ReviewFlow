@@ -60,7 +60,7 @@ export default async function AdminTemplateDetailPage({ params }: PageProps) {
         </div>
         <div className="flex items-center gap-2">
           <Button asChild variant="outline">
-            <Link href="/admin/application-setup">申請作成へ戻る</Link>
+            <Link href="/space/application-setup">申請作成へ戻る</Link>
           </Button>
         </div>
       </div>
