@@ -49,7 +49,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </Link>
           <Link
             className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-            href="/admin/groups"
+            href="/admin/spaces"
           >
             スペース管理
           </Link>
@@ -71,7 +71,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             </AdminNavLink>
             <AdminNavLink href="/admin/applications">申請一覧</AdminNavLink>
             <AdminNavLink href="/admin/users">ユーザー一覧</AdminNavLink>
-            <AdminNavLink href="/admin/groups">スペース管理</AdminNavLink>
+            <AdminNavLink href="/admin/spaces">スペース管理</AdminNavLink>
             <AdminNavLink href="/admin/invitations">ユーザー招待</AdminNavLink>
             <AdminNavLink href="/admin/export-jobs">CSVジョブ</AdminNavLink>
             <AdminNavLink href="/admin/audit-logs">監査ログ</AdminNavLink>
