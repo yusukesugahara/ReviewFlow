@@ -1,4 +1,5 @@
 import { fetchApiOriginReachable } from "@/lib/server/fetch-api-origin-reachable";
+import Link from "next/link";
 
 export default async function LogoutPage() {
   const apiReachable = await fetchApiOriginReachable();
@@ -10,7 +11,7 @@ export default async function LogoutPage() {
         <p role="alert">API サーバーに接続できません（`NEXT_PUBLIC_API_URL` を確認してください）。</p>
       ) : null}
       <p>
-        <a href="/">トップへ</a>
+        <Link href="/">トップへ</Link>
       </p>
     </main>
   );

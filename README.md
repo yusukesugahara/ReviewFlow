@@ -1,5 +1,7 @@
 # ReviewFlow
 
+[![CI](https://github.com/yusukesugahara/ReviewFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/yusukesugahara/ReviewFlow/actions/workflows/ci.yml)
+
 ReviewFlow is a portfolio-grade full-stack workflow application for creating application forms, submitting requests, approving or returning them, managing spaces and users, exporting CSV data, and reviewing audit logs.
 
 This repository is intended to show practical engineering quality, not only a working demo:
@@ -195,7 +197,7 @@ Run from repository root:
 npm run dev            # Docker Compose full stack
 npm run dev:frontend   # Next.js dev server on port 3001
 npm run dev:backend    # NestJS dev server on port 3000
-npm run lint           # Backend lint check
+npm run lint           # Frontend and backend lint checks
 npm run typecheck      # Frontend and backend TypeScript checks
 npm run test           # Backend Jest tests
 npm run build          # Backend and frontend production builds
@@ -204,8 +206,9 @@ npm run check          # lint + typecheck + test + build
 
 Current limitation:
 
-- Frontend ESLint is not configured yet, so root `lint` currently runs backend lint only.
 - Frontend E2E is intentionally separate because it requires a reachable backend test environment.
+- Backend E2E is currently local-only. Some scenarios still need to be realigned with the current role/authorization contract before they are stable enough for CI.
+- MySQL is not started in the default CI job. Current automated tests do not require it.
 
 Frontend E2E:
 
@@ -240,6 +243,14 @@ For repository hygiene and portfolio quality, run:
 
 ```bash
 npm run check
+```
+
+This is the same local gate as the GitHub Actions CI job: frontend/backend lint, frontend/backend typecheck, backend unit tests, and frontend/backend builds.
+
+Backend E2E is available as a local, focused command while those scenarios are being stabilized:
+
+```bash
+npm run test:e2e -w backend
 ```
 
 For API contract changes:
