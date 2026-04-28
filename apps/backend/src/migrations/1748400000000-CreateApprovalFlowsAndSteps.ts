@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateApprovalFlowsAndSteps1748400000000
-  implements MigrationInterface
-{
+export class CreateApprovalFlowsAndSteps1748400000000 implements MigrationInterface {
   name = 'CreateApprovalFlowsAndSteps1748400000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -18,7 +16,12 @@ export class CreateApprovalFlowsAndSteps1748400000000
           name: 'approval_flows',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'form_template_id',
               type: 'varchar',
@@ -77,7 +80,12 @@ export class CreateApprovalFlowsAndSteps1748400000000
           name: 'approval_steps',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'approval_flow_id',
               type: 'varchar',
@@ -85,7 +93,12 @@ export class CreateApprovalFlowsAndSteps1748400000000
               isNullable: false,
             },
             { name: 'step_order', type: 'int', isNullable: false },
-            { name: 'step_name', type: 'varchar', length: '255', isNullable: false },
+            {
+              name: 'step_name',
+              type: 'varchar',
+              length: '255',
+              isNullable: false,
+            },
             {
               name: 'approver_role',
               type: 'varchar',

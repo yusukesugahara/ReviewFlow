@@ -112,7 +112,7 @@ describe('UsersService', () => {
         createdAt: new Date(),
       } as User;
       repo.findOne.mockResolvedValue(approver);
-      repo.save.mockImplementation(async (u: User) => u);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
 
       const out = await service.updateRoleInTenant(
         't1',
@@ -136,7 +136,7 @@ describe('UsersService', () => {
         createdAt: new Date(),
       } as User;
       repo.findOne.mockResolvedValue(approver);
-      repo.save.mockImplementation(async (u: User) => u);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
 
       const out = await service.updateRoleInTenant(
         't1',

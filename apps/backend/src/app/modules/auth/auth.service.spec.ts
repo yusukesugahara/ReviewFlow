@@ -59,16 +59,16 @@ describe('AuthService', () => {
       users.findAllByEmail.mockResolvedValue([]);
       const tenantRepo = {
         create: jest.fn((x: object) => ({ ...x })),
-        save: jest.fn(async (t: Tenant) => {
+        save: jest.fn((t: Tenant) => {
           Object.assign(t, { id: 'tenant-1' });
-          return t;
+          return Promise.resolve(t);
         }),
       };
       const userRepo = {
         create: jest.fn((x: object) => ({ ...x })),
-        save: jest.fn(async (u: User) => {
+        save: jest.fn((u: User) => {
           Object.assign(u, { id: 'id-admin' });
-          return u;
+          return Promise.resolve(u);
         }),
       };
 

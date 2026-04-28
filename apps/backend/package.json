@@ -9,6 +9,7 @@
     "build": "nest build",
     "postbuild": "node scripts/emit-dist-main.cjs",
     "compile": "eslint \"src/**/*.ts\" --max-warnings 0 && npm run build",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write \"src/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",

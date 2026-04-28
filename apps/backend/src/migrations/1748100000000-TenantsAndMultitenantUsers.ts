@@ -8,9 +8,7 @@ import {
 /** 既存 users 行を紐づける既定テナント（移行専用） */
 const DEFAULT_TENANT_ID = '00000000-0000-4000-8000-000000000001';
 
-export class TenantsAndMultitenantUsers1748100000000
-  implements MigrationInterface
-{
+export class TenantsAndMultitenantUsers1748100000000 implements MigrationInterface {
   name = 'TenantsAndMultitenantUsers1748100000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {

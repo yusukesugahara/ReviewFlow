@@ -19,6 +19,7 @@ describe('Invitations (integration)', () => {
     process.env.INTERNAL_API_KEY = 'int-api-key';
     process.env.JWT_SECRET = 'int-jwt-secret-at-least-32-characters-long';
     process.env.DB_PATH = dbPath;
+    process.env.MAIL_ENABLED = '0';
     try {
       rmSync(dbPath, { force: true });
     } catch {
@@ -96,7 +97,10 @@ describe('Invitations (integration)', () => {
     );
 
     await expect(
-      invitations.create({ email: 'dup@int.test', role: UserRole.APPLICANT }, actor),
+      invitations.create(
+        { email: 'dup@int.test', role: UserRole.APPLICANT },
+        actor,
+      ),
     ).rejects.toMatchObject({
       errorCode: ClientErrorCodes.INVITATION_PENDING_EXISTS,
     });

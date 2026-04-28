@@ -59,12 +59,25 @@ type ApplicationDetailBody = {
   data?: { id?: string; status?: string; values?: Record<string, unknown> };
 };
 type CorrectionsListBody = {
-  data?: { corrections?: { id: string; status: string; items?: { formFieldId: string }[] }[] };
+  data?: {
+    corrections?: {
+      id: string;
+      status: string;
+      items?: { formFieldId: string }[];
+    }[];
+  };
 };
 type CorrectionTargetsBody = {
   data?: {
     applicationStatus?: string;
-    openCorrection?: { id: string; items?: { formFieldId: string; fieldKey: string; currentValue?: unknown }[] } | null;
+    openCorrection?: {
+      id: string;
+      items?: {
+        formFieldId: string;
+        fieldKey: string;
+        currentValue?: unknown;
+      }[];
+    } | null;
   };
 };
 type ExportJobBody = {
@@ -82,6 +95,7 @@ describe('App (e2e)', () => {
     process.env.INTERNAL_API_KEY = 'e2e-internal-api-key';
     process.env.JWT_SECRET = 'e2e-jwt-secret-at-least-32-characters-long';
     process.env.DB_PATH = dbPath;
+    process.env.MAIL_ENABLED = '0';
     try {
       rmSync(dbPath, { force: true });
     } catch {
@@ -174,10 +188,9 @@ describe('App (e2e)', () => {
       .expect(201);
 
     const ds = app.get(DataSource);
-    await ds.getRepository(User).update(
-      { email: 'user@e2e.test' },
-      { role: UserRole.APPLICANT },
-    );
+    await ds
+      .getRepository(User)
+      .update({ email: 'user@e2e.test' }, { role: UserRole.APPLICANT });
 
     const login2 = await request(http)
       .post('/auth/login')
@@ -700,7 +713,8 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${aprTok}`)
       .expect(200);
-    const apps = (queue.body as ApplicationsListJsonBody).data?.applications ?? [];
+    const apps =
+      (queue.body as ApplicationsListJsonBody).data?.applications ?? [];
     expect(apps.length).toBe(1);
     expect(apps[0]?.status).toBe('in_review');
 
@@ -781,9 +795,9 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
-    const fieldId = (
-      tplDetail.body as FormTemplateGetBody
-    ).data?.fields?.find((f) => f.fieldKey === 'note')?.id;
+    const fieldId = (tplDetail.body as FormTemplateGetBody).data?.fields?.find(
+      (f) => f.fieldKey === 'note',
+    )?.id;
     expect(typeof fieldId).toBe('string');
 
     await request(http)
@@ -946,7 +960,8 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .send({ email: 'csv-admin@e2e.test', password: 'password12' })
       .expect(200);
-    const adminTok = (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+    const adminTok =
+      (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
 
     const tpl = await request(http)
       .post('/form-templates')

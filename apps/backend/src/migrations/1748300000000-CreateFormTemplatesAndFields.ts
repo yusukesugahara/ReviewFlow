@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateFormTemplatesAndFields1748300000000
-  implements MigrationInterface
-{
+export class CreateFormTemplatesAndFields1748300000000 implements MigrationInterface {
   name = 'CreateFormTemplatesAndFields1748300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -18,7 +16,12 @@ export class CreateFormTemplatesAndFields1748300000000
           name: 'form_templates',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             { name: 'name', type: 'varchar', length: '255', isNullable: false },
             {
               name: 'description',
@@ -80,15 +83,30 @@ export class CreateFormTemplatesAndFields1748300000000
           name: 'form_fields',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'form_template_id',
               type: 'varchar',
               length: '36',
               isNullable: false,
             },
-            { name: 'field_key', type: 'varchar', length: '128', isNullable: false },
-            { name: 'label', type: 'varchar', length: '255', isNullable: false },
+            {
+              name: 'field_key',
+              type: 'varchar',
+              length: '128',
+              isNullable: false,
+            },
+            {
+              name: 'label',
+              type: 'varchar',
+              length: '255',
+              isNullable: false,
+            },
             {
               name: 'field_type',
               type: 'varchar',

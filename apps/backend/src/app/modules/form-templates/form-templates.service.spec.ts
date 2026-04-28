@@ -6,6 +6,8 @@ import { FormTemplateStatus } from '../../../models/constants/form-template-stat
 import { FormFieldType } from '../../../models/constants/form-field-type';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { AuthService } from '../auth/auth.service';
+import { MailService } from '../mail/mail.service';
 import { FormTemplatesService } from './form-templates.service';
 
 describe('FormTemplatesService', () => {
@@ -22,14 +24,14 @@ describe('FormTemplatesService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
-      save: jest.fn(async (x: FormTemplate) => x),
+      save: jest.fn((x: FormTemplate) => Promise.resolve(x)),
     } as unknown as jest.Mocked<
       Pick<Repository<FormTemplate>, 'find' | 'findOne' | 'create' | 'save'>
     >;
     fields = {
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
-      save: jest.fn(async (x: FormField) => x),
+      save: jest.fn((x: FormField) => Promise.resolve(x)),
     } as unknown as jest.Mocked<
       Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
     >;
@@ -39,6 +41,14 @@ describe('FormTemplatesService', () => {
         FormTemplatesService,
         { provide: getRepositoryToken(FormTemplate), useValue: templates },
         { provide: getRepositoryToken(FormField), useValue: fields },
+        {
+          provide: MailService,
+          useValue: { sendApplicationAccessEmail: jest.fn() },
+        },
+        {
+          provide: AuthService,
+          useValue: { issueApplicantAccessToken: jest.fn() },
+        },
       ],
     }).compile();
 

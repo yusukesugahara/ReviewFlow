@@ -12,7 +12,11 @@ import { Tenant } from './tenant.entity';
 import { User } from './user.entity';
 
 @Entity('export_jobs')
-@Index('IDX_export_jobs_tenant_status_created', ['tenantId', 'status', 'createdAt'])
+@Index('IDX_export_jobs_tenant_status_created', [
+  'tenantId',
+  'status',
+  'createdAt',
+])
 export class ExportJob {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

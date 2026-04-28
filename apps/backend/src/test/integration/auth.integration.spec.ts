@@ -15,6 +15,7 @@ describe('Auth (integration)', () => {
     process.env.INTERNAL_API_KEY = 'int-api-key';
     process.env.JWT_SECRET = 'int-jwt-secret-at-least-32-characters-long';
     process.env.DB_PATH = dbPath;
+    process.env.MAIL_ENABLED = '0';
     try {
       rmSync(dbPath, { force: true });
     } catch {

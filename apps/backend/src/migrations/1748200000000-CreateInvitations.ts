@@ -19,7 +19,12 @@ export class CreateInvitations1748200000000 implements MigrationInterface {
         name: 'invitations',
         columns: [
           { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-          { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+          {
+            name: 'tenant_id',
+            type: 'varchar',
+            length: '36',
+            isNullable: false,
+          },
           { name: 'email', type: 'varchar', length: '255', isNullable: false },
           { name: 'role', type: 'varchar', length: '32', isNullable: false },
           {

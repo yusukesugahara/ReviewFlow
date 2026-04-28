@@ -19,7 +19,12 @@ export class CreateAuditLogs1748800000000 implements MigrationInterface {
         name: 'audit_logs',
         columns: [
           { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-          { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+          {
+            name: 'tenant_id',
+            type: 'varchar',
+            length: '36',
+            isNullable: false,
+          },
           {
             name: 'actor_user_id',
             type: 'varchar',

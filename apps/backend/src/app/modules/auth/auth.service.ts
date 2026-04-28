@@ -4,7 +4,10 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import * as bcrypt from 'bcrypt';
 import { DataSource } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
-import { TenantPlan, TenantStatus } from '../../../models/constants/tenant-enums';
+import {
+  TenantPlan,
+  TenantStatus,
+} from '../../../models/constants/tenant-enums';
 import { UserRole } from '../../../models/constants/user-role';
 import { Tenant } from '../../../models/entities/tenant.entity';
 import { User } from '../../../models/entities/user.entity';
@@ -85,7 +88,7 @@ export class AuthService {
     if (passwordMatches.length > 1) {
       throw clientError(ClientErrorCodes.AUTH_TENANT_REQUIRED);
     }
-    const user = passwordMatches[0]!;
+    const user = passwordMatches[0];
     if (!user.isActive) {
       throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
     }

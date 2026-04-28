@@ -19,7 +19,12 @@ export class CreateExportJobs1748700000000 implements MigrationInterface {
         name: 'export_jobs',
         columns: [
           { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-          { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+          {
+            name: 'tenant_id',
+            type: 'varchar',
+            length: '36',
+            isNullable: false,
+          },
           {
             name: 'requested_by_user_id',
             type: 'varchar',
@@ -28,7 +33,12 @@ export class CreateExportJobs1748700000000 implements MigrationInterface {
           },
           { name: 'status', type: 'varchar', length: '32', isNullable: false },
           { name: 'filter_json', type: 'json', isNullable: true },
-          { name: 'file_path', type: 'varchar', length: '1000', isNullable: true },
+          {
+            name: 'file_path',
+            type: 'varchar',
+            length: '1000',
+            isNullable: true,
+          },
           { name: 'started_at', type: 'datetime', isNullable: true },
           { name: 'finished_at', type: 'datetime', isNullable: true },
           {

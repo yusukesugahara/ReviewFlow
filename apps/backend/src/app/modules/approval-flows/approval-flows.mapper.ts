@@ -5,7 +5,9 @@ import type {
   ApprovalStepResponseDto,
 } from './approval-flows.dto';
 
-export function mapApprovalStepToDto(row: ApprovalStep): ApprovalStepResponseDto {
+export function mapApprovalStepToDto(
+  row: ApprovalStep,
+): ApprovalStepResponseDto {
   return {
     id: row.id,
     stepOrder: row.stepOrder,
@@ -16,8 +18,12 @@ export function mapApprovalStepToDto(row: ApprovalStep): ApprovalStepResponseDto
   };
 }
 
-export function mapApprovalFlowToDto(row: ApprovalFlow): ApprovalFlowResponseDto {
-  const steps = [...(row.steps ?? [])].sort((a, b) => a.stepOrder - b.stepOrder);
+export function mapApprovalFlowToDto(
+  row: ApprovalFlow,
+): ApprovalFlowResponseDto {
+  const steps = [...(row.steps ?? [])].sort(
+    (a, b) => a.stepOrder - b.stepOrder,
+  );
   return {
     id: row.id,
     formTemplateId: row.formTemplateId,

@@ -60,12 +60,16 @@ describe('GroupsService', () => {
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
       save: jest.fn((row: Group) =>
-        Promise.resolve({
-          id: 'group-1',
-          createdAt: new Date(),
-          updatedAt: new Date(),
-          ...row,
-        }),
+        Promise.resolve(
+          Object.assign(
+            {
+              id: 'group-1',
+              createdAt: new Date(),
+              updatedAt: new Date(),
+            },
+            row,
+          ),
+        ),
       ),
       delete: jest.fn(() => Promise.resolve()),
     };

@@ -23,7 +23,12 @@ export class AuditLog {
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'actor_user_id', type: 'varchar', length: 36, nullable: true })
+  @Column({
+    name: 'actor_user_id',
+    type: 'varchar',
+    length: 36,
+    nullable: true,
+  })
   actorUserId!: string | null;
 
   @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })

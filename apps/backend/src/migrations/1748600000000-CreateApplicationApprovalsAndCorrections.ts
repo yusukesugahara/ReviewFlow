@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateApplicationApprovalsAndCorrections1748600000000
-  implements MigrationInterface
-{
+export class CreateApplicationApprovalsAndCorrections1748600000000 implements MigrationInterface {
   name = 'CreateApplicationApprovalsAndCorrections1748600000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -18,7 +16,12 @@ export class CreateApplicationApprovalsAndCorrections1748600000000
           name: 'application_approvals',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'application_id',
               type: 'varchar',
@@ -97,7 +100,12 @@ export class CreateApplicationApprovalsAndCorrections1748600000000
           name: 'correction_requests',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'application_id',
               type: 'varchar',
@@ -175,7 +183,12 @@ export class CreateApplicationApprovalsAndCorrections1748600000000
           name: 'correction_request_items',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'correction_request_id',
               type: 'varchar',

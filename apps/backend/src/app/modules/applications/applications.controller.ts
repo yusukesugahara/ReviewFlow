@@ -116,7 +116,8 @@ export class ApplicationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '差し戻し',
-    description: '現在ステップの can_return が true のときのみ。correction_request を作成。',
+    description:
+      '現在ステップの can_return が true のときのみ。correction_request を作成。',
   })
   @ApiSuccessResponse(ApplicationDetailDto)
   async returnWithCorrection(
@@ -221,7 +222,8 @@ export class ApplicationsController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '値更新',
-    description: 'draft は全項目。returned はオープンな correction の対象フィールドのみ。',
+    description:
+      'draft は全項目。returned はオープンな correction の対象フィールドのみ。',
   })
   @ApiSuccessResponse(ApplicationDetailDto)
   async patch(

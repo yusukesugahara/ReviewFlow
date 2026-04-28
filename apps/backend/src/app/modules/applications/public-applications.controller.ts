@@ -12,7 +12,11 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
-import { Api, ApiSuccessResponse, ApiSuccessResponseCreated } from '../../decorators';
+import {
+  Api,
+  ApiSuccessResponse,
+  ApiSuccessResponseCreated,
+} from '../../decorators';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { CurrentApplicantSession } from '../../../decorators/current-applicant-session.decorator';
 import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
@@ -146,7 +150,10 @@ export class PublicApplicationsController {
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<SuccessResponse<CorrectionTargetsResponseDto>> {
-    const data = await this.applications.getCorrectionTargetsForApplicant(actor, id);
+    const data = await this.applications.getCorrectionTargetsForApplicant(
+      actor,
+      id,
+    );
     return successResponse(data);
   }
 

@@ -1,4 +1,8 @@
-import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
@@ -14,7 +18,10 @@ import type { AuthUserPayload } from '../../../decorators/current-user.decorator
 import { AuthService } from '../auth/auth.service';
 import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
-import type { AcceptInvitationDto, CreateInvitationDto } from './invitations.dto';
+import type {
+  AcceptInvitationDto,
+  CreateInvitationDto,
+} from './invitations.dto';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -63,14 +70,16 @@ export class InvitationsService {
         throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
       }
       if (!this.canCreateTenantInvitation(actor)) {
-        const member = await this.dataSource.getRepository(GroupMember).findOne({
-          where: {
-            tenantId,
-            groupId: dto.groupId,
-            userId: actor.id,
-            role: GroupMemberRole.ADMIN,
-          },
-        });
+        const member = await this.dataSource
+          .getRepository(GroupMember)
+          .findOne({
+            where: {
+              tenantId,
+              groupId: dto.groupId,
+              userId: actor.id,
+              role: GroupMemberRole.ADMIN,
+            },
+          });
         if (!member) {
           throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
         }
@@ -87,9 +96,7 @@ export class InvitationsService {
       email,
       role: dto.role,
       groupId: dto.groupId ?? null,
-      groupRole: dto.groupId
-        ? (dto.groupRole ?? GroupMemberRole.USER)
-        : null,
+      groupRole: dto.groupId ? (dto.groupRole ?? GroupMemberRole.USER) : null,
       token,
       status: InvitationStatus.PENDING,
       invitedByUserId: actor.id,
@@ -111,9 +118,7 @@ export class InvitationsService {
         error instanceof Error ? error.stack : undefined,
       );
       await this.invitations.delete(saved.id);
-      throw new InternalServerErrorException(
-        'failed to send invitation email',
-      );
+      throw new InternalServerErrorException('failed to send invitation email');
     }
 
     return {

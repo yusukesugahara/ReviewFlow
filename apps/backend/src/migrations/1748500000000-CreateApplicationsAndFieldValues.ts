@@ -6,9 +6,7 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateApplicationsAndFieldValues1748500000000
-  implements MigrationInterface
-{
+export class CreateApplicationsAndFieldValues1748500000000 implements MigrationInterface {
   name = 'CreateApplicationsAndFieldValues1748500000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
@@ -18,7 +16,12 @@ export class CreateApplicationsAndFieldValues1748500000000
           name: 'applications',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'applicant_user_id',
               type: 'varchar',
@@ -107,7 +110,12 @@ export class CreateApplicationsAndFieldValues1748500000000
           name: 'application_field_values',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
-            { name: 'tenant_id', type: 'varchar', length: '36', isNullable: false },
+            {
+              name: 'tenant_id',
+              type: 'varchar',
+              length: '36',
+              isNullable: false,
+            },
             {
               name: 'application_id',
               type: 'varchar',

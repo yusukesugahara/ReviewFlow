@@ -13,9 +13,10 @@ describe('MailService', () => {
   beforeEach(() => {
     jest.clearAllMocks();
     sendMail.mockResolvedValue(undefined);
-    createTransport.mockReturnValue({
+    const transporter = {
       sendMail,
-    } as unknown as nodemailer.Transporter);
+    } as unknown as ReturnType<typeof nodemailer.createTransport>;
+    createTransport.mockReturnValue(transporter);
   });
 
   it('uses Gmail transport outside production by default', async () => {

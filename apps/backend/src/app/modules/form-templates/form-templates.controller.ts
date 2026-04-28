@@ -220,7 +220,8 @@ export class FormTemplatesController {
   async getCurrentForApplicant(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
   ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    const row = await this.formTemplates.getPublishedTemplateForApplicant(actor);
+    const row =
+      await this.formTemplates.getPublishedTemplateForApplicant(actor);
     return successResponse(this.formTemplates.toResponse(row));
   }
 

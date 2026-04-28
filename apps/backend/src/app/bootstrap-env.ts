@@ -45,7 +45,9 @@ export function assertProductionEnvFromProcess(): void {
   if (provider === 'gmail') {
     for (const key of ['MAIL_GMAIL_USER', 'MAIL_GMAIL_APP_PASSWORD'] as const) {
       if (!process.env[key]?.length) {
-        throw new Error(`本番で Gmail を使うときは ${key} を設定してください。`);
+        throw new Error(
+          `本番で Gmail を使うときは ${key} を設定してください。`,
+        );
       }
     }
     return;

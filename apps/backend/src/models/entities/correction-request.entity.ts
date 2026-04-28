@@ -45,7 +45,12 @@ export class CorrectionRequest {
   @Column({ type: 'varchar', length: 32 })
   status!: CorrectionRequestStatusValue;
 
-  @Column({ name: 'overall_comment', type: 'varchar', length: 4000, nullable: true })
+  @Column({
+    name: 'overall_comment',
+    type: 'varchar',
+    length: 4000,
+    nullable: true,
+  })
   overallComment!: string | null;
 
   @Column({ name: 'resolved_at', type: 'datetime', nullable: true })

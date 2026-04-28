@@ -114,7 +114,10 @@ export class ApplicationsService {
     return step.approverRole === userRole;
   }
 
-  private canActorActOnReview(actor: AuthUserPayload, app: Application): boolean {
+  private canActorActOnReview(
+    actor: AuthUserPayload,
+    app: Application,
+  ): boolean {
     if (app.status !== ApplicationStatus.IN_REVIEW) {
       return false;
     }
@@ -156,10 +159,7 @@ export class ApplicationsService {
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
   }
 
-  private assertApplicantOwns(
-    actor: ApplicantSession,
-    app: Application,
-  ): void {
+  private assertApplicantOwns(actor: ApplicantSession, app: Application): void {
     if (
       app.tenantId !== actor.tenantId ||
       app.formTemplateId !== actor.templateId ||
@@ -199,7 +199,7 @@ export class ApplicationsService {
     if (list.length > 1) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FLOW_AMBIGUOUS);
     }
-    return list[0]!;
+    return list[0];
   }
 
   private async loadApplicationOrThrow(
@@ -208,7 +208,12 @@ export class ApplicationsService {
     withRelations: { detail: boolean },
   ): Promise<Application> {
     const relations = withRelations.detail
-      ? ['fieldValues', 'fieldValues.formField', 'approvalFlow', 'approvalFlow.steps']
+      ? [
+          'fieldValues',
+          'fieldValues.formField',
+          'approvalFlow',
+          'approvalFlow.steps',
+        ]
       : ['approvalFlow', 'approvalFlow.steps'];
     const row = await this.apps.findOne({
       where: { id, tenantId },
@@ -305,7 +310,11 @@ export class ApplicationsService {
       this.assertValueMatchesFieldType(field, values[key]);
     }
 
-    const flow = await this.resolveActiveFlow(tenantId, template.id, dto.approvalFlowId);
+    const flow = await this.resolveActiveFlow(
+      tenantId,
+      template.id,
+      dto.approvalFlowId,
+    );
 
     let newId = '';
     await this.apps.manager.transaction(async (em) => {
@@ -530,10 +539,7 @@ export class ApplicationsService {
     return this.getOneForApplicant(actor, id);
   }
 
-  private async assertRequiredSatisfied(
-    app: Application,
-    fields: FormField[],
-  ): Promise<void> {
+  private assertRequiredSatisfied(app: Application, fields: FormField[]): void {
     const byFieldId = new Map(
       (app.fieldValues ?? []).map((v) => [v.formFieldId, v.valueJson]),
     );
@@ -563,9 +569,11 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    await this.assertRequiredSatisfied(app, template.fields ?? []);
+    this.assertRequiredSatisfied(app, template.fields ?? []);
     for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find((x) => x.id === fv.formFieldId);
+      const field = (template.fields ?? []).find(
+        (x) => x.id === fv.formFieldId,
+      );
       if (field) {
         this.assertValueMatchesFieldType(field, fv.valueJson);
       }
@@ -599,9 +607,11 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    await this.assertRequiredSatisfied(app, template.fields ?? []);
+    this.assertRequiredSatisfied(app, template.fields ?? []);
     for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find((x) => x.id === fv.formFieldId);
+      const field = (template.fields ?? []).find(
+        (x) => x.id === fv.formFieldId,
+      );
       if (field) {
         this.assertValueMatchesFieldType(field, fv.valueJson);
       }
@@ -639,8 +649,7 @@ export class ApplicationsService {
     }
     const next = steps.find((s) => s.stepOrder === cur.stepOrder + 1);
 
-    const comment =
-      dto.comment?.trim().length ? dto.comment.trim() : null;
+    const comment = dto.comment?.trim().length ? dto.comment.trim() : null;
 
     await this.apps.manager.transaction(async (em) => {
       const approvalRepo = em.getRepository(ApplicationApproval);
@@ -690,8 +699,7 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
     }
 
-    const comment =
-      dto.comment?.trim().length ? dto.comment.trim() : null;
+    const comment = dto.comment?.trim().length ? dto.comment.trim() : null;
 
     await this.apps.manager.transaction(async (em) => {
       await em.getRepository(ApplicationApproval).save(
@@ -750,7 +758,9 @@ export class ApplicationsService {
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
-    const fieldIdsOnTemplate = new Set((template.fields ?? []).map((f) => f.id));
+    const fieldIdsOnTemplate = new Set(
+      (template.fields ?? []).map((f) => f.id),
+    );
 
     for (const f of dto.fields) {
       if (!fieldIdsOnTemplate.has(f.fieldId)) {
@@ -758,8 +768,9 @@ export class ApplicationsService {
       }
     }
 
-    const overall =
-      dto.overallComment?.trim().length ? dto.overallComment.trim() : null;
+    const overall = dto.overallComment?.trim().length
+      ? dto.overallComment.trim()
+      : null;
 
     await this.apps.manager.transaction(async (em) => {
       const approvalRepo = em.getRepository(ApplicationApproval);
@@ -834,9 +845,11 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    await this.assertRequiredSatisfied(app, template.fields ?? []);
+    this.assertRequiredSatisfied(app, template.fields ?? []);
     for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find((x) => x.id === fv.formFieldId);
+      const field = (template.fields ?? []).find(
+        (x) => x.id === fv.formFieldId,
+      );
       if (field) {
         this.assertValueMatchesFieldType(field, fv.valueJson);
       }
@@ -895,9 +908,11 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    await this.assertRequiredSatisfied(app, template.fields ?? []);
+    this.assertRequiredSatisfied(app, template.fields ?? []);
     for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find((x) => x.id === fv.formFieldId);
+      const field = (template.fields ?? []).find(
+        (x) => x.id === fv.formFieldId,
+      );
       if (field) {
         this.assertValueMatchesFieldType(field, fv.valueJson);
       }
@@ -957,9 +972,13 @@ export class ApplicationsService {
     actor: AuthUserPayload,
     applicationId: string,
   ): Promise<CorrectionTargetsResponseDto> {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, applicationId, {
-      detail: true,
-    });
+    const app = await this.loadApplicationOrThrow(
+      actor.tenantId,
+      applicationId,
+      {
+        detail: true,
+      },
+    );
     await this.assertCanRead(actor, app);
 
     const opens = await this.correctionRequests.find({
@@ -1017,9 +1036,13 @@ export class ApplicationsService {
     actor: ApplicantSession,
     applicationId: string,
   ): Promise<CorrectionTargetsResponseDto> {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, applicationId, {
-      detail: true,
-    });
+    const app = await this.loadApplicationOrThrow(
+      actor.tenantId,
+      applicationId,
+      {
+        detail: true,
+      },
+    );
     this.assertApplicantOwns(actor, app);
 
     const opens = await this.correctionRequests.find({

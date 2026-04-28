@@ -31,7 +31,7 @@ describe('InvitationsService', () => {
     invitationsRepo = {
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
-      save: jest.fn(async (row: Invitation) => row),
+      save: jest.fn((row: Invitation) => Promise.resolve(row)),
       delete: jest.fn(),
     };
     dataSource = { transaction: jest.fn() };
@@ -65,10 +65,7 @@ describe('InvitationsService', () => {
       usersService.findByTenantAndEmail.mockResolvedValue({ id: 'u1' } as User);
 
       await expect(
-        service.create(
-          { email: 'x@y.com', role: UserRole.APPLICANT },
-          actor,
-        ),
+        service.create({ email: 'x@y.com', role: UserRole.APPLICANT }, actor),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.INVITATION_MEMBER_EXISTS,
       });
@@ -82,10 +79,7 @@ describe('InvitationsService', () => {
       });
 
       await expect(
-        service.create(
-          { email: 'x@y.com', role: UserRole.APPLICANT },
-          actor,
-        ),
+        service.create({ email: 'x@y.com', role: UserRole.APPLICANT }, actor),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.INVITATION_PENDING_EXISTS,
       });
@@ -135,10 +129,7 @@ describe('InvitationsService', () => {
       mailService.sendInvitationEmail.mockRejectedValue(new Error('smtp down'));
 
       await expect(
-        service.create(
-          { email: 'New@Y.com', role: UserRole.APPLICANT },
-          actor,
-        ),
+        service.create({ email: 'New@Y.com', role: UserRole.APPLICANT }, actor),
       ).rejects.toMatchObject({
         status: 500,
       });
@@ -149,17 +140,30 @@ describe('InvitationsService', () => {
 
   describe('accept', () => {
     it('throws when token unknown', async () => {
-      dataSource.transaction.mockImplementation(async (fn: (m: unknown) => unknown) => {
-        const invRepo = {
-          findOne: jest.fn().mockResolvedValue(null),
-        };
-        const userRepo = { findOne: jest.fn(), create: jest.fn(), save: jest.fn() };
-        return fn({ getRepository: (e: unknown) => (e === Invitation ? invRepo : userRepo) });
-      });
+      dataSource.transaction.mockImplementation(
+        (fn: (m: unknown) => unknown) => {
+          const invRepo = {
+            findOne: jest.fn().mockResolvedValue(null),
+          };
+          const userRepo = {
+            findOne: jest.fn(),
+            create: jest.fn(),
+            save: jest.fn(),
+          };
+          return Promise.resolve(
+            fn({
+              getRepository: (e: unknown) =>
+                e === Invitation ? invRepo : userRepo,
+            }),
+          );
+        },
+      );
 
       await expect(
         service.accept({ token: 'bad', password: 'password12' }),
-      ).rejects.toMatchObject({ errorCode: ClientErrorCodes.INVITATION_NOT_FOUND });
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.INVITATION_NOT_FOUND,
+      });
     });
 
     it('creates user and returns tokens', async () => {
@@ -178,21 +182,31 @@ describe('InvitationsService', () => {
       const userRepo = {
         findOne: jest.fn().mockResolvedValue(null),
         create: jest.fn((u: object) => u),
-        save: jest.fn(async (u: User & { id?: string }) => {
+        save: jest.fn((u: User & { id?: string }) => {
           u.id = 'new-user';
-          return u;
+          return Promise.resolve(u);
         }),
       };
 
-      dataSource.transaction.mockImplementation(async (fn: (m: unknown) => unknown) => {
-        return fn({
-          getRepository: (e: unknown) => (e === Invitation ? invRepo : userRepo),
-        });
-      });
+      dataSource.transaction.mockImplementation(
+        (fn: (m: unknown) => unknown) => {
+          return Promise.resolve(
+            fn({
+              getRepository: (e: unknown) =>
+                e === Invitation ? invRepo : userRepo,
+            }),
+          );
+        },
+      );
 
       authService.issueTokensForUser.mockReturnValue({
         access_token: 'jwt',
-        user: { id: 'new-user', email: 'join@y.com', role: UserRole.APPLICANT, tenantId: 'tenant-1' },
+        user: {
+          id: 'new-user',
+          email: 'join@y.com',
+          role: UserRole.APPLICANT,
+          tenantId: 'tenant-1',
+        },
       });
 
       const out = await service.accept({

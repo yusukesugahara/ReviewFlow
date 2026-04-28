@@ -8,7 +8,9 @@ import type {
   CorrectionsListResponseDto,
 } from './applications.dto';
 
-export function mapApplicationToSummary(row: Application): ApplicationSummaryDto {
+export function mapApplicationToSummary(
+  row: Application,
+): ApplicationSummaryDto {
   return {
     id: row.id,
     status: row.status,
