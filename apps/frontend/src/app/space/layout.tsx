@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { AdminNavLink } from "./_components/admin-nav-link";
 import {
@@ -35,13 +36,16 @@ export default async function RootSpaceLayout({ children }: RootSpaceLayoutProps
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col bg-slate-50">
       <div className="border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center px-6">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-6">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-slate-900">
               スペース管理コンソール
             </h1>
             <p className="text-xs text-slate-500">ReviewFlow Space Workspace</p>
           </div>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/admin/spaces">システム管理へ</Link>
+          </Button>
         </div>
       </div>
       <div className="mx-auto flex w-full max-w-7xl flex-1 flex-col items-stretch px-6 py-8 md:grid md:grid-cols-[150px_180px_minmax(0,1fr)] md:items-start md:gap-4 lg:grid-cols-[160px_190px_minmax(0,1fr)] lg:gap-6 lg:py-10">

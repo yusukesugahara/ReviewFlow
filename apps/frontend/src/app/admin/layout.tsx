@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { AdminNavLink } from "./_components/admin-nav-link";
 
 export const dynamic = "force-dynamic";
@@ -19,13 +20,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   return (
     <div className="flex min-h-[calc(100vh-3.5rem)] flex-col bg-slate-50">
       <div className="border-b border-slate-200 bg-white/90 backdrop-blur-xl">
-        <div className="mx-auto flex h-16 w-full max-w-7xl items-center px-6">
+        <div className="mx-auto flex h-16 w-full max-w-7xl items-center justify-between gap-4 px-6">
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-slate-900">
               管理者コンソール
             </h1>
             <p className="text-xs text-slate-500">ReviewFlow Admin Workspace</p>
           </div>
+          <Button asChild size="sm" variant="outline">
+            <Link href="/space">スペース管理へ</Link>
+          </Button>
         </div>
       </div>
       <div className="mx-auto flex w-full max-w-7xl flex-1 items-start px-6 py-8 md:grid md:grid-cols-[240px_minmax(0,1fr)] md:gap-8 lg:grid-cols-[260px_minmax(0,1fr)] lg:gap-12 lg:py-10">
