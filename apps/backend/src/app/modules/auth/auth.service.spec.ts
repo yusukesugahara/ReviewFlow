@@ -55,7 +55,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({ errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN });
     });
 
-    it('creates tenant + tenant_admin and signs JWT with tenantId', async () => {
+    it('creates tenant + platform_admin and signs JWT with tenantId', async () => {
       users.findAllByEmail.mockResolvedValue([]);
       const tenantRepo = {
         create: jest.fn((x: object) => ({ ...x })),
@@ -101,12 +101,12 @@ describe('AuthService', () => {
         sub: 'id-admin',
         email: 'first@example.com',
         tenantId: 'tenant-1',
-        role: UserRole.TENANT_ADMIN,
+        role: UserRole.PLATFORM_ADMIN,
       });
       expect(out.user).toEqual({
         id: 'id-admin',
         email: 'first@example.com',
-        role: UserRole.TENANT_ADMIN,
+        role: UserRole.PLATFORM_ADMIN,
         tenantId: 'tenant-1',
       });
       expect(out.access_token).toBe('signed-jwt');

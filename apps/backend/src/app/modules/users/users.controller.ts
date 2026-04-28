@@ -54,7 +54,7 @@ export class UsersController {
   @Get()
   @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'テナント内ユーザー一覧（tenant_admin）' })
+  @ApiOperation({ summary: 'テナント内ユーザー一覧（system admin）' })
   @ApiSuccessResponse(TenantUsersListResponseDto)
   async list(
     @CurrentUser() actor: AuthUserPayload,
@@ -68,9 +68,9 @@ export class UsersController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Patch(':id/role')
-  @Roles(UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'テナント内ユーザーのロール変更（tenant_admin）' })
+  @ApiOperation({ summary: 'テナント内ユーザーのロール変更（system admin）' })
   @ApiSuccessResponse(TenantUserSummaryDto)
   async updateRole(
     @Param('id', ParseUUIDPipe) id: string,

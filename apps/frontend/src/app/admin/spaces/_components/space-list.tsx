@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { spaceRoleLabel } from "@/lib/role-labels";
 import {
   Table,
   TableBody,
@@ -51,10 +52,6 @@ type SpaceListProps = {
   leaveSpaceAction: (groupId: string) => Promise<void>;
   removeSpaceAction: (groupId: string) => Promise<void>;
 };
-
-function groupRoleLabel(role: string) {
-  return role === "admin" ? "スペース管理者" : "スペースユーザー";
-}
 
 export function SpaceList({
   spaces,
@@ -141,8 +138,8 @@ export function SpaceList({
                           name="role"
                           defaultValue="user"
                         >
-                          <option value="user">ユーザー</option>
-                          <option value="admin">管理者</option>
+                          <option value="user">スペースユーザー</option>
+                          <option value="admin">スペース管理者</option>
                         </select>
                         <Button size="sm" type="submit">
                           追加
@@ -177,11 +174,13 @@ export function SpaceList({
                           <select
                             id={`tenant-role-${group.id}`}
                             name="tenantRole"
-                            defaultValue="approver"
+                            defaultValue="applicant"
                             className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                           >
-                            <option value="approver">承認者</option>
-                            <option value="tenant_admin">管理者</option>
+                            <option value="applicant">ユーザー</option>
+                            <option value="platform_admin">
+                              システム管理者
+                            </option>
                           </select>
                         </div>
                         <div className="space-y-1">
@@ -194,8 +193,8 @@ export function SpaceList({
                             defaultValue="user"
                             className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                           >
-                            <option value="user">ユーザー</option>
-                            <option value="admin">管理者</option>
+                            <option value="user">スペースユーザー</option>
+                            <option value="admin">スペース管理者</option>
                           </select>
                         </div>
                         <div className="flex items-end">
@@ -238,7 +237,7 @@ export function SpaceList({
                                     : "outline"
                                 }
                               >
-                                {groupRoleLabel(member.role)}
+                                {spaceRoleLabel(member.role)}
                               </Badge>
                             </TableCell>
                             <TableCell className="space-x-2 text-right">
@@ -256,8 +255,8 @@ export function SpaceList({
                                     defaultValue={member.role}
                                     className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                                   >
-                                    <option value="user">ユーザー</option>
-                                    <option value="admin">管理者</option>
+                                    <option value="user">スペースユーザー</option>
+                                    <option value="admin">スペース管理者</option>
                                   </select>
                                   <Button
                                     size="sm"

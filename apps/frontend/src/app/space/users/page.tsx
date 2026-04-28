@@ -5,12 +5,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { userRoleLabel } from "@/lib/role-labels";
 
 type TenantUserSummary = {
   id: string;
   email: string;
   name: string | null;
-  role: "tenant_admin" | "approver" | string;
+  role: "platform_admin" | "tenant_admin" | "approver" | "applicant" | string;
   isActive: boolean;
   createdAt: string;
 };
@@ -20,17 +21,6 @@ function unwrapData<T>(raw: unknown): T {
     throw new Error("invalid success envelope");
   }
   return (raw as { data: T }).data;
-}
-
-function roleLabel(role: string) {
-  switch (role) {
-    case "tenant_admin":
-      return "管理者";
-    case "approver":
-      return "承認者";
-    default:
-      return role;
-  }
 }
 
 async function updateRoleAction(userId: string, formData: FormData): Promise<void> {
@@ -92,7 +82,7 @@ export default async function AdminUsersPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline">{roleLabel(user.role)}</Badge>
+                        <Badge variant="outline">{userRoleLabel(user.role)}</Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {new Date(user.createdAt).toLocaleDateString("ja-JP")}
@@ -107,8 +97,8 @@ export default async function AdminUsersPage() {
                             defaultValue={user.role}
                           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                         >
-                          <option value="tenant_admin">管理者</option>
-                          <option value="approver">承認者</option>
+                          <option value="platform_admin">システム管理者</option>
+                          <option value="applicant">ユーザー</option>
                         </select>
                           <Button size="sm" type="submit" variant="outline">
                             更新

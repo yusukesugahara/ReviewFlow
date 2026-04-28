@@ -23,7 +23,7 @@ export function AdminNavLink({ href, children }: AdminNavLinkProps) {
       asChild
       variant="ghost"
       className={cn(
-        "justify-start h-10 rounded-xl px-3.5 text-[14px] font-medium transition-colors",
+        "h-8 justify-start rounded-lg px-2.5 text-xs font-medium transition-colors",
         "text-slate-300 hover:bg-slate-800 hover:text-white",
         isActive &&
           "bg-violet-500/15 text-violet-100 ring-1 ring-inset ring-violet-400/40 hover:bg-violet-500/20"

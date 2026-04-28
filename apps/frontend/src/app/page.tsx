@@ -7,11 +7,11 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  if (me.roles.includes("tenant_admin")) {
-    redirect("/space");
+  if (me.roles.includes("platform_admin")) {
+    redirect("/admin/spaces");
   }
-  if (me.roles.includes("approver")) {
-    redirect("/review/applications");
+  if (me.roles.includes("tenant_admin")) {
+    redirect("/admin/spaces");
   }
   redirect("/app/applications");
 }

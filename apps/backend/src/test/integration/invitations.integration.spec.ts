@@ -44,7 +44,7 @@ describe('Invitations (integration)', () => {
     }
   });
 
-  it('tenant_admin creates invitation; accept creates user and returns JWT', async () => {
+  it('system admin creates invitation; accept creates user and returns JWT', async () => {
     const reg = await auth.register({
       email: 'admin-inv@int.test',
       password: 'password12',
@@ -91,12 +91,12 @@ describe('Invitations (integration)', () => {
     };
 
     await invitations.create(
-      { email: 'dup@int.test', role: UserRole.APPROVER },
+      { email: 'dup@int.test', role: UserRole.APPLICANT },
       actor,
     );
 
     await expect(
-      invitations.create({ email: 'dup@int.test', role: UserRole.APPROVER }, actor),
+      invitations.create({ email: 'dup@int.test', role: UserRole.APPLICANT }, actor),
     ).rejects.toMatchObject({
       errorCode: ClientErrorCodes.INVITATION_PENDING_EXISTS,
     });

@@ -139,7 +139,7 @@ describe('App (e2e)', () => {
     });
   });
 
-  it('first registered user is tenant_admin; admin ping OK; applicant gets 403', async () => {
+  it('first registered user is platform_admin; admin ping OK; applicant gets 403', async () => {
     const http = app.getHttpServer();
     const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
 
@@ -149,7 +149,7 @@ describe('App (e2e)', () => {
       .send({ email: 'admin@e2e.test', password: 'password12' })
       .expect(201);
     expect((reg1.body as RegisterJsonBody).data?.user?.role).toBe(
-      'tenant_admin',
+      'platform_admin',
     );
 
     const login1 = await request(http)
@@ -270,7 +270,7 @@ describe('App (e2e)', () => {
     const body = me.body as MeJsonBody;
     expect(body.status).toBe(200);
     expect(body.data?.email).toBe('me@e2e.test');
-    expect(body.data?.roles).toEqual(['tenant_admin']);
+    expect(body.data?.roles).toEqual(['platform_admin']);
     expect(typeof body.data?.id).toBe('string');
   });
 

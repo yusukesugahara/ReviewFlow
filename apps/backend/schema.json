@@ -41,7 +41,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザー一覧（tenant_admin）",
+        "summary": "テナント内ユーザー一覧（system admin）",
         "tags": [
           "users"
         ]
@@ -106,7 +106,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザーのロール変更（tenant_admin）",
+        "summary": "テナント内ユーザーのロール変更（system admin）",
         "tags": [
           "users"
         ]
@@ -2980,10 +2980,10 @@
         "properties": {
           "role": {
             "type": "string",
-            "example": "approver",
+            "example": "platform_admin",
             "enum": [
-              "tenant_admin",
-              "approver"
+              "platform_admin",
+              "applicant"
             ]
           }
         },
@@ -3004,7 +3004,7 @@
           },
           "role": {
             "type": "string",
-            "example": "tenant_admin",
+            "example": "platform_admin",
             "enum": [
               "platform_admin",
               "tenant_admin",
@@ -3098,7 +3098,7 @@
           },
           "roles": {
             "example": [
-              "tenant_admin"
+              "platform_admin"
             ],
             "type": "array",
             "items": {
@@ -3223,10 +3223,10 @@
           },
           "role": {
             "type": "string",
-            "example": "approver",
+            "example": "applicant",
             "enum": [
-              "tenant_admin",
-              "approver"
+              "platform_admin",
+              "applicant"
             ]
           },
           "groupId": {

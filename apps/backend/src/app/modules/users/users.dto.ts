@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsIn, IsString } from 'class-validator';
-import { INVITATION_ASSIGNABLE_ROLES } from '../../../models/constants/invitation-role';
+import {
+  UserRole,
+  type UserRoleValue,
+} from '../../../models/constants/user-role';
+
+const USER_ROLE_UPDATE_SELECTABLE_ROLES: UserRoleValue[] = [
+  UserRole.PLATFORM_ADMIN,
+  UserRole.APPLICANT,
+];
 
 export class TenantUserSummaryDto {
   @ApiProperty()
@@ -29,10 +37,10 @@ export class TenantUsersListResponseDto {
 
 export class UpdateUserRoleDto {
   @ApiProperty({
-    example: 'approver',
-    enum: INVITATION_ASSIGNABLE_ROLES,
+    example: UserRole.PLATFORM_ADMIN,
+    enum: USER_ROLE_UPDATE_SELECTABLE_ROLES,
   })
   @IsString()
-  @IsIn(INVITATION_ASSIGNABLE_ROLES)
-  role!: (typeof INVITATION_ASSIGNABLE_ROLES)[number];
+  @IsIn(USER_ROLE_UPDATE_SELECTABLE_ROLES)
+  role!: UserRoleValue;
 }

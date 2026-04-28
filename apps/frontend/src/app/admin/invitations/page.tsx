@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { userRoleLabel } from "@/lib/role-labels";
 import { CopyButton } from "../_components/copy-button";
 
 type InvitationResponse = {
@@ -111,7 +112,7 @@ export default async function AdminInvitationsPage({
       <div>
         <h2 className="text-3xl font-bold tracking-tight">ユーザー招待</h2>
         <p className="text-muted-foreground">
-          招待URLを発行して、承認者・管理者を追加できます
+          招待URLを発行して、ユーザー・システム管理者を追加できます
         </p>
       </div>
 
@@ -139,11 +140,11 @@ export default async function AdminInvitationsPage({
               <select
                 id="role"
                 name="role"
-                defaultValue="approver"
+                defaultValue="applicant"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm"
               >
-                <option value="approver">approver（承認者）</option>
-                <option value="tenant_admin">tenant_admin（管理者）</option>
+                <option value="applicant">ユーザー</option>
+                <option value="platform_admin">システム管理者</option>
               </select>
             </div>
             <Button type="submit">招待URLを発行</Button>
@@ -169,7 +170,7 @@ export default async function AdminInvitationsPage({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              {params.role ? <Badge>{params.role}</Badge> : null}
+              {params.role ? <Badge>{userRoleLabel(params.role)}</Badge> : null}
               {params.email ? (
                 <Badge variant="outline">{params.email}</Badge>
               ) : null}

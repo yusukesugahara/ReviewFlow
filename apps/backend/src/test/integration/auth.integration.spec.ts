@@ -38,12 +38,12 @@ describe('Auth (integration)', () => {
     }
   });
 
-  it('register creates tenant_admin with tenantId; login accepts lowercased email; duplicate register conflicts', async () => {
+  it('register creates platform_admin with tenantId; login accepts lowercased email; duplicate register conflicts', async () => {
     const reg = await auth.register({
       email: 'Admin@Int.test',
       password: 'password12',
     });
-    expect(reg.user.role).toBe(UserRole.TENANT_ADMIN);
+    expect(reg.user.role).toBe(UserRole.PLATFORM_ADMIN);
     expect(reg.user.tenantId).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
     );
@@ -61,7 +61,7 @@ describe('Auth (integration)', () => {
     ).rejects.toMatchObject({ errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN });
   });
 
-  it('second distinct email registers another tenant as tenant_admin', async () => {
+  it('second distinct email registers another tenant as platform_admin', async () => {
     await auth.register({
       email: 'first@int.test',
       password: 'password12',
@@ -70,7 +70,7 @@ describe('Auth (integration)', () => {
       email: 'second@int.test',
       password: 'password12',
     });
-    expect(second.user.role).toBe(UserRole.TENANT_ADMIN);
+    expect(second.user.role).toBe(UserRole.PLATFORM_ADMIN);
     expect(second.user.tenantId).toBeTruthy();
   });
 });

@@ -66,19 +66,6 @@ describe('UsersService', () => {
       });
     });
 
-    it('forbids platform_admin role', async () => {
-      await expect(
-        service.updateRoleInTenant(
-          't1',
-          'other-id',
-          UserRole.PLATFORM_ADMIN,
-          'actor-id',
-        ),
-      ).rejects.toMatchObject({
-        errorCode: ClientErrorCodes.USER_ROLE_NOT_ASSIGNABLE,
-      });
-    });
-
     it('throws when user not in tenant', async () => {
       repo.findOne.mockResolvedValue(null);
       await expect(
@@ -135,6 +122,30 @@ describe('UsersService', () => {
       );
 
       expect(out.role).toBe(UserRole.APPLICANT);
+      expect(repo.save).toHaveBeenCalled();
+    });
+
+    it('allows promoting another user to platform_admin', async () => {
+      const approver = {
+        id: 'u-ap',
+        tenantId: 't1',
+        role: UserRole.APPROVER,
+        email: 'a@b.com',
+        name: null,
+        isActive: true,
+        createdAt: new Date(),
+      } as User;
+      repo.findOne.mockResolvedValue(approver);
+      repo.save.mockImplementation(async (u: User) => u);
+
+      const out = await service.updateRoleInTenant(
+        't1',
+        'u-ap',
+        UserRole.PLATFORM_ADMIN,
+        'actor-id',
+      );
+
+      expect(out.role).toBe(UserRole.PLATFORM_ADMIN);
       expect(repo.save).toHaveBeenCalled();
     });
   });

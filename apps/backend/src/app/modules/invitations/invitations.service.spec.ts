@@ -83,7 +83,7 @@ describe('InvitationsService', () => {
 
       await expect(
         service.create(
-          { email: 'x@y.com', role: UserRole.APPROVER },
+          { email: 'x@y.com', role: UserRole.APPLICANT },
           actor,
         ),
       ).rejects.toMatchObject({
@@ -166,7 +166,7 @@ describe('InvitationsService', () => {
       const inv: Partial<Invitation> = {
         tenantId: 'tenant-1',
         email: 'join@y.com',
-        role: UserRole.APPROVER,
+        role: UserRole.APPLICANT,
         status: InvitationStatus.PENDING,
         expiresAt: new Date(Date.now() + 60_000),
       };
@@ -192,7 +192,7 @@ describe('InvitationsService', () => {
 
       authService.issueTokensForUser.mockReturnValue({
         access_token: 'jwt',
-        user: { id: 'new-user', email: 'join@y.com', role: UserRole.APPROVER, tenantId: 'tenant-1' },
+        user: { id: 'new-user', email: 'join@y.com', role: UserRole.APPLICANT, tenantId: 'tenant-1' },
       });
 
       const out = await service.accept({

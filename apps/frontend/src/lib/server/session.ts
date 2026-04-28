@@ -35,7 +35,12 @@ export async function getCurrentSessionUser(): Promise<CurrentSessionUser | null
   if (!token) {
     return null;
   }
-  const me = await postAuthMe(token);
+  let me: Awaited<ReturnType<typeof postAuthMe>>;
+  try {
+    me = await postAuthMe(token);
+  } catch {
+    return null;
+  }
   if (!me.ok) {
     return null;
   }

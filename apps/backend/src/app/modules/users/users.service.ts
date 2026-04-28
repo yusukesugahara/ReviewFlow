@@ -8,6 +8,11 @@ import {
 } from '../../../models/constants/user-role';
 import { User } from '../../../models/entities/user.entity';
 
+const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [
+  UserRole.PLATFORM_ADMIN,
+  UserRole.TENANT_ADMIN,
+];
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -60,7 +65,7 @@ export class UsersService {
     return this.users.count({
       where: {
         tenantId,
-        role: UserRole.TENANT_ADMIN,
+        role: In(ADMIN_CAPABLE_ROLES),
         isActive: true,
       },
     });
@@ -75,9 +80,6 @@ export class UsersService {
     if (targetUserId === actorUserId) {
       throw clientError(ClientErrorCodes.USER_ROLE_UPDATE_SELF_FORBIDDEN);
     }
-    if (nextRole === UserRole.PLATFORM_ADMIN) {
-      throw clientError(ClientErrorCodes.USER_ROLE_NOT_ASSIGNABLE);
-    }
 
     const target = await this.findByIdAndTenant(targetUserId, tenantId);
     if (!target) {
@@ -85,8 +87,8 @@ export class UsersService {
     }
 
     if (
-      target.role === UserRole.TENANT_ADMIN &&
-      nextRole !== UserRole.TENANT_ADMIN
+      ADMIN_CAPABLE_ROLES.includes(target.role) &&
+      !ADMIN_CAPABLE_ROLES.includes(nextRole)
     ) {
       const admins = await this.countTenantAdmins(tenantId);
       if (admins <= 1) {
