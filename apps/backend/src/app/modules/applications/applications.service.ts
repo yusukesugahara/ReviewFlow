@@ -767,34 +767,26 @@ export class ApplicationsService {
     return mapCorrectionsList(rows);
   }
 
-  async getCorrectionTargetsForActor(
-    actor: AuthUserPayload,
+  private async findOpenCorrectionWithItems(
+    tenantId: string,
     applicationId: string,
-  ): Promise<CorrectionTargetsResponseDto> {
-    const app = await this.loadApplicationOrThrow(
-      actor.tenantId,
-      applicationId,
-      {
-        detail: true,
-      },
-    );
-    await this.accessPolicy.assertCanRead(
-      actor,
-      app,
-      (applicationId, actorId) =>
-        this.countApprovalsByActor(applicationId, actorId),
-    );
-
+  ): Promise<CorrectionRequest | null> {
     const opens = await this.correctionRequests.find({
       where: {
-        applicationId: app.id,
-        tenantId: actor.tenantId,
+        applicationId,
+        tenantId,
         status: CorrectionRequestStatus.OPEN,
       },
       relations: ['items', 'items.formField'],
       order: { createdAt: 'DESC' },
     });
-    const open = opens[0] ?? null;
+    return opens[0] ?? null;
+  }
+
+  private async buildCorrectionTargetsResponse(
+    app: Application,
+  ): Promise<CorrectionTargetsResponseDto> {
+    const open = await this.findOpenCorrectionWithItems(app.tenantId, app.id);
 
     if (!open) {
       return {
@@ -836,6 +828,27 @@ export class ApplicationsService {
     };
   }
 
+  async getCorrectionTargetsForActor(
+    actor: AuthUserPayload,
+    applicationId: string,
+  ): Promise<CorrectionTargetsResponseDto> {
+    const app = await this.loadApplicationOrThrow(
+      actor.tenantId,
+      applicationId,
+      {
+        detail: true,
+      },
+    );
+    await this.accessPolicy.assertCanRead(
+      actor,
+      app,
+      (applicationId, actorId) =>
+        this.countApprovalsByActor(applicationId, actorId),
+    );
+
+    return this.buildCorrectionTargetsResponse(app);
+  }
+
   async getCorrectionTargetsForApplicant(
     actor: ApplicantSession,
     applicationId: string,
@@ -847,57 +860,12 @@ export class ApplicationsService {
         detail: true,
       },
     );
+    if (app.formTemplateId !== actor.templateId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
     this.accessPolicy.assertApplicantOwns(actor, app);
 
-    const opens = await this.correctionRequests.find({
-      where: {
-        applicationId: app.id,
-        tenantId: actor.tenantId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
-    const open = opens[0] ?? null;
-
-    if (!open) {
-      return {
-        applicationId: app.id,
-        applicationStatus: app.status,
-        openCorrection: null,
-      };
-    }
-
-    const valueByFieldId = new Map(
-      (app.fieldValues ?? []).map((v) => [v.formFieldId, v.valueJson]),
-    );
-
-    const items = (open.items ?? []).map((it) => {
-      const ff = it.formField;
-      return {
-        itemId: it.id,
-        formFieldId: it.formFieldId,
-        fieldKey: ff?.fieldKey ?? '',
-        label: ff?.label ?? '',
-        fieldType: ff?.fieldType ?? '',
-        required: ff?.required ?? false,
-        comment: it.comment,
-        currentValue: valueByFieldId.has(it.formFieldId)
-          ? valueByFieldId.get(it.formFieldId)
-          : null,
-      };
-    });
-
-    return {
-      applicationId: app.id,
-      applicationStatus: app.status,
-      openCorrection: {
-        id: open.id,
-        overallComment: open.overallComment,
-        createdAt: open.createdAt.toISOString(),
-        items,
-      },
-    };
+    return this.buildCorrectionTargetsResponse(app);
   }
 
   toSummary(row: Application) {
