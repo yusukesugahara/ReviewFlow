@@ -123,6 +123,13 @@ Update docs when changing:
 
 ## Technology Stack
 
+Package management:
+
+- Use npm workspaces from the repository root.
+- Keep the root `package-lock.json` as the only committed lockfile.
+- Do not create or commit app-local lockfiles such as `apps/frontend/package-lock.json`, `apps/backend/package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
+- Run dependency installs from the repository root with npm unless the package manager policy is intentionally changed in README, CI, and this file in the same update.
+
 Frontend:
 
 - Next.js App Router
@@ -351,4 +358,3 @@ Before considering work complete:
 - Logs do not expose sensitive data.
 - Tenant and role authorization paths are verified.
 - Final response reports commands run and any commands that could not be run.
-

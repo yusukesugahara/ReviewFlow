@@ -1,4 +1,8 @@
 node_modules
+apps/*/package-lock.json
+apps/*/yarn.lock
+apps/*/pnpm-lock.yaml
+apps/*/npm-shrinkwrap.json
 .turbo
 .next
 dist
