@@ -14,9 +14,11 @@ import { FormTemplateStatus } from '../constants/form-template-status';
 import { Tenant } from './tenant.entity';
 import { User } from './user.entity';
 import { FormField } from './form-field.entity';
+import { Group } from './group.entity';
 
 @Entity('form_templates')
 @Index('IDX_form_templates_tenant', ['tenantId'])
+@Index('IDX_form_templates_tenant_group', ['tenantId', 'groupId'])
 export class FormTemplate {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -27,6 +29,13 @@ export class FormTemplate {
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
+
+  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  groupId!: string;
+
+  @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'group_id' })
+  group!: Group;
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;

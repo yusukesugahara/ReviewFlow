@@ -36,6 +36,7 @@ type PageProps = {
     setupError?: string;
     setupStatus?: string;
     publishedTemplateId?: string;
+    spaceId?: string;
   }>;
 };
 
@@ -189,8 +190,12 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
   const fieldsJson = formData.get("fieldsJson");
   const stepLines = formData.get("stepLines");
   const intent = formData.get("intent");
+  const spaceId = formData.get("spaceId");
 
   if (typeof name !== "string" || name.trim().length === 0) {
+    redirect("/space/application-setup?setupError=invalid_name");
+  }
+  if (typeof spaceId !== "string" || spaceId.length === 0) {
     redirect("/space/application-setup?setupError=invalid_name");
   }
   if (typeof stepLines !== "string") {
@@ -220,6 +225,7 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
     const createdRaw = await backendAuthFetchJson("/form-templates", {
       method: "POST",
       body: {
+        groupId: spaceId,
         name: name.trim(),
         description: `${name.trim()} の申請フォーム`,
       },
@@ -244,6 +250,7 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
     await backendAuthFetchJson("/approval-flows", {
       method: "POST",
       body: {
+        groupId: spaceId,
         formTemplateId: createdId,
         name: `${name.trim()} 承認フロー`,
         steps,
@@ -274,6 +281,9 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
 
 export default async function AdminApplicationSetupPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
+  const spacesRaw = await backendAuthFetchJson("/groups");
+  const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
+  const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
   const errorMessage = setupErrorMessage(params.setupError);
   const statusMessage = setupStatusMessage(params.setupStatus);
   const publishedTemplateId = params.setupStatus === "published" ? params.publishedTemplateId : null;
@@ -300,6 +310,7 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
         statusMessage={statusMessage}
         publishedTemplateId={publishedTemplateId}
         assignees={assignees}
+        spaceId={spaceId}
       />
     </div>
   );

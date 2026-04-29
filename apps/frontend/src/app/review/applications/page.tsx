@@ -46,9 +46,19 @@ function getStatusLabel(status: string): string {
   return labels[status] ?? status;
 }
 
-export default async function ReviewApplicationsPage() {
+type PageProps = {
+  searchParams?: Promise<{ spaceId?: string }>;
+};
+
+export default async function ReviewApplicationsPage({ searchParams }: PageProps) {
   try {
-    const raw = await backendAuthFetchJson("/applications");
+    const params = (await searchParams) ?? {};
+    const spacesRaw = await backendAuthFetchJson("/groups");
+    const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
+    const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
+    const raw = await backendAuthFetchJson(
+      `/applications?groupId=${encodeURIComponent(spaceId)}`,
+    );
     const rows =
       unwrapData<{ applications?: ApplicationRow[] }>(raw).applications ?? [];
 

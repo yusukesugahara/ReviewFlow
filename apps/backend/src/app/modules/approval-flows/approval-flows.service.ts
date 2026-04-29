@@ -2,9 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
+import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
+import { GroupMemberRole } from '../../../models/constants/group-member-role';
+import { UserRole } from '../../../models/constants/user-role';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { GroupMember } from '../../../models/entities/group-member.entity';
+import { Group } from '../../../models/entities/group.entity';
 import { User } from '../../../models/entities/user.entity';
 import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import type { CreateApprovalFlowDto } from './approval-flows.dto';
@@ -17,13 +22,47 @@ export class ApprovalFlowsService {
     private readonly flows: Repository<ApprovalFlow>,
     @InjectRepository(FormTemplate)
     private readonly templates: Repository<FormTemplate>,
+    @InjectRepository(Group)
+    private readonly groups: Repository<Group>,
+    @InjectRepository(GroupMember)
+    private readonly members: Repository<GroupMember>,
     @InjectRepository(User)
     private readonly users: Repository<User>,
   ) {}
 
-  async listByTenant(tenantId: string): Promise<ApprovalFlow[]> {
+  private async assertCanManageGroup(
+    actor: AuthUserPayload,
+    groupId: string,
+  ): Promise<void> {
+    const group = await this.groups.findOne({
+      where: { id: groupId, tenantId: actor.tenantId },
+    });
+    if (!group) {
+      throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
+    }
+    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
+      return;
+    }
+    const member = await this.members.findOne({
+      where: {
+        tenantId: actor.tenantId,
+        groupId,
+        userId: actor.id,
+        role: GroupMemberRole.ADMIN,
+      },
+    });
+    if (!member) {
+      throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
+    }
+  }
+
+  async listByGroup(
+    actor: AuthUserPayload,
+    groupId: string,
+  ): Promise<ApprovalFlow[]> {
+    await this.assertCanManageGroup(actor, groupId);
     const rows = await this.flows.find({
-      where: { tenantId },
+      where: { tenantId: actor.tenantId, groupId },
       relations: ['steps'],
       order: { updatedAt: 'DESC' },
     });
@@ -49,13 +88,18 @@ export class ApprovalFlowsService {
   }
 
   async create(
-    tenantId: string,
+    actor: AuthUserPayload,
     dto: CreateApprovalFlowDto,
   ): Promise<ApprovalFlow> {
+    await this.assertCanManageGroup(actor, dto.groupId);
     this.assertStepsValid(dto);
 
     const tpl = await this.templates.findOne({
-      where: { id: dto.formTemplateId, tenantId },
+      where: {
+        id: dto.formTemplateId,
+        tenantId: actor.tenantId,
+        groupId: dto.groupId,
+      },
     });
     if (!tpl) {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
@@ -68,10 +112,20 @@ export class ApprovalFlowsService {
       new Set(sortedSteps.map((step) => step.assigneeUserId)),
     );
     const assignees = await this.users.find({
-      where: assigneeIds.map((id) => ({ id, tenantId })),
+      where: assigneeIds.map((id) => ({ id, tenantId: actor.tenantId })),
     });
     if (assignees.length !== assigneeIds.length) {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
+    }
+    const assigneeMemberships = await this.members.find({
+      where: assigneeIds.map((userId) => ({
+        tenantId: actor.tenantId,
+        groupId: dto.groupId,
+        userId,
+      })),
+    });
+    if (assigneeMemberships.length !== assigneeIds.length) {
+      throw clientError(ClientErrorCodes.GROUP_MEMBER_NOT_FOUND);
     }
 
     let newFlowId = '';
@@ -79,7 +133,8 @@ export class ApprovalFlowsService {
       const flowRepo = em.getRepository(ApprovalFlow);
       const stepRepo = em.getRepository(ApprovalStep);
       const flow = flowRepo.create({
-        tenantId,
+        tenantId: actor.tenantId,
+        groupId: dto.groupId,
         formTemplateId: dto.formTemplateId,
         name: dto.name.trim(),
         isActive: true,
@@ -89,7 +144,8 @@ export class ApprovalFlowsService {
       for (const s of sortedSteps) {
         await stepRepo.save(
           stepRepo.create({
-            tenantId,
+            tenantId: actor.tenantId,
+            groupId: dto.groupId,
             approvalFlowId: saved.id,
             stepOrder: s.stepOrder,
             stepName: s.stepName.trim(),
@@ -100,7 +156,7 @@ export class ApprovalFlowsService {
       }
     });
 
-    return this.getOne(tenantId, newFlowId);
+    return this.getOne(actor.tenantId, newFlowId);
   }
 
   async getOne(tenantId: string, flowId: string): Promise<ApprovalFlow> {

@@ -13,15 +13,16 @@ type ExportJob = {
   createdAt: string;
 };
 
-async function createExportJobAction(): Promise<void> {
+async function createExportJobAction(formData: FormData): Promise<void> {
   "use server";
+  const groupId = formData.get("groupId");
   const me = await getCurrentSessionUser();
-  if (!me) {
+  if (!me || typeof groupId !== "string" || groupId.length === 0) {
     return;
   }
   const createdRaw = await backendAuthFetchJson("/export-jobs", {
     method: "POST",
-    body: {},
+    body: { groupId },
   });
   const job = unwrapData<ExportJob>(createdRaw);
   revalidatePath("/admin/export-jobs");
@@ -54,6 +55,9 @@ type ExportJobsPageProps = {
 
 export default async function ExportJobsPage({ searchParams }: ExportJobsPageProps) {
   const params = (await searchParams) ?? {};
+  const spacesRaw = await backendAuthFetchJson("/groups");
+  const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
+  const groupId = spaces[0]?.id ?? "";
   const jobId = params.jobId;
   let latestJob: ExportJob | null = null;
   let errorText: string | null = null;
@@ -88,6 +92,7 @@ export default async function ExportJobsPage({ searchParams }: ExportJobsPagePro
         </CardHeader>
         <CardContent>
           <form action={createExportJobAction}>
+            <input type="hidden" name="groupId" value={groupId} />
             <Button type="submit">新しいCSVジョブを作成</Button>
           </form>
         </CardContent>

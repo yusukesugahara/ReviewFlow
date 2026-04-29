@@ -952,6 +952,7 @@ export interface components {
         };
         FormTemplateResponseDto: {
             id: string;
+            groupId: string;
             name: string;
             description?: Record<string, never>;
             /** @enum {string} */
@@ -965,6 +966,8 @@ export interface components {
             templates: components["schemas"]["FormTemplateResponseDto"][];
         };
         CreateFormTemplateDto: {
+            /** Format: uuid */
+            groupId: string;
             /** @example 経費申請 */
             name: string;
             /** @example 経費精算用 */
@@ -1025,6 +1028,7 @@ export interface components {
         };
         ApprovalFlowResponseDto: {
             id: string;
+            groupId: string;
             formTemplateId: string;
             name: string;
             isActive: boolean;
@@ -1049,6 +1053,8 @@ export interface components {
             canReturn: boolean;
         };
         CreateApprovalFlowDto: {
+            /** Format: uuid */
+            groupId: string;
             /** Format: uuid */
             formTemplateId: string;
             /** @example 経費申請フロー */
@@ -1114,6 +1120,7 @@ export interface components {
         };
         ApplicationSummaryDto: {
             id: string;
+            groupId: string;
             status: string;
             formTemplateId: string;
             approvalFlowId: string;
@@ -1131,6 +1138,8 @@ export interface components {
             status: string;
         };
         CreateApplicationDto: {
+            /** Format: uuid */
+            groupId: string;
             /** Format: uuid */
             formTemplateId: string;
             /**
@@ -1150,6 +1159,7 @@ export interface components {
         };
         ApplicationDetailDto: {
             id: string;
+            groupId: string;
             status: string;
             formTemplateId: string;
             approvalFlowId: string;
@@ -1233,6 +1243,7 @@ export interface components {
         ApplicantSessionResponseDto: Record<string, never>;
         ExportJobResponseDto: {
             id: string;
+            groupId: string;
             status: string;
             filterJson?: Record<string, never>;
             filePath?: Record<string, never>;
@@ -1241,6 +1252,8 @@ export interface components {
             createdAt: string;
         };
         CreateExportJobDto: {
+            /** Format: uuid */
+            groupId: string;
             /** @enum {string} */
             status?: "draft" | "submitted" | "in_review" | "returned" | "approved" | "rejected";
             /** Format: uuid */
@@ -1529,7 +1542,9 @@ export interface operations {
     };
     FormTemplatesController_list: {
         parameters: {
-            query?: never;
+            query: {
+                groupId: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -1852,7 +1867,9 @@ export interface operations {
     };
     ApprovalFlowsController_list: {
         parameters: {
-            query?: never;
+            query: {
+                groupId: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -2143,7 +2160,9 @@ export interface operations {
     };
     ApplicationsController_list: {
         parameters: {
-            query?: never;
+            query: {
+                groupId: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;

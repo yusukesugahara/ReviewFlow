@@ -13,6 +13,7 @@ export function mapApplicationToSummary(
 ): ApplicationSummaryDto {
   return {
     id: row.id,
+    groupId: row.groupId,
     status: row.status,
     formTemplateId: row.formTemplateId,
     approvalFlowId: row.approvalFlowId,

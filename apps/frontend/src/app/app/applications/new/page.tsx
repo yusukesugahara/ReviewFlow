@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 
 type FormTemplate = {
   id: string;
+  groupId: string;
   name: string;
   status: string;
   fields: DynamicFormField[];
@@ -34,9 +35,14 @@ function unwrapData<T>(raw: unknown): T {
 async function createApplicationAction(formData: FormData): Promise<void> {
   "use server";
   const formTemplateId = formData.get("selectedFormTemplateId");
+  const groupId = formData.get("selectedGroupId");
   const approvalFlowId = formData.get("approvalFlowId");
   const fieldsJson = formData.get("selectedFormFieldsJson");
-  if (typeof formTemplateId !== "string" || typeof fieldsJson !== "string") {
+  if (
+    typeof formTemplateId !== "string" ||
+    typeof groupId !== "string" ||
+    typeof fieldsJson !== "string"
+  ) {
     redirect("/app/applications/new?error=invalid_input");
   }
 
@@ -56,6 +62,7 @@ async function createApplicationAction(formData: FormData): Promise<void> {
     method: "POST",
     body: {
       formTemplateId,
+      groupId,
       approvalFlowId:
         typeof approvalFlowId === "string" && approvalFlowId.length > 0
           ? approvalFlowId
@@ -115,6 +122,7 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
           <CardContent>
             <form action={createApplicationAction} className="space-y-6">
               <input type="hidden" name="selectedFormTemplateId" value={selectedTemplate.id} />
+              <input type="hidden" name="selectedGroupId" value={selectedTemplate.groupId} />
               <input
                 type="hidden"
                 name="selectedFormFieldsJson"

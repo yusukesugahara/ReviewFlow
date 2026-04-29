@@ -489,7 +489,16 @@
     "/form-templates": {
       "get": {
         "operationId": "FormTemplatesController_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1121,7 +1130,16 @@
     "/approval-flows": {
       "get": {
         "operationId": "ApprovalFlowsController_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -1672,7 +1690,16 @@
     "/applications": {
       "get": {
         "operationId": "ApplicationsController_list",
-        "parameters": [],
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "description": "",
@@ -3322,6 +3349,9 @@
           "id": {
             "type": "string"
           },
+          "groupId": {
+            "type": "string"
+          },
           "name": {
             "type": "string"
           },
@@ -3354,6 +3384,7 @@
         },
         "required": [
           "id",
+          "groupId",
           "name",
           "status",
           "createdByUserId",
@@ -3379,6 +3410,10 @@
       "CreateFormTemplateDto": {
         "type": "object",
         "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "name": {
             "type": "string",
             "example": "経費申請"
@@ -3389,6 +3424,7 @@
           }
         },
         "required": [
+          "groupId",
           "name"
         ]
       },
@@ -3562,6 +3598,9 @@
           "id": {
             "type": "string"
           },
+          "groupId": {
+            "type": "string"
+          },
           "formTemplateId": {
             "type": "string"
           },
@@ -3586,6 +3625,7 @@
         },
         "required": [
           "id",
+          "groupId",
           "formTemplateId",
           "name",
           "isActive",
@@ -3639,6 +3679,10 @@
       "CreateApprovalFlowDto": {
         "type": "object",
         "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "formTemplateId": {
             "type": "string",
             "format": "uuid"
@@ -3655,6 +3699,7 @@
           }
         },
         "required": [
+          "groupId",
           "formTemplateId",
           "name",
           "steps"
@@ -3862,6 +3907,9 @@
           "id": {
             "type": "string"
           },
+          "groupId": {
+            "type": "string"
+          },
           "status": {
             "type": "string"
           },
@@ -3891,6 +3939,7 @@
         },
         "required": [
           "id",
+          "groupId",
           "status",
           "formTemplateId",
           "approvalFlowId",
@@ -3931,6 +3980,10 @@
       "CreateApplicationDto": {
         "type": "object",
         "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "formTemplateId": {
             "type": "string",
             "format": "uuid"
@@ -3950,6 +4003,7 @@
           }
         },
         "required": [
+          "groupId",
           "formTemplateId"
         ]
       },
@@ -3957,6 +4011,9 @@
         "type": "object",
         "properties": {
           "id": {
+            "type": "string"
+          },
+          "groupId": {
             "type": "string"
           },
           "status": {
@@ -3993,6 +4050,7 @@
         },
         "required": [
           "id",
+          "groupId",
           "status",
           "formTemplateId",
           "approvalFlowId",
@@ -4243,6 +4301,9 @@
           "id": {
             "type": "string"
           },
+          "groupId": {
+            "type": "string"
+          },
           "status": {
             "type": "string"
           },
@@ -4266,6 +4327,7 @@
         },
         "required": [
           "id",
+          "groupId",
           "status",
           "createdAt"
         ]
@@ -4273,6 +4335,10 @@
       "CreateExportJobDto": {
         "type": "object",
         "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
           "status": {
             "type": "string",
             "enum": [
@@ -4288,7 +4354,10 @@
             "type": "string",
             "format": "uuid"
           }
-        }
+        },
+        "required": [
+          "groupId"
+        ]
       },
       "ErrorResponseDto": {
         "type": "object",

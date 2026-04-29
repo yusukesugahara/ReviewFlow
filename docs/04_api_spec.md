@@ -3,6 +3,8 @@
 - 認証必須APIでは JWT 内の tenant_id と role を利用する
 - クライアントから tenant_id を受け取って信頼しない
 - テナントスコープはサーバー側で強制する
+- 業務データは `tenant_id` と `group_id` の両方でスコープする。UI 上は group を space と呼ぶ。
+- space 業務 API は `groupId` を query/body で明示する。サーバー側で group の tenant と利用者の所属/権限を検証する。
 
 ## Auth
 
@@ -83,24 +85,26 @@ request:
 ## Form Templates
 
 ### GET /form-templates
-権限: tenant_admin
+権限: tenant_admin, tenant_user（group admin）  
+query: `groupId` 必須。tenant_admin はテナント内 group、group admin は自分が admin の group のみ。
 
 ### GET /form-templates/:id
-権限: tenant_admin  
+権限: tenant_admin, tenant_user（group admin）  
 単一テンプレート（`fields` 含む）を返す。
 
 ### POST /form-templates
-権限: tenant_admin
+権限: tenant_admin, tenant_user（group admin）
 request:
 ```json
 {
+  "groupId": "group_1",
   "name": "経費申請",
   "description": "経費精算用フォーム"
 }
 ```
 
 ### POST /form-templates/:id/fields
-権限: tenant_admin
+権限: tenant_admin, tenant_user（group admin）
 request:
 ```json
 {
@@ -116,19 +120,20 @@ request:
 ```
 
 ### POST /form-templates/:id/publish
-権限: tenant_admin
+権限: tenant_admin, tenant_user（group admin）
 
 ## Approval Flows
 
 ### GET /approval-flows
-権限: tenant_admin  
-テナント内の承認フロー一覧（`steps` を `step_order` 昇順で含む）。
+権限: tenant_admin, tenant_user（group admin）  
+query: `groupId` 必須。指定 group 内の承認フロー一覧（`steps` を `step_order` 昇順で含む）。
 
 ### POST /approval-flows
-権限: tenant_admin。参照する `formTemplateId` のテンプレートは同一テナントに存在すること。`steps[].stepOrder` は **1 からの連番**で重複不可。
+権限: tenant_admin, tenant_user（group admin）。参照する `formTemplateId` のテンプレートは同一テナント・同一 group に存在すること。`steps[].assigneeUserId` は同一 group 所属ユーザー。`steps[].stepOrder` は **1 からの連番**で重複不可。
 request:
 ```json
 {
+  "groupId": "group_1",
   "formTemplateId": "form_1",
   "name": "経費申請フロー",
   "steps": [
@@ -151,16 +156,18 @@ request:
 ## Applications
 
 ### GET /applications
-権限: tenant_user, tenant_user, tenant_admin  
-- tenant_user: 自分の申請のみ  
-- tenant_user: **in_review** かつ現在ステップの `assignee_user_id` が `tenant_user` のもののみ  
-- tenant_admin: テナント内の全申請
+権限: tenant_user, tenant_admin  
+query: `groupId` 必須。
+- tenant_admin: テナント内の指定 group の申請
+- group admin: 自分が admin の group の申請
+- group user: 所属 group 内で、自分の申請または **in_review** かつ現在ステップの `assignee_user_id` が自分のもの
 
 ### POST /applications
-権限: tenant_user。`formTemplateId` は **published** のテンプレートのみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
+権限: tenant_user, tenant_admin。`groupId` 必須。`formTemplateId` は同一 group の **published** テンプレートのみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
 request:
 ```json
 {
+  "groupId": "group_1",
   "formTemplateId": "form_1",
   "approvalFlowId": "optional-flow-uuid",
   "values": {
@@ -189,13 +196,14 @@ response:
 権限:
 - tenant_user: 自分の申請のみ
 - tenant_user: 担当対象のみ
+- group admin: 自分が admin の group の申請
 - tenant_admin: テナント内全件
 
 ## Approval Actions
 
 ### POST /applications/:id/approve
 権限: tenant_user, tenant_admin  
-`in_review` のときのみ。現在ステップの `assignee_user_id` が承認者ロールと一致する **tenant_user**、または **tenant_admin**（いずれのステップでも可）。最終ステップ承認後は `approved`。任意 `comment`。
+`in_review` のときのみ。tenant_admin はテナント内 group、group admin は自分が admin の group、group user は現在ステップの `assignee_user_id` が自分の申請のみ実行可能。最終ステップ承認後は `approved`。任意 `comment`。
 
 ### POST /applications/:id/return
 権限: tenant_user, tenant_admin  
@@ -236,10 +244,11 @@ request:
 ## Export Jobs
 
 ### POST /export-jobs
-権限: tenant_admin  
+権限: tenant_admin, tenant_user（group admin）  
 request (任意フィルタ):
 ```json
 {
+  "groupId": "group_1",
   "status": "in_review",
   "formTemplateId": "optional-template-uuid"
 }
@@ -248,10 +257,10 @@ request (任意フィルタ):
 - 値は `application_field_values.value_json` を列に展開（object/array は JSON 文字列）。
 
 ### GET /export-jobs/:id
-権限: tenant_admin
+権限: tenant_admin, tenant_user（group admin）
 
 ### GET /export-jobs/:id/download
-権限: tenant_admin  
+権限: tenant_admin, tenant_user（group admin）  
 `status=completed` のジョブのみダウンロード可能（`text/csv`）。
 
 ## Audit Logs

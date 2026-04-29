@@ -32,6 +32,7 @@ type ApplicationSetupDraftFormProps = {
   statusMessage?: string | null;
   publishedTemplateId?: string | null;
   assignees: ApprovalAssigneeOption[];
+  spaceId: string;
 };
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -135,6 +136,7 @@ export function ApplicationSetupDraftForm({
   statusMessage,
   publishedTemplateId,
   assignees,
+  spaceId,
 }: ApplicationSetupDraftFormProps) {
   const [fields, setFields] = useState<DraftField[]>([createDefaultField(0)]);
 
@@ -167,6 +169,7 @@ export function ApplicationSetupDraftForm({
         templateId={publishedTemplateId ?? undefined}
       />
       <input type="hidden" name="fieldsJson" value={fieldsJson} />
+      <input type="hidden" name="spaceId" value={spaceId} />
 
       {errorMessage ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">

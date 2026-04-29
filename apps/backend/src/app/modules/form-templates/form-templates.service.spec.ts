@@ -6,6 +6,8 @@ import { FormTemplateStatus } from '../../../models/constants/form-template-stat
 import { FormFieldType } from '../../../models/constants/form-field-type';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { GroupMember } from '../../../models/entities/group-member.entity';
+import { Group } from '../../../models/entities/group.entity';
 import { AuthService } from '../auth/auth.service';
 import { MailService } from '../mail/mail.service';
 import { FormTemplatesService } from './form-templates.service';
@@ -18,6 +20,14 @@ describe('FormTemplatesService', () => {
   let fields: jest.Mocked<
     Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
   >;
+  let groups: jest.Mocked<Pick<Repository<Group>, 'count'>>;
+  let members: jest.Mocked<Pick<Repository<GroupMember>, 'findOne'>>;
+  const actor = {
+    id: 'u1',
+    tenantId: 'ten1',
+    email: 'u1@example.com',
+    roles: ['tenant_admin'],
+  };
 
   beforeEach(async () => {
     templates = {
@@ -35,12 +45,20 @@ describe('FormTemplatesService', () => {
     } as unknown as jest.Mocked<
       Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
     >;
+    groups = {
+      count: jest.fn().mockResolvedValue(1),
+    };
+    members = {
+      findOne: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FormTemplatesService,
         { provide: getRepositoryToken(FormTemplate), useValue: templates },
         { provide: getRepositoryToken(FormField), useValue: fields },
+        { provide: getRepositoryToken(Group), useValue: groups },
+        { provide: getRepositoryToken(GroupMember), useValue: members },
         {
           provide: MailService,
           useValue: { sendApplicationAccessEmail: jest.fn() },
@@ -66,11 +84,12 @@ describe('FormTemplatesService', () => {
     } as FormTemplate;
     templates.save.mockResolvedValue(saved);
 
-    const out = await service.create('ten1', { name: '  A  ' }, 'u1');
+    const out = await service.create(actor, { groupId: 'g1', name: '  A  ' });
 
     expect(templates.create).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'A',
+        groupId: 'g1',
         status: FormTemplateStatus.DRAFT,
         createdByUserId: 'u1',
       }),
@@ -82,11 +101,12 @@ describe('FormTemplatesService', () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
+      groupId: 'g1',
       status: FormTemplateStatus.PUBLISHED,
     } as FormTemplate);
 
     await expect(
-      service.addField('ten1', 't1', {
+      service.addField(actor, 't1', {
         fieldKey: 'k',
         label: 'L',
         fieldType: FormFieldType.TEXT,
@@ -102,10 +122,11 @@ describe('FormTemplatesService', () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
+      groupId: 'g1',
       status: FormTemplateStatus.ARCHIVED,
     } as FormTemplate);
 
-    await expect(service.publish('ten1', 't1')).rejects.toMatchObject({
+    await expect(service.publish(actor, 't1')).rejects.toMatchObject({
       errorCode: ClientErrorCodes.FORM_TEMPLATE_NOT_PUBLISHABLE,
     });
   });

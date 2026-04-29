@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -51,9 +52,10 @@ export class ApplicationsController {
   @ApiOperation({ summary: '申請一覧（ロールに応じたスコープ）' })
   @ApiSuccessResponse(ApplicationsListResponseDto)
   async list(
+    @Query('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationsListResponseDto>> {
-    const rows = await this.applications.listForActor(actor);
+    const rows = await this.applications.listForActor(actor, groupId);
     return successResponse({
       applications: rows.map((r) => this.applications.toSummary(r)),
     });

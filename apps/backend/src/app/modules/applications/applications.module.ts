@@ -7,6 +7,8 @@ import { CorrectionRequestItem } from '../../../models/entities/correction-reque
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { GroupMember } from '../../../models/entities/group-member.entity';
+import { Group } from '../../../models/entities/group.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationAccessPolicy } from './application-access.policy';
@@ -27,6 +29,8 @@ import { PublicApplicationsController } from './public-applications.controller';
       CorrectionRequestItem,
       FormTemplate,
       ApprovalFlow,
+      Group,
+      GroupMember,
     ]),
   ],
   controllers: [ApplicationsController, PublicApplicationsController],

@@ -10,10 +10,17 @@ import {
 import type { ExportJobStatusValue } from '../constants/export-job-status';
 import { Tenant } from './tenant.entity';
 import { User } from './user.entity';
+import { Group } from './group.entity';
 
 @Entity('export_jobs')
 @Index('IDX_export_jobs_tenant_status_created', [
   'tenantId',
+  'status',
+  'createdAt',
+])
+@Index('IDX_export_jobs_tenant_group_status_created', [
+  'tenantId',
+  'groupId',
   'status',
   'createdAt',
 ])
@@ -27,6 +34,13 @@ export class ExportJob {
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
+
+  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  groupId!: string;
+
+  @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'group_id' })
+  group!: Group;
 
   @Column({ name: 'requested_by_user_id', type: 'varchar', length: 36 })
   requestedByUserId!: string;

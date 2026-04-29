@@ -6,6 +6,8 @@ import { FormTemplateStatus } from '../../../models/constants/form-template-stat
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { GroupMember } from '../../../models/entities/group-member.entity';
+import { Group } from '../../../models/entities/group.entity';
 import { User } from '../../../models/entities/user.entity';
 import { ApprovalFlowsService } from './approval-flows.service';
 
@@ -15,7 +17,15 @@ describe('ApprovalFlowsService', () => {
     Pick<Repository<ApprovalFlow>, 'find' | 'findOne' | 'manager'>
   >;
   let templates: jest.Mocked<Pick<Repository<FormTemplate>, 'findOne'>>;
+  let groups: jest.Mocked<Pick<Repository<Group>, 'findOne'>>;
+  let members: jest.Mocked<Pick<Repository<GroupMember>, 'findOne' | 'find'>>;
   let users: jest.Mocked<Pick<Repository<User>, 'find'>>;
+  const actor = {
+    id: 'admin-1',
+    tenantId: 'ten1',
+    email: 'admin@example.com',
+    roles: ['tenant_admin'],
+  };
 
   beforeEach(async () => {
     templates = {
@@ -23,6 +33,13 @@ describe('ApprovalFlowsService', () => {
     };
     users = {
       find: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
+    };
+    groups = {
+      findOne: jest.fn().mockResolvedValue({ id: 'g1', tenantId: 'ten1' }),
+    };
+    members = {
+      findOne: jest.fn(),
+      find: jest.fn().mockResolvedValue([{ userId: 'user-1' }]),
     };
     flows = {
       find: jest.fn(),
@@ -60,6 +77,8 @@ describe('ApprovalFlowsService', () => {
         ApprovalFlowsService,
         { provide: getRepositoryToken(ApprovalFlow), useValue: flows },
         { provide: getRepositoryToken(FormTemplate), useValue: templates },
+        { provide: getRepositoryToken(Group), useValue: groups },
+        { provide: getRepositoryToken(GroupMember), useValue: members },
         { provide: getRepositoryToken(User), useValue: users },
       ],
     }).compile();
@@ -71,11 +90,13 @@ describe('ApprovalFlowsService', () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
+      groupId: 'g1',
       status: FormTemplateStatus.DRAFT,
     } as FormTemplate);
     flows.findOne.mockResolvedValue({
       id: 'flow-new',
       tenantId: 'ten1',
+      groupId: 'g1',
       formTemplateId: 't1',
       name: 'F',
       isActive: true,
@@ -91,7 +112,8 @@ describe('ApprovalFlowsService', () => {
     } as ApprovalFlow);
 
     await expect(
-      service.create('ten1', {
+      service.create(actor, {
+        groupId: 'g1',
         formTemplateId: 't1',
         name: 'F',
         steps: [
@@ -113,11 +135,13 @@ describe('ApprovalFlowsService', () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
+      groupId: 'g1',
       status: FormTemplateStatus.PUBLISHED,
     } as FormTemplate);
 
     await expect(
-      service.create('ten1', {
+      service.create(actor, {
+        groupId: 'g1',
         formTemplateId: 't1',
         name: 'F',
         steps: [

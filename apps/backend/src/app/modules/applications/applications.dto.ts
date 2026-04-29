@@ -15,6 +15,10 @@ import type { ApplicationStatusValue } from '../../../models/constants/applicati
 export class CreateApplicationDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
+  groupId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
   formTemplateId!: string;
 
   @ApiPropertyOptional({
@@ -204,6 +208,9 @@ export class ApplicationCreateResponseDto {
 export class ApplicationSummaryDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  groupId!: string;
 
   @ApiProperty()
   status!: ApplicationStatusValue;

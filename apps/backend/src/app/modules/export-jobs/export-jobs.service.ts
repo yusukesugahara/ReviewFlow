@@ -8,6 +8,10 @@ import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { Application } from '../../../models/entities/application.entity';
 import { ExportJobStatus } from '../../../models/constants/export-job-status';
 import { ExportJob } from '../../../models/entities/export-job.entity';
+import { GroupMemberRole } from '../../../models/constants/group-member-role';
+import { UserRole } from '../../../models/constants/user-role';
+import { GroupMember } from '../../../models/entities/group-member.entity';
+import { Group } from '../../../models/entities/group.entity';
 import type { CreateExportJobDto } from './export-jobs.dto';
 import { mapExportJobToDto } from './export-jobs.mapper';
 
@@ -20,7 +24,37 @@ export class ExportJobsService {
     private readonly jobs: Repository<ExportJob>,
     @InjectRepository(Application)
     private readonly applications: Repository<Application>,
+    @InjectRepository(Group)
+    private readonly groups: Repository<Group>,
+    @InjectRepository(GroupMember)
+    private readonly members: Repository<GroupMember>,
   ) {}
+
+  private async assertCanManageGroup(
+    actor: AuthUserPayload,
+    groupId: string,
+  ): Promise<void> {
+    const group = await this.groups.findOne({
+      where: { id: groupId, tenantId: actor.tenantId },
+    });
+    if (!group) {
+      throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
+    }
+    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
+      return;
+    }
+    const member = await this.members.findOne({
+      where: {
+        tenantId: actor.tenantId,
+        groupId,
+        userId: actor.id,
+        role: GroupMemberRole.ADMIN,
+      },
+    });
+    if (!member) {
+      throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
+    }
+  }
 
   private csvEscape(value: unknown): string {
     if (value === null || value === undefined) {
@@ -100,6 +134,7 @@ export class ExportJobsService {
   }
 
   async create(actor: AuthUserPayload, dto: CreateExportJobDto) {
+    await this.assertCanManageGroup(actor, dto.groupId);
     const filterJson: Record<string, unknown> = {};
     if (dto.status) {
       filterJson.status = dto.status;
@@ -111,6 +146,7 @@ export class ExportJobsService {
     const job = await this.jobs.save(
       this.jobs.create({
         tenantId: actor.tenantId,
+        groupId: dto.groupId,
         requestedByUserId: actor.id,
         status: ExportJobStatus.QUEUED,
         filterJson: Object.keys(filterJson).length ? filterJson : null,
@@ -125,7 +161,10 @@ export class ExportJobsService {
       job.startedAt = new Date();
       await this.jobs.save(job);
 
-      const where: Record<string, unknown> = { tenantId: actor.tenantId };
+      const where: Record<string, unknown> = {
+        tenantId: actor.tenantId,
+        groupId: dto.groupId,
+      };
       if (dto.status) where.status = dto.status;
       if (dto.formTemplateId) where.formTemplateId = dto.formTemplateId;
 
@@ -155,22 +194,28 @@ export class ExportJobsService {
       await this.jobs.save(job);
     }
 
-    return this.getOne(actor.tenantId, job.id);
+    return this.getOne(actor, job.id);
   }
 
-  async getOne(tenantId: string, id: string) {
-    const row = await this.jobs.findOne({ where: { id, tenantId } });
+  async getOne(actor: AuthUserPayload, id: string) {
+    const row = await this.jobs.findOne({
+      where: { id, tenantId: actor.tenantId },
+    });
     if (!row) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_FOUND);
     }
+    await this.assertCanManageGroup(actor, row.groupId);
     return mapExportJobToDto(row);
   }
 
-  async getDownload(tenantId: string, id: string): Promise<CsvDownload> {
-    const row = await this.jobs.findOne({ where: { id, tenantId } });
+  async getDownload(actor: AuthUserPayload, id: string): Promise<CsvDownload> {
+    const row = await this.jobs.findOne({
+      where: { id, tenantId: actor.tenantId },
+    });
     if (!row) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_FOUND);
     }
+    await this.assertCanManageGroup(actor, row.groupId);
     if (row.status !== ExportJobStatus.COMPLETED) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_READY);
     }

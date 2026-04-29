@@ -35,7 +35,7 @@ export class ExportJobsController {
   @AuthApi()
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Post()
-  @Roles(UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: 'CSV 出力ジョブ作成（tenant_admin）' })
   @ApiSuccessResponseCreated(ExportJobResponseDto)
@@ -50,7 +50,7 @@ export class ExportJobsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id')
-  @Roles(UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'CSV 出力ジョブ状態取得' })
   @ApiSuccessResponse(ExportJobResponseDto)
@@ -58,13 +58,13 @@ export class ExportJobsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ExportJobResponseDto>> {
-    return successResponse(await this.exportJobs.getOne(actor.tenantId, id));
+    return successResponse(await this.exportJobs.getOne(actor, id));
   }
 
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Get(':id/download')
-  @Roles(UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'CSV ダウンロード（completed のみ）' })
   @ApiProduces('text/csv')
@@ -72,7 +72,7 @@ export class ExportJobsController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<StreamableFile> {
-    const file = await this.exportJobs.getDownload(actor.tenantId, id);
+    const file = await this.exportJobs.getDownload(actor, id);
     return new StreamableFile(file.content, {
       type: 'text/csv; charset=utf-8',
       disposition: `attachment; filename="${file.fileName}"`,

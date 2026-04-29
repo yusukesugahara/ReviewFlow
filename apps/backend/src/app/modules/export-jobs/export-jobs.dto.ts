@@ -7,6 +7,10 @@ import {
 import type { ExportJobStatusValue } from '../../../models/constants/export-job-status';
 
 export class CreateExportJobDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  groupId!: string;
+
   @ApiPropertyOptional({ enum: Object.values(ApplicationStatus) })
   @IsOptional()
   @IsIn(Object.values(ApplicationStatus))
@@ -21,6 +25,9 @@ export class CreateExportJobDto {
 export class ExportJobResponseDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  groupId!: string;
 
   @ApiProperty()
   status!: ExportJobStatusValue;

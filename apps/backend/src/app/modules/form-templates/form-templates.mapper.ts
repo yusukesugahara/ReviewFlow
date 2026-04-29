@@ -26,6 +26,7 @@ export function mapFormTemplateToDto(t: FormTemplate): FormTemplateResponseDto {
     .sort((a, b) => a.sortOrder - b.sortOrder);
   return {
     id: t.id,
+    groupId: t.groupId,
     name: t.name,
     description: t.description,
     status: t.status,

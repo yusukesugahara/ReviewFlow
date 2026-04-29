@@ -12,6 +12,8 @@ import { requestContextMiddleware } from '../../common/logging/request-context.m
 import { UserRole } from '../../models/constants/user-role';
 import { User } from '../../models/entities/user.entity';
 
+jest.setTimeout(15_000);
+
 type ErrorJsonBody = { errorCode?: string };
 type LoginJsonBody = {
   data?: { access_token?: string; user?: { id?: string } };
@@ -27,6 +29,7 @@ type InviteCreateJsonBody = {
 type UsersListJsonBody = {
   data?: { users?: { id: string; email: string; role: string }[] };
 };
+type GroupCreateJsonBody = { data?: { id?: string } };
 type FormTemplatesListBody = {
   data?: { templates?: { id: string; name: string; status: string }[] };
 };
@@ -94,6 +97,22 @@ async function fetchMeId(
     .set('Authorization', `Bearer ${token}`)
     .expect(200);
   return (res.body as MeJsonBody).data?.id ?? '';
+}
+
+async function createGroupForAdmin(
+  http: App,
+  apiKey: Record<string, string>,
+  token: string,
+  adminUserId: string,
+  name: string,
+): Promise<string> {
+  const res = await request(http)
+    .post('/groups')
+    .set(apiKey)
+    .set('Authorization', `Bearer ${token}`)
+    .send({ name, adminUserIds: [adminUserId] })
+    .expect(201);
+  return (res.body as GroupCreateJsonBody).data?.id ?? '';
 }
 type ExportJobBody = {
   data?: { id?: string; status?: string; filePath?: string | null };
@@ -495,12 +514,19 @@ describe('App (e2e)', () => {
       .expect(200);
     const tok = (login.body as LoginJsonBody).data?.access_token ?? '';
     const adminId = await fetchMeId(http, apiKey, tok);
+    const groupId = await createGroupForAdmin(
+      http,
+      apiKey,
+      tok,
+      adminId,
+      'form-space',
+    );
 
     const created = await request(http)
       .post('/form-templates')
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
-      .send({ name: '経費申請', description: 'desc' })
+      .send({ groupId, name: '経費申請', description: 'desc' })
       .expect(201);
     const tid = (created.body as FormTemplateCreateBody).data?.id ?? '';
     expect((created.body as FormTemplateCreateBody).data?.status).toBe('draft');
@@ -527,6 +553,7 @@ describe('App (e2e)', () => {
 
     const list = await request(http)
       .get('/form-templates')
+      .query({ groupId })
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
@@ -549,6 +576,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .send({
+        groupId,
         formTemplateId: tid,
         name: '経費申請フロー',
         steps: [
@@ -570,6 +598,7 @@ describe('App (e2e)', () => {
 
     const flowsRes = await request(http)
       .get('/approval-flows')
+      .query({ groupId })
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
@@ -598,12 +627,19 @@ describe('App (e2e)', () => {
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
     const adminId = await fetchMeId(http, apiKey, adminTok);
+    const groupId = await createGroupForAdmin(
+      http,
+      apiKey,
+      adminTok,
+      adminId,
+      'app-space',
+    );
 
     const createdTpl = await request(http)
       .post('/form-templates')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ name: '申請用フォーム' })
+      .send({ groupId, name: '申請用フォーム' })
       .expect(201);
     const tplId = (createdTpl.body as FormTemplateCreateBody).data?.id ?? '';
 
@@ -632,6 +668,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
+        groupId,
         formTemplateId: tplId,
         name: '単一承認者フロー',
         steps: [
@@ -649,7 +686,12 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'app-submitter@e2e.test', role: 'tenant_user' })
+      .send({
+        email: 'app-submitter@e2e.test',
+        role: 'tenant_user',
+        groupId,
+        groupRole: 'user',
+      })
       .expect(201);
     const invAppTok = (invApp.body as InviteCreateJsonBody).data?.token ?? '';
 
@@ -657,7 +699,12 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'app-approver@e2e.test', role: 'tenant_user' })
+      .send({
+        email: 'app-approver@e2e.test',
+        role: 'tenant_user',
+        groupId,
+        groupRole: 'user',
+      })
       .expect(201);
     const invAprTok = (invApr.body as InviteCreateJsonBody).data?.token ?? '';
 
@@ -693,6 +740,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${appTok}`)
       .send({
+        groupId,
         formTemplateId: tplId,
         values: { title: '下書きタイトル' },
       })
@@ -704,6 +752,7 @@ describe('App (e2e)', () => {
 
     const listDraft = await request(http)
       .get('/applications')
+      .query({ groupId })
       .set(apiKey)
       .set('Authorization', `Bearer ${appTok}`)
       .expect(200);
@@ -725,6 +774,7 @@ describe('App (e2e)', () => {
 
     const queue = await request(http)
       .get('/applications')
+      .query({ groupId })
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
@@ -777,12 +827,19 @@ describe('App (e2e)', () => {
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
     const adminId = await fetchMeId(http, apiKey, adminTok);
+    const groupId = await createGroupForAdmin(
+      http,
+      apiKey,
+      adminTok,
+      adminId,
+      'return-space',
+    );
 
     const tplRes = await request(http)
       .post('/form-templates')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ name: '差し戻し用' })
+      .send({ groupId, name: '差し戻し用' })
       .expect(201);
     const tplId = (tplRes.body as FormTemplateCreateBody).data?.id ?? '';
 
@@ -821,6 +878,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
+        groupId,
         formTemplateId: tplId,
         name: '差し戻し可フロー',
         steps: [
@@ -838,13 +896,23 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'ret-app@e2e.test', role: 'tenant_user' })
+      .send({
+        email: 'ret-app@e2e.test',
+        role: 'tenant_user',
+        groupId,
+        groupRole: 'user',
+      })
       .expect(201);
     const invB = await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'ret-apr@e2e.test', role: 'tenant_user' })
+      .send({
+        email: 'ret-apr@e2e.test',
+        role: 'tenant_user',
+        groupId,
+        groupRole: 'user',
+      })
       .expect(201);
 
     await request(http)
@@ -882,6 +950,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
       .send({
+        groupId,
         formTemplateId: tplId,
         values: { note: 'v1' },
       })
@@ -977,12 +1046,19 @@ describe('App (e2e)', () => {
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
     const adminId = await fetchMeId(http, apiKey, adminTok);
+    const groupId = await createGroupForAdmin(
+      http,
+      apiKey,
+      adminTok,
+      adminId,
+      'csv-space',
+    );
 
     const tpl = await request(http)
       .post('/form-templates')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ name: 'CSV対象フォーム' })
+      .send({ groupId, name: 'CSV対象フォーム' })
       .expect(201);
     const tplId = (tpl.body as FormTemplateCreateBody).data?.id ?? '';
 
@@ -1023,6 +1099,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
+        groupId,
         formTemplateId: tplId,
         name: 'CSVフロー',
         steps: [
@@ -1040,7 +1117,12 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'csv-app@e2e.test', role: 'tenant_user' })
+      .send({
+        email: 'csv-app@e2e.test',
+        role: 'tenant_user',
+        groupId,
+        groupRole: 'user',
+      })
       .expect(201);
     await request(http)
       .post('/invitations/accept')
@@ -1063,6 +1145,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${appTok}`)
       .send({
+        groupId,
         formTemplateId: tplId,
         values: { expense_title: '旅費精算', amount: 12000 },
       })
@@ -1079,7 +1162,7 @@ describe('App (e2e)', () => {
       .post('/export-jobs')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ status: 'in_review' })
+      .send({ groupId, status: 'in_review' })
       .expect(201);
     const jobId = (jobCreated.body as ExportJobBody).data?.id ?? '';
     expect((jobCreated.body as ExportJobBody).data?.status).toBe('completed');

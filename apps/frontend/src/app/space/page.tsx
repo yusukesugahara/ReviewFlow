@@ -14,9 +14,19 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
-export default async function AdminDashboardPage() {
+type PageProps = {
+  searchParams?: Promise<{ spaceId?: string }>;
+};
+
+export default async function AdminDashboardPage({ searchParams }: PageProps) {
   try {
-    const appsRaw = await backendAuthFetchJson("/applications");
+    const params = (await searchParams) ?? {};
+    const spacesRaw = await backendAuthFetchJson("/groups");
+    const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
+    const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
+    const appsRaw = await backendAuthFetchJson(
+      `/applications?groupId=${encodeURIComponent(spaceId)}`,
+    );
     const apps = unwrapData<{ applications?: AppSummary[] }>(appsRaw).applications ?? [];
 
     let correctionCount = 0;

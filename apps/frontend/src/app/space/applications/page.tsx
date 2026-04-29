@@ -21,7 +21,7 @@ type ApplicationRow = {
 };
 
 type PageProps = {
-  searchParams?: Promise<{ status?: string }>;
+  searchParams?: Promise<{ status?: string; spaceId?: string }>;
 };
 
 function unwrapData<T>(raw: unknown): T {
@@ -60,10 +60,13 @@ function getStatusLabel(status: string): string {
 export default async function AdminApplicationsPage({ searchParams }: PageProps) {
   try {
     const params = (await searchParams) ?? {};
+    const spacesRaw = await backendAuthFetchJson("/groups");
+    const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
+    const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
     const activeStatus = params.status === "draft" ? "draft" : "published";
     const [templatesRaw, applicationsRaw] = await Promise.all([
-      backendAuthFetchJson("/form-templates"),
-      backendAuthFetchJson("/applications"),
+      backendAuthFetchJson(`/form-templates?groupId=${encodeURIComponent(spaceId)}`),
+      backendAuthFetchJson(`/applications?groupId=${encodeURIComponent(spaceId)}`),
     ]);
 
     const templates =
@@ -152,7 +155,7 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
                       <TableCell className="text-right">
                         <Button asChild variant="ghost" size="sm">
                           <Link
-                            href={`/admin/template-management/${encodeURIComponent(template.id)}`}
+                            href={`/admin/template-management/${encodeURIComponent(template.id)}?spaceId=${encodeURIComponent(spaceId)}`}
                           >
                             詳細
                           </Link>

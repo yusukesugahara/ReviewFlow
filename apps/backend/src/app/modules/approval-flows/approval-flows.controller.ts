@@ -4,7 +4,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
   Post,
+  Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -36,14 +38,15 @@ export class ApprovalFlowsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get()
-  @Roles(UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '承認フロー一覧（tenant_admin）' })
   @ApiSuccessResponse(ApprovalFlowsListResponseDto)
   async list(
+    @Query('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApprovalFlowsListResponseDto>> {
-    const rows = await this.approvalFlows.listByTenant(actor.tenantId);
+    const rows = await this.approvalFlows.listByGroup(actor, groupId);
     return successResponse({
       flows: rows.map((r) => this.approvalFlows.toDto(r)),
     });
@@ -52,7 +55,7 @@ export class ApprovalFlowsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post()
-  @Roles(UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: '承認フロー作成（tenant_admin）',
@@ -64,7 +67,7 @@ export class ApprovalFlowsController {
     @Body() dto: CreateApprovalFlowDto,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApprovalFlowResponseDto>> {
-    const row = await this.approvalFlows.create(actor.tenantId, dto);
+    const row = await this.approvalFlows.create(actor, dto);
     return successResponse(this.approvalFlows.toDto(row));
   }
 }

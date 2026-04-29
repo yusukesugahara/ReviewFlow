@@ -19,9 +19,15 @@ type FormField = {
 
 type FormTemplate = {
   id: string;
+  groupId: string;
   name: string;
   status: string;
   fields: FormField[];
+};
+
+type GroupSummary = {
+  id: string;
+  name: string;
 };
 
 function unwrapData<T>(raw: unknown): T {
@@ -33,14 +39,26 @@ function unwrapData<T>(raw: unknown): T {
 
 type PageProps = {
   params: Promise<{ templateId: string }>;
+  searchParams?: Promise<{ spaceId?: string }>;
 };
 
-export default async function AdminTemplateDetailPage({ params }: PageProps) {
+export default async function AdminTemplateDetailPage({ params, searchParams }: PageProps) {
   const { templateId } = await params;
+  const query = searchParams ? await searchParams : {};
   const requestHeaders = await headers();
   const protocol = requestHeaders.get("x-forwarded-proto") ?? "http";
   const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host") ?? "";
-  const raw = await backendAuthFetchJson("/form-templates");
+  const groupsRaw = await backendAuthFetchJson("/groups");
+  const groups = unwrapData<{ groups?: GroupSummary[] }>(groupsRaw).groups ?? [];
+  const selectedGroupId = query.spaceId ?? groups[0]?.id;
+
+  if (!selectedGroupId) {
+    notFound();
+  }
+
+  const raw = await backendAuthFetchJson(
+    `/form-templates?groupId=${encodeURIComponent(selectedGroupId)}`,
+  );
   const templates = unwrapData<{ templates?: FormTemplate[] }>(raw).templates ?? [];
   const template = templates.find((item) => item.id === templateId);
 

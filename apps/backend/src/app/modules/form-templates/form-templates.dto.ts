@@ -7,6 +7,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   MinLength,
   Min,
@@ -15,6 +16,10 @@ import { FORM_FIELD_TYPES } from '../../../models/constants/form-field-type';
 import type { FormTemplateStatusValue } from '../../../models/constants/form-template-status';
 
 export class CreateFormTemplateDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  groupId!: string;
+
   @ApiProperty({ example: '経費申請' })
   @IsString()
   @MinLength(1)
@@ -63,6 +68,9 @@ export class FormFieldResponseDto {
 export class FormTemplateResponseDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  groupId!: string;
 
   @ApiProperty()
   name!: string;

@@ -15,10 +15,17 @@ import { FormTemplate } from './form-template.entity';
 import { ApprovalFlow } from './approval-flow.entity';
 import { ApplicationFieldValue } from './application-field-value.entity';
 import { User } from './user.entity';
+import { Group } from './group.entity';
 
 @Entity('applications')
 @Index('IDX_applications_tenant_status_created', [
   'tenantId',
+  'status',
+  'createdAt',
+])
+@Index('IDX_applications_tenant_group_status_created', [
+  'tenantId',
+  'groupId',
   'status',
   'createdAt',
 ])
@@ -32,6 +39,13 @@ export class Application {
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
+
+  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  groupId!: string;
+
+  @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'group_id' })
+  group!: Group;
 
   @Column({
     name: 'applicant_user_id',

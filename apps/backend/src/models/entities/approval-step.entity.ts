@@ -11,6 +11,7 @@ import {
 import { Tenant } from './tenant.entity';
 import { ApprovalFlow } from './approval-flow.entity';
 import { User } from './user.entity';
+import { Group } from './group.entity';
 
 @Entity('approval_steps')
 @Index('UQ_approval_steps_flow_order', ['approvalFlowId', 'stepOrder'], {
@@ -26,6 +27,13 @@ export class ApprovalStep {
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
+
+  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  groupId!: string;
+
+  @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'group_id' })
+  group!: Group;
 
   @Column({ name: 'approval_flow_id', type: 'varchar', length: 36 })
   approvalFlowId!: string;

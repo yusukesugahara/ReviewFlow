@@ -40,6 +40,10 @@ export class CreateApprovalFlowStepDto {
 export class CreateApprovalFlowDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
+  groupId!: string;
+
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
   formTemplateId!: string;
 
   @ApiProperty({ example: '経費申請フロー' })
@@ -79,6 +83,9 @@ export class ApprovalStepResponseDto {
 export class ApprovalFlowResponseDto {
   @ApiProperty()
   id!: string;
+
+  @ApiProperty()
+  groupId!: string;
 
   @ApiProperty()
   formTemplateId!: string;

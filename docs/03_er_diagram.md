@@ -33,6 +33,7 @@
 ## form_templates
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
+- group_id: string (FK -> groups.id)
 - name: string
 - description: string nullable
 - status: enum(draft, published, archived)
@@ -58,6 +59,7 @@
 ## approval_flows
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
+- group_id: string (FK -> groups.id)
 - form_template_id: string (FK -> form_templates.id)
 - name: string
 - is_active: boolean
@@ -67,6 +69,7 @@
 ## approval_steps
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
+- group_id: string (FK -> groups.id)
 - approval_flow_id: string (FK -> approval_flows.id)
 - step_order: int
 - step_name: string
@@ -78,6 +81,7 @@
 ## applications
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
+- group_id: string (FK -> groups.id)
 - applicant_user_id: string nullable (FK -> users.id)
 - applicant_email: string
 - form_template_id: string (FK -> form_templates.id)
@@ -129,6 +133,7 @@
 ## export_jobs
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
+- group_id: string (FK -> groups.id)
 - requested_by_user_id: string (FK -> users.id)
 - status: enum(queued, processing, completed, failed)
 - filter_json: json nullable
@@ -140,6 +145,7 @@
 ## audit_logs
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
+- group_id: string nullable (FK -> groups.id)
 - actor_user_id: string nullable (FK -> users.id)
 - action_type: string
 - target_type: string
@@ -149,10 +155,13 @@
 
 ## インデックス方針
 - users: unique(tenant_id, email)
+- form_templates: index(tenant_id, group_id)
 - form_fields: index(tenant_id, form_template_id, sort_order)
+- approval_flows: index(tenant_id, group_id)
+- approval_steps: index(tenant_id, group_id)
 - approval_steps: unique(approval_flow_id, step_order)
-- applications: index(tenant_id, status, created_at)
+- applications: index(tenant_id, group_id, status, created_at)
 - application_field_values: unique(application_id, form_field_id)
 - correction_request_items: index(correction_request_id, form_field_id)
-- export_jobs: index(tenant_id, status, created_at)
-- audit_logs: index(tenant_id, created_at)
+- export_jobs: index(tenant_id, group_id, status, created_at)
+- audit_logs: index(tenant_id, group_id, created_at), index(tenant_id, created_at)

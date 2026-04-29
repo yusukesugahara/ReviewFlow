@@ -28,7 +28,8 @@ export async function proxyBackendRequestTo(
   req: Request,
 ): Promise<NextResponse> {
   const env = getServerAuthEnv();
-  const url = `${env.apiBaseUrl}${nestPath}`;
+  const incomingUrl = new URL(req.url);
+  const url = `${env.apiBaseUrl}${nestPath}${incomingUrl.search}`;
 
   const headers = new Headers();
   headers.set("X-API-Key", env.INTERNAL_API_KEY);

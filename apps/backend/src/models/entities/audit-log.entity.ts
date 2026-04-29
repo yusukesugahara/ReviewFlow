@@ -9,9 +9,15 @@ import {
 } from 'typeorm';
 import { Tenant } from './tenant.entity';
 import { User } from './user.entity';
+import { Group } from './group.entity';
 
 @Entity('audit_logs')
 @Index('IDX_audit_logs_tenant_created', ['tenantId', 'createdAt'])
+@Index('IDX_audit_logs_tenant_group_created', [
+  'tenantId',
+  'groupId',
+  'createdAt',
+])
 export class AuditLog {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -22,6 +28,13 @@ export class AuditLog {
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
+
+  @Column({ name: 'group_id', type: 'varchar', length: 36, nullable: true })
+  groupId!: string | null;
+
+  @ManyToOne(() => Group, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'group_id' })
+  group!: Group | null;
 
   @Column({
     name: 'actor_user_id',

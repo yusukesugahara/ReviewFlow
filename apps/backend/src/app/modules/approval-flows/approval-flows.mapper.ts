@@ -26,6 +26,7 @@ export function mapApprovalFlowToDto(
   );
   return {
     id: row.id,
+    groupId: row.groupId,
     formTemplateId: row.formTemplateId,
     name: row.name,
     isActive: row.isActive,
