@@ -1,37 +1,35 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import {
+  listTenantUsers,
+  updateTenantUserRole,
+  type UpdateUserRoleInput,
+} from "@/lib/server/users-repository";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { userRoleLabel } from "@/lib/role-labels";
 
-type TenantUserSummary = {
-  id: string;
-  email: string;
-  name: string | null;
-  role: "platform_admin" | "tenant_admin" | "approver" | "applicant" | string;
-  isActive: boolean;
-  createdAt: string;
-};
+const editableRoles = new Set<UpdateUserRoleInput["role"]>([
+  "tenant_admin",
+  "approver",
+  "applicant",
+]);
 
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
+function isUpdateUserRole(role: string): role is UpdateUserRoleInput["role"] {
+  return editableRoles.has(role as UpdateUserRoleInput["role"]);
 }
 
 async function updateRoleAction(userId: string, formData: FormData): Promise<void> {
   "use server";
   const role = formData.get("role");
-  if (typeof role !== "string") return;
+  if (typeof role !== "string" || !isUpdateUserRole(role)) {
+    return;
+  }
 
-  await backendAuthFetchJson(`/users/${userId}/role`, {
-    method: "PATCH",
-    body: { role },
-  });
+  await updateTenantUserRole(userId, { role });
 
   revalidatePath("/space/users");
   redirect("/space/users");
@@ -39,8 +37,7 @@ async function updateRoleAction(userId: string, formData: FormData): Promise<voi
 
 export default async function AdminUsersPage() {
   try {
-    const raw = await backendAuthFetchJson("/users");
-    const users = unwrapData<{ users?: TenantUserSummary[] }>(raw).users ?? [];
+    const users = await listTenantUsers();
 
     return (
       <div className="space-y-6">
