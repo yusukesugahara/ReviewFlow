@@ -14,6 +14,7 @@ import { Tenant } from './tenant.entity';
 import { FormTemplate } from './form-template.entity';
 import { ApprovalFlow } from './approval-flow.entity';
 import { ApplicationFieldValue } from './application-field-value.entity';
+import { User } from './user.entity';
 
 @Entity('applications')
 @Index('IDX_applications_tenant_status_created', [
@@ -31,6 +32,18 @@ export class Application {
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
+
+  @Column({
+    name: 'applicant_user_id',
+    type: 'varchar',
+    length: 36,
+    nullable: true,
+  })
+  applicantUserId!: string | null;
+
+  @ManyToOne(() => User, { onDelete: 'RESTRICT', nullable: true })
+  @JoinColumn({ name: 'applicant_user_id' })
+  applicantUser!: User | null;
 
   @Column({ name: 'applicant_email', type: 'varchar', length: 255 })
   applicantEmail!: string;

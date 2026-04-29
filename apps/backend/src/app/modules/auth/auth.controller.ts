@@ -75,7 +75,7 @@ export class AuthController {
 
   @AuthApi()
   @Get('admin/ping')
-  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN)
   @ApiOperation({ summary: '管理者のみ（403 = ロール不足）' })
   @ApiSuccessResponse(AdminPingResponseDto)
   adminPing(): SuccessResponse<AdminPingResponseDto> {

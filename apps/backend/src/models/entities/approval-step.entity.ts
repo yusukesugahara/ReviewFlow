@@ -8,9 +8,9 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
-import type { ApproverStepRoleValue } from '../constants/approver-step-role';
 import { Tenant } from './tenant.entity';
 import { ApprovalFlow } from './approval-flow.entity';
+import { User } from './user.entity';
 
 @Entity('approval_steps')
 @Index('UQ_approval_steps_flow_order', ['approvalFlowId', 'stepOrder'], {
@@ -40,8 +40,12 @@ export class ApprovalStep {
   @Column({ name: 'step_name', type: 'varchar', length: 255 })
   stepName!: string;
 
-  @Column({ name: 'approver_role', type: 'varchar', length: 32 })
-  approverRole!: ApproverStepRoleValue;
+  @Column({ name: 'assignee_user_id', type: 'varchar', length: 36 })
+  assigneeUserId!: string;
+
+  @ManyToOne(() => User, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'assignee_user_id' })
+  assigneeUser!: User;
 
   @Column({ name: 'can_return', default: false })
   canReturn!: boolean;

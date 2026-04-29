@@ -7,7 +7,7 @@ type ApprovalStep = {
   id: string;
   stepOrder: number;
   stepName: string;
-  approverRole: string;
+  assigneeUserId: string;
   canReturn: boolean;
 };
 
@@ -99,7 +99,7 @@ export function ApprovalFlowSelector({ flows }: ApprovalFlowSelectorProps) {
                       </Badge>
                       <span className="font-medium">{step.stepName}</span>
                       <Badge variant="secondary" className="text-xs">
-                        {step.approverRole === "tenant_admin" ? "管理者" : "承認者"}
+                        承認者: {step.assigneeUserId.slice(0, 8)}...
                       </Badge>
                       {step.canReturn ? (
                         <Badge variant="outline" className="text-xs">

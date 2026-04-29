@@ -14,7 +14,7 @@
 - name: string
 - email: string
 - password_hash: string
-- role: enum(platform_admin, tenant_admin, approver, applicant)
+- role: enum(tenant_admin, tenant_user)
 - is_active: boolean
 - created_at: datetime
 - updated_at: datetime
@@ -23,7 +23,7 @@
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
 - email: string
-- role: enum(tenant_admin, approver, applicant)
+- role: enum(tenant_admin, tenant_user)
 - token: string
 - status: enum(pending, accepted, expired, revoked)
 - invited_by_user_id: string (FK -> users.id)
@@ -70,7 +70,7 @@
 - approval_flow_id: string (FK -> approval_flows.id)
 - step_order: int
 - step_name: string
-- approver_role: enum(tenant_admin, approver)
+- assignee_user_id: string (FK -> users.id)
 - can_return: boolean
 - created_at: datetime
 - updated_at: datetime
@@ -78,7 +78,8 @@
 ## applications
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
-- applicant_user_id: string (FK -> users.id)
+- applicant_user_id: string nullable (FK -> users.id)
+- applicant_email: string
 - form_template_id: string (FK -> form_templates.id)
 - approval_flow_id: string (FK -> approval_flows.id)
 - current_step_order: int nullable

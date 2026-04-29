@@ -7,7 +7,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ApprovalStepsBuilder } from "./approval-steps-builder";
+import {
+  ApprovalStepsBuilder,
+  type ApprovalAssigneeOption,
+} from "./approval-steps-builder";
 import { OrderMoveButtons } from "./order-move-buttons";
 import { PublishedApplicationUrlModal } from "./published-application-url-modal";
 
@@ -28,6 +31,7 @@ type ApplicationSetupDraftFormProps = {
   errorMessage?: string | null;
   statusMessage?: string | null;
   publishedTemplateId?: string | null;
+  assignees: ApprovalAssigneeOption[];
 };
 
 const FIELD_TYPES: { value: FieldType; label: string }[] = [
@@ -130,6 +134,7 @@ export function ApplicationSetupDraftForm({
   errorMessage,
   statusMessage,
   publishedTemplateId,
+  assignees,
 }: ApplicationSetupDraftFormProps) {
   const [fields, setFields] = useState<DraftField[]>([createDefaultField(0)]);
 
@@ -311,7 +316,7 @@ export function ApplicationSetupDraftForm({
           <CardDescription>承認ステップを設定します。ここではまだ保存されません。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ApprovalStepsBuilder />
+          <ApprovalStepsBuilder assignees={assignees} />
         </CardContent>
       </Card>
 

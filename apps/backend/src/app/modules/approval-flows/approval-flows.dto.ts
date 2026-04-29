@@ -4,7 +4,6 @@ import {
   ArrayMinSize,
   IsArray,
   IsBoolean,
-  IsIn,
   IsInt,
   IsString,
   IsUUID,
@@ -13,10 +12,6 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import {
-  APPROVER_STEP_ROLES,
-  type ApproverStepRoleValue,
-} from '../../../models/constants/approver-step-role';
 
 export class CreateApprovalFlowStepDto {
   @ApiProperty({ example: 1 })
@@ -30,9 +25,12 @@ export class CreateApprovalFlowStepDto {
   @MaxLength(255)
   stepName!: string;
 
-  @ApiProperty({ enum: APPROVER_STEP_ROLES })
-  @IsIn(APPROVER_STEP_ROLES)
-  approverRole!: ApproverStepRoleValue;
+  @ApiProperty({
+    format: 'uuid',
+    description: 'このステップを承認するテナント内ユーザーID',
+  })
+  @IsUUID()
+  assigneeUserId!: string;
 
   @ApiProperty({ example: true })
   @IsBoolean()
@@ -69,7 +67,7 @@ export class ApprovalStepResponseDto {
   stepName!: string;
 
   @ApiProperty()
-  approverRole!: string;
+  assigneeUserId!: string;
 
   @ApiProperty()
   canReturn!: boolean;

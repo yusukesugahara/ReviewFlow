@@ -7,20 +7,25 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { OrderMoveButtons } from "./order-move-buttons";
 
-type ApproverRole = "approver" | "tenant_admin";
-
 type StepItem = {
   id: string;
   stepName: string;
-  approverRole: ApproverRole;
+  assigneeUserId: string;
   canReturn: boolean;
+};
+
+export type ApprovalAssigneeOption = {
+  id: string;
+  label: string;
 };
 
 type ApprovalStepsBuilderProps = {
   defaultSteps?: StepItem[];
+  assignees: ApprovalAssigneeOption[];
 };
 
-export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps) {
+export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsBuilderProps) {
+  const defaultAssigneeId = assignees[0]?.id ?? "";
   const [steps, setSteps] = useState<StepItem[]>(
     defaultSteps && defaultSteps.length > 0
       ? defaultSteps
@@ -28,13 +33,13 @@ export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps
           {
             id: "step-1",
             stepName: "一次承認",
-            approverRole: "approver",
+            assigneeUserId: defaultAssigneeId,
             canReturn: true,
           },
           {
             id: "step-2",
             stepName: "最終承認",
-            approverRole: "tenant_admin",
+            assigneeUserId: defaultAssigneeId,
             canReturn: false,
           },
         ]
@@ -44,7 +49,7 @@ export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps
   const serializedStepLines = useMemo(
     () =>
       steps
-        .map((s) => `${s.stepName},${s.approverRole},${String(s.canReturn)}`)
+        .map((s) => `${s.stepName},${s.assigneeUserId},${String(s.canReturn)}`)
         .join("\n"),
     [steps]
   );
@@ -56,7 +61,7 @@ export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps
       {
         id: `step-${nextIndex}`,
         stepName: `承認ステップ${nextIndex}`,
-        approverRole: "approver",
+        assigneeUserId: defaultAssigneeId,
         canReturn: true,
       },
     ]);
@@ -107,7 +112,7 @@ export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps
                 onDrop={() => onDropTo(step.id)}
                 className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
               >
-                <div className="grid gap-3 md:grid-cols-[120px_1fr_180px_120px] md:items-end">
+                <div className="grid gap-3 md:grid-cols-[120px_1fr_220px_120px] md:items-end">
                   <div className="space-y-2">
                     <Label>順序</Label>
                     <div className="flex h-9 items-center gap-2">
@@ -126,20 +131,24 @@ export function ApprovalStepsBuilder({ defaultSteps }: ApprovalStepsBuilderProps
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>ロール</Label>
+                    <Label>承認者</Label>
                     <select
-                      value={step.approverRole}
+                      value={step.assigneeUserId}
                       onChange={(e) =>
                         setSteps((prev) =>
                           prev.map((s) =>
-                            s.id === step.id ? { ...s, approverRole: e.target.value as ApproverRole } : s
+                            s.id === step.id ? { ...s, assigneeUserId: e.target.value } : s
                           )
                         )
                       }
                       className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm"
+                      required
                     >
-                      <option value="approver">approver</option>
-                      <option value="tenant_admin">tenant_admin</option>
+                      {assignees.map((assignee) => (
+                        <option key={assignee.id} value={assignee.id}>
+                          {assignee.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
                   <div className="space-y-2">

@@ -13,7 +13,9 @@ import { UserRole } from '../../models/constants/user-role';
 import { User } from '../../models/entities/user.entity';
 
 type ErrorJsonBody = { errorCode?: string };
-type LoginJsonBody = { data?: { access_token?: string } };
+type LoginJsonBody = {
+  data?: { access_token?: string; user?: { id?: string } };
+};
 type RegisterJsonBody = { data?: { user?: { role?: string; id?: string } } };
 type MeJsonBody = {
   status?: number;
@@ -80,6 +82,19 @@ type CorrectionTargetsBody = {
     } | null;
   };
 };
+
+async function fetchMeId(
+  http: App,
+  apiKey: Record<string, string>,
+  token: string,
+): Promise<string> {
+  const res = await request(http)
+    .post('/auth/me')
+    .set(apiKey)
+    .set('Authorization', `Bearer ${token}`)
+    .expect(200);
+  return (res.body as MeJsonBody).data?.id ?? '';
+}
 type ExportJobBody = {
   data?: { id?: string; status?: string; filePath?: string | null };
 };
@@ -153,7 +168,7 @@ describe('App (e2e)', () => {
     });
   });
 
-  it('first registered user is platform_admin; admin ping OK; applicant gets 403', async () => {
+  it('first registered user is tenant_admin; admin ping OK; applicant gets 403', async () => {
     const http = app.getHttpServer();
     const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
 
@@ -163,7 +178,7 @@ describe('App (e2e)', () => {
       .send({ email: 'admin@e2e.test', password: 'password12' })
       .expect(201);
     expect((reg1.body as RegisterJsonBody).data?.user?.role).toBe(
-      'platform_admin',
+      'tenant_admin',
     );
 
     const login1 = await request(http)
@@ -190,7 +205,7 @@ describe('App (e2e)', () => {
     const ds = app.get(DataSource);
     await ds
       .getRepository(User)
-      .update({ email: 'user@e2e.test' }, { role: UserRole.APPLICANT });
+      .update({ email: 'user@e2e.test' }, { role: UserRole.TENANT_USER });
 
     const login2 = await request(http)
       .post('/auth/login')
@@ -283,7 +298,7 @@ describe('App (e2e)', () => {
     const body = me.body as MeJsonBody;
     expect(body.status).toBe(200);
     expect(body.data?.email).toBe('me@e2e.test');
-    expect(body.data?.roles).toEqual(['platform_admin']);
+    expect(body.data?.roles).toEqual(['tenant_admin']);
     expect(typeof body.data?.id).toBe('string');
   });
 
@@ -327,7 +342,7 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminToken}`)
-      .send({ email: 'inv-member@e2e.test', role: 'applicant' })
+      .send({ email: 'inv-member@e2e.test', role: 'tenant_user' })
       .expect(201);
 
     const inviteBody = created.body as InviteCreateJsonBody;
@@ -356,7 +371,7 @@ describe('App (e2e)', () => {
       .expect(200);
     const meBody = me.body as MeJsonBody;
     expect(meBody.data?.email).toBe('inv-member@e2e.test');
-    expect(meBody.data?.roles).toEqual(['applicant']);
+    expect(meBody.data?.roles).toEqual(['tenant_user']);
   });
 
   it('POST /invitations returns 403 for applicant', async () => {
@@ -376,12 +391,11 @@ describe('App (e2e)', () => {
       .expect(200);
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
-
     const invRes = await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'inv-applicant@e2e.test', role: 'applicant' })
+      .send({ email: 'inv-applicant@e2e.test', role: 'tenant_user' })
       .expect(201);
     const tok = (invRes.body as InviteCreateJsonBody).data?.token ?? '';
 
@@ -397,7 +411,7 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${applicantTok}`)
-      .send({ email: 'inv-should-fail@e2e.test', role: 'approver' })
+      .send({ email: 'inv-should-fail@e2e.test', role: 'tenant_user' })
       .expect(403);
     expect((forbidden.body as ErrorJsonBody).errorCode).toBe(
       'AUTH_FORBIDDEN_ROLE',
@@ -433,7 +447,7 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'list-member@e2e.test', role: 'applicant' })
+      .send({ email: 'list-member@e2e.test', role: 'tenant_user' })
       .expect(201);
     const invTok = (inv.body as InviteCreateJsonBody).data?.token ?? '';
 
@@ -451,16 +465,16 @@ describe('App (e2e)', () => {
     const users = (list2.body as UsersListJsonBody).data?.users ?? [];
     expect(users.length).toBe(2);
     const member = users.find((u) => u.email === 'list-member@e2e.test');
-    expect(member?.role).toBe('applicant');
+    expect(member?.role).toBe('tenant_user');
 
     const patchRes = await request(http)
       .patch(`/users/${member?.id}/role`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ role: 'approver' })
+      .send({ role: 'tenant_user' })
       .expect(200);
     expect((patchRes.body as { data?: { role?: string } }).data?.role).toBe(
-      'approver',
+      'tenant_user',
     );
   });
 
@@ -480,6 +494,7 @@ describe('App (e2e)', () => {
       .send({ email: 'form-admin@e2e.test', password: 'password12' })
       .expect(200);
     const tok = (login.body as LoginJsonBody).data?.access_token ?? '';
+    const adminId = await fetchMeId(http, apiKey, tok);
 
     const created = await request(http)
       .post('/form-templates')
@@ -540,13 +555,13 @@ describe('App (e2e)', () => {
           {
             stepOrder: 1,
             stepName: '一次承認',
-            approverRole: 'approver',
+            assigneeUserId: adminId,
             canReturn: true,
           },
           {
             stepOrder: 2,
             stepName: '最終承認',
-            approverRole: 'tenant_admin',
+            assigneeUserId: adminId,
             canReturn: true,
           },
         ],
@@ -582,6 +597,7 @@ describe('App (e2e)', () => {
       .expect(200);
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+    const adminId = await fetchMeId(http, apiKey, adminTok);
 
     const createdTpl = await request(http)
       .post('/form-templates')
@@ -622,7 +638,7 @@ describe('App (e2e)', () => {
           {
             stepOrder: 1,
             stepName: '承認',
-            approverRole: 'approver',
+            assigneeUserId: adminId,
             canReturn: false,
           },
         ],
@@ -633,7 +649,7 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'app-submitter@e2e.test', role: 'applicant' })
+      .send({ email: 'app-submitter@e2e.test', role: 'tenant_user' })
       .expect(201);
     const invAppTok = (invApp.body as InviteCreateJsonBody).data?.token ?? '';
 
@@ -641,7 +657,7 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'app-approver@e2e.test', role: 'approver' })
+      .send({ email: 'app-approver@e2e.test', role: 'tenant_user' })
       .expect(201);
     const invAprTok = (invApr.body as InviteCreateJsonBody).data?.token ?? '';
 
@@ -701,17 +717,16 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${appTok}`)
       .expect(200);
 
-    const aprLogin = await request(http)
+    await request(http)
       .post('/auth/login')
       .set(apiKey)
       .send({ email: 'app-approver@e2e.test', password: 'password12' })
       .expect(200);
-    const aprTok = (aprLogin.body as LoginJsonBody).data?.access_token ?? '';
 
     const queue = await request(http)
       .get('/applications')
       .set(apiKey)
-      .set('Authorization', `Bearer ${aprTok}`)
+      .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
     const apps =
       (queue.body as ApplicationsListJsonBody).data?.applications ?? [];
@@ -721,7 +736,7 @@ describe('App (e2e)', () => {
     const detail = await request(http)
       .get(`/applications/${appId}`)
       .set(apiKey)
-      .set('Authorization', `Bearer ${aprTok}`)
+      .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
     expect((detail.body as ApplicationDetailBody).data?.values?.title).toBe(
       '下書きタイトル',
@@ -730,14 +745,14 @@ describe('App (e2e)', () => {
     await request(http)
       .post(`/applications/${appId}/approve`)
       .set(apiKey)
-      .set('Authorization', `Bearer ${aprTok}`)
+      .set('Authorization', `Bearer ${adminTok}`)
       .send({})
       .expect(200);
 
     const afterApprove = await request(http)
       .get(`/applications/${appId}`)
       .set(apiKey)
-      .set('Authorization', `Bearer ${aprTok}`)
+      .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
     expect((afterApprove.body as ApplicationDetailBody).data?.status).toBe(
       'approved',
@@ -761,6 +776,7 @@ describe('App (e2e)', () => {
       .expect(200);
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+    const adminId = await fetchMeId(http, apiKey, adminTok);
 
     const tplRes = await request(http)
       .post('/form-templates')
@@ -811,7 +827,7 @@ describe('App (e2e)', () => {
           {
             stepOrder: 1,
             stepName: '承認',
-            approverRole: 'approver',
+            assigneeUserId: adminId,
             canReturn: true,
           },
         ],
@@ -822,13 +838,13 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'ret-app@e2e.test', role: 'applicant' })
+      .send({ email: 'ret-app@e2e.test', role: 'tenant_user' })
       .expect(201);
     const invB = await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'ret-apr@e2e.test', role: 'approver' })
+      .send({ email: 'ret-apr@e2e.test', role: 'tenant_user' })
       .expect(201);
 
     await request(http)
@@ -855,13 +871,11 @@ describe('App (e2e)', () => {
         .send({ email: 'ret-app@e2e.test', password: 'password12' })
         .expect(200)
     ).body as LoginJsonBody;
-    const aprTokRet = (
-      await request(http)
-        .post('/auth/login')
-        .set(apiKey)
-        .send({ email: 'ret-apr@e2e.test', password: 'password12' })
-        .expect(200)
-    ).body as LoginJsonBody;
+    await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'ret-apr@e2e.test', password: 'password12' })
+      .expect(200);
 
     const appCreate = await request(http)
       .post('/applications')
@@ -883,7 +897,7 @@ describe('App (e2e)', () => {
     await request(http)
       .post(`/applications/${retAppId}/return`)
       .set(apiKey)
-      .set('Authorization', `Bearer ${aprTokRet.data?.access_token ?? ''}`)
+      .set('Authorization', `Bearer ${adminTok}`)
       .send({
         overallComment: '修正してください',
         fields: [{ fieldId, comment: '内容を具体化' }],
@@ -962,6 +976,7 @@ describe('App (e2e)', () => {
       .expect(200);
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+    const adminId = await fetchMeId(http, apiKey, adminTok);
 
     const tpl = await request(http)
       .post('/form-templates')
@@ -1014,7 +1029,7 @@ describe('App (e2e)', () => {
           {
             stepOrder: 1,
             stepName: '承認',
-            approverRole: 'tenant_admin',
+            assigneeUserId: adminId,
             canReturn: true,
           },
         ],
@@ -1025,7 +1040,7 @@ describe('App (e2e)', () => {
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ email: 'csv-app@e2e.test', role: 'applicant' })
+      .send({ email: 'csv-app@e2e.test', role: 'tenant_user' })
       .expect(201);
     await request(http)
       .post('/invitations/accept')

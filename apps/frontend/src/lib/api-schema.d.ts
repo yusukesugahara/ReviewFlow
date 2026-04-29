@@ -4,6 +4,40 @@
  */
 
 export interface paths {
+    "/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** テナント内ユーザー一覧（system admin） */
+        get: operations["UsersController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/users/{id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** テナント内ユーザーのロール変更（system admin） */
+        patch: operations["UsersController_updateRole"];
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -72,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 監査ログ一覧（tenant_admin） */
+        get: operations["AuditLogsController_list"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/invitations": {
         parameters: {
             query?: never;
@@ -81,7 +132,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** メンバー招待（tenant_admin） */
+        /** メンバー招待（tenant_admin / space admin） */
         post: operations["InvitationsController_create"];
         delete?: never;
         options?: never;
@@ -106,15 +157,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users": {
+    "/form-templates": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** テナント内ユーザー一覧（tenant_admin） */
-        get: operations["UsersController_list"];
+        /** フォームテンプレート一覧（tenant_admin） */
+        get: operations["FormTemplatesController_list"];
+        put?: never;
+        /** フォームテンプレート作成（下書き） */
+        post: operations["FormTemplatesController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** フォームテンプレート取得（tenant_admin） */
+        get: operations["FormTemplatesController_getOne"];
         put?: never;
         post?: never;
         delete?: never;
@@ -123,13 +192,238 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/users/{id}/role": {
+    "/form-templates/{id}/fields": {
         parameters: {
             query?: never;
             header?: never;
-            path: {
-                id: string;
-            };
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォーム項目追加（下書きのみ） */
+        post: operations["FormTemplatesController_addField"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/{id}/fields/{fieldId}/move": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォーム項目の並び順変更（下書きのみ） */
+        post: operations["FormTemplatesController_moveField"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/{id}/fields/{fieldId}/delete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォーム項目削除（下書きのみ） */
+        post: operations["FormTemplatesController_deleteField"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/{id}/fields/{fieldId}/settings": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォーム項目設定更新（下書きのみ） */
+        post: operations["FormTemplatesController_updateFieldSettings"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/{id}/publish": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォームテンプレート公開（draft → published） */
+        post: operations["FormTemplatesController_publish"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/{id}/request-access": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォーム案内メール送信（公開） */
+        post: operations["FormTemplatesController_requestAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/public/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請用の現在テンプレート取得 */
+        get: operations["FormTemplatesController_getCurrentForApplicant"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-templates/public/current/approval-flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請用の有効な承認フロー一覧 */
+        get: operations["FormTemplatesController_listCurrentFlowsForApplicant"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/approval-flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 承認フロー一覧（tenant_admin） */
+        get: operations["ApprovalFlowsController_list"];
+        put?: never;
+        /**
+         * 承認フロー作成（tenant_admin）
+         * @description 参照するフォームテンプレートは同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。
+         */
+        post: operations["ApprovalFlowsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/groups": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ） */
+        get: operations["GroupsController_list"];
+        put?: never;
+        /** スペース作成（tenant_admin） */
+        post: operations["GroupsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/groups/{groupId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** スペース削除（tenant_admin） */
+        delete: operations["GroupsController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/groups/{groupId}/members": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** スペースメンバー一覧（tenant_admin / space admin） */
+        get: operations["GroupsController_listMembers"];
+        put?: never;
+        /** スペースへユーザー追加（tenant_admin / space admin） */
+        post: operations["GroupsController_addMember"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/groups/{groupId}/available-users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** スペース追加候補ユーザー一覧（tenant_admin / space admin） */
+        get: operations["GroupsController_listAvailableUsers"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/groups/{groupId}/members/{userId}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
             cookie?: never;
         };
         get?: never;
@@ -138,14 +432,408 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** テナント内ユーザーのロール変更（tenant_admin） */
-        patch: operations["UsersController_updateRole"];
+        /** スペース管理者/ユーザ設定（tenant_admin / space admin） */
+        patch: operations["GroupsController_updateMemberRole"];
+        trace?: never;
+    };
+    "/groups/{groupId}/members/me": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** スペースから退出（参加中ユーザー） */
+        delete: operations["GroupsController_leave"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/groups/{groupId}/members/{userId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** スペースメンバー削除（tenant_admin / space admin） */
+        delete: operations["GroupsController_removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 申請一覧（ロールに応じたスコープ） */
+        get: operations["ApplicationsController_list"];
+        put?: never;
+        /**
+         * 申請作成（下書き）
+         * @description 公開済みフォームのみ。有効な承認フローが複数ある場合は approvalFlowId を指定。
+         */
+        post: operations["ApplicationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 提出（draft → in_review） */
+        post: operations["ApplicationsController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/approve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 承認（in_review の現在ステップ） */
+        post: operations["ApplicationsController_approve"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 差し戻し
+         * @description 現在ステップの can_return が true のときのみ。correction_request を作成。
+         */
+        post: operations["ApplicationsController_returnWithCorrection"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/reject": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 却下 */
+        post: operations["ApplicationsController_reject"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 再提出（returned → in_review） */
+        post: operations["ApplicationsController_resubmit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/correction-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 修正対象取得（オープンな correction + 現在値）
+         * @description returned 時の入力支援用。最新の status=open の correction_request を1件分まとめて返す（無ければ openCorrection は null）。
+         */
+        get: operations["ApplicationsController_getCorrectionTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 差し戻し履歴（correction_requests）
+         * @description テナント内の当該申請に紐づく correction を新しい順で一覧。
+         */
+        get: operations["ApplicationsController_listCorrections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 申請詳細（field_key → 値） */
+        get: operations["ApplicationsController_getOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 値更新
+         * @description draft は全項目。returned はオープンな correction の対象フィールドのみ。
+         */
+        patch: operations["ApplicationsController_patch"];
+        trace?: never;
+    };
+    "/public/applications/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請セッション情報 */
+        get: operations["PublicApplicationsController_session"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請一覧 */
+        get: operations["PublicApplicationsController_list"];
+        put?: never;
+        /** 公開申請作成（下書き） */
+        post: operations["PublicApplicationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請詳細 */
+        get: operations["PublicApplicationsController_getOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** 公開申請更新 */
+        patch: operations["PublicApplicationsController_patch"];
+        trace?: never;
+    };
+    "/public/applications/{id}/submit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 公開申請提出 */
+        post: operations["PublicApplicationsController_submit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/{id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 公開申請再提出 */
+        post: operations["PublicApplicationsController_resubmit"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/{id}/correction-targets": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請の修正対象取得 */
+        get: operations["PublicApplicationsController_correctionTargets"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/{id}/corrections": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請の差し戻し履歴 */
+        get: operations["PublicApplicationsController_corrections"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/export-jobs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** CSV 出力ジョブ作成（tenant_admin） */
+        post: operations["ExportJobsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/export-jobs/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** CSV 出力ジョブ状態取得 */
+        get: operations["ExportJobsController_getOne"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/export-jobs/{id}/download": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** CSV ダウンロード（completed のみ） */
+        get: operations["ExportJobsController_download"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        TenantUserSummaryDto: {
+            id: string;
+            email: string;
+            name?: string | null;
+            role: string;
+            isActive: boolean;
+            createdAt: string;
+        };
+        TenantUsersListResponseDto: {
+            users: components["schemas"]["TenantUserSummaryDto"][];
+        };
+        UpdateUserRoleDto: {
+            /**
+             * @example tenant_user
+             * @enum {string}
+             */
+            role: "tenant_admin" | "tenant_user";
+        };
         AuthUserSummaryDto: {
             /** @example uuid */
             id: string;
@@ -155,12 +843,11 @@ export interface components {
              * @example tenant_admin
              * @enum {string}
              */
-            role:
-                | "platform_admin"
-                | "tenant_admin"
-                | "approver"
-                | "applicant";
-            /** @example uuid */
+            role: "tenant_admin" | "tenant_user";
+            /**
+             * @description 所属テナント ID
+             * @example uuid
+             */
             tenantId: string;
         };
         AuthIssueTokensResponseDto: {
@@ -173,7 +860,10 @@ export interface components {
             email: string;
             /** @example password12 */
             password: string;
-            /** @example Acme Inc */
+            /**
+             * @description 新規テナント名（省略時は既定のワークスペース名）
+             * @example Acme Inc
+             */
             organizationName?: string;
         };
         LoginDto: {
@@ -181,7 +871,7 @@ export interface components {
             email: string;
             /** @example password12 */
             password: string;
-            /** Format: uuid */
+            /** @description 同一メールで複数テナントに所属する場合に指定（`docs/08_auth_and_multitenant.md`） */
             tenantId?: string;
         };
         AuthMeResponseDto: {
@@ -189,49 +879,372 @@ export interface components {
             email: string;
             /**
              * @example [
-             *       "user"
+             *       "tenant_admin"
              *     ]
              */
             roles: string[];
+            /** @description 所属テナント ID */
             tenantId: string;
         };
         AdminPingResponseDto: {
             /** @example true */
             ok: boolean;
         };
-        CreateInvitationDto: {
-            email: string;
-            /** @enum {string} */
-            role: "tenant_admin" | "approver" | "applicant";
+        AuditLogItemDto: {
+            id: string;
+            actorUserId?: Record<string, never> | null;
+            actionType: string;
+            targetType: string;
+            targetId?: Record<string, never> | null;
+            metadataJson?: Record<string, never>;
+            createdAt: string;
+        };
+        AuditLogsListResponseDto: {
+            logs: components["schemas"]["AuditLogItemDto"][];
         };
         CreateInvitationResponseDto: {
             id: string;
-            /** 受諾 API に渡すワンタイムトークン */
+            /** @description 受諾 API に渡すワンタイムトークン */
             token: string;
             email: string;
             role: string;
-            /** ISO 8601 */
+            groupId?: string | null;
+            groupRole?: string | null;
+            /** @description ISO 8601 */
             expiresAt: string;
         };
+        CreateInvitationDto: {
+            /** @example member@example.com */
+            email: string;
+            /**
+             * @example tenant_user
+             * @enum {string}
+             */
+            role: "tenant_admin" | "tenant_user";
+            /** @description 招待受諾時に参加させるスペースID */
+            groupId?: string;
+            /**
+             * @description スペース参加時のロール
+             * @example user
+             * @enum {string}
+             */
+            groupRole?: "admin" | "user";
+        };
         AcceptInvitationDto: {
+            /** @description 招待作成時に発行された token */
             token: string;
+            /** @example 山田 太郎 */
             name?: string;
+            /** @example password12 */
             password: string;
         };
-        TenantUserSummaryDto: {
+        FormFieldResponseDto: {
             id: string;
-            email: string;
-            name: string | null;
-            role: string;
-            isActive: boolean;
+            fieldKey: string;
+            label: string;
+            fieldType: string;
+            required: boolean;
+            placeholder?: Record<string, never>;
+            helpText?: Record<string, never>;
+            options?: Record<string, never>[];
+            sortOrder: number;
             createdAt: string;
         };
-        TenantUsersListResponseDto: {
-            users: components["schemas"]["TenantUserSummaryDto"][];
-        };
-        UpdateUserRoleDto: {
+        FormTemplateResponseDto: {
+            id: string;
+            name: string;
+            description?: Record<string, never>;
             /** @enum {string} */
-            role: "tenant_admin" | "approver" | "applicant";
+            status: "draft" | "published" | "archived";
+            createdByUserId: string;
+            fields: components["schemas"]["FormFieldResponseDto"][];
+            createdAt: string;
+            updatedAt: string;
+        };
+        FormTemplatesListResponseDto: {
+            templates: components["schemas"]["FormTemplateResponseDto"][];
+        };
+        CreateFormTemplateDto: {
+            /** @example 経費申請 */
+            name: string;
+            /** @example 経費精算用 */
+            description?: string;
+        };
+        CreateFormFieldDto: {
+            /** @example expense_title */
+            fieldKey: string;
+            /** @example 件名 */
+            label: string;
+            /**
+             * @example text
+             * @enum {string}
+             */
+            fieldType: "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox";
+            required: boolean;
+            placeholder?: string;
+            helpText?: string;
+            /** @example 1 */
+            sortOrder: number;
+            options?: Record<string, never>[];
+        };
+        MoveFormFieldDto: {
+            /**
+             * @example up
+             * @enum {string}
+             */
+            direction: "up" | "down";
+        };
+        UpdateFormFieldSettingsDto: {
+            /** @example 件名 */
+            label?: string;
+            /**
+             * @example text
+             * @enum {string}
+             */
+            fieldType: "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox";
+            required: boolean;
+            placeholder?: string;
+            helpText?: string;
+            options?: Record<string, never>[];
+        };
+        RequestFormAccessResponseDto: {
+            /** @example true */
+            accepted: boolean;
+        };
+        RequestFormAccessDto: {
+            /** @example user@example.com */
+            email: string;
+        };
+        ApprovalStepResponseDto: {
+            id: string;
+            stepOrder: number;
+            stepName: string;
+            assigneeUserId: string;
+            canReturn: boolean;
+            createdAt: string;
+        };
+        ApprovalFlowResponseDto: {
+            id: string;
+            formTemplateId: string;
+            name: string;
+            isActive: boolean;
+            steps: components["schemas"]["ApprovalStepResponseDto"][];
+            createdAt: string;
+            updatedAt: string;
+        };
+        ApprovalFlowsListResponseDto: {
+            flows: components["schemas"]["ApprovalFlowResponseDto"][];
+        };
+        CreateApprovalFlowStepDto: {
+            /** @example 1 */
+            stepOrder: number;
+            /** @example 一次承認 */
+            stepName: string;
+            /**
+             * Format: uuid
+             * @description このステップを承認するテナント内ユーザーID
+             */
+            assigneeUserId: string;
+            /** @example true */
+            canReturn: boolean;
+        };
+        CreateApprovalFlowDto: {
+            /** Format: uuid */
+            formTemplateId: string;
+            /** @example 経費申請フロー */
+            name: string;
+            steps: components["schemas"]["CreateApprovalFlowStepDto"][];
+        };
+        GroupSummaryDto: {
+            id: string;
+            name: string;
+            description: Record<string, never>;
+            createdByUserId: string;
+            createdAt: string;
+            updatedAt: string;
+        };
+        GroupsListResponseDto: {
+            groups: components["schemas"]["GroupSummaryDto"][];
+        };
+        CreateGroupDto: {
+            /** @example 経理部 */
+            name: string;
+            /** @example 経理部向けの承認・レビュースペース */
+            description?: string;
+            /** @description 初期スペース管理者。1人以上必須。 */
+            adminUserIds: string[];
+        };
+        GroupMemberSummaryDto: {
+            id: string;
+            groupId: string;
+            userId: string;
+            email: string;
+            name: Record<string, never>;
+            /** @enum {string} */
+            role: "admin" | "user";
+            createdAt: string;
+            updatedAt: string;
+        };
+        GroupMembersListResponseDto: {
+            members: components["schemas"]["GroupMemberSummaryDto"][];
+        };
+        GroupAvailableUserSummaryDto: {
+            id: string;
+            email: string;
+            name: Record<string, never>;
+        };
+        GroupAvailableUsersResponseDto: {
+            users: components["schemas"]["GroupAvailableUserSummaryDto"][];
+        };
+        AddGroupMemberDto: {
+            /** @description 追加するテナント内ユーザーID */
+            userId: string;
+            /**
+             * @example user
+             * @enum {string}
+             */
+            role: "admin" | "user";
+        };
+        UpdateGroupMemberRoleDto: {
+            /**
+             * @example admin
+             * @enum {string}
+             */
+            role: "admin" | "user";
+        };
+        ApplicationSummaryDto: {
+            id: string;
+            status: string;
+            formTemplateId: string;
+            approvalFlowId: string;
+            applicantEmail: string;
+            currentStepOrder?: Record<string, never> | null;
+            submittedAt?: Record<string, never> | null;
+            createdAt: string;
+            updatedAt: string;
+        };
+        ApplicationsListResponseDto: {
+            applications: components["schemas"]["ApplicationSummaryDto"][];
+        };
+        ApplicationCreateResponseDto: {
+            id: string;
+            status: string;
+        };
+        CreateApplicationDto: {
+            /** Format: uuid */
+            formTemplateId: string;
+            /**
+             * Format: uuid
+             * @description 公開テンプレートに有効な承認フローが複数あるときは必須。1件のみなら省略可。
+             */
+            approvalFlowId?: string;
+            /**
+             * @example {
+             *       "expense_title": "出張交通費",
+             *       "amount": 12000
+             *     }
+             */
+            values?: {
+                [key: string]: unknown;
+            };
+        };
+        ApplicationDetailDto: {
+            id: string;
+            status: string;
+            formTemplateId: string;
+            approvalFlowId: string;
+            applicantEmail: string;
+            currentStepOrder?: Record<string, never> | null;
+            submittedAt?: Record<string, never> | null;
+            createdAt: string;
+            updatedAt: string;
+            /** @description field_key → 値 */
+            values: {
+                [key: string]: unknown;
+            };
+        };
+        ApproveApplicationDto: {
+            /** @description 任意コメント（監査用） */
+            comment?: string;
+        };
+        ReturnFieldItemDto: {
+            /**
+             * Format: uuid
+             * @description form_fields.id
+             */
+            fieldId: string;
+            comment?: string;
+        };
+        ReturnApplicationDto: {
+            overallComment?: string;
+            fields: components["schemas"]["ReturnFieldItemDto"][];
+        };
+        RejectApplicationDto: {
+            comment?: string;
+        };
+        CorrectionTargetItemResponseDto: {
+            itemId: string;
+            formFieldId: string;
+            fieldKey: string;
+            label: string;
+            fieldType: string;
+            required: boolean;
+            comment?: Record<string, never> | null;
+            /** @description application_field_values.value_json に相当 */
+            currentValue?: Record<string, never>;
+        };
+        OpenCorrectionTargetsDto: {
+            id: string;
+            overallComment?: Record<string, never> | null;
+            createdAt: string;
+            items: components["schemas"]["CorrectionTargetItemResponseDto"][];
+        };
+        CorrectionTargetsResponseDto: {
+            applicationId: string;
+            applicationStatus: string;
+            /** @description オープンな correction が無いとき null */
+            openCorrection?: components["schemas"]["OpenCorrectionTargetsDto"] | null;
+        };
+        CorrectionRequestItemResponseDto: {
+            id: string;
+            formFieldId: string;
+            fieldKey: string;
+            comment?: Record<string, never> | null;
+            isResolved: boolean;
+            createdAt: string;
+        };
+        CorrectionRequestResponseDto: {
+            id: string;
+            status: string;
+            overallComment?: Record<string, never> | null;
+            resolvedAt?: Record<string, never> | null;
+            createdAt: string;
+            items: components["schemas"]["CorrectionRequestItemResponseDto"][];
+        };
+        CorrectionsListResponseDto: {
+            corrections: components["schemas"]["CorrectionRequestResponseDto"][];
+        };
+        PatchApplicationDto: {
+            /** @description field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。 */
+            values: {
+                [key: string]: unknown;
+            };
+        };
+        ApplicantSessionResponseDto: Record<string, never>;
+        ExportJobResponseDto: {
+            id: string;
+            status: string;
+            filterJson?: Record<string, never>;
+            filePath?: Record<string, never>;
+            startedAt?: Record<string, never> | null;
+            finishedAt?: Record<string, never> | null;
+            createdAt: string;
+        };
+        CreateExportJobDto: {
+            /** @enum {string} */
+            status?: "draft" | "submitted" | "in_review" | "returned" | "approved" | "rejected";
+            /** Format: uuid */
+            formTemplateId?: string;
         };
         ErrorResponseDto: {
             /**
@@ -254,16 +1267,44 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    AuthController_register: {
+    UsersController_list: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["TenantUsersListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    UsersController_updateRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["RegisterDto"];
+                "application/json": components["schemas"]["UpdateUserRoleDto"];
             };
         };
         responses: {
@@ -278,11 +1319,25 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["AuthIssueTokensResponseDto"];
+                        data: components["schemas"]["TenantUserSummaryDto"];
                     };
                 };
             };
-            /** @description Created */
+        };
+    };
+    AuthController_register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterDto"];
+            };
+        };
+        responses: {
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -382,6 +1437,36 @@ export interface operations {
             };
         };
     };
+    AuditLogsController_list: {
+        parameters: {
+            query?: {
+                limit?: number;
+                /** @description action_type で前方一致絞り込み */
+                actionType?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["AuditLogsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
     InvitationsController_create: {
         parameters: {
             query?: never;
@@ -395,7 +1480,6 @@ export interface operations {
             };
         };
         responses: {
-            /** @description Created */
             201: {
                 headers: {
                     [name: string]: unknown;
@@ -443,7 +1527,7 @@ export interface operations {
             };
         };
     };
-    UsersController_list: {
+    FormTemplatesController_list: {
         parameters: {
             query?: never;
             header?: never;
@@ -463,13 +1547,71 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["TenantUsersListResponseDto"];
+                        data: components["schemas"]["FormTemplatesListResponseDto"];
                     };
                 };
             };
         };
     };
-    UsersController_updateRole: {
+    FormTemplatesController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateFormTemplateDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormTemplateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormTemplateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_addField: {
         parameters: {
             query?: never;
             header?: never;
@@ -480,7 +1622,40 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UpdateUserRoleDto"];
+                "application/json": components["schemas"]["CreateFormFieldDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormFieldResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_moveField: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fieldId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MoveFormFieldDto"];
             };
         };
         responses: {
@@ -495,9 +1670,1129 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["TenantUserSummaryDto"];
+                        data: components["schemas"]["FormTemplateResponseDto"];
                     };
                 };
+            };
+        };
+    };
+    FormTemplatesController_deleteField: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fieldId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormTemplateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_updateFieldSettings: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+                fieldId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFormFieldSettingsDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormTemplateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormTemplateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_requestAccess: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestFormAccessDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["RequestFormAccessResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_getCurrentForApplicant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormTemplateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormTemplatesController_listCurrentFlowsForApplicant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApprovalFlowsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApprovalFlowsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApprovalFlowDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateGroupDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupSummaryDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GroupsController_listMembers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupMembersListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_addMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddGroupMemberDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupMemberSummaryDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_listAvailableUsers: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupAvailableUsersResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_updateMemberRole: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGroupMemberRoleDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupMemberSummaryDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_leave: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    GroupsController_removeMember: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+                userId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    ApplicationsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApplicationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationCreateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_approve: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ApproveApplicationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_returnWithCorrection: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnApplicationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_reject: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RejectApplicationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_resubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_getCorrectionTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["CorrectionTargetsResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_listCorrections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["CorrectionsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApplicationsController_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchApplicationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicantSessionResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApplicationDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationCreateResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchApplicationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_submit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_resubmit: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_correctionTargets: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["CorrectionTargetsResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_corrections: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["CorrectionsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ExportJobsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateExportJobDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ExportJobResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ExportJobsController_getOne: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ExportJobResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ExportJobsController_download: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

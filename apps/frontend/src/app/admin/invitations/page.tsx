@@ -140,11 +140,11 @@ export default async function AdminInvitationsPage({
               <select
                 id="role"
                 name="role"
-                defaultValue="applicant"
+                defaultValue="tenant_user"
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm"
               >
-                <option value="applicant">ユーザー</option>
-                <option value="platform_admin">システム管理者</option>
+                <option value="tenant_user">テナントユーザー</option>
+                <option value="tenant_admin">テナント管理者</option>
               </select>
             </div>
             <Button type="submit">招待URLを発行</Button>

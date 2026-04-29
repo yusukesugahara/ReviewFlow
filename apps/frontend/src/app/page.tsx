@@ -7,9 +7,6 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  if (me.roles.includes("platform_admin")) {
-    redirect("/admin/spaces");
-  }
   if (me.roles.includes("tenant_admin")) {
     redirect("/admin/spaces");
   }

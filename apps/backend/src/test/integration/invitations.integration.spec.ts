@@ -58,7 +58,7 @@ describe('Invitations (integration)', () => {
     };
 
     const created = await invitations.create(
-      { email: 'Member@Int.test', role: UserRole.APPLICANT },
+      { email: 'Member@Int.test', role: UserRole.TENANT_USER },
       actor,
     );
     expect(created.token.length).toBeGreaterThanOrEqual(32);
@@ -70,7 +70,7 @@ describe('Invitations (integration)', () => {
       password: 'password12',
     });
     expect(accepted.user.email).toBe('member@int.test');
-    expect(accepted.user.role).toBe(UserRole.APPLICANT);
+    expect(accepted.user.role).toBe(UserRole.TENANT_USER);
 
     const member = await users.findByTenantAndEmail(
       reg.user.tenantId,
@@ -92,13 +92,13 @@ describe('Invitations (integration)', () => {
     };
 
     await invitations.create(
-      { email: 'dup@int.test', role: UserRole.APPLICANT },
+      { email: 'dup@int.test', role: UserRole.TENANT_USER },
       actor,
     );
 
     await expect(
       invitations.create(
-        { email: 'dup@int.test', role: UserRole.APPLICANT },
+        { email: 'dup@int.test', role: UserRole.TENANT_USER },
         actor,
       ),
     ).rejects.toMatchObject({

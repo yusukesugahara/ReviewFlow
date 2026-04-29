@@ -3,10 +3,10 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes } from '../../../common/errors';
 import { FormTemplateStatus } from '../../../models/constants/form-template-status';
-import { UserRole } from '../../../models/constants/user-role';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { User } from '../../../models/entities/user.entity';
 import { ApprovalFlowsService } from './approval-flows.service';
 
 describe('ApprovalFlowsService', () => {
@@ -15,10 +15,14 @@ describe('ApprovalFlowsService', () => {
     Pick<Repository<ApprovalFlow>, 'find' | 'findOne' | 'manager'>
   >;
   let templates: jest.Mocked<Pick<Repository<FormTemplate>, 'findOne'>>;
+  let users: jest.Mocked<Pick<Repository<User>, 'find'>>;
 
   beforeEach(async () => {
     templates = {
       findOne: jest.fn(),
+    };
+    users = {
+      find: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
     };
     flows = {
       find: jest.fn(),
@@ -56,6 +60,7 @@ describe('ApprovalFlowsService', () => {
         ApprovalFlowsService,
         { provide: getRepositoryToken(ApprovalFlow), useValue: flows },
         { provide: getRepositoryToken(FormTemplate), useValue: templates },
+        { provide: getRepositoryToken(User), useValue: users },
       ],
     }).compile();
 
@@ -79,7 +84,7 @@ describe('ApprovalFlowsService', () => {
           id: 'step-1',
           stepOrder: 1,
           stepName: 'S1',
-          approverRole: UserRole.APPROVER,
+          assigneeUserId: 'user-1',
           canReturn: false,
         },
       ],
@@ -93,7 +98,7 @@ describe('ApprovalFlowsService', () => {
           {
             stepOrder: 1,
             stepName: 'S1',
-            approverRole: UserRole.APPROVER,
+            assigneeUserId: 'user-1',
             canReturn: false,
           },
         ],
@@ -119,13 +124,13 @@ describe('ApprovalFlowsService', () => {
           {
             stepOrder: 1,
             stepName: 'S1',
-            approverRole: UserRole.APPROVER,
+            assigneeUserId: 'user-1',
             canReturn: false,
           },
           {
             stepOrder: 3,
             stepName: 'S2',
-            approverRole: UserRole.TENANT_ADMIN,
+            assigneeUserId: 'user-1',
             canReturn: true,
           },
         ],

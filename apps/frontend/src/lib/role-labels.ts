@@ -1,11 +1,9 @@
 export function userRoleLabel(role: string): string {
   switch (role) {
-    case "platform_admin":
     case "tenant_admin":
-      return "システム管理者";
-    case "approver":
-    case "applicant":
-      return "ユーザー";
+      return "テナント管理者";
+    case "tenant_user":
+      return "テナントユーザー";
     default:
       return role;
   }

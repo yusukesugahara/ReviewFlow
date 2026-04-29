@@ -65,7 +65,7 @@ describe('InvitationsService', () => {
       usersService.findByTenantAndEmail.mockResolvedValue({ id: 'u1' } as User);
 
       await expect(
-        service.create({ email: 'x@y.com', role: UserRole.APPLICANT }, actor),
+        service.create({ email: 'x@y.com', role: UserRole.TENANT_USER }, actor),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.INVITATION_MEMBER_EXISTS,
       });
@@ -79,7 +79,7 @@ describe('InvitationsService', () => {
       });
 
       await expect(
-        service.create({ email: 'x@y.com', role: UserRole.APPLICANT }, actor),
+        service.create({ email: 'x@y.com', role: UserRole.TENANT_USER }, actor),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.INVITATION_PENDING_EXISTS,
       });
@@ -90,7 +90,7 @@ describe('InvitationsService', () => {
       invitationsRepo.findOne.mockResolvedValue(null);
 
       const out = await service.create(
-        { email: 'New@Y.com', role: UserRole.APPLICANT },
+        { email: 'New@Y.com', role: UserRole.TENANT_USER },
         actor,
       );
 
@@ -98,7 +98,7 @@ describe('InvitationsService', () => {
         expect.objectContaining({
           tenantId: 'tenant-1',
           email: 'new@y.com',
-          role: UserRole.APPLICANT,
+          role: UserRole.TENANT_USER,
           invitedByUserId: 'admin-1',
           status: InvitationStatus.PENDING,
         }),
@@ -110,7 +110,7 @@ describe('InvitationsService', () => {
         expect.objectContaining({
           to: 'new@y.com',
           invitedByEmail: 'a@t.com',
-          role: UserRole.APPLICANT,
+          role: UserRole.TENANT_USER,
         }),
       );
     });
@@ -122,14 +122,17 @@ describe('InvitationsService', () => {
         id: 'inv-1',
         tenantId: 'tenant-1',
         email: 'new@y.com',
-        role: UserRole.APPLICANT,
+        role: UserRole.TENANT_USER,
         token: 't'.repeat(64),
         expiresAt: new Date(Date.now() + 60_000),
       });
       mailService.sendInvitationEmail.mockRejectedValue(new Error('smtp down'));
 
       await expect(
-        service.create({ email: 'New@Y.com', role: UserRole.APPLICANT }, actor),
+        service.create(
+          { email: 'New@Y.com', role: UserRole.TENANT_USER },
+          actor,
+        ),
       ).rejects.toMatchObject({
         status: 500,
       });
@@ -170,7 +173,7 @@ describe('InvitationsService', () => {
       const inv: Partial<Invitation> = {
         tenantId: 'tenant-1',
         email: 'join@y.com',
-        role: UserRole.APPLICANT,
+        role: UserRole.TENANT_USER,
         status: InvitationStatus.PENDING,
         expiresAt: new Date(Date.now() + 60_000),
       };
@@ -204,7 +207,7 @@ describe('InvitationsService', () => {
         user: {
           id: 'new-user',
           email: 'join@y.com',
-          role: UserRole.APPLICANT,
+          role: UserRole.TENANT_USER,
           tenantId: 'tenant-1',
         },
       });

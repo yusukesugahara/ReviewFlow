@@ -5,6 +5,7 @@ import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { User } from '../../../models/entities/user.entity';
 import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import type { CreateApprovalFlowDto } from './approval-flows.dto';
 import { mapApprovalFlowToDto } from './approval-flows.mapper';
@@ -16,6 +17,8 @@ export class ApprovalFlowsService {
     private readonly flows: Repository<ApprovalFlow>,
     @InjectRepository(FormTemplate)
     private readonly templates: Repository<FormTemplate>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
   ) {}
 
   async listByTenant(tenantId: string): Promise<ApprovalFlow[]> {
@@ -61,6 +64,15 @@ export class ApprovalFlowsService {
     const sortedSteps = [...dto.steps].sort(
       (a, b) => a.stepOrder - b.stepOrder,
     );
+    const assigneeIds = Array.from(
+      new Set(sortedSteps.map((step) => step.assigneeUserId)),
+    );
+    const assignees = await this.users.find({
+      where: assigneeIds.map((id) => ({ id, tenantId })),
+    });
+    if (assignees.length !== assigneeIds.length) {
+      throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
+    }
 
     let newFlowId = '';
     await this.flows.manager.transaction(async (em) => {
@@ -81,7 +93,7 @@ export class ApprovalFlowsService {
             approvalFlowId: saved.id,
             stepOrder: s.stepOrder,
             stepName: s.stepName.trim(),
-            approverRole: s.approverRole,
+            assigneeUserId: s.assigneeUserId,
             canReturn: s.canReturn,
           }),
         );

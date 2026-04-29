@@ -8,10 +8,7 @@ import {
 } from '../../../models/constants/user-role';
 import { User } from '../../../models/entities/user.entity';
 
-const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [
-  UserRole.PLATFORM_ADMIN,
-  UserRole.TENANT_ADMIN,
-];
+const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [UserRole.TENANT_ADMIN];
 
 @Injectable()
 export class UsersService {

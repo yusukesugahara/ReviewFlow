@@ -16,14 +16,14 @@
 - /admin/export-jobs
 - /admin/audit-logs
 
-## applicant
+## tenant_user
 - /app
 - /app/applications
 - /app/applications/new
 - /app/applications/[id]
 - /app/applications/[id]/edit
 
-## approver
+## tenant_user
 - /review
 - /review/applications
 - /review/applications/[id]

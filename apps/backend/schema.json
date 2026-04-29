@@ -427,7 +427,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "メンバー招待（tenant_admin / platform_admin / space admin）",
+        "summary": "メンバー招待（tenant_admin / space admin）",
         "tags": [
           "invitations"
         ]
@@ -1259,7 +1259,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース一覧（platform_admin は全件、通常ユーザーは参加中のみ）",
+        "summary": "スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ）",
         "tags": [
           "groups"
         ]
@@ -1313,7 +1313,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース作成（tenant_admin / platform_admin）",
+        "summary": "スペース作成（tenant_admin）",
         "tags": [
           "groups"
         ]
@@ -1345,7 +1345,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース削除（platform_admin）",
+        "summary": "スペース削除（tenant_admin）",
         "tags": [
           "groups"
         ]
@@ -1400,7 +1400,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペースメンバー一覧（platform_admin / space admin）",
+        "summary": "スペースメンバー一覧（tenant_admin / space admin）",
         "tags": [
           "groups"
         ]
@@ -1463,7 +1463,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペースへユーザー追加（platform_admin / space admin）",
+        "summary": "スペースへユーザー追加（tenant_admin / space admin）",
         "tags": [
           "groups"
         ]
@@ -1518,7 +1518,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース追加候補ユーザー一覧（platform_admin / space admin）",
+        "summary": "スペース追加候補ユーザー一覧（tenant_admin / space admin）",
         "tags": [
           "groups"
         ]
@@ -1591,7 +1591,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース管理者/ユーザ設定（platform_admin / space admin）",
+        "summary": "スペース管理者/ユーザ設定（tenant_admin / space admin）",
         "tags": [
           "groups"
         ]
@@ -1663,7 +1663,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペースメンバー削除（platform_admin / space admin）",
+        "summary": "スペースメンバー削除（tenant_admin / space admin）",
         "tags": [
           "groups"
         ]
@@ -2940,7 +2940,8 @@
             "type": "string"
           },
           "name": {
-            "type": "object"
+            "type": "string",
+            "nullable": true
           },
           "role": {
             "type": "string"
@@ -2955,7 +2956,6 @@
         "required": [
           "id",
           "email",
-          "name",
           "role",
           "isActive",
           "createdAt"
@@ -2980,10 +2980,10 @@
         "properties": {
           "role": {
             "type": "string",
-            "example": "platform_admin",
+            "example": "tenant_user",
             "enum": [
-              "platform_admin",
-              "applicant"
+              "tenant_admin",
+              "tenant_user"
             ]
           }
         },
@@ -3004,12 +3004,10 @@
           },
           "role": {
             "type": "string",
-            "example": "platform_admin",
+            "example": "tenant_admin",
             "enum": [
-              "platform_admin",
               "tenant_admin",
-              "approver",
-              "applicant"
+              "tenant_user"
             ]
           },
           "tenantId": {
@@ -3098,7 +3096,7 @@
           },
           "roles": {
             "example": [
-              "platform_admin"
+              "tenant_admin"
             ],
             "type": "array",
             "items": {
@@ -3223,10 +3221,10 @@
           },
           "role": {
             "type": "string",
-            "example": "applicant",
+            "example": "tenant_user",
             "enum": [
-              "platform_admin",
-              "applicant"
+              "tenant_admin",
+              "tenant_user"
             ]
           },
           "groupId": {
@@ -3539,7 +3537,7 @@
           "stepName": {
             "type": "string"
           },
-          "approverRole": {
+          "assigneeUserId": {
             "type": "string"
           },
           "canReturn": {
@@ -3553,7 +3551,7 @@
           "id",
           "stepOrder",
           "stepName",
-          "approverRole",
+          "assigneeUserId",
           "canReturn",
           "createdAt"
         ]
@@ -3621,12 +3619,10 @@
             "type": "string",
             "example": "一次承認"
           },
-          "approverRole": {
+          "assigneeUserId": {
             "type": "string",
-            "enum": [
-              "tenant_admin",
-              "approver"
-            ]
+            "format": "uuid",
+            "description": "このステップを承認するテナント内ユーザーID"
           },
           "canReturn": {
             "type": "boolean",
@@ -3636,7 +3632,7 @@
         "required": [
           "stepOrder",
           "stepName",
-          "approverRole",
+          "assigneeUserId",
           "canReturn"
         ]
       },

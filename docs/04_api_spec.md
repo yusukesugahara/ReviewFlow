@@ -48,7 +48,7 @@ request:
 ```json
 {
   "email": "member@example.com",
-  "role": "approver"
+  "role": "tenant_user"
 }
 ```
 
@@ -73,10 +73,10 @@ request:
 request:
 ```json
 {
-  "role": "approver"
+  "role": "tenant_user"
 }
 ```
-- 付与可能な `role` は `tenant_admin` / `approver` / `applicant`（`platform_admin` は不可）。
+- 付与可能な `role` は `tenant_admin` / `tenant_user` / `tenant_user`（`tenant_admin` は不可）。
 - 自分自身のロールは変更不可。
 - **最後の 1 人の tenant_admin** を他ロールへ落とすことは不可。
 
@@ -135,13 +135,13 @@ request:
     {
       "stepOrder": 1,
       "stepName": "一次承認",
-      "approverRole": "approver",
+      "assigneeUserId": "tenant_user",
       "canReturn": true
     },
     {
       "stepOrder": 2,
       "stepName": "最終承認",
-      "approverRole": "tenant_admin",
+      "assigneeUserId": "tenant_admin",
       "canReturn": true
     }
   ]
@@ -151,13 +151,13 @@ request:
 ## Applications
 
 ### GET /applications
-権限: applicant, approver, tenant_admin  
-- applicant: 自分の申請のみ  
-- approver: **in_review** かつ現在ステップの `approver_role` が `approver` のもののみ  
+権限: tenant_user, tenant_user, tenant_admin  
+- tenant_user: 自分の申請のみ  
+- tenant_user: **in_review** かつ現在ステップの `assignee_user_id` が `tenant_user` のもののみ  
 - tenant_admin: テナント内の全申請
 
 ### POST /applications
-権限: applicant。`formTemplateId` は **published** のテンプレートのみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
+権限: tenant_user。`formTemplateId` は **published** のテンプレートのみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
 request:
 ```json
 {
@@ -178,27 +178,27 @@ response:
 ```
 
 ### PATCH /applications/:id
-権限: applicant
+権限: tenant_user
 - 現実装: **draft のみ**更新可能（`values` は field_key 単位でマージ）。
 - returned の場合は correction_request_items 対象フィールドのみ更新可能（別フェーズ）
 
 ### POST /applications/:id/submit
-権限: applicant
+権限: tenant_user
 
 ### GET /applications/:id
 権限:
-- applicant: 自分の申請のみ
-- approver: 担当対象のみ
+- tenant_user: 自分の申請のみ
+- tenant_user: 担当対象のみ
 - tenant_admin: テナント内全件
 
 ## Approval Actions
 
 ### POST /applications/:id/approve
-権限: approver, tenant_admin  
-`in_review` のときのみ。現在ステップの `approver_role` が承認者ロールと一致する **approver**、または **tenant_admin**（いずれのステップでも可）。最終ステップ承認後は `approved`。任意 `comment`。
+権限: tenant_user, tenant_admin  
+`in_review` のときのみ。現在ステップの `assignee_user_id` が承認者ロールと一致する **tenant_user**、または **tenant_admin**（いずれのステップでも可）。最終ステップ承認後は `approved`。任意 `comment`。
 
 ### POST /applications/:id/return
-権限: approver, tenant_admin  
+権限: tenant_user, tenant_admin  
 現在ステップの **`can_return` が true** のときのみ。`application_approvals`（action=returned）と **`correction_requests` / `correction_request_items`** を作成し、申請は `returned`。オープンな correction が既にある場合は 409。
 request:
 ```json
@@ -218,19 +218,19 @@ request:
 ```
 
 ### POST /applications/:id/reject
-権限: approver, tenant_admin  
+権限: tenant_user, tenant_admin  
 `in_review` のみ。承認と同様の担当判定。申請は `rejected`。任意 `comment`。
 
 ### POST /applications/:id/resubmit
-権限: applicant  
+権限: tenant_user  
 `returned` かつ **open** の `correction_request` があるときのみ。必須項目を再検証後、`returned` → `in_review`（先頭ステップから）。correction は `resolved`。
 
 ### GET /applications/:id/corrections
-権限: applicant, approver, tenant_admin  
+権限: tenant_user, tenant_user, tenant_admin  
 当該申請の correction_requests 一覧（items に `form_field_id` / `field_key`）。履歴用。
 
 ### GET /applications/:id/correction-targets
-権限: applicant, approver, tenant_admin  
+権限: tenant_user, tenant_user, tenant_admin  
 **修正対象取得**（Phase 7）。`applicationStatus` と、**最新の `open` の correction_request** 1件分（無ければ `openCorrection: null`）。各 item に `field_key` / `label` / `fieldType` / `required` / 項目コメント / **`currentValue`**（申請の現在値）を含める。
 
 ## Export Jobs

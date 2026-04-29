@@ -58,7 +58,7 @@ describe('UsersService', () => {
         service.updateRoleInTenant(
           't1',
           'same-id',
-          UserRole.APPROVER,
+          UserRole.TENANT_USER,
           'same-id',
         ),
       ).rejects.toMatchObject({
@@ -72,7 +72,7 @@ describe('UsersService', () => {
         service.updateRoleInTenant(
           't1',
           'missing',
-          UserRole.APPROVER,
+          UserRole.TENANT_USER,
           'actor-id',
         ),
       ).rejects.toMatchObject({
@@ -93,7 +93,7 @@ describe('UsersService', () => {
         service.updateRoleInTenant(
           't1',
           'u-admin',
-          UserRole.APPLICANT,
+          UserRole.TENANT_USER,
           'actor-id',
         ),
       ).rejects.toMatchObject({
@@ -105,7 +105,7 @@ describe('UsersService', () => {
       const approver = {
         id: 'u-ap',
         tenantId: 't1',
-        role: UserRole.APPROVER,
+        role: UserRole.TENANT_USER,
         email: 'a@b.com',
         name: null,
         isActive: true,
@@ -117,19 +117,19 @@ describe('UsersService', () => {
       const out = await service.updateRoleInTenant(
         't1',
         'u-ap',
-        UserRole.APPLICANT,
+        UserRole.TENANT_USER,
         'actor-id',
       );
 
-      expect(out.role).toBe(UserRole.APPLICANT);
+      expect(out.role).toBe(UserRole.TENANT_USER);
       expect(repo.save).toHaveBeenCalled();
     });
 
-    it('allows promoting another user to platform_admin', async () => {
+    it('allows promoting another user to tenant_admin', async () => {
       const approver = {
         id: 'u-ap',
         tenantId: 't1',
-        role: UserRole.APPROVER,
+        role: UserRole.TENANT_USER,
         email: 'a@b.com',
         name: null,
         isActive: true,
@@ -141,11 +141,11 @@ describe('UsersService', () => {
       const out = await service.updateRoleInTenant(
         't1',
         'u-ap',
-        UserRole.PLATFORM_ADMIN,
+        UserRole.TENANT_ADMIN,
         'actor-id',
       );
 
-      expect(out.role).toBe(UserRole.PLATFORM_ADMIN);
+      expect(out.role).toBe(UserRole.TENANT_ADMIN);
       expect(repo.save).toHaveBeenCalled();
     });
   });

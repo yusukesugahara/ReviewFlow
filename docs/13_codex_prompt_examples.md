@@ -21,7 +21,7 @@ NestJS で applications module を実装してください。
 - DTO を作る
 - validation を入れる
 - tenant_id を JWT から取得する
-- applicant は自分の申請しか扱えない
+- tenant_user は自分の申請しか扱えない
 - returned 状態では correction_request_items 対象フィールドのみ編集可能にする
 
 # Prompt 3: 差し戻し機能実装

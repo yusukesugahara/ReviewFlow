@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsIn, IsString } from 'class-validator';
 import {
   UserRole,
@@ -6,8 +6,8 @@ import {
 } from '../../../models/constants/user-role';
 
 const USER_ROLE_UPDATE_SELECTABLE_ROLES: UserRoleValue[] = [
-  UserRole.PLATFORM_ADMIN,
-  UserRole.APPLICANT,
+  UserRole.TENANT_ADMIN,
+  UserRole.TENANT_USER,
 ];
 
 export class TenantUserSummaryDto {
@@ -17,7 +17,7 @@ export class TenantUserSummaryDto {
   @ApiProperty()
   email!: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional({ type: String, nullable: true })
   name!: string | null;
 
   @ApiProperty()
@@ -37,7 +37,7 @@ export class TenantUsersListResponseDto {
 
 export class UpdateUserRoleDto {
   @ApiProperty({
-    example: UserRole.PLATFORM_ADMIN,
+    example: UserRole.TENANT_USER,
     enum: USER_ROLE_UPDATE_SELECTABLE_ROLES,
   })
   @IsString()

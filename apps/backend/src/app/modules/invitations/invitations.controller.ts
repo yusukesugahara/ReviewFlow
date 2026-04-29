@@ -31,7 +31,7 @@ export class InvitationsController {
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'メンバー招待（tenant_admin / platform_admin / space admin）',
+    summary: 'メンバー招待（tenant_admin / space admin）',
   })
   @ApiSuccessResponseCreated(CreateInvitationResponseDto)
   async create(

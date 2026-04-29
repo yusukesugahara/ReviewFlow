@@ -63,7 +63,7 @@ export class AuthUserSummaryDto {
   email!: string;
 
   @ApiProperty({
-    example: UserRole.PLATFORM_ADMIN,
+    example: UserRole.TENANT_ADMIN,
     enum: Object.values(UserRole),
   })
   role!: string;
@@ -87,7 +87,7 @@ export class AuthMeResponseDto {
   @ApiProperty()
   email!: string;
 
-  @ApiProperty({ type: [String], example: ['platform_admin'] })
+  @ApiProperty({ type: [String], example: ['tenant_admin'] })
   roles!: string[];
 
   @ApiProperty({ description: '所属テナント ID' })

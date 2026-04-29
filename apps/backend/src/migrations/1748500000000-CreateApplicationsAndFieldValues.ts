@@ -26,7 +26,7 @@ export class CreateApplicationsAndFieldValues1748500000000 implements MigrationI
               name: 'applicant_user_id',
               type: 'varchar',
               length: '36',
-              isNullable: false,
+              isNullable: true,
             },
             {
               name: 'form_template_id',

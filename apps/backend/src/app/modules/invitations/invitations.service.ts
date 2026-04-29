@@ -199,9 +199,6 @@ export class InvitationsService {
   }
 
   private canCreateTenantInvitation(actor: AuthUserPayload): boolean {
-    return (
-      actor.roles.includes('tenant_admin') ||
-      actor.roles.includes('platform_admin')
-    );
+    return actor.roles.includes('tenant_admin');
   }
 }

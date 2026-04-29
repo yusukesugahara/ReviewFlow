@@ -174,12 +174,12 @@ export function SpaceList({
                           <select
                             id={`tenant-role-${group.id}`}
                             name="tenantRole"
-                            defaultValue="applicant"
+                            defaultValue="tenant_user"
                             className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                           >
-                            <option value="applicant">ユーザー</option>
-                            <option value="platform_admin">
-                              システム管理者
+                            <option value="tenant_user">テナントユーザー</option>
+                            <option value="tenant_admin">
+                              テナント管理者
                             </option>
                           </select>
                         </div>

@@ -277,7 +277,7 @@ type PageProps = {
 export default async function AdminSpacesPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const me = await getCurrentSessionUser();
-  const isSystemAdmin = me?.roles.includes("platform_admin") ?? false;
+  const isSystemAdmin = me?.roles.includes("tenant_admin") ?? false;
   const canCreateSpace =
     isSystemAdmin || (me?.roles.includes("tenant_admin") ?? false);
 

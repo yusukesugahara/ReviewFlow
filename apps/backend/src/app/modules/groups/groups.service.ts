@@ -281,6 +281,6 @@ export class GroupsService {
   }
 
   private isSystemAdmin(actor: AuthUserPayload): boolean {
-    return actor.roles.includes(UserRole.PLATFORM_ADMIN);
+    return actor.roles.includes(UserRole.TENANT_ADMIN);
   }
 }

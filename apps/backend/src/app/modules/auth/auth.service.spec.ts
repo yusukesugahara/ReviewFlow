@@ -55,7 +55,7 @@ describe('AuthService', () => {
       ).rejects.toMatchObject({ errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN });
     });
 
-    it('creates tenant + platform_admin and signs JWT with tenantId', async () => {
+    it('creates tenant + tenant_admin and signs JWT with tenantId', async () => {
       users.findAllByEmail.mockResolvedValue([]);
       const tenantRepo = {
         create: jest.fn((x: object) => ({ ...x })),
@@ -101,12 +101,12 @@ describe('AuthService', () => {
         sub: 'id-admin',
         email: 'first@example.com',
         tenantId: 'tenant-1',
-        role: UserRole.PLATFORM_ADMIN,
+        role: UserRole.TENANT_ADMIN,
       });
       expect(out.user).toEqual({
         id: 'id-admin',
         email: 'first@example.com',
-        role: UserRole.PLATFORM_ADMIN,
+        role: UserRole.TENANT_ADMIN,
         tenantId: 'tenant-1',
       });
       expect(out.access_token).toBe('signed-jwt');
@@ -131,7 +131,7 @@ describe('AuthService', () => {
           tenantId: 't1',
           email: 'a@b.com',
           passwordHash: hash,
-          role: UserRole.APPLICANT,
+          role: UserRole.TENANT_USER,
           name: null,
           isActive: true,
           createdAt: new Date(),
@@ -154,7 +154,7 @@ describe('AuthService', () => {
           tenantId: 't1',
           email: 'a@b.com',
           passwordHash: hash,
-          role: UserRole.APPLICANT,
+          role: UserRole.TENANT_USER,
           name: null,
           isActive: true,
           createdAt: new Date(),
@@ -171,7 +171,7 @@ describe('AuthService', () => {
       expect(out.user).toEqual({
         id: 'u1',
         email: 'a@b.com',
-        role: UserRole.APPLICANT,
+        role: UserRole.TENANT_USER,
         tenantId: 't1',
       });
     });

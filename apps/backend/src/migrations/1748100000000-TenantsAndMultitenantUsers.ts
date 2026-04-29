@@ -77,7 +77,7 @@ export class TenantsAndMultitenantUsers1748100000000 implements MigrationInterfa
     }
 
     await queryRunner.query(
-      `UPDATE \`users\` SET \`tenant_id\` = COALESCE(\`tenant_id\`, ?), \`role\` = CASE \`role\` WHEN 'admin' THEN 'tenant_admin' WHEN 'user' THEN 'applicant' ELSE \`role\` END`,
+      `UPDATE \`users\` SET \`tenant_id\` = COALESCE(\`tenant_id\`, ?), \`role\` = CASE \`role\` WHEN 'admin' THEN 'tenant_admin' WHEN 'user' THEN 'tenant_user' ELSE \`role\` END`,
       [DEFAULT_TENANT_ID],
     );
 
@@ -159,7 +159,7 @@ export class TenantsAndMultitenantUsers1748100000000 implements MigrationInterfa
         NULL AS "name",
         "email",
         "password_hash",
-        CASE "role" WHEN 'admin' THEN 'tenant_admin' WHEN 'user' THEN 'applicant' ELSE "role" END,
+        CASE "role" WHEN 'admin' THEN 'tenant_admin' WHEN 'user' THEN 'tenant_user' ELSE "role" END,
         1,
         "created_at",
         datetime('now')

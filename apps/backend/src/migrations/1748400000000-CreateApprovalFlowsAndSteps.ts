@@ -100,9 +100,9 @@ export class CreateApprovalFlowsAndSteps1748400000000 implements MigrationInterf
               isNullable: false,
             },
             {
-              name: 'approver_role',
+              name: 'assignee_user_id',
               type: 'varchar',
-              length: '32',
+              length: '36',
               isNullable: false,
             },
             {
@@ -134,6 +134,12 @@ export class CreateApprovalFlowsAndSteps1748400000000 implements MigrationInterf
               referencedTableName: 'approval_flows',
               referencedColumnNames: ['id'],
               onDelete: 'CASCADE',
+            }),
+            new TableForeignKey({
+              columnNames: ['assignee_user_id'],
+              referencedTableName: 'users',
+              referencedColumnNames: ['id'],
+              onDelete: 'RESTRICT',
             }),
           ],
           indices: [

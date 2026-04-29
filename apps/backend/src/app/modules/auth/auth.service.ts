@@ -53,7 +53,7 @@ export class AuthService {
         tenantId: tenant.id,
         email,
         passwordHash,
-        role: UserRole.PLATFORM_ADMIN,
+        role: UserRole.TENANT_ADMIN,
         name: null,
         isActive: true,
       });

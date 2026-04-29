@@ -49,7 +49,7 @@ async function HeaderUser({
   }
   return (
     <div className="flex items-center gap-4">
-      {me.roles.includes("platform_admin") ? (
+      {me.roles.includes("tenant_admin") ? (
         <Button asChild variant="ghost" size="sm">
           <Link href="/admin/spaces">管理画面</Link>
         </Button>

@@ -85,7 +85,7 @@ export class GroupsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'スペース一覧（platform_admin は全件、通常ユーザーは参加中のみ）',
+    summary: 'スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ）',
   })
   @ApiSuccessResponse(GroupsListResponseDto)
   async list(
@@ -98,9 +98,9 @@ export class GroupsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post()
-  @Roles(UserRole.TENANT_ADMIN, UserRole.PLATFORM_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'スペース作成（tenant_admin / platform_admin）' })
+  @ApiOperation({ summary: 'スペース作成（tenant_admin）' })
   @ApiSuccessResponseCreated(GroupSummaryDto)
   async create(
     @Body() dto: CreateGroupDto,
@@ -113,9 +113,9 @@ export class GroupsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Delete(':groupId')
-  @Roles(UserRole.PLATFORM_ADMIN)
+  @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'スペース削除（platform_admin）' })
+  @ApiOperation({ summary: 'スペース削除（tenant_admin）' })
   async remove(
     @Param('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() actor: AuthUserPayload,
@@ -128,7 +128,7 @@ export class GroupsController {
   @Get(':groupId/members')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'スペースメンバー一覧（platform_admin / space admin）',
+    summary: 'スペースメンバー一覧（tenant_admin / space admin）',
   })
   @ApiSuccessResponse(GroupMembersListResponseDto)
   async listMembers(
@@ -144,7 +144,7 @@ export class GroupsController {
   @Get(':groupId/available-users')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'スペース追加候補ユーザー一覧（platform_admin / space admin）',
+    summary: 'スペース追加候補ユーザー一覧（tenant_admin / space admin）',
   })
   @ApiSuccessResponse(GroupAvailableUsersResponseDto)
   async listAvailableUsers(
@@ -160,7 +160,7 @@ export class GroupsController {
   @Post(':groupId/members')
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'スペースへユーザー追加（platform_admin / space admin）',
+    summary: 'スペースへユーザー追加（tenant_admin / space admin）',
   })
   @ApiSuccessResponseCreated(GroupMemberSummaryDto)
   async addMember(
@@ -177,7 +177,7 @@ export class GroupsController {
   @Patch(':groupId/members/:userId/role')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'スペース管理者/ユーザ設定（platform_admin / space admin）',
+    summary: 'スペース管理者/ユーザ設定（tenant_admin / space admin）',
   })
   @ApiSuccessResponse(GroupMemberSummaryDto)
   async updateMemberRole(
@@ -214,7 +214,7 @@ export class GroupsController {
   @Delete(':groupId/members/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'スペースメンバー削除（platform_admin / space admin）',
+    summary: 'スペースメンバー削除（tenant_admin / space admin）',
   })
   async removeMember(
     @Param('groupId', ParseUUIDPipe) groupId: string,

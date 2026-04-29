@@ -14,8 +14,7 @@ import { userRoleLabel } from "@/lib/role-labels";
 
 const editableRoles = new Set<UpdateUserRoleInput["role"]>([
   "tenant_admin",
-  "approver",
-  "applicant",
+  "tenant_user",
 ]);
 
 function isUpdateUserRole(role: string): role is UpdateUserRoleInput["role"] {
@@ -94,8 +93,8 @@ export default async function AdminUsersPage() {
                             defaultValue={user.role}
                           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                         >
-                          <option value="platform_admin">システム管理者</option>
-                          <option value="applicant">ユーザー</option>
+                          <option value="tenant_admin">テナント管理者</option>
+                          <option value="tenant_user">テナントユーザー</option>
                         </select>
                           <Button size="sm" type="submit" variant="outline">
                             更新

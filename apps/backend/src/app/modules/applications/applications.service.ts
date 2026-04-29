@@ -101,7 +101,10 @@ export class ApplicationsService {
     }
   }
 
-  private approverCanActOn(app: Application, userRole: string): boolean {
+  private actorIsAssignedToCurrentStep(
+    actor: AuthUserPayload,
+    app: Application,
+  ): boolean {
     if (app.status !== ApplicationStatus.IN_REVIEW) {
       return false;
     }
@@ -111,7 +114,7 @@ export class ApplicationsService {
     if (!step) {
       return false;
     }
-    return step.approverRole === userRole;
+    return step.assigneeUserId === actor.id;
   }
 
   private canActorActOnReview(
@@ -124,13 +127,7 @@ export class ApplicationsService {
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return true;
     }
-    if (
-      actor.roles.includes(UserRole.APPROVER) &&
-      !actor.roles.includes(UserRole.TENANT_ADMIN)
-    ) {
-      return this.approverCanActOn(app, UserRole.APPROVER);
-    }
-    return false;
+    return this.actorIsAssignedToCurrentStep(actor, app);
   }
 
   private async assertCanRead(
@@ -140,20 +137,18 @@ export class ApplicationsService {
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return;
     }
-    if (
-      actor.roles.includes(UserRole.APPROVER) &&
-      !actor.roles.includes(UserRole.TENANT_ADMIN)
-    ) {
-      if (this.approverCanActOn(app, UserRole.APPROVER)) {
+    if (app.applicantUserId === actor.id) {
+      return;
+    }
+    if (this.actorIsAssignedToCurrentStep(actor, app)) {
+      return;
+    }
+    if (app.status !== ApplicationStatus.DRAFT) {
+      const participated = await this.approvals.count({
+        where: { applicationId: app.id, actedByUserId: actor.id },
+      });
+      if (participated > 0) {
         return;
-      }
-      if (app.status !== ApplicationStatus.DRAFT) {
-        const participated = await this.approvals.count({
-          where: { applicationId: app.id, actedByUserId: actor.id },
-        });
-        if (participated > 0) {
-          return;
-        }
       }
     }
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
@@ -235,18 +230,16 @@ export class ApplicationsService {
         order: { createdAt: 'DESC' },
       });
     }
-    if (actor.roles.includes(UserRole.APPROVER)) {
-      const rows = await this.apps.find({
-        where: {
-          tenantId: actor.tenantId,
-          status: ApplicationStatus.IN_REVIEW,
-        },
-        relations: ['approvalFlow', 'approvalFlow.steps'],
-        order: { createdAt: 'DESC' },
-      });
-      return rows.filter((a) => this.approverCanActOn(a, UserRole.APPROVER));
-    }
-    throw clientError(ClientErrorCodes.AUTH_FORBIDDEN_ROLE);
+    const rows = await this.apps.find({
+      where: { tenantId: actor.tenantId },
+      relations: ['approvalFlow', 'approvalFlow.steps'],
+      order: { createdAt: 'DESC' },
+    });
+    return rows.filter(
+      (app) =>
+        app.applicantUserId === actor.id ||
+        this.actorIsAssignedToCurrentStep(actor, app),
+    );
   }
 
   async listForApplicant(actor: ApplicantSession): Promise<Application[]> {
@@ -267,7 +260,6 @@ export class ApplicationsService {
     const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    await this.assertCanRead(actor, row);
     return row;
   }
 
@@ -285,6 +277,7 @@ export class ApplicationsService {
   private async createInternal(
     tenantId: string,
     applicantEmail: string,
+    applicantUserId: string | null,
     dto: CreateApplicationDto,
   ): Promise<Application> {
     const template = await this.templates.findOne({
@@ -322,6 +315,7 @@ export class ApplicationsService {
       const valRepo = em.getRepository(ApplicationFieldValue);
       const app = appRepo.create({
         tenantId,
+        applicantUserId,
         applicantEmail,
         formTemplateId: template.id,
         approvalFlowId: flow.id,
@@ -354,7 +348,7 @@ export class ApplicationsService {
     actor: AuthUserPayload,
     dto: CreateApplicationDto,
   ): Promise<Application> {
-    return this.createInternal(actor.tenantId, actor.email, dto);
+    return this.createInternal(actor.tenantId, actor.email, actor.id, dto);
   }
 
   async createForApplicant(
@@ -364,18 +358,20 @@ export class ApplicationsService {
     if (dto.formTemplateId !== actor.templateId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    return this.createInternal(actor.tenantId, actor.email, dto);
+    return this.createInternal(actor.tenantId, actor.email, null, dto);
   }
 
   private async loadApplicantEditableApplication(
-    actor: { tenantId: string; email: string },
+    actor: { tenantId: string; id?: string; email: string },
     id: string,
   ): Promise<Application> {
     const app = await this.apps.findOne({
       where: {
         id,
         tenantId: actor.tenantId,
-        applicantEmail: actor.email,
+        ...(actor.id
+          ? { applicantUserId: actor.id }
+          : { applicantEmail: actor.email }),
       },
       relations: ['fieldValues'],
     });

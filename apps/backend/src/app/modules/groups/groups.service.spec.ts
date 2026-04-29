@@ -37,21 +37,21 @@ describe('GroupsService', () => {
     id: 'sys-1',
     email: 'sys@example.com',
     tenantId: 'tenant-1',
-    roles: [UserRole.PLATFORM_ADMIN],
+    roles: [UserRole.TENANT_ADMIN],
   };
 
   const groupAdmin = {
     id: 'admin-1',
     email: 'admin@example.com',
     tenantId: 'tenant-1',
-    roles: [UserRole.APPLICANT],
+    roles: [UserRole.TENANT_USER],
   };
 
   const regularUser = {
     id: 'user-1',
     email: 'user@example.com',
     tenantId: 'tenant-1',
-    roles: [UserRole.APPLICANT],
+    roles: [UserRole.TENANT_USER],
   };
 
   beforeEach(async () => {

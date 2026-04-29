@@ -1,6 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { BackendHttpError, backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { listTenantUsers } from "@/lib/server/users-repository";
 import {
   ApplicationSetupDraftForm,
   type DraftField,
@@ -15,7 +16,7 @@ type SetupIntent = "draft" | "publish";
 type ApprovalStepPayload = {
   stepOrder: number;
   stepName: string;
-  approverRole: "approver" | "tenant_admin";
+  assigneeUserId: string;
   canReturn: boolean;
 };
 
@@ -52,13 +53,13 @@ function parseSteps(stepLines: string): ApprovalStepPayload[] {
     .filter((line) => line.length > 0);
 
   return lines.map((line, index) => {
-    const [stepNameRaw, roleRaw, canReturnRaw] = line
+    const [stepNameRaw = "", assigneeUserIdRaw = "", canReturnRaw = ""] = line
       .split(",")
       .map((value) => value?.trim() ?? "");
     return {
       stepOrder: index + 1,
       stepName: stepNameRaw || `Step ${index + 1}`,
-      approverRole: roleRaw === "tenant_admin" ? "tenant_admin" : "approver",
+      assigneeUserId: assigneeUserIdRaw,
       canReturn: canReturnRaw === "true",
     };
   });
@@ -276,6 +277,13 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
   const errorMessage = setupErrorMessage(params.setupError);
   const statusMessage = setupStatusMessage(params.setupStatus);
   const publishedTemplateId = params.setupStatus === "published" ? params.publishedTemplateId : null;
+  const users = await listTenantUsers();
+  const assignees = users
+    .filter((user) => user.isActive)
+    .map((user) => ({
+      id: user.id,
+      label: user.name ? `${user.name} (${user.email})` : user.email,
+    }));
 
   return (
     <div className="space-y-8">
@@ -291,6 +299,7 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
         errorMessage={errorMessage}
         statusMessage={statusMessage}
         publishedTemplateId={publishedTemplateId}
+        assignees={assignees}
       />
     </div>
   );

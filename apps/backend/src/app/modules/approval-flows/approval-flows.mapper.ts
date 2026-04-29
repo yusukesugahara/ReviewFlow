@@ -12,7 +12,7 @@ export function mapApprovalStepToDto(
     id: row.id,
     stepOrder: row.stepOrder,
     stepName: row.stepName,
-    approverRole: row.approverRole,
+    assigneeUserId: row.assigneeUserId,
     canReturn: row.canReturn,
     createdAt: row.createdAt.toISOString(),
   };

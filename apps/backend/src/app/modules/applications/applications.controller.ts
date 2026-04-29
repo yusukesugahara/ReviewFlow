@@ -46,7 +46,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get()
-  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '申請一覧（ロールに応じたスコープ）' })
   @ApiSuccessResponse(ApplicationsListResponseDto)
@@ -62,7 +62,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post()
-  @Roles(UserRole.APPLICANT)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
     summary: '申請作成（下書き）',
@@ -81,7 +81,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/submit')
-  @Roles(UserRole.APPLICANT)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '提出（draft → in_review）' })
   @ApiSuccessResponse(ApplicationDetailDto)
@@ -96,7 +96,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/approve')
-  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '承認（in_review の現在ステップ）' })
   @ApiSuccessResponse(ApplicationDetailDto)
@@ -112,7 +112,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/return')
-  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '差し戻し',
@@ -132,7 +132,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/reject')
-  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '却下' })
   @ApiSuccessResponse(ApplicationDetailDto)
@@ -148,7 +148,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/resubmit')
-  @Roles(UserRole.APPLICANT)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '再提出（returned → in_review）' })
   @ApiSuccessResponse(ApplicationDetailDto)
@@ -163,7 +163,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id/correction-targets')
-  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '修正対象取得（オープンな correction + 現在値）',
@@ -185,7 +185,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id/corrections')
-  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '差し戻し履歴（correction_requests）',
@@ -203,7 +203,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id')
-  @Roles(UserRole.APPROVER, UserRole.TENANT_ADMIN)
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '申請詳細（field_key → 値）' })
   @ApiSuccessResponse(ApplicationDetailDto)
@@ -218,7 +218,7 @@ export class ApplicationsController {
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Patch(':id')
-  @Roles(UserRole.APPLICANT)
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: '値更新',

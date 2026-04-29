@@ -20,7 +20,7 @@ export class CreateInvitationDto {
   email!: string;
 
   @ApiProperty({
-    example: 'applicant',
+    example: 'tenant_user',
     enum: INVITATION_ASSIGNABLE_ROLES,
   })
   @IsString()
