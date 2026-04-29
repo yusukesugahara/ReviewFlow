@@ -10,6 +10,7 @@ import { FormTemplate } from '../../../models/entities/form-template.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationAccessPolicy } from './application-access.policy';
+import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
@@ -33,6 +34,7 @@ import { PublicApplicationsController } from './public-applications.controller';
     ApplicationsService,
     ApplicantAccessGuard,
     ApplicationAccessPolicy,
+    ApplicationFormValueValidator,
     ApplicationTransitionPolicy,
   ],
 })

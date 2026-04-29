@@ -7,7 +7,6 @@ import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
 import { CorrectionRequestStatus } from '../../../models/constants/correction-request-status';
-import { FormFieldType } from '../../../models/constants/form-field-type';
 import { FormTemplateStatus } from '../../../models/constants/form-template-status';
 import { UserRole } from '../../../models/constants/user-role';
 import { ApplicationApproval } from '../../../models/entities/application-approval.entity';
@@ -16,7 +15,6 @@ import { Application } from '../../../models/entities/application.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { CorrectionRequestItem } from '../../../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
-import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
 import type {
   ApproveApplicationDto,
@@ -32,6 +30,7 @@ import {
   mapCorrectionsList,
 } from './applications.mapper';
 import { ApplicationAccessPolicy } from './application-access.policy';
+import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
@@ -54,56 +53,9 @@ export class ApplicationsService {
     @InjectRepository(ApprovalFlow)
     private readonly flows: Repository<ApprovalFlow>,
     private readonly accessPolicy: ApplicationAccessPolicy,
+    private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
-
-  private valuePresent(value: unknown): boolean {
-    if (value === null || value === undefined) {
-      return false;
-    }
-    if (typeof value === 'string') {
-      return value.trim().length > 0;
-    }
-    if (typeof value === 'number') {
-      return Number.isFinite(value);
-    }
-    if (typeof value === 'boolean') {
-      return true;
-    }
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-    return true;
-  }
-
-  private assertValueMatchesFieldType(field: FormField, value: unknown): void {
-    switch (field.fieldType) {
-      case FormFieldType.TEXT:
-      case FormFieldType.TEXTAREA:
-      case FormFieldType.DATE:
-      case FormFieldType.SELECT:
-      case FormFieldType.RADIO:
-        if (typeof value !== 'string') {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      case FormFieldType.NUMBER:
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      case FormFieldType.CHECKBOX:
-        if (
-          !Array.isArray(value) ||
-          !value.every((x) => typeof x === 'string')
-        ) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      default:
-        throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-    }
-  }
 
   private countApprovalsByActor(
     applicationId: string,
@@ -247,17 +199,11 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.APPLICATION_FORM_NOT_PUBLISHED);
     }
 
-    const fieldsByKey = new Map(
-      (template.fields ?? []).map((f) => [f.fieldKey, f]),
-    );
     const values = dto.values ?? {};
-    for (const key of Object.keys(values)) {
-      const field = fieldsByKey.get(key);
-      if (!field) {
-        throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
-      }
-      this.assertValueMatchesFieldType(field, values[key]);
-    }
+    const fieldsByKey = this.formValueValidator.buildFieldsByKey(
+      template.fields ?? [],
+    );
+    this.formValueValidator.assertValuesMatchFields(fieldsByKey, values);
 
     const flow = await this.resolveActiveFlow(
       tenantId,
@@ -282,7 +228,7 @@ export class ApplicationsService {
       const saved = await appRepo.save(app);
       newId = saved.id;
       for (const [key, val] of Object.entries(values)) {
-        const field = fieldsByKey.get(key)!;
+        const field = this.formValueValidator.getKnownField(fieldsByKey, key);
         await valRepo.save(
           valRepo.create({
             tenantId,
@@ -363,9 +309,10 @@ export class ApplicationsService {
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
-    const fieldsByKey = new Map(
-      (template.fields ?? []).map((f) => [f.fieldKey, f]),
+    const fieldsByKey = this.formValueValidator.buildFieldsByKey(
+      template.fields ?? [],
     );
+    let allowedFieldIds: Set<string> | undefined;
 
     if (app.status === ApplicationStatus.DRAFT) {
       /* continue normal patch */
@@ -374,33 +321,19 @@ export class ApplicationsService {
       if (!open?.items?.length) {
         throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
       }
-      const allowed = new Set(open.items.map((i) => i.formFieldId));
-      for (const key of Object.keys(dto.values)) {
-        const field = fieldsByKey.get(key);
-        if (!field) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
-        }
-        if (!allowed.has(field.id)) {
-          throw clientError(
-            ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
-          );
-        }
-        this.assertValueMatchesFieldType(field, dto.values[key]);
-      }
+      allowedFieldIds = new Set(open.items.map((i) => i.formFieldId));
     } else {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
 
-    for (const key of Object.keys(dto.values)) {
-      const field = fieldsByKey.get(key);
-      if (!field) {
-        throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
-      }
-      this.assertValueMatchesFieldType(field, dto.values[key]);
-    }
+    this.formValueValidator.assertPatchValuesMatchFields(
+      fieldsByKey,
+      dto.values,
+      allowedFieldIds,
+    );
 
     for (const [key, val] of Object.entries(dto.values)) {
-      const field = fieldsByKey.get(key)!;
+      const field = this.formValueValidator.getKnownField(fieldsByKey, key);
       const existing = await this.fieldValues.findOne({
         where: { applicationId: app.id, formFieldId: field.id },
       });
@@ -439,37 +372,29 @@ export class ApplicationsService {
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
-    const fieldsByKey = new Map(
-      (template.fields ?? []).map((f) => [f.fieldKey, f]),
+    const fieldsByKey = this.formValueValidator.buildFieldsByKey(
+      template.fields ?? [],
     );
+    let allowedFieldIds: Set<string> | undefined;
 
     if (app.status === ApplicationStatus.RETURNED) {
       const open = await this.findOpenCorrection(app.id);
       if (!open?.items?.length) {
         throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
       }
-      const allowed = new Set(open.items.map((i) => i.formFieldId));
-      for (const key of Object.keys(dto.values)) {
-        const field = fieldsByKey.get(key);
-        if (!field) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
-        }
-        if (!allowed.has(field.id)) {
-          throw clientError(
-            ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
-          );
-        }
-      }
+      allowedFieldIds = new Set(open.items.map((i) => i.formFieldId));
     } else if (app.status !== ApplicationStatus.DRAFT) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
 
+    this.formValueValidator.assertPatchValuesMatchFields(
+      fieldsByKey,
+      dto.values,
+      allowedFieldIds,
+    );
+
     for (const [key, val] of Object.entries(dto.values)) {
-      const field = fieldsByKey.get(key);
-      if (!field) {
-        throw clientError(ClientErrorCodes.APPLICATION_FIELD_UNKNOWN);
-      }
-      this.assertValueMatchesFieldType(field, val);
+      const field = this.formValueValidator.getKnownField(fieldsByKey, key);
       const existing = await this.fieldValues.findOne({
         where: { applicationId: app.id, formFieldId: field.id },
       });
@@ -491,22 +416,6 @@ export class ApplicationsService {
     return this.getOneForApplicant(actor, id);
   }
 
-  private assertRequiredSatisfied(app: Application, fields: FormField[]): void {
-    const byFieldId = new Map(
-      (app.fieldValues ?? []).map((v) => [v.formFieldId, v.valueJson]),
-    );
-    for (const f of fields) {
-      if (!f.required) {
-        continue;
-      }
-      const val = byFieldId.get(f.id);
-      if (!this.valuePresent(val)) {
-        throw clientError(ClientErrorCodes.APPLICATION_REQUIRED_FIELDS_MISSING);
-      }
-      this.assertValueMatchesFieldType(f, val);
-    }
-  }
-
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     this.transitionPolicy.assertDraft(app);
@@ -519,15 +428,10 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    this.assertRequiredSatisfied(app, template.fields ?? []);
-    for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find(
-        (x) => x.id === fv.formFieldId,
-      );
-      if (field) {
-        this.assertValueMatchesFieldType(field, fv.valueJson);
-      }
-    }
+    this.formValueValidator.assertApplicationValuesSubmittable(
+      app,
+      template.fields ?? [],
+    );
 
     this.transitionPolicy.startReview(app);
     await this.apps.save(app);
@@ -553,15 +457,10 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    this.assertRequiredSatisfied(app, template.fields ?? []);
-    for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find(
-        (x) => x.id === fv.formFieldId,
-      );
-      if (field) {
-        this.assertValueMatchesFieldType(field, fv.valueJson);
-      }
-    }
+    this.formValueValidator.assertApplicationValuesSubmittable(
+      app,
+      template.fields ?? [],
+    );
 
     this.transitionPolicy.startReview(app);
     await this.apps.save(app);
@@ -748,15 +647,10 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    this.assertRequiredSatisfied(app, template.fields ?? []);
-    for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find(
-        (x) => x.id === fv.formFieldId,
-      );
-      if (field) {
-        this.assertValueMatchesFieldType(field, fv.valueJson);
-      }
-    }
+    this.formValueValidator.assertApplicationValuesSubmittable(
+      app,
+      template.fields ?? [],
+    );
 
     await this.apps.manager.transaction(async (em) => {
       const corrRepo = em.getRepository(CorrectionRequest);
@@ -808,15 +702,10 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
-    this.assertRequiredSatisfied(app, template.fields ?? []);
-    for (const fv of app.fieldValues ?? []) {
-      const field = (template.fields ?? []).find(
-        (x) => x.id === fv.formFieldId,
-      );
-      if (field) {
-        this.assertValueMatchesFieldType(field, fv.valueJson);
-      }
-    }
+    this.formValueValidator.assertApplicationValuesSubmittable(
+      app,
+      template.fields ?? [],
+    );
 
     await this.apps.manager.transaction(async (em) => {
       const corrRepo = em.getRepository(CorrectionRequest);
