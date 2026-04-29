@@ -147,15 +147,13 @@ Do not commit `.env`, `.env.dev`, `.env.local`, real API keys, real mail credent
 
 ## Local Development
 
-Install dependencies per app if needed:
+This monorepo uses npm workspaces. Keep dependency installation and lockfile updates at the repository root, using the single root `package-lock.json`.
 
 ```bash
-cd apps/backend
-npm install
-
-cd ../frontend
 npm install
 ```
+
+Do not create app-local lockfiles such as `apps/frontend/package-lock.json` or `apps/backend/package-lock.json`; they make package-manager ownership ambiguous and can confuse framework workspace-root detection.
 
 Run the backend:
 

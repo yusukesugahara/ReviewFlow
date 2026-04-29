@@ -62,7 +62,7 @@ describe('InvitationsService', () => {
 
   describe('create', () => {
     it('throws when user already exists in tenant', async () => {
-      usersService.findByTenantAndEmail.mockResolvedValue({ id: 'u1' } as User);
+      usersService.findByTenantAndEmail.mockResolvedValue({ id: 'u1' });
 
       await expect(
         service.create({ email: 'x@y.com', role: UserRole.TENANT_USER }, actor),
@@ -219,7 +219,7 @@ describe('InvitationsService', () => {
       });
 
       expect(userRepo.save).toHaveBeenCalled();
-      const savedUser = userRepo.save.mock.calls[0][0] as User;
+      const savedUser = userRepo.save.mock.calls[0][0];
       expect(savedUser.email).toBe('join@y.com');
       await expect(
         bcrypt.compare('password12', savedUser.passwordHash),

@@ -169,7 +169,7 @@ describe('GroupsService', () => {
       id: 'user-1',
       email: 'user@example.com',
       name: null,
-    } as User);
+    });
 
     const out = await service.addMember(
       'group-1',
