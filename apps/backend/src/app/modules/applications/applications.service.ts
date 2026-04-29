@@ -40,9 +40,16 @@ type EditablePatchContext = {
   fieldsByKey: Map<string, FormField>;
   allowedFieldIds?: Set<string>;
 };
-type PatchedApplicationMapping =
+type ApplicationReadMapping =
   | { source: 'actor'; actor: AuthUserPayload; id: string }
   | { source: 'applicant'; actor: ApplicantSession; id: string };
+type SubmittableApplicationContext = {
+  app: Application;
+  template: FormTemplate;
+};
+type ResubmittableApplicationContext = SubmittableApplicationContext & {
+  openCorrection: CorrectionRequest;
+};
 
 @Injectable()
 export class ApplicationsService {
@@ -387,8 +394,8 @@ export class ApplicationsService {
     });
   }
 
-  private async mapPatchedApplication(
-    mapping: PatchedApplicationMapping,
+  private async mapApplicationForSource(
+    mapping: ApplicationReadMapping,
   ): Promise<Application> {
     if (mapping.source === 'actor') {
       return this.getOneForActor(mapping.actor, mapping.id);
@@ -405,7 +412,7 @@ export class ApplicationsService {
     const context = await this.loadEditablePatchContext(actor.tenantId, app);
     const fieldValues = await this.applyFieldValuePatch(context, dto.values);
     await this.saveFieldValues(fieldValues);
-    return this.mapPatchedApplication({ source: 'actor', actor, id });
+    return this.mapApplicationForSource({ source: 'actor', actor, id });
   }
 
   async patchForApplicant(
@@ -421,30 +428,107 @@ export class ApplicationsService {
     const context = await this.loadEditablePatchContext(actor.tenantId, app);
     const fieldValues = await this.applyFieldValuePatch(context, dto.values);
     await this.saveFieldValues(fieldValues);
-    return this.mapPatchedApplication({ source: 'applicant', actor, id });
+    return this.mapApplicationForSource({ source: 'applicant', actor, id });
   }
 
-  async submit(actor: AuthUserPayload, id: string): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
+  private async loadSubmittableApplicationContext(
+    tenantId: string,
+    app: Application,
+  ): Promise<SubmittableApplicationContext> {
     this.transitionPolicy.assertDraft(app);
 
     const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId: actor.tenantId },
+      where: { id: app.formTemplateId, tenantId },
       relations: ['fields'],
     });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
 
+    return { app, template };
+  }
+
+  private validateApplicationReadyToSubmit(
+    context: SubmittableApplicationContext,
+  ): void {
     this.formValueValidator.assertApplicationValuesSubmittable(
-      app,
-      template.fields ?? [],
+      context.app,
+      context.template.fields ?? [],
     );
+  }
 
-    this.transitionPolicy.startReview(app);
-    await this.apps.save(app);
+  private async saveSubmittedApplication(app: Application): Promise<void> {
+    await this.apps.manager.transaction(async (em: EntityManager) => {
+      await em.getRepository(Application).save(app);
+    });
+  }
 
-    return this.getOneForActor(actor, id);
+  private async applySubmitTransition(
+    context: SubmittableApplicationContext,
+  ): Promise<void> {
+    this.transitionPolicy.startReview(context.app);
+    await this.saveSubmittedApplication(context.app);
+  }
+
+  private async loadResubmittableApplicationContext(
+    tenantId: string,
+    app: Application,
+  ): Promise<ResubmittableApplicationContext> {
+    this.transitionPolicy.assertReturned(app);
+
+    const openCorrection = await this.correctionRequests.findOne({
+      where: {
+        applicationId: app.id,
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items'],
+    });
+    if (!openCorrection) {
+      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
+    }
+
+    const template = await this.templates.findOne({
+      where: { id: app.formTemplateId, tenantId },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    }
+
+    return { app, template, openCorrection };
+  }
+
+  private async applyResubmitTransition(
+    context: ResubmittableApplicationContext,
+  ): Promise<void> {
+    await this.apps.manager.transaction(async (em: EntityManager) => {
+      const corrRepo = em.getRepository(CorrectionRequest);
+      const itemRepo = em.getRepository(CorrectionRequestItem);
+      const appRepo = em.getRepository(Application);
+
+      context.openCorrection.status = CorrectionRequestStatus.RESOLVED;
+      context.openCorrection.resolvedAt = new Date();
+      await corrRepo.save(context.openCorrection);
+
+      for (const it of context.openCorrection.items ?? []) {
+        it.isResolved = true;
+        await itemRepo.save(it);
+      }
+
+      this.transitionPolicy.applyResubmit(context.app);
+      await appRepo.save(context.app);
+    });
+  }
+
+  async submit(actor: AuthUserPayload, id: string): Promise<Application> {
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    const context = await this.loadSubmittableApplicationContext(
+      actor.tenantId,
+      app,
+    );
+    this.validateApplicationReadyToSubmit(context);
+    await this.applySubmitTransition(context);
+    return this.mapApplicationForSource({ source: 'actor', actor, id });
   }
 
   async submitForApplicant(
@@ -455,25 +539,14 @@ export class ApplicationsService {
     if (app.formTemplateId !== actor.templateId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    this.transitionPolicy.assertDraft(app);
-
-    const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId: actor.tenantId },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
-    }
-
-    this.formValueValidator.assertApplicationValuesSubmittable(
+    this.accessPolicy.assertApplicantOwns(actor, app);
+    const context = await this.loadSubmittableApplicationContext(
+      actor.tenantId,
       app,
-      template.fields ?? [],
     );
-
-    this.transitionPolicy.startReview(app);
-    await this.apps.save(app);
-
-    return this.getOneForApplicant(actor, id);
+    this.validateApplicationReadyToSubmit(context);
+    await this.applySubmitTransition(context);
+    return this.mapApplicationForSource({ source: 'applicant', actor, id });
   }
 
   async approve(
@@ -634,51 +707,13 @@ export class ApplicationsService {
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    this.transitionPolicy.assertReturned(app);
-
-    const open = await this.correctionRequests.findOne({
-      where: {
-        applicationId: app.id,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
-    if (!open) {
-      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
-    }
-
-    const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId: actor.tenantId },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
-    }
-
-    this.formValueValidator.assertApplicationValuesSubmittable(
+    const context = await this.loadResubmittableApplicationContext(
+      actor.tenantId,
       app,
-      template.fields ?? [],
     );
-
-    await this.apps.manager.transaction(async (em) => {
-      const corrRepo = em.getRepository(CorrectionRequest);
-      const itemRepo = em.getRepository(CorrectionRequestItem);
-      const appRepo = em.getRepository(Application);
-
-      open.status = CorrectionRequestStatus.RESOLVED;
-      open.resolvedAt = new Date();
-      await corrRepo.save(open);
-
-      for (const it of open.items ?? []) {
-        it.isResolved = true;
-        await itemRepo.save(it);
-      }
-
-      this.transitionPolicy.applyResubmit(app);
-      await appRepo.save(app);
-    });
-
-    return this.getOneForActor(actor, id);
+    this.validateApplicationReadyToSubmit(context);
+    await this.applyResubmitTransition(context);
+    return this.mapApplicationForSource({ source: 'actor', actor, id });
   }
 
   async resubmitForApplicant(
@@ -689,51 +724,14 @@ export class ApplicationsService {
     if (app.formTemplateId !== actor.templateId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    this.transitionPolicy.assertReturned(app);
-
-    const open = await this.correctionRequests.findOne({
-      where: {
-        applicationId: app.id,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
-    if (!open) {
-      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
-    }
-
-    const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId: actor.tenantId },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
-    }
-
-    this.formValueValidator.assertApplicationValuesSubmittable(
+    this.accessPolicy.assertApplicantOwns(actor, app);
+    const context = await this.loadResubmittableApplicationContext(
+      actor.tenantId,
       app,
-      template.fields ?? [],
     );
-
-    await this.apps.manager.transaction(async (em) => {
-      const corrRepo = em.getRepository(CorrectionRequest);
-      const itemRepo = em.getRepository(CorrectionRequestItem);
-      const appRepo = em.getRepository(Application);
-
-      open.status = CorrectionRequestStatus.RESOLVED;
-      open.resolvedAt = new Date();
-      await corrRepo.save(open);
-
-      for (const it of open.items ?? []) {
-        it.isResolved = true;
-        await itemRepo.save(it);
-      }
-
-      this.transitionPolicy.applyResubmit(app);
-      await appRepo.save(app);
-    });
-
-    return this.getOneForApplicant(actor, id);
+    this.validateApplicationReadyToSubmit(context);
+    await this.applyResubmitTransition(context);
+    return this.mapApplicationForSource({ source: 'applicant', actor, id });
   }
 
   async getCorrectionsForActor(actor: AuthUserPayload, id: string) {
