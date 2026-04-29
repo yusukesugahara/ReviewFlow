@@ -29,6 +29,9 @@ export class AuditLogItemDto {
   @ApiProperty()
   id!: string;
 
+  @ApiPropertyOptional({ type: String, nullable: true })
+  groupId!: string | null;
+
   @ApiPropertyOptional({ nullable: true })
   actorUserId!: string | null;
 

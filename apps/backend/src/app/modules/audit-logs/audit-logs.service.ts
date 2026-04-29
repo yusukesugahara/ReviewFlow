@@ -7,6 +7,7 @@ import { mapAuditLogToDto } from './audit-logs.mapper';
 
 type CreateAuditLogParams = {
   tenantId: string;
+  groupId?: string | null;
   actorUserId: string | null;
   actionType: string;
   targetType: string;
@@ -25,6 +26,7 @@ export class AuditLogsService {
     await this.auditLogs.save(
       this.auditLogs.create({
         tenantId: params.tenantId,
+        groupId: params.groupId ?? null,
         actorUserId: params.actorUserId,
         actionType: params.actionType,
         targetType: params.targetType,

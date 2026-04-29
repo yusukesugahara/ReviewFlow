@@ -4,6 +4,7 @@ import type { AuditLogItemDto } from './audit-logs.dto';
 export function mapAuditLogToDto(row: AuditLog): AuditLogItemDto {
   return {
     id: row.id,
+    groupId: row.groupId,
     actorUserId: row.actorUserId,
     actionType: row.actionType,
     targetType: row.targetType,

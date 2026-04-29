@@ -118,7 +118,14 @@ type ExportJobBody = {
   data?: { id?: string; status?: string; filePath?: string | null };
 };
 type AuditLogsListBody = {
-  data?: { logs?: { id: string; actionType: string; targetType: string }[] };
+  data?: {
+    logs?: {
+      id: string;
+      groupId: string | null;
+      actionType: string;
+      targetType: string;
+    }[];
+  };
 };
 
 describe('App (e2e)', () => {
@@ -607,6 +614,180 @@ describe('App (e2e)', () => {
     const flow = flows.find((f) => f.formTemplateId === tid);
     expect(flow?.name).toBe('経費申請フロー');
     expect(flow?.steps?.length).toBe(2);
+  });
+
+  it('space scope: group roles gate templates and applications', async () => {
+    const http = app.getHttpServer();
+    const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
+
+    await request(http)
+      .post('/auth/register')
+      .set(apiKey)
+      .send({ email: 'scope-admin@e2e.test', password: 'password12' })
+      .expect(201);
+    const adminLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'scope-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const adminTok =
+      (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+    const adminId = await fetchMeId(http, apiKey, adminTok);
+    const groupA = await createGroupForAdmin(
+      http,
+      apiKey,
+      adminTok,
+      adminId,
+      'scope-a',
+    );
+    const groupB = await createGroupForAdmin(
+      http,
+      apiKey,
+      adminTok,
+      adminId,
+      'scope-b',
+    );
+
+    const adminInvite = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        email: 'scope-group-admin@e2e.test',
+        role: 'tenant_user',
+        groupId: groupA,
+        groupRole: 'admin',
+      })
+      .expect(201);
+    const userInvite = await request(http)
+      .post('/invitations')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        email: 'scope-group-user@e2e.test',
+        role: 'tenant_user',
+        groupId: groupA,
+        groupRole: 'user',
+      })
+      .expect(201);
+
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: (adminInvite.body as InviteCreateJsonBody).data?.token ?? '',
+        name: 'Group Admin',
+        password: 'password12',
+      })
+      .expect(200);
+    await request(http)
+      .post('/invitations/accept')
+      .set(apiKey)
+      .send({
+        token: (userInvite.body as InviteCreateJsonBody).data?.token ?? '',
+        name: 'Group User',
+        password: 'password12',
+      })
+      .expect(200);
+
+    const groupAdminLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'scope-group-admin@e2e.test', password: 'password12' })
+      .expect(200);
+    const groupAdminTok =
+      (groupAdminLogin.body as LoginJsonBody).data?.access_token ?? '';
+    const groupUserLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'scope-group-user@e2e.test', password: 'password12' })
+      .expect(200);
+    const groupUserTok =
+      (groupUserLogin.body as LoginJsonBody).data?.access_token ?? '';
+
+    const createdTpl = await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .send({ groupId: groupA, name: 'Group Admin Form' })
+      .expect(201);
+    const tplA = (createdTpl.body as FormTemplateCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupUserTok}`)
+      .send({ groupId: groupA, name: 'Forbidden Form' })
+      .expect(403);
+
+    await request(http)
+      .post(`/form-templates/${tplA}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .send({
+        fieldKey: 'title',
+        label: '件名',
+        fieldType: 'text',
+        required: true,
+        sortOrder: 1,
+        options: [],
+      })
+      .expect(201);
+    await request(http)
+      .post(`/form-templates/${tplA}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .expect(200);
+    await request(http)
+      .post('/approval-flows')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .send({
+        groupId: groupA,
+        formTemplateId: tplA,
+        name: 'Group A Flow',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: 'Admin approval',
+            assigneeUserId: adminId,
+            canReturn: false,
+          },
+        ],
+      })
+      .expect(201);
+
+    const appA = await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupUserTok}`)
+      .send({
+        groupId: groupA,
+        formTemplateId: tplA,
+        values: { title: 'allowed' },
+      })
+      .expect(201);
+    const appAId = (appA.body as ApplicationCreateBody).data?.id ?? '';
+
+    const tplB = await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ groupId: groupB, name: 'Group B Form' })
+      .expect(201);
+    const tplBId = (tplB.body as FormTemplateCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupUserTok}`)
+      .send({ groupId: groupB, formTemplateId: tplBId, values: {} })
+      .expect(403);
+    await request(http)
+      .get(`/applications/${appAId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupUserTok}`)
+      .expect(200);
   });
 
   it('applications: applicant creates draft, submits; approver sees queue', async () => {
@@ -1201,12 +1382,26 @@ describe('App (e2e)', () => {
       .send({ email: 'audit-admin@e2e.test', password: 'password12' })
       .expect(200);
     const tok = (login.body as LoginJsonBody).data?.access_token ?? '';
+    const adminUserId = await fetchMeId(http, apiKey, tok);
+    const groupId = await createGroupForAdmin(
+      http,
+      apiKey,
+      tok,
+      adminUserId,
+      'Audit Space',
+    );
 
     await request(http)
       .get('/users')
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
+    await request(http)
+      .post('/form-templates')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .send({ groupId, name: 'Audit Form' })
+      .expect(201);
 
     const logs = await request(http)
       .get('/audit-logs')
@@ -1216,5 +1411,10 @@ describe('App (e2e)', () => {
     const rows = (logs.body as AuditLogsListBody).data?.logs ?? [];
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.some((x) => x.targetType === 'users')).toBe(true);
+    expect(
+      rows.some(
+        (x) => x.targetType === 'form-templates' && x.groupId === groupId,
+      ),
+    ).toBe(true);
   });
 });

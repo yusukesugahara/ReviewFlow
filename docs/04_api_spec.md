@@ -5,6 +5,8 @@
 - テナントスコープはサーバー側で強制する
 - 業務データは `tenant_id` と `group_id` の両方でスコープする。UI 上は group を space と呼ぶ。
 - space 業務 API は `groupId` を query/body で明示する。サーバー側で group の tenant と利用者の所属/権限を検証する。
+- 現段階では既存 path を維持する。次段階で `/groups/:groupId/form-templates` / `/groups/:groupId/applications` のような nested path へ寄せる。
+- `audit_logs.group_id` は nullable。tenant-level event は `null`、space-level event は対象 `groupId` を保持する。
 
 ## Auth
 

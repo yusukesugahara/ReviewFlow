@@ -8,17 +8,14 @@ import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import { FormTemplateStatus } from '../../../models/constants/form-template-status';
-import { GroupMemberRole } from '../../../models/constants/group-member-role';
-import { UserRole } from '../../../models/constants/user-role';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
-import { GroupMember } from '../../../models/entities/group-member.entity';
-import { Group } from '../../../models/entities/group.entity';
 import { MailService } from '../mail/mail.service';
 import {
   AuthService,
   type ApplicantAccessTokenPayload,
 } from '../auth/auth.service';
+import { SpaceAccessService } from '../groups/space-access.service';
 import type {
   CreateFormFieldDto,
   CreateFormTemplateDto,
@@ -39,50 +36,16 @@ export class FormTemplatesService {
     private readonly templates: Repository<FormTemplate>,
     @InjectRepository(FormField)
     private readonly fields: Repository<FormField>,
-    @InjectRepository(Group)
-    private readonly groups: Repository<Group>,
-    @InjectRepository(GroupMember)
-    private readonly members: Repository<GroupMember>,
+    private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
     private readonly authService: AuthService,
   ) {}
-
-  private async assertGroupInTenant(
-    tenantId: string,
-    groupId: string,
-  ): Promise<void> {
-    const count = await this.groups.count({ where: { id: groupId, tenantId } });
-    if (count === 0) {
-      throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
-    }
-  }
-
-  private async assertCanManageGroup(
-    actor: AuthUserPayload,
-    groupId: string,
-  ): Promise<void> {
-    await this.assertGroupInTenant(actor.tenantId, groupId);
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return;
-    }
-    const member = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
-    if (!member) {
-      throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
-    }
-  }
 
   async listByGroup(
     actor: AuthUserPayload,
     groupId: string,
   ): Promise<FormTemplate[]> {
-    await this.assertCanManageGroup(actor, groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, groupId);
     return this.templates.find({
       where: { tenantId: actor.tenantId, groupId },
       relations: ['fields'],
@@ -94,7 +57,7 @@ export class FormTemplatesService {
     actor: AuthUserPayload,
     dto: CreateFormTemplateDto,
   ): Promise<FormTemplate> {
-    await this.assertCanManageGroup(actor, dto.groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
     const row = this.templates.create({
       tenantId: actor.tenantId,
       groupId: dto.groupId,
@@ -129,7 +92,7 @@ export class FormTemplatesService {
     actor: AuthUserPayload,
     template: FormTemplate,
   ): Promise<void> {
-    await this.assertCanManageGroup(actor, template.groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, template.groupId);
   }
 
   async addField(

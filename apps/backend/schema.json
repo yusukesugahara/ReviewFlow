@@ -3160,6 +3160,10 @@
           "id": {
             "type": "string"
           },
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          },
           "actorUserId": {
             "type": "object",
             "nullable": true
@@ -4187,6 +4191,7 @@
           "openCorrection": {
             "nullable": true,
             "description": "オープンな correction が無いとき null",
+            "type": "object",
             "allOf": [
               {
                 "$ref": "#/components/schemas/OpenCorrectionTargetsDto"

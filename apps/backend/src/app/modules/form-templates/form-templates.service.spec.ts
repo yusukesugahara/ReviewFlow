@@ -6,9 +6,8 @@ import { FormTemplateStatus } from '../../../models/constants/form-template-stat
 import { FormFieldType } from '../../../models/constants/form-field-type';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
-import { GroupMember } from '../../../models/entities/group-member.entity';
-import { Group } from '../../../models/entities/group.entity';
 import { AuthService } from '../auth/auth.service';
+import { SpaceAccessService } from '../groups/space-access.service';
 import { MailService } from '../mail/mail.service';
 import { FormTemplatesService } from './form-templates.service';
 
@@ -20,8 +19,9 @@ describe('FormTemplatesService', () => {
   let fields: jest.Mocked<
     Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
   >;
-  let groups: jest.Mocked<Pick<Repository<Group>, 'count'>>;
-  let members: jest.Mocked<Pick<Repository<GroupMember>, 'findOne'>>;
+  let spaceAccess: jest.Mocked<
+    Pick<SpaceAccessService, 'assertCanManageGroup'>
+  >;
   const actor = {
     id: 'u1',
     tenantId: 'ten1',
@@ -45,11 +45,8 @@ describe('FormTemplatesService', () => {
     } as unknown as jest.Mocked<
       Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
     >;
-    groups = {
-      count: jest.fn().mockResolvedValue(1),
-    };
-    members = {
-      findOne: jest.fn(),
+    spaceAccess = {
+      assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -57,8 +54,7 @@ describe('FormTemplatesService', () => {
         FormTemplatesService,
         { provide: getRepositoryToken(FormTemplate), useValue: templates },
         { provide: getRepositoryToken(FormField), useValue: fields },
-        { provide: getRepositoryToken(Group), useValue: groups },
-        { provide: getRepositoryToken(GroupMember), useValue: members },
+        { provide: SpaceAccessService, useValue: spaceAccess },
         {
           provide: MailService,
           useValue: { sendApplicationAccessEmail: jest.fn() },

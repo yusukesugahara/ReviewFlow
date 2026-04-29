@@ -892,6 +892,7 @@ export interface components {
         };
         AuditLogItemDto: {
             id: string;
+            groupId?: string | null;
             actorUserId?: Record<string, never> | null;
             actionType: string;
             targetType: string;

@@ -98,7 +98,7 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
               <Link
-                href="/space/applications?status=published"
+                href={`/space/applications?status=published&spaceId=${encodeURIComponent(spaceId)}`}
                 className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
                   activeStatus === "published"
                     ? "border-primary bg-primary text-primary-foreground"
@@ -108,7 +108,7 @@ export default async function AdminApplicationsPage({ searchParams }: PageProps)
                 申請 ({publishedTemplates.length})
               </Link>
               <Link
-                href="/space/applications?status=draft"
+                href={`/space/applications?status=draft&spaceId=${encodeURIComponent(spaceId)}`}
                 className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
                   activeStatus === "draft"
                     ? "border-primary bg-primary text-primary-foreground"

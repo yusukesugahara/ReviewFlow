@@ -5,11 +5,12 @@ import { Group } from '../../../models/entities/group.entity';
 import { UsersModule } from '../users/users.module';
 import { GroupsController } from './groups.controller';
 import { GroupsService } from './groups.service';
+import { SpaceAccessService } from './space-access.service';
 
 @Module({
   imports: [TypeOrmModule.forFeature([Group, GroupMember]), UsersModule],
   controllers: [GroupsController],
-  providers: [GroupsService],
-  exports: [GroupsService],
+  providers: [GroupsService, SpaceAccessService],
+  exports: [GroupsService, SpaceAccessService],
 })
 export class GroupsModule {}

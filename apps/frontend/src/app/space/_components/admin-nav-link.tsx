@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -13,10 +13,17 @@ type AdminNavLinkProps = {
 
 export function AdminNavLink({ href, children }: AdminNavLinkProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isSectionRoot = href === "/admin" || href === "/space";
   const isActive = isSectionRoot
     ? pathname === href
     : pathname === href || pathname.startsWith(`${href}/`);
+
+  const spaceId = searchParams.get("spaceId");
+  const scopedHref =
+    href.startsWith("/space") && spaceId
+      ? `${href}?spaceId=${encodeURIComponent(spaceId)}`
+      : href;
 
   return (
     <Button
@@ -29,7 +36,7 @@ export function AdminNavLink({ href, children }: AdminNavLinkProps) {
           "bg-violet-500/15 text-violet-100 ring-1 ring-inset ring-violet-400/40 hover:bg-violet-500/20"
       )}
     >
-      <Link href={href}>{children}</Link>
+      <Link href={scopedHref}>{children}</Link>
     </Button>
   );
 }

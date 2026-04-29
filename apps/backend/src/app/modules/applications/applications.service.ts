@@ -8,7 +8,6 @@ import { ApplicationApprovalAction } from '../../../models/constants/application
 import { ApplicationStatus } from '../../../models/constants/application-status';
 import { CorrectionRequestStatus } from '../../../models/constants/correction-request-status';
 import { FormTemplateStatus } from '../../../models/constants/form-template-status';
-import { GroupMemberRole } from '../../../models/constants/group-member-role';
 import { UserRole } from '../../../models/constants/user-role';
 import { ApplicationApproval } from '../../../models/entities/application-approval.entity';
 import { ApplicationFieldValue } from '../../../models/entities/application-field-value.entity';
@@ -18,8 +17,7 @@ import { CorrectionRequestItem } from '../../../models/entities/correction-reque
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
 import type { FormField } from '../../../models/entities/form-field.entity';
-import { GroupMember } from '../../../models/entities/group-member.entity';
-import { Group } from '../../../models/entities/group.entity';
+import { SpaceAccessService } from '../groups/space-access.service';
 import type {
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
@@ -71,10 +69,7 @@ export class ApplicationsService {
     private readonly templates: Repository<FormTemplate>,
     @InjectRepository(ApprovalFlow)
     private readonly flows: Repository<ApprovalFlow>,
-    @InjectRepository(Group)
-    private readonly groups: Repository<Group>,
-    @InjectRepository(GroupMember)
-    private readonly members: Repository<GroupMember>,
+    private readonly spaceAccess: SpaceAccessService,
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
@@ -87,72 +82,6 @@ export class ApplicationsService {
     return this.approvals.count({
       where: { applicationId, actedByUserId: actorId },
     });
-  }
-
-  private async assertGroupInTenant(
-    tenantId: string,
-    groupId: string,
-  ): Promise<void> {
-    const count = await this.groups.count({ where: { id: groupId, tenantId } });
-    if (count === 0) {
-      throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
-    }
-  }
-
-  private async assertCanUseGroup(
-    actor: AuthUserPayload,
-    groupId: string,
-  ): Promise<void> {
-    await this.assertGroupInTenant(actor.tenantId, groupId);
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return;
-    }
-    const member = await this.members.findOne({
-      where: { tenantId: actor.tenantId, groupId, userId: actor.id },
-    });
-    if (!member) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-  }
-
-  private async assertCanManageGroup(
-    actor: AuthUserPayload,
-    groupId: string,
-  ): Promise<void> {
-    await this.assertGroupInTenant(actor.tenantId, groupId);
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return;
-    }
-    const member = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
-    if (!member) {
-      throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
-    }
-  }
-
-  private async actorCanManageGroup(
-    actor: AuthUserPayload,
-    groupId: string,
-  ): Promise<boolean> {
-    await this.assertGroupInTenant(actor.tenantId, groupId);
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return true;
-    }
-    const member = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
-    return !!member;
   }
 
   private async resolveActiveFlow(
@@ -220,7 +149,7 @@ export class ApplicationsService {
     actor: AuthUserPayload,
     groupId: string,
   ): Promise<Application[]> {
-    await this.assertCanUseGroup(actor, groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, groupId);
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return this.apps.find({
         where: { tenantId: actor.tenantId, groupId },
@@ -257,7 +186,7 @@ export class ApplicationsService {
     const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    await this.assertCanUseGroup(actor, row.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, row.groupId);
     await this.accessPolicy.assertCanRead(
       actor,
       row,
@@ -348,7 +277,7 @@ export class ApplicationsService {
     actor: AuthUserPayload,
     dto: CreateApplicationDto,
   ): Promise<Application> {
-    await this.assertCanUseGroup(actor, dto.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, dto.groupId);
     return this.createInternal(actor.tenantId, actor.email, actor.id, dto);
   }
 
@@ -492,7 +421,7 @@ export class ApplicationsService {
     dto: PatchApplicationDto,
   ): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.assertCanUseGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     const context = await this.loadEditablePatchContext(actor.tenantId, app);
     const fieldValues = await this.applyFieldValuePatch(context, dto.values);
     await this.saveFieldValues(fieldValues);
@@ -606,7 +535,7 @@ export class ApplicationsService {
 
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.assertCanUseGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     const context = await this.loadSubmittableApplicationContext(
       actor.tenantId,
       app,
@@ -642,8 +571,11 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    await this.assertCanUseGroup(actor, app.groupId);
-    const canManageGroup = await this.actorCanManageGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+    const canManageGroup = await this.spaceAccess.actorCanManageGroup(
+      actor,
+      app.groupId,
+    );
     if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
@@ -680,8 +612,11 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    await this.assertCanUseGroup(actor, app.groupId);
-    const canManageGroup = await this.actorCanManageGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+    const canManageGroup = await this.spaceAccess.actorCanManageGroup(
+      actor,
+      app.groupId,
+    );
     if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
@@ -715,8 +650,11 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    await this.assertCanUseGroup(actor, app.groupId);
-    const canManageGroup = await this.actorCanManageGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+    const canManageGroup = await this.spaceAccess.actorCanManageGroup(
+      actor,
+      app.groupId,
+    );
     if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
@@ -802,7 +740,7 @@ export class ApplicationsService {
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.assertCanUseGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     const context = await this.loadResubmittableApplicationContext(
       actor.tenantId,
       app,
@@ -834,7 +772,7 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: false,
     });
-    await this.assertCanUseGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     await this.accessPolicy.assertCanRead(
       actor,
       app,
@@ -936,7 +874,7 @@ export class ApplicationsService {
         detail: true,
       },
     );
-    await this.assertCanUseGroup(actor, app.groupId);
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     await this.accessPolicy.assertCanRead(
       actor,
       app,

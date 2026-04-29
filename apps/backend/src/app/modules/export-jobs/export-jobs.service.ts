@@ -8,10 +8,7 @@ import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { Application } from '../../../models/entities/application.entity';
 import { ExportJobStatus } from '../../../models/constants/export-job-status';
 import { ExportJob } from '../../../models/entities/export-job.entity';
-import { GroupMemberRole } from '../../../models/constants/group-member-role';
-import { UserRole } from '../../../models/constants/user-role';
-import { GroupMember } from '../../../models/entities/group-member.entity';
-import { Group } from '../../../models/entities/group.entity';
+import { SpaceAccessService } from '../groups/space-access.service';
 import type { CreateExportJobDto } from './export-jobs.dto';
 import { mapExportJobToDto } from './export-jobs.mapper';
 
@@ -24,37 +21,8 @@ export class ExportJobsService {
     private readonly jobs: Repository<ExportJob>,
     @InjectRepository(Application)
     private readonly applications: Repository<Application>,
-    @InjectRepository(Group)
-    private readonly groups: Repository<Group>,
-    @InjectRepository(GroupMember)
-    private readonly members: Repository<GroupMember>,
+    private readonly spaceAccess: SpaceAccessService,
   ) {}
-
-  private async assertCanManageGroup(
-    actor: AuthUserPayload,
-    groupId: string,
-  ): Promise<void> {
-    const group = await this.groups.findOne({
-      where: { id: groupId, tenantId: actor.tenantId },
-    });
-    if (!group) {
-      throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
-    }
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return;
-    }
-    const member = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
-    if (!member) {
-      throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
-    }
-  }
 
   private csvEscape(value: unknown): string {
     if (value === null || value === undefined) {
@@ -134,7 +102,7 @@ export class ExportJobsService {
   }
 
   async create(actor: AuthUserPayload, dto: CreateExportJobDto) {
-    await this.assertCanManageGroup(actor, dto.groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
     const filterJson: Record<string, unknown> = {};
     if (dto.status) {
       filterJson.status = dto.status;
@@ -204,7 +172,7 @@ export class ExportJobsService {
     if (!row) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_FOUND);
     }
-    await this.assertCanManageGroup(actor, row.groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, row.groupId);
     return mapExportJobToDto(row);
   }
 
@@ -215,7 +183,7 @@ export class ExportJobsService {
     if (!row) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_FOUND);
     }
-    await this.assertCanManageGroup(actor, row.groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, row.groupId);
     if (row.status !== ExportJobStatus.COMPLETED) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_READY);
     }

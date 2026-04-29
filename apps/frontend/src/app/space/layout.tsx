@@ -7,6 +7,7 @@ import {
   SpaceSwitcher,
   type SpaceSwitcherItem,
 } from "./_components/space-switcher";
+import { SpaceScopedLink } from "./_components/space-scoped-link";
 
 export const dynamic = "force-dynamic";
 
@@ -56,30 +57,30 @@ export default async function RootSpaceLayout({ children }: RootSpaceLayoutProps
           <SpaceSwitcher spaces={spaces} />
         </aside>
         <nav className="mb-5 flex gap-2 overflow-x-auto rounded-xl border border-slate-200 bg-white p-2 md:hidden">
-          <Link
+          <SpaceScopedLink
             className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
             href="/space"
           >
             ダッシュボード
-          </Link>
-          <Link
+          </SpaceScopedLink>
+          <SpaceScopedLink
             className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
             href="/space/application-setup"
           >
             申請作成
-          </Link>
-          <Link
+          </SpaceScopedLink>
+          <SpaceScopedLink
             className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
             href="/space/applications"
           >
             申請一覧
-          </Link>
-          <Link
+          </SpaceScopedLink>
+          <SpaceScopedLink
             className="rounded-lg px-3 py-2 text-sm font-medium text-slate-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
             href="/space/users"
           >
             ユーザー一覧
-          </Link>
+          </SpaceScopedLink>
         </nav>
         <aside className="hidden w-full shrink-0 self-start overflow-hidden rounded-lg border border-slate-800 bg-slate-900 shadow-md md:sticky md:top-24 md:block">
           <div className="border-b border-slate-800 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-slate-400">

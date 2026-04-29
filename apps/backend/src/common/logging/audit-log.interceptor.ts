@@ -80,6 +80,25 @@ export class AuditLogInterceptor implements NestInterceptor {
     );
   }
 
+  private readGroupId(req: RequestWithContext): string | null {
+    const queryGroupId = req.query?.groupId;
+    if (typeof queryGroupId === 'string' && queryGroupId.length > 0) {
+      return queryGroupId;
+    }
+    const body = req.body as { groupId?: unknown } | undefined;
+    if (body && typeof body.groupId === 'string' && body.groupId.length > 0) {
+      return body.groupId;
+    }
+    const segments = (req.path ?? req.url ?? '/')
+      .split('?')[0]
+      .split('/')
+      .filter((s) => s.length > 0);
+    if (segments[0] === 'groups' && segments[1]) {
+      return segments[1];
+    }
+    return null;
+  }
+
   private writeLog(params: {
     req: RequestWithContext;
     res: { statusCode: number };
@@ -126,9 +145,11 @@ export class AuditLogInterceptor implements NestInterceptor {
     const targetType = segments[0] ?? 'unknown';
     const targetId = segments[1] ?? null;
     const actionType = `${req.method.toUpperCase()}:${targetType}`;
+    const groupId = this.readGroupId(req);
 
     void this.auditLogs.create({
       tenantId,
+      groupId,
       actorUserId: userId,
       actionType,
       targetType,
@@ -142,6 +163,7 @@ export class AuditLogInterceptor implements NestInterceptor {
         role,
         ip,
         userAgent,
+        groupId,
         success,
         ...(success ? {} : { errorCode }),
       },

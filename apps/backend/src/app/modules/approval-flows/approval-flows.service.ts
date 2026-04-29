@@ -3,15 +3,13 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
-import { GroupMemberRole } from '../../../models/constants/group-member-role';
-import { UserRole } from '../../../models/constants/user-role';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
 import { GroupMember } from '../../../models/entities/group-member.entity';
-import { Group } from '../../../models/entities/group.entity';
 import { User } from '../../../models/entities/user.entity';
 import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
+import { SpaceAccessService } from '../groups/space-access.service';
 import type { CreateApprovalFlowDto } from './approval-flows.dto';
 import { mapApprovalFlowToDto } from './approval-flows.mapper';
 
@@ -22,45 +20,18 @@ export class ApprovalFlowsService {
     private readonly flows: Repository<ApprovalFlow>,
     @InjectRepository(FormTemplate)
     private readonly templates: Repository<FormTemplate>,
-    @InjectRepository(Group)
-    private readonly groups: Repository<Group>,
     @InjectRepository(GroupMember)
     private readonly members: Repository<GroupMember>,
     @InjectRepository(User)
     private readonly users: Repository<User>,
+    private readonly spaceAccess: SpaceAccessService,
   ) {}
-
-  private async assertCanManageGroup(
-    actor: AuthUserPayload,
-    groupId: string,
-  ): Promise<void> {
-    const group = await this.groups.findOne({
-      where: { id: groupId, tenantId: actor.tenantId },
-    });
-    if (!group) {
-      throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
-    }
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return;
-    }
-    const member = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
-    if (!member) {
-      throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
-    }
-  }
 
   async listByGroup(
     actor: AuthUserPayload,
     groupId: string,
   ): Promise<ApprovalFlow[]> {
-    await this.assertCanManageGroup(actor, groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, groupId);
     const rows = await this.flows.find({
       where: { tenantId: actor.tenantId, groupId },
       relations: ['steps'],
@@ -91,7 +62,7 @@ export class ApprovalFlowsService {
     actor: AuthUserPayload,
     dto: CreateApprovalFlowDto,
   ): Promise<ApprovalFlow> {
-    await this.assertCanManageGroup(actor, dto.groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
     this.assertStepsValid(dto);
 
     const tpl = await this.templates.findOne({

@@ -65,7 +65,9 @@ export default async function AdminDashboardPage({ searchParams }: PageProps) {
                 <Link href="/space/application-setup">申請作成</Link>
               </Button>
               <Button asChild size="sm" variant="outline">
-                <Link href="/space/applications">申請一覧を見る</Link>
+                <Link href={`/space/applications?spaceId=${encodeURIComponent(spaceId)}`}>
+                  申請一覧を見る
+                </Link>
               </Button>
             </div>
           </div>
