@@ -9,6 +9,8 @@ import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
 import { AuthModule } from '../auth/auth.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
+import { ApplicationAccessPolicy } from './application-access.policy';
+import { ApplicationTransitionPolicy } from './application-transition.policy';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
 import { PublicApplicationsController } from './public-applications.controller';
@@ -27,6 +29,11 @@ import { PublicApplicationsController } from './public-applications.controller';
     ]),
   ],
   controllers: [ApplicationsController, PublicApplicationsController],
-  providers: [ApplicationsService, ApplicantAccessGuard],
+  providers: [
+    ApplicationsService,
+    ApplicantAccessGuard,
+    ApplicationAccessPolicy,
+    ApplicationTransitionPolicy,
+  ],
 })
 export class ApplicationsModule {}

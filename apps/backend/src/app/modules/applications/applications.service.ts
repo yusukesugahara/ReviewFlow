@@ -31,6 +31,8 @@ import {
   mapApplicationToSummary,
   mapCorrectionsList,
 } from './applications.mapper';
+import { ApplicationAccessPolicy } from './application-access.policy';
+import { ApplicationTransitionPolicy } from './application-transition.policy';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
 
@@ -51,6 +53,8 @@ export class ApplicationsService {
     private readonly templates: Repository<FormTemplate>,
     @InjectRepository(ApprovalFlow)
     private readonly flows: Repository<ApprovalFlow>,
+    private readonly accessPolicy: ApplicationAccessPolicy,
+    private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
   private valuePresent(value: unknown): boolean {
@@ -101,67 +105,13 @@ export class ApplicationsService {
     }
   }
 
-  private actorIsAssignedToCurrentStep(
-    actor: AuthUserPayload,
-    app: Application,
-  ): boolean {
-    if (app.status !== ApplicationStatus.IN_REVIEW) {
-      return false;
-    }
-    const step = app.approvalFlow?.steps?.find(
-      (s) => s.stepOrder === app.currentStepOrder,
-    );
-    if (!step) {
-      return false;
-    }
-    return step.assigneeUserId === actor.id;
-  }
-
-  private canActorActOnReview(
-    actor: AuthUserPayload,
-    app: Application,
-  ): boolean {
-    if (app.status !== ApplicationStatus.IN_REVIEW) {
-      return false;
-    }
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return true;
-    }
-    return this.actorIsAssignedToCurrentStep(actor, app);
-  }
-
-  private async assertCanRead(
-    actor: AuthUserPayload,
-    app: Application,
-  ): Promise<void> {
-    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return;
-    }
-    if (app.applicantUserId === actor.id) {
-      return;
-    }
-    if (this.actorIsAssignedToCurrentStep(actor, app)) {
-      return;
-    }
-    if (app.status !== ApplicationStatus.DRAFT) {
-      const participated = await this.approvals.count({
-        where: { applicationId: app.id, actedByUserId: actor.id },
-      });
-      if (participated > 0) {
-        return;
-      }
-    }
-    throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-  }
-
-  private assertApplicantOwns(actor: ApplicantSession, app: Application): void {
-    if (
-      app.tenantId !== actor.tenantId ||
-      app.formTemplateId !== actor.templateId ||
-      app.applicantEmail !== actor.email
-    ) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
+  private countApprovalsByActor(
+    applicationId: string,
+    actorId: string,
+  ): Promise<number> {
+    return this.approvals.count({
+      where: { applicationId, actedByUserId: actorId },
+    });
   }
 
   private async resolveActiveFlow(
@@ -238,7 +188,7 @@ export class ApplicationsService {
     return rows.filter(
       (app) =>
         app.applicantUserId === actor.id ||
-        this.actorIsAssignedToCurrentStep(actor, app),
+        this.accessPolicy.actorIsAssignedToCurrentStep(actor, app),
     );
   }
 
@@ -260,6 +210,12 @@ export class ApplicationsService {
     const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
+    await this.accessPolicy.assertCanRead(
+      actor,
+      row,
+      (applicationId, actorId) =>
+        this.countApprovalsByActor(applicationId, actorId),
+    );
     return row;
   }
 
@@ -270,7 +226,7 @@ export class ApplicationsService {
     const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    this.assertApplicantOwns(actor, row);
+    this.accessPolicy.assertApplicantOwns(actor, row);
     return row;
   }
 
@@ -553,9 +509,7 @@ export class ApplicationsService {
 
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.status !== ApplicationStatus.DRAFT) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_DRAFT);
-    }
+    this.transitionPolicy.assertDraft(app);
 
     const template = await this.templates.findOne({
       where: { id: app.formTemplateId, tenantId: actor.tenantId },
@@ -575,9 +529,7 @@ export class ApplicationsService {
       }
     }
 
-    app.status = ApplicationStatus.IN_REVIEW;
-    app.currentStepOrder = 1;
-    app.submittedAt = new Date();
+    this.transitionPolicy.startReview(app);
     await this.apps.save(app);
 
     return this.getOneForActor(actor, id);
@@ -591,9 +543,7 @@ export class ApplicationsService {
     if (app.formTemplateId !== actor.templateId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    if (app.status !== ApplicationStatus.DRAFT) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_DRAFT);
-    }
+    this.transitionPolicy.assertDraft(app);
 
     const template = await this.templates.findOne({
       where: { id: app.formTemplateId, tenantId: actor.tenantId },
@@ -613,9 +563,7 @@ export class ApplicationsService {
       }
     }
 
-    app.status = ApplicationStatus.IN_REVIEW;
-    app.currentStepOrder = 1;
-    app.submittedAt = new Date();
+    this.transitionPolicy.startReview(app);
     await this.apps.save(app);
 
     return this.getOneForApplicant(actor, id);
@@ -629,21 +577,11 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    if (!this.canActorActOnReview(actor, app)) {
+    if (!this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
-    if (app.status !== ApplicationStatus.IN_REVIEW) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_IN_REVIEW);
-    }
-
-    const steps = [...(app.approvalFlow?.steps ?? [])].sort(
-      (a, b) => a.stepOrder - b.stepOrder,
-    );
-    const cur = steps.find((s) => s.stepOrder === app.currentStepOrder);
-    if (!cur) {
-      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
-    }
-    const next = steps.find((s) => s.stepOrder === cur.stepOrder + 1);
+    const cur = this.transitionPolicy.getCurrentStep(app);
+    const next = this.transitionPolicy.getNextStep(app, cur);
 
     const comment = dto.comment?.trim().length ? dto.comment.trim() : null;
 
@@ -660,12 +598,7 @@ export class ApplicationsService {
           comment,
         }),
       );
-      if (!next) {
-        app.status = ApplicationStatus.APPROVED;
-        app.currentStepOrder = null;
-      } else {
-        app.currentStepOrder = next.stepOrder;
-      }
+      this.transitionPolicy.applyApproval(app, next);
       await appRepo.save(app);
     });
 
@@ -680,20 +613,10 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    if (!this.canActorActOnReview(actor, app)) {
+    if (!this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
-    if (app.status !== ApplicationStatus.IN_REVIEW) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_IN_REVIEW);
-    }
-
-    const steps = [...(app.approvalFlow?.steps ?? [])].sort(
-      (a, b) => a.stepOrder - b.stepOrder,
-    );
-    const cur = steps.find((s) => s.stepOrder === app.currentStepOrder);
-    if (!cur) {
-      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
-    }
+    const cur = this.transitionPolicy.getCurrentStep(app);
 
     const comment = dto.comment?.trim().length ? dto.comment.trim() : null;
 
@@ -708,8 +631,7 @@ export class ApplicationsService {
           comment,
         }),
       );
-      app.status = ApplicationStatus.REJECTED;
-      app.currentStepOrder = null;
+      this.transitionPolicy.applyReject(app);
       await em.getRepository(Application).save(app);
     });
 
@@ -724,23 +646,11 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: true,
     });
-    if (!this.canActorActOnReview(actor, app)) {
+    if (!this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
-    if (app.status !== ApplicationStatus.IN_REVIEW) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_IN_REVIEW);
-    }
-
-    const steps = [...(app.approvalFlow?.steps ?? [])].sort(
-      (a, b) => a.stepOrder - b.stepOrder,
-    );
-    const cur = steps.find((s) => s.stepOrder === app.currentStepOrder);
-    if (!cur) {
-      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
-    }
-    if (!cur.canReturn) {
-      throw clientError(ClientErrorCodes.APPLICATION_RETURN_NOT_ALLOWED);
-    }
+    const cur = this.transitionPolicy.getCurrentStep(app);
+    this.transitionPolicy.assertStepCanReturn(cur);
 
     const existingOpen = await this.findOpenCorrection(app.id);
     if (existingOpen) {
@@ -808,8 +718,7 @@ export class ApplicationsService {
         );
       }
 
-      app.status = ApplicationStatus.RETURNED;
-      app.currentStepOrder = null;
+      this.transitionPolicy.applyReturn(app);
       await appRepo.save(app);
     });
 
@@ -818,9 +727,7 @@ export class ApplicationsService {
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.status !== ApplicationStatus.RETURNED) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_RETURNED);
-    }
+    this.transitionPolicy.assertReturned(app);
 
     const open = await this.correctionRequests.findOne({
       where: {
@@ -865,8 +772,7 @@ export class ApplicationsService {
         await itemRepo.save(it);
       }
 
-      app.status = ApplicationStatus.IN_REVIEW;
-      app.currentStepOrder = 1;
+      this.transitionPolicy.applyResubmit(app);
       await appRepo.save(app);
     });
 
@@ -881,9 +787,7 @@ export class ApplicationsService {
     if (app.formTemplateId !== actor.templateId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    if (app.status !== ApplicationStatus.RETURNED) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_RETURNED);
-    }
+    this.transitionPolicy.assertReturned(app);
 
     const open = await this.correctionRequests.findOne({
       where: {
@@ -928,8 +832,7 @@ export class ApplicationsService {
         await itemRepo.save(it);
       }
 
-      app.status = ApplicationStatus.IN_REVIEW;
-      app.currentStepOrder = 1;
+      this.transitionPolicy.applyResubmit(app);
       await appRepo.save(app);
     });
 
@@ -940,7 +843,12 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: false,
     });
-    await this.assertCanRead(actor, app);
+    await this.accessPolicy.assertCanRead(
+      actor,
+      app,
+      (applicationId, actorId) =>
+        this.countApprovalsByActor(applicationId, actorId),
+    );
 
     const rows = await this.correctionRequests.find({
       where: { applicationId: app.id, tenantId: actor.tenantId },
@@ -954,7 +862,7 @@ export class ApplicationsService {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
       detail: false,
     });
-    this.assertApplicantOwns(actor, app);
+    this.accessPolicy.assertApplicantOwns(actor, app);
 
     const rows = await this.correctionRequests.find({
       where: { applicationId: app.id, tenantId: actor.tenantId },
@@ -975,7 +883,12 @@ export class ApplicationsService {
         detail: true,
       },
     );
-    await this.assertCanRead(actor, app);
+    await this.accessPolicy.assertCanRead(
+      actor,
+      app,
+      (applicationId, actorId) =>
+        this.countApprovalsByActor(applicationId, actorId),
+    );
 
     const opens = await this.correctionRequests.find({
       where: {
@@ -1039,7 +952,7 @@ export class ApplicationsService {
         detail: true,
       },
     );
-    this.assertApplicantOwns(actor, app);
+    this.accessPolicy.assertApplicantOwns(actor, app);
 
     const opens = await this.correctionRequests.find({
       where: {
