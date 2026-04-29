@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
@@ -16,6 +16,7 @@ import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { CorrectionRequestItem } from '../../../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { FormTemplate } from '../../../models/entities/form-template.entity';
+import type { FormField } from '../../../models/entities/form-field.entity';
 import type {
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
@@ -34,6 +35,14 @@ import { ApplicationFormValueValidator } from './application-form-value.validato
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
+type EditablePatchContext = {
+  app: Application;
+  fieldsByKey: Map<string, FormField>;
+  allowedFieldIds?: Set<string>;
+};
+type PatchedApplicationMapping =
+  | { source: 'actor'; actor: AuthUserPayload; id: string }
+  | { source: 'applicant'; actor: ApplicantSession; id: string };
 
 @Injectable()
 export class ApplicationsService {
@@ -295,83 +304,18 @@ export class ApplicationsService {
     });
   }
 
-  async patch(
-    actor: AuthUserPayload,
-    id: string,
-    dto: PatchApplicationDto,
-  ): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-
+  private async loadEditablePatchContext(
+    tenantId: string,
+    app: Application,
+  ): Promise<EditablePatchContext> {
     const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId: actor.tenantId },
+      where: { id: app.formTemplateId, tenantId },
       relations: ['fields'],
     });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
     }
-    const fieldsByKey = this.formValueValidator.buildFieldsByKey(
-      template.fields ?? [],
-    );
-    let allowedFieldIds: Set<string> | undefined;
 
-    if (app.status === ApplicationStatus.DRAFT) {
-      /* continue normal patch */
-    } else if (app.status === ApplicationStatus.RETURNED) {
-      const open = await this.findOpenCorrection(app.id);
-      if (!open?.items?.length) {
-        throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
-      }
-      allowedFieldIds = new Set(open.items.map((i) => i.formFieldId));
-    } else {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
-    }
-
-    this.formValueValidator.assertPatchValuesMatchFields(
-      fieldsByKey,
-      dto.values,
-      allowedFieldIds,
-    );
-
-    for (const [key, val] of Object.entries(dto.values)) {
-      const field = this.formValueValidator.getKnownField(fieldsByKey, key);
-      const existing = await this.fieldValues.findOne({
-        where: { applicationId: app.id, formFieldId: field.id },
-      });
-      if (existing) {
-        existing.valueJson = val;
-        await this.fieldValues.save(existing);
-      } else {
-        await this.fieldValues.save(
-          this.fieldValues.create({
-            tenantId: actor.tenantId,
-            applicationId: app.id,
-            formFieldId: field.id,
-            valueJson: val,
-          }),
-        );
-      }
-    }
-
-    return this.getOneForActor(actor, id);
-  }
-
-  async patchForApplicant(
-    actor: ApplicantSession,
-    id: string,
-    dto: PatchApplicationDto,
-  ): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.formTemplateId !== actor.templateId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-
-    const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId: actor.tenantId },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
-    }
     const fieldsByKey = this.formValueValidator.buildFieldsByKey(
       template.fields ?? [],
     );
@@ -387,25 +331,41 @@ export class ApplicationsService {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
 
+    return { app, fieldsByKey, allowedFieldIds };
+  }
+
+  private async applyFieldValuePatch(
+    context: EditablePatchContext,
+    values: Record<string, unknown>,
+  ): Promise<ApplicationFieldValue[]> {
     this.formValueValidator.assertPatchValuesMatchFields(
-      fieldsByKey,
-      dto.values,
-      allowedFieldIds,
+      context.fieldsByKey,
+      values,
+      context.allowedFieldIds,
     );
 
-    for (const [key, val] of Object.entries(dto.values)) {
-      const field = this.formValueValidator.getKnownField(fieldsByKey, key);
-      const existing = await this.fieldValues.findOne({
-        where: { applicationId: app.id, formFieldId: field.id },
-      });
+    const existingValues = await this.fieldValues.find({
+      where: { applicationId: context.app.id },
+    });
+    const existingByFieldId = new Map(
+      existingValues.map((value) => [value.formFieldId, value]),
+    );
+    const patchedValues: ApplicationFieldValue[] = [];
+
+    for (const [key, val] of Object.entries(values)) {
+      const field = this.formValueValidator.getKnownField(
+        context.fieldsByKey,
+        key,
+      );
+      const existing = existingByFieldId.get(field.id);
       if (existing) {
         existing.valueJson = val;
-        await this.fieldValues.save(existing);
+        patchedValues.push(existing);
       } else {
-        await this.fieldValues.save(
+        patchedValues.push(
           this.fieldValues.create({
-            tenantId: actor.tenantId,
-            applicationId: app.id,
+            tenantId: context.app.tenantId,
+            applicationId: context.app.id,
             formFieldId: field.id,
             valueJson: val,
           }),
@@ -413,7 +373,55 @@ export class ApplicationsService {
       }
     }
 
-    return this.getOneForApplicant(actor, id);
+    return patchedValues;
+  }
+
+  private async saveFieldValues(
+    values: ApplicationFieldValue[],
+  ): Promise<void> {
+    if (values.length === 0) {
+      return;
+    }
+    await this.apps.manager.transaction(async (em: EntityManager) => {
+      await em.getRepository(ApplicationFieldValue).save(values);
+    });
+  }
+
+  private async mapPatchedApplication(
+    mapping: PatchedApplicationMapping,
+  ): Promise<Application> {
+    if (mapping.source === 'actor') {
+      return this.getOneForActor(mapping.actor, mapping.id);
+    }
+    return this.getOneForApplicant(mapping.actor, mapping.id);
+  }
+
+  async patch(
+    actor: AuthUserPayload,
+    id: string,
+    dto: PatchApplicationDto,
+  ): Promise<Application> {
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    const context = await this.loadEditablePatchContext(actor.tenantId, app);
+    const fieldValues = await this.applyFieldValuePatch(context, dto.values);
+    await this.saveFieldValues(fieldValues);
+    return this.mapPatchedApplication({ source: 'actor', actor, id });
+  }
+
+  async patchForApplicant(
+    actor: ApplicantSession,
+    id: string,
+    dto: PatchApplicationDto,
+  ): Promise<Application> {
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    if (app.formTemplateId !== actor.templateId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    this.accessPolicy.assertApplicantOwns(actor, app);
+    const context = await this.loadEditablePatchContext(actor.tenantId, app);
+    const fieldValues = await this.applyFieldValuePatch(context, dto.values);
+    await this.saveFieldValues(fieldValues);
+    return this.mapPatchedApplication({ source: 'applicant', actor, id });
   }
 
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
