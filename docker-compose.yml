@@ -21,42 +21,46 @@ services:
 
   backend:
     build:
-      context: ./apps/backend
+      context: .
+      dockerfile: apps/backend/Dockerfile
     ports:
-      - "3000:3000"
+      - "${BACKEND_HOST_PORT:-3002}:3000"
     environment:
       NODE_ENV: development
       ENABLE_SWAGGER: "1"
       PORT: "3000"
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
       JWT_SECRET: ${JWT_SECRET:-docker-jwt-secret-at-least-32-characters-long}
-      CORS_ORIGIN: http://localhost:3001
+      CORS_ORIGIN: http://localhost:${FRONTEND_HOST_PORT:-3001}
       DB_PATH: /data/sqlite.db
     volumes:
-      - ./apps/backend:/app
-      - backend-node-modules:/app/node_modules
+      - .:/workspace
+      - backend-node-modules:/workspace/node_modules
       - backend-sqlite:/data
-    command: sh -c "npm ci && npm run start:dev"
+    working_dir: /workspace
+    command: sh -c "npm ci -w backend && npm run start:dev -w backend"
 
   frontend:
     build:
-      context: ./apps/frontend
+      context: .
+      dockerfile: apps/frontend/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: http://localhost:3000
+        NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_HOST_PORT:-3002}
     user: "0:0"
     ports:
-      - "3001:3000"
+      - "${FRONTEND_HOST_PORT:-3001}:3000"
     depends_on:
       - backend
     environment:
       NODE_ENV: development
-      NEXT_PUBLIC_API_URL: http://localhost:3000
+      NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_HOST_PORT:-3002}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
       INTERNAL_API_ORIGIN: http://backend:3000
     volumes:
-      - ./apps/frontend:/app
-      - frontend-node-modules:/app/node_modules
-    command: sh -c "npm ci --legacy-peer-deps && npm run dev -- -p 3000"
+      - .:/workspace
+      - frontend-node-modules:/workspace/node_modules
+    working_dir: /workspace
+    command: sh -c "npm ci --legacy-peer-deps && npm run dev -w frontend -- -p 3000"
 
 volumes:
   backend-sqlite:
