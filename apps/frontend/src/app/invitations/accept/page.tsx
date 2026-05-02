@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 
 async function acceptInvitationAction(formData: FormData): Promise<void> {
   "use server";
@@ -101,10 +102,9 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
                 パスワード
                 <span className="text-destructive ml-1">*</span>
               </Label>
-              <Input
+              <PasswordInput
                 id="password"
                 name="password"
-                type="password"
                 minLength={8}
                 placeholder="8文字以上のパスワード"
                 required

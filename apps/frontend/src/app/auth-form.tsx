@@ -7,6 +7,7 @@ import type { FormActionResponse } from "@/lib/baseTypes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -192,8 +193,7 @@ export function AuthForm({
 
               <div className="space-y-2">
                 <Label htmlFor="password">パスワード</Label>
-                <Input
-                  type="password"
+                <PasswordInput
                   id="password"
                   name="password"
                   value={state.password}
