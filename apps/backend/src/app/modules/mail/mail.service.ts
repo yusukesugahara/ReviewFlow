@@ -131,8 +131,11 @@ export class MailService {
         : nodemailer.createTransport({
             service: 'gmail',
             auth: {
-              user: this.getRequired('MAIL_GMAIL_USER'),
-              pass: this.getRequired('MAIL_GMAIL_APP_PASSWORD'),
+              user: this.getFirstRequired(['MAIL_GMAIL_USER', 'GMAIL_USER']),
+              pass: this.getFirstRequired([
+                'MAIL_GMAIL_APP_PASSWORD',
+                'GMAIL_APP_PASSWORD',
+              ]),
             },
           });
 
@@ -157,6 +160,16 @@ export class MailService {
       throw new Error(`${key} is required for mail delivery`);
     }
     return value;
+  }
+
+  private getFirstRequired(keys: readonly string[]): string {
+    for (const key of keys) {
+      const value = this.configService.get<string>(key);
+      if (value?.length) {
+        return value;
+      }
+    }
+    throw new Error(`${keys.join(' or ')} is required for mail delivery`);
   }
 
   private getBoolean(key: string, fallback: boolean): boolean {
