@@ -1,11 +1,13 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getDataSourceToken } from '@nestjs/typeorm';
+import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes } from '../../../common/errors';
 import { UserRole } from '../../../models/constants/user-role';
+import { PasswordResetToken } from '../../../models/entities/password-reset-token.entity';
 import { Tenant } from '../../../models/entities/tenant.entity';
 import { User } from '../../../models/entities/user.entity';
+import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 
@@ -14,6 +16,12 @@ describe('AuthService', () => {
   let users: jest.Mocked<Pick<UsersService, 'findAllByEmail'>>;
   let jwt: { sign: jest.Mock };
   let dataSource: { transaction: jest.Mock };
+  let passwordResetTokens: {
+    create: jest.Mock;
+    findOne: jest.Mock;
+    save: jest.Mock;
+  };
+  let mailService: { sendPasswordResetEmail: jest.Mock };
 
   beforeEach(async () => {
     users = {
@@ -21,13 +29,24 @@ describe('AuthService', () => {
     };
     jwt = { sign: jest.fn().mockReturnValue('signed-jwt') };
     dataSource = { transaction: jest.fn() };
+    passwordResetTokens = {
+      create: jest.fn((x: object) => ({ ...x })),
+      findOne: jest.fn(),
+      save: jest.fn((x: object) => Promise.resolve({ id: 'reset-1', ...x })),
+    };
+    mailService = { sendPasswordResetEmail: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: UsersService, useValue: users },
+        { provide: MailService, useValue: mailService },
         { provide: JwtService, useValue: jwt },
         { provide: getDataSourceToken(), useValue: dataSource },
+        {
+          provide: getRepositoryToken(PasswordResetToken),
+          useValue: passwordResetTokens,
+        },
       ],
     }).compile();
 
@@ -174,6 +193,84 @@ describe('AuthService', () => {
         role: UserRole.TENANT_USER,
         tenantId: 't1',
       });
+    });
+  });
+
+  describe('password reset', () => {
+    it('creates reset token and sends mail for active users', async () => {
+      users.findAllByEmail.mockResolvedValue([
+        {
+          id: 'u1',
+          tenantId: 't1',
+          email: 'a@b.com',
+          passwordHash: 'h',
+          role: UserRole.TENANT_USER,
+          name: null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User,
+      ]);
+
+      await service.requestPasswordReset({ email: 'A@B.com' });
+
+      expect(passwordResetTokens.save).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tenantId: 't1',
+          userId: 'u1',
+          email: 'a@b.com',
+          usedAt: null,
+        }),
+      );
+      expect(mailService.sendPasswordResetEmail).toHaveBeenCalledWith(
+        expect.objectContaining({
+          to: 'a@b.com',
+          resetToken: expect.any(String) as string,
+          expiresAtIso: expect.any(String) as string,
+        }),
+      );
+    });
+
+    it('updates password and marks token used', async () => {
+      const tokenRow = {
+        id: 'rt1',
+        tenantId: 't1',
+        userId: 'u1',
+        email: 'a@b.com',
+        token: 'token',
+        expiresAt: new Date(Date.now() + 60_000),
+        usedAt: null,
+      };
+      passwordResetTokens.findOne.mockResolvedValue(tokenRow);
+      const userRepo = { update: jest.fn() };
+      const resetRepo = { update: jest.fn() };
+      dataSource.transaction.mockImplementation(
+        (
+          fn: (manager: {
+            getRepository: (
+              entity: unknown,
+            ) => typeof userRepo | typeof resetRepo;
+          }) => Promise<unknown>,
+        ) =>
+          fn({
+            getRepository: (entity: unknown) =>
+              entity === User ? userRepo : resetRepo,
+          }),
+      );
+
+      await service.confirmPasswordReset({
+        token: 'token',
+        password: 'newpassword12',
+      });
+
+      expect(userRepo.update).toHaveBeenCalledWith(
+        { id: 'u1', tenantId: 't1', email: 'a@b.com' },
+        { passwordHash: expect.any(String) as string },
+      );
+      expect(resetRepo.update).toHaveBeenCalledWith(
+        { id: 'rt1' },
+        { usedAt: expect.any(Date) as Date },
+      );
     });
   });
 });

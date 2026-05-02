@@ -30,6 +30,7 @@ type AuthFormProps = {
   switchText: string;
   switchHref: "/login" | "/signup";
   switchLabel: string;
+  forgotPasswordHref?: string;
   submit: (formData: FormData) => Promise<FormActionResponse<void>>;
   next?: string;
   fallbackErrorMessage: string;
@@ -46,6 +47,7 @@ export function AuthForm({
   switchText,
   switchHref,
   switchLabel,
+  forgotPasswordHref,
   submit,
   next,
   fallbackErrorMessage,
@@ -225,6 +227,16 @@ export function AuthForm({
                   <p id={passwordHintId} className="text-xs text-muted-foreground">
                     {passwordHint}
                   </p>
+                ) : null}
+                {forgotPasswordHref ? (
+                  <div className="text-right">
+                    <Link
+                      href={forgotPasswordHref}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      パスワードを忘れた方
+                    </Link>
+                  </div>
                 ) : null}
                 {state.fieldErrors.password ? (
                   <p id={passwordErrorId} className="text-sm text-destructive" role="alert">

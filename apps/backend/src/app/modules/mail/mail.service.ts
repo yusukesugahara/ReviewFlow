@@ -24,6 +24,12 @@ type ApplicationAccessMailInput = {
   accessToken: string;
 };
 
+type PasswordResetMailInput = {
+  to: string;
+  resetToken: string;
+  expiresAtIso: string;
+};
+
 @Injectable()
 export class MailService {
   private readonly logger = new Logger(MailService.name);
@@ -76,6 +82,29 @@ export class MailService {
         `<p>${this.escapeHtml(input.templateName)} の申請案内です。</p>`,
         '<p>以下のURLから申請フォームを開いてください。</p>',
         `<p><a href="${this.escapeHtml(accessUrl)}">申請フォームを開く</a></p>`,
+      ].join(''),
+    });
+  }
+
+  async sendPasswordResetEmail(input: PasswordResetMailInput): Promise<void> {
+    const resetUrl = this.buildFrontendUrl('/password-reset', {
+      token: input.resetToken,
+    });
+
+    await this.send({
+      to: input.to,
+      subject: 'ReviewFlow パスワード再設定のお知らせ',
+      text: [
+        'ReviewFlow のパスワード再設定リクエストを受け付けました。',
+        `再設定URL: ${resetUrl}`,
+        `有効期限: ${input.expiresAtIso}`,
+        '心当たりがない場合は、このメールを破棄してください。',
+      ].join('\n'),
+      html: [
+        '<p>ReviewFlow のパスワード再設定リクエストを受け付けました。</p>',
+        `<p><a href="${this.escapeHtml(resetUrl)}">パスワードを再設定する</a></p>`,
+        `<p>有効期限: ${this.escapeHtml(input.expiresAtIso)}</p>`,
+        '<p>心当たりがない場合は、このメールを破棄してください。</p>',
       ].join(''),
     });
   }

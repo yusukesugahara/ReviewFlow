@@ -3,11 +3,14 @@ import { APP_GUARD } from '@nestjs/core';
 import { JwtModule, type JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { InternalApiKeyGuard } from '../../guards/internal-api-key.guard';
 import { JwtAuthGuard } from '../../guards/jwt-auth.guard';
 import { RolesGuard } from '../../guards/roles.guard';
 import { JwtStrategy } from '../../../strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
+import { MailModule } from '../mail/mail.module';
+import { PasswordResetToken } from '../../../models/entities/password-reset-token.entity';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -27,7 +30,13 @@ const jwtModule = JwtModule.registerAsync({
 const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
 
 @Module({
-  imports: [UsersModule, jwtModule, passportModule],
+  imports: [
+    UsersModule,
+    MailModule,
+    TypeOrmModule.forFeature([PasswordResetToken]),
+    jwtModule,
+    passportModule,
+  ],
   controllers: [AuthController],
   providers: [
     AuthService,

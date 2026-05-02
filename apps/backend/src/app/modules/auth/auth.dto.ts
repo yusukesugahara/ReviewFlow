@@ -51,6 +51,23 @@ export class LoginDto {
   tenantId?: string;
 }
 
+export class RequestPasswordResetDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email!: string;
+}
+
+export class ConfirmPasswordResetDto {
+  @ApiProperty({ example: 'reset-token' })
+  @IsString()
+  token!: string;
+
+  @ApiProperty({ example: 'password12', minLength: 8, maxLength: 72 })
+  @MinLength(8)
+  @MaxLength(72)
+  password!: string;
+}
+
 /**
  * Response DTO
  */
@@ -95,6 +112,11 @@ export class AuthMeResponseDto {
 }
 
 export class AdminPingResponseDto {
+  @ApiProperty({ example: true })
+  ok!: boolean;
+}
+
+export class PasswordResetAcceptedResponseDto {
   @ApiProperty({ example: true })
   ok!: boolean;
 }

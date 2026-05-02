@@ -16,6 +16,7 @@ import { FormTemplate } from '../models/entities/form-template.entity';
 import { GroupMember } from '../models/entities/group-member.entity';
 import { Group } from '../models/entities/group.entity';
 import { Invitation } from '../models/entities/invitation.entity';
+import { PasswordResetToken } from '../models/entities/password-reset-token.entity';
 import { Tenant } from '../models/entities/tenant.entity';
 import { User } from '../models/entities/user.entity';
 
@@ -47,6 +48,7 @@ export function buildTypeOrmOptions(
     Group,
     GroupMember,
     Invitation,
+    PasswordResetToken,
     Tenant,
     User,
   ];

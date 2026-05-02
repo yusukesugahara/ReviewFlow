@@ -72,6 +72,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/password-reset/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** パスワード再設定メール送信 */
+        post: operations["AuthController_requestPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/password-reset/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** パスワード再設定の確定 */
+        post: operations["AuthController_confirmPasswordReset"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/me": {
         parameters: {
             query?: never;
@@ -874,6 +908,20 @@ export interface components {
             /** @description 同一メールで複数テナントに所属する場合に指定（`docs/08_auth_and_multitenant.md`） */
             tenantId?: string;
         };
+        PasswordResetAcceptedResponseDto: {
+            /** @example true */
+            ok: boolean;
+        };
+        RequestPasswordResetDto: {
+            /** @example user@example.com */
+            email: string;
+        };
+        ConfirmPasswordResetDto: {
+            /** @example reset-token */
+            token: string;
+            /** @example password12 */
+            password: string;
+        };
         AuthMeResponseDto: {
             id: string;
             email: string;
@@ -1394,6 +1442,66 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["AuthIssueTokensResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_requestPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestPasswordResetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["PasswordResetAcceptedResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_confirmPasswordReset: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmPasswordResetDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["PasswordResetAcceptedResponseDto"];
                     };
                 };
             };

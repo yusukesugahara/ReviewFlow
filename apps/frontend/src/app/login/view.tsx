@@ -20,6 +20,7 @@ export const LoginView = ({ apiReachable, next }: LoginViewProps) => {
       switchText="アカウントをお持ちでない方は"
       switchHref="/signup"
       switchLabel="新規登録"
+      forgotPasswordHref="/forgot-password"
       submit={login}
       next={next}
       fallbackErrorMessage="ログインに失敗しました"

@@ -19,8 +19,11 @@ import {
   AdminPingResponseDto,
   AuthIssueTokensResponseDto,
   AuthMeResponseDto,
+  ConfirmPasswordResetDto,
   LoginDto,
+  PasswordResetAcceptedResponseDto,
   RegisterDto,
+  RequestPasswordResetDto,
 } from './auth.dto';
 import {
   CurrentUser,
@@ -58,6 +61,30 @@ export class AuthController {
     @Body() dto: LoginDto,
   ): Promise<SuccessResponse<AuthIssueTokensResponseDto>> {
     return successResponse(await this.authService.login(dto));
+  }
+
+  @Api()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'パスワード再設定メール送信' })
+  @ApiSuccessResponse(PasswordResetAcceptedResponseDto)
+  async requestPasswordReset(
+    @Body() dto: RequestPasswordResetDto,
+  ): Promise<SuccessResponse<PasswordResetAcceptedResponseDto>> {
+    return successResponse(await this.authService.requestPasswordReset(dto));
+  }
+
+  @Api()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('password-reset/confirm')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'パスワード再設定の確定' })
+  @ApiSuccessResponse(PasswordResetAcceptedResponseDto)
+  async confirmPasswordReset(
+    @Body() dto: ConfirmPasswordResetDto,
+  ): Promise<SuccessResponse<PasswordResetAcceptedResponseDto>> {
+    return successResponse(await this.authService.confirmPasswordReset(dto));
   }
 
   @AuthApi()
