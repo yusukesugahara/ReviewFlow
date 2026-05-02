@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendApplicantFetchJson } from "@/lib/server/backend-applicant-fetch";
+import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import {
   DynamicFieldInput,
   readDynamicValuesFromFormData,
@@ -23,6 +23,11 @@ type ApprovalFlow = {
   formTemplateId: string;
   name: string;
   isActive: boolean;
+};
+
+type Space = {
+  id: string;
+  name: string;
 };
 
 function unwrapData<T>(raw: unknown): T {
@@ -58,7 +63,7 @@ async function createApplicationAction(formData: FormData): Promise<void> {
   }
   const values = readDynamicValuesFromFormData(fields, formData);
 
-  const created = await backendApplicantFetchJson("/public/applications", {
+  const created = await backendAuthFetchJson("/applications", {
     method: "POST",
     body: {
       formTemplateId,
@@ -84,12 +89,31 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const error = params.error;
 
-  const templateRaw = await backendApplicantFetchJson("/form-templates/public/current");
-  const selectedTemplate = unwrapData<FormTemplate>(templateRaw);
+  const spacesRaw = await backendAuthFetchJson("/groups");
+  const spaces = unwrapData<{ groups?: Space[] }>(spacesRaw).groups ?? [];
+  const activeSpaceId = spaces[0]?.id ?? "";
+  const templatesRaw = activeSpaceId
+    ? await backendAuthFetchJson(
+        `/form-templates?groupId=${encodeURIComponent(activeSpaceId)}`,
+      )
+    : null;
+  const templates =
+    templatesRaw === null
+      ? []
+      : unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
+  const selectedTemplate =
+    templates.find((template) => template.status === "published") ?? templates[0];
   const selectedTemplateId = selectedTemplate?.id ?? "";
 
-  const flowsRaw = await backendApplicantFetchJson("/form-templates/public/current/approval-flows");
-  const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
+  const flowsRaw = activeSpaceId
+    ? await backendAuthFetchJson(
+        `/approval-flows?groupId=${encodeURIComponent(activeSpaceId)}`,
+      )
+    : null;
+  const flows =
+    flowsRaw === null
+      ? []
+      : unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
   const selectableFlows = flows.filter((f) => f.formTemplateId === selectedTemplateId);
 
   return (
@@ -154,6 +178,15 @@ export default async function NewApplicationPage({ searchParams }: PageProps) {
 
               <Button type="submit" size="lg">申請を作成</Button>
             </form>
+          </CardContent>
+        </Card>
+      ) : null}
+      {!selectedTemplate ? (
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-sm text-muted-foreground">
+              利用できるフォームテンプレートがありません。
+            </p>
           </CardContent>
         </Card>
       ) : null}

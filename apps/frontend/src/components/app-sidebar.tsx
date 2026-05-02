@@ -28,6 +28,7 @@ type AppSidebarProps = {
   userEmail?: string;
   userRoles: string[];
   spaces: AppSidebarSpace[];
+  variant?: "workspace" | "applicant";
 };
 
 type SidebarNavItem = {
@@ -56,11 +57,17 @@ const tenantAdminNavItems: SidebarNavItem[] = [
   { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
 ];
 
+const applicantNavItems: SidebarNavItem[] = [
+  { href: "/app/applications", label: "申請一覧", icon: ClipboardList },
+  { href: "/app/applications/new", label: "新規申請", icon: FileText },
+];
+
 export function AppSidebar({
   children,
   userEmail,
   userRoles,
   spaces,
+  variant = "workspace",
 }: AppSidebarProps) {
   const [isOpen, setIsOpen] = useState(false);
   const isTenantAdmin = userRoles.includes("tenant_admin");
@@ -104,6 +111,7 @@ export function AppSidebar({
                   </Button>
                 </div>
                 <SidebarContent
+                  variant={variant}
                   isTenantAdmin={isTenantAdmin}
                   spaces={spaces}
                   userEmail={userEmail}
@@ -124,6 +132,7 @@ export function AppSidebar({
               <p className="mt-0.5 text-xs text-slate-500">ワークスペース</p>
             </div>
             <SidebarContent
+              variant={variant}
               isTenantAdmin={isTenantAdmin}
               spaces={spaces}
               userEmail={userEmail}
@@ -142,11 +151,13 @@ export function AppSidebar({
 }
 
 function SidebarContent({
+  variant,
   isTenantAdmin,
   spaces,
   userEmail,
   onNavigate,
 }: {
+  variant: "workspace" | "applicant";
   isTenantAdmin: boolean;
   spaces: AppSidebarSpace[];
   userEmail?: string;
@@ -154,14 +165,16 @@ function SidebarContent({
 }) {
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-4">
-      <section>
-        <SectionLabel>現在のスペース</SectionLabel>
-        <SpaceSwitcher spaces={spaces} onNavigate={onNavigate} />
-      </section>
+      {variant === "workspace" ? (
+        <section>
+          <SectionLabel>現在のスペース</SectionLabel>
+          <SpaceSwitcher spaces={spaces} onNavigate={onNavigate} />
+        </section>
+      ) : null}
       <section className="mt-5">
-        <SectionLabel>スペース</SectionLabel>
+        <SectionLabel>{variant === "workspace" ? "スペース" : "申請"}</SectionLabel>
         <nav className="grid gap-1">
-          {spaceNavItems
+          {(variant === "workspace" ? spaceNavItems : applicantNavItems)
             .filter((item) => !item.adminOnly || isTenantAdmin)
             .map((item) => (
               <SidebarLink

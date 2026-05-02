@@ -1,9 +1,8 @@
-import Link from "next/link";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { unwrapData } from "@/lib/server/api-envelope";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { ApplicationEmptyState } from "@/features/applications/application-empty-state";
+import { ApplicationListTable } from "@/features/applications/application-list-table";
 
 type ApplicationRow = {
   id: string;
@@ -12,39 +11,6 @@ type ApplicationRow = {
   formTemplateId: string;
   createdAt: string;
 };
-
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
-
-function getStatusBadgeVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case "approved":
-      return "default";
-    case "in_review":
-      return "secondary";
-    case "returned":
-    case "rejected":
-      return "destructive";
-    default:
-      return "outline";
-  }
-}
-
-function getStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    draft: "下書き",
-    submitted: "提出済み",
-    in_review: "レビュー中",
-    returned: "差し戻し",
-    approved: "承認",
-    rejected: "却下",
-  };
-  return labels[status] ?? status;
-}
 
 type PageProps = {
   searchParams?: Promise<{ spaceId?: string }>;
@@ -80,44 +46,14 @@ export default async function ReviewApplicationsPage({ searchParams }: PageProps
           </CardHeader>
           <CardContent>
             {rows.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">レビュー待ちの申請はありません</p>
+              <ApplicationEmptyState message="レビュー待ちの申請はありません" />
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>ステータス</TableHead>
-                    <TableHead>申請者</TableHead>
-                    <TableHead>テンプレート</TableHead>
-                    <TableHead>作成日時</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {rows.map((r) => (
-                    <TableRow key={r.id}>
-                      <TableCell>
-                        <Badge variant={getStatusBadgeVariant(r.status)}>
-                          {getStatusLabel(r.status)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {r.applicantEmail}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {r.formTemplateId.slice(0, 12)}...
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(r.createdAt).toLocaleString("ja-JP")}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild variant="ghost" size="sm">
-                          <Link href={`/review/applications/${r.id}`}>レビュー</Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <ApplicationListTable
+                rows={rows}
+                getDetailHref={(row) => `/review/applications/${row.id}`}
+                actionLabel="レビュー"
+                showApplicantEmail
+              />
             )}
           </CardContent>
         </Card>
