@@ -10,6 +10,17 @@ import { errorMessageFromBody, postAuthLogin } from "@/lib/server/auth-api";
 
 export type LoginSchema = AuthCredentials & { next?: string };
 
+function authCredentialsFromFormData(formData: FormData): LoginSchema {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const next = formData.get("next");
+  return {
+    email: typeof email === "string" ? email : "",
+    password: typeof password === "string" ? password : "",
+    ...(typeof next === "string" ? { next } : {}),
+  };
+}
+
 function resolveSafeNextPath(next?: string): string {
   if (!next || !next.startsWith("/")) {
     return "/";
@@ -74,7 +85,8 @@ export async function persistAccessTokenCookie(accessToken: string): Promise<voi
  * @param params - ログインするパラメータ
  * @returns ログイン API のレスポンス
  */
-export async function login(params: LoginSchema): Promise<FormActionResponse<void>> {
+export async function login(formData: FormData): Promise<FormActionResponse<void>> {
+  const params = authCredentialsFromFormData(formData);
   const parsed = authCredentialsSchema.safeParse(params);
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };

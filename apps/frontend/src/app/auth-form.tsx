@@ -29,7 +29,7 @@ type AuthFormProps = {
   switchText: string;
   switchHref: "/login" | "/signup";
   switchLabel: string;
-  submit: (params: { email: string; password: string; next?: string }) => Promise<FormActionResponse<void>>;
+  submit: (formData: FormData) => Promise<FormActionResponse<void>>;
   next?: string;
   fallbackErrorMessage: string;
 };
@@ -64,13 +64,13 @@ export function AuthForm({
 
   const disabled = state.loading || !apiReachable;
 
-  const onSubmit = async () => {
+  const onSubmit = async (formData: FormData) => {
     if (disabled) {
       return;
     }
     setState((s) => ({ ...s, loading: true }));
     try {
-      const result = await submit({ email: state.email, password: state.password, next });
+      const result = await submit(formData);
       if ("fieldErrors" in result && result.fieldErrors) {
         setState((s) => ({
           ...s,
@@ -142,7 +142,11 @@ export function AuthForm({
               className="space-y-4"
               onSubmit={(e) => {
                 e.preventDefault();
-                void onSubmit();
+                const formData = new FormData(e.currentTarget);
+                if (next) {
+                  formData.set("next", next);
+                }
+                void onSubmit(formData);
               }}
               noValidate
             >
