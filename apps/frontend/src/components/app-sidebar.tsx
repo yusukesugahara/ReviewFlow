@@ -36,10 +36,16 @@ type SidebarNavItem = {
   label: string;
   icon: LucideIcon;
   adminOnly?: boolean;
+  spacePath?: "applications";
 };
 
 const spaceNavItems: SidebarNavItem[] = [
-  { href: "/space/applications", label: "申請一覧", icon: ClipboardList },
+  {
+    href: "/space/applications",
+    label: "申請一覧",
+    icon: ClipboardList,
+    spacePath: "applications",
+  },
   { href: "/space/application-setup", label: "フォームテンプレート", icon: FileText },
   { href: "/space", label: "承認フロー", icon: GitBranch },
   {
@@ -180,6 +186,8 @@ function SidebarContent({
               <SidebarLink
                 key={item.href}
                 href={item.href}
+                spacePath={item.spacePath}
+                fallbackSpaceId={spaces[0]?.id}
                 icon={item.icon}
                 onNavigate={onNavigate}
               >
@@ -243,7 +251,9 @@ function SpaceSwitcher({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const activeSpaceId = searchParams.get("spaceId") ?? spaces[0]?.id ?? null;
+  const pathSpaceId = getPathSpaceId(pathname);
+  const activeSpaceId =
+    pathSpaceId ?? searchParams.get("spaceId") ?? spaces[0]?.id ?? null;
 
   if (spaces.length === 0) {
     return (
@@ -258,11 +268,11 @@ function SpaceSwitcher({
       {spaces.map((space) => {
         const isActive = activeSpaceId === space.id;
         const params = new URLSearchParams(searchParams);
-        params.set("spaceId", space.id);
+        const href = getSpaceSwitcherHref(pathname, params, space.id);
         return (
           <Link
             key={space.id}
-            href={`${pathname}?${params.toString()}`}
+            href={href}
             className={cn(
               "block truncate rounded-lg px-2.5 py-2 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
               isActive && "bg-violet-50 text-violet-800 ring-1 ring-violet-200",
@@ -280,26 +290,38 @@ function SpaceSwitcher({
 
 function SidebarLink({
   href,
+  spacePath,
+  fallbackSpaceId,
   icon: Icon,
   children,
   onNavigate,
 }: {
   href: string;
+  spacePath?: "applications";
+  fallbackSpaceId?: string;
   icon: LucideIcon;
   children: ReactNode;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const pathSpaceId = getPathSpaceId(pathname);
+  const activeSpaceId =
+    pathSpaceId ?? searchParams.get("spaceId") ?? fallbackSpaceId;
   const isSectionRoot = href === "/admin" || href === "/space";
-  const isActive = isSectionRoot
-    ? pathname === href
-    : pathname === href || pathname.startsWith(`${href}/`);
-  const spaceId = searchParams.get("spaceId");
   const scopedHref =
-    href.startsWith("/space") && spaceId
-      ? `${href}?spaceId=${encodeURIComponent(spaceId)}`
-      : href;
+    spacePath === "applications" && activeSpaceId
+      ? `/space/${encodeURIComponent(activeSpaceId)}/applications`
+      : href.startsWith("/space") && activeSpaceId
+        ? `${href}?spaceId=${encodeURIComponent(activeSpaceId)}`
+        : href;
+  const isActive = spacePath === "applications"
+    ? pathname === scopedHref ||
+      pathname.startsWith(`${scopedHref}/`) ||
+      pathname === href
+    : isSectionRoot
+      ? pathname === href
+      : pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <Link
@@ -314,4 +336,37 @@ function SidebarLink({
       <span className="truncate">{children}</span>
     </Link>
   );
+}
+
+function getPathSpaceId(pathname: string): string | null {
+  const segments = pathname.split("/").filter(Boolean);
+  if (segments[0] !== "space" || segments.length < 3) {
+    return null;
+  }
+  const [spaceId, section] = segments.slice(1);
+  if (section !== "applications") {
+    return null;
+  }
+  if (!spaceId) {
+    return null;
+  }
+  return decodeURIComponent(spaceId);
+}
+
+function getSpaceSwitcherHref(
+  pathname: string,
+  params: URLSearchParams,
+  spaceId: string,
+): string {
+  const pathSpaceId = getPathSpaceId(pathname);
+  if (pathSpaceId) {
+    const nextPathname = pathname.replace(
+      `/space/${encodeURIComponent(pathSpaceId)}/`,
+      `/space/${encodeURIComponent(spaceId)}/`,
+    );
+    return params.size > 0 ? `${nextPathname}?${params.toString()}` : nextPathname;
+  }
+
+  params.set("spaceId", spaceId);
+  return `${pathname}?${params.toString()}`;
 }
