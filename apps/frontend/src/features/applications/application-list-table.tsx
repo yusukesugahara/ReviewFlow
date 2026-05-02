@@ -12,6 +12,7 @@ import { ApplicationStatusBadge } from "./application-status-badge";
 
 export type ApplicationListRow = {
   id: string;
+  groupId?: string | null;
   status: string;
   formTemplateId: string;
   createdAt: string;

@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   backendAuthFetchJson,
@@ -23,6 +24,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ApplicationEmptyState } from "@/features/applications/application-empty-state";
 import { ApplicationListTable } from "@/features/applications/application-list-table";
+import {
+  buildSpaceApplicationDetailHref,
+  buildSpaceApplicationNewHref,
+  buildSpaceApplicationsHref,
+} from "@/features/applications/application-routes";
+import { getCurrentSessionUser } from "@/lib/server/session";
 
 type FormTemplateRow = {
   id: string;
@@ -33,28 +40,35 @@ type FormTemplateRow = {
 
 type ApplicationRow = {
   id: string;
+  groupId: string;
   status: string;
   applicantEmail: string;
   formTemplateId: string;
   createdAt: string;
 };
 
+type ApplicationListView = "mine" | "review" | "all";
+
 type SpaceApplicationsPageContentProps = {
   spaceId: string;
   status?: string;
+  view?: string;
 };
 
 export async function SpaceApplicationsPageContent({
   spaceId,
   status,
+  view,
 }: SpaceApplicationsPageContentProps) {
   try {
     const activeStatus = status === "draft" ? "draft" : "published";
-    const [templatesRaw, applicationsRaw] = await Promise.all([
+    const activeView = parseApplicationListView(view);
+    const [templatesRaw, applicationsRaw, actor] = await Promise.all([
       backendAuthFetchJson(
         `/form-templates?groupId=${encodeURIComponent(spaceId)}`,
       ),
       backendAuthFetchJson(`/applications?groupId=${encodeURIComponent(spaceId)}`),
+      getCurrentSessionUser(),
     ]);
 
     const templates =
@@ -69,14 +83,24 @@ export async function SpaceApplicationsPageContent({
     const draftTemplates = templates.filter((row) => row.status !== "published");
     const visibleTemplates =
       activeStatus === "draft" ? draftTemplates : publishedTemplates;
+    const visibleApplications = filterApplicationsByView(
+      applicationRows,
+      activeView,
+      actor?.email,
+    );
 
     return (
       <div className="space-y-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
-          <p className="text-muted-foreground">
-            申請作成画面で作成した申請定義と、提出済みの申請を確認できます
-          </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
+            <p className="text-muted-foreground">
+              申請作成画面で作成した申請定義と、提出済みの申請を確認できます
+            </p>
+          </div>
+          <Button asChild>
+            <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
+          </Button>
         </div>
 
         <Card>
@@ -89,7 +113,10 @@ export async function SpaceApplicationsPageContent({
           <CardContent className="space-y-3">
             <div className="flex items-center gap-2">
               <Link
-                href={`/space/${encodeURIComponent(spaceId)}/applications?status=published`}
+                href={buildSpaceApplicationsViewHref(spaceId, {
+                  status: "published",
+                  view: activeView,
+                })}
                 className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
                   activeStatus === "published"
                     ? "border-primary bg-primary text-primary-foreground"
@@ -99,7 +126,10 @@ export async function SpaceApplicationsPageContent({
                 申請 ({publishedTemplates.length})
               </Link>
               <Link
-                href={`/space/${encodeURIComponent(spaceId)}/applications?status=draft`}
+                href={buildSpaceApplicationsViewHref(spaceId, {
+                  status: "draft",
+                  view: activeView,
+                })}
                 className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
                   activeStatus === "draft"
                     ? "border-primary bg-primary text-primary-foreground"
@@ -170,18 +200,42 @@ export async function SpaceApplicationsPageContent({
 
         <Card>
           <CardHeader>
-            <CardTitle>提出済み申請一覧</CardTitle>
+            <CardTitle>申請一覧</CardTitle>
             <CardDescription>
-              {applicationRows.length}件の提出済み申請があります
+              {visibleApplications.length}件の申請を表示しています
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            {applicationRows.length === 0 ? (
-              <ApplicationEmptyState message="提出済み申請はまだありません" />
+          <CardContent className="space-y-3">
+            <ApplicationListViewTabs
+              activeView={activeView}
+              counts={{
+                mine: filterApplicationsByView(
+                  applicationRows,
+                  "mine",
+                  actor?.email,
+                ).length,
+                review: filterApplicationsByView(
+                  applicationRows,
+                  "review",
+                  actor?.email,
+                ).length,
+                all: applicationRows.length,
+              }}
+              spaceId={spaceId}
+              status={activeStatus}
+            />
+            {visibleApplications.length === 0 ? (
+              <ApplicationEmptyState
+                message={getApplicationEmptyMessage(activeView)}
+                action={getApplicationEmptyAction(activeView, spaceId)}
+              />
             ) : (
               <ApplicationListTable
-                rows={applicationRows}
-                getDetailHref={(row) => `/space/applications/${row.id}`}
+                rows={visibleApplications}
+                getDetailHref={(row) =>
+                  buildSpaceApplicationDetailHref(row) ??
+                  `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
+                }
                 showApplicantEmail
                 templateIdLength={8}
               />
@@ -210,4 +264,107 @@ export async function SpaceApplicationsPageContent({
       </Card>
     );
   }
+}
+
+function parseApplicationListView(view: string | undefined): ApplicationListView {
+  if (view === "review" || view === "all") {
+    return view;
+  }
+  return "mine";
+}
+
+function filterApplicationsByView(
+  rows: ApplicationRow[],
+  view: ApplicationListView,
+  actorEmail: string | undefined,
+): ApplicationRow[] {
+  if (view === "all") {
+    return rows;
+  }
+  if (view === "review") {
+    return rows.filter((row) => row.status === "in_review");
+  }
+  if (!actorEmail) {
+    return [];
+  }
+  const normalizedActorEmail = actorEmail.toLowerCase();
+  return rows.filter(
+    (row) => row.applicantEmail.toLowerCase() === normalizedActorEmail,
+  );
+}
+
+function getApplicationEmptyMessage(view: ApplicationListView): string {
+  if (view === "review") {
+    return "レビュー対象の申請はありません";
+  }
+  if (view === "all") {
+    return "スペース内の申請はまだありません";
+  }
+  return "自分の申請はまだありません";
+}
+
+function getApplicationEmptyAction(
+  view: ApplicationListView,
+  spaceId: string,
+): ReactNode {
+  if (view === "review") {
+    return undefined;
+  }
+  return (
+    <Button asChild variant="outline">
+      <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
+    </Button>
+  );
+}
+
+function ApplicationListViewTabs({
+  activeView,
+  counts,
+  spaceId,
+  status,
+}: {
+  activeView: ApplicationListView;
+  counts: Record<ApplicationListView, number>;
+  spaceId: string;
+  status: string;
+}) {
+  const tabs: { view: ApplicationListView; label: string }[] = [
+    { view: "mine", label: "自分の申請" },
+    { view: "review", label: "レビュー対象" },
+    { view: "all", label: "すべて" },
+  ];
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      {tabs.map((tab) => {
+        const isActive = activeView === tab.view;
+        return (
+          <Link
+            key={tab.view}
+            href={buildSpaceApplicationsViewHref(spaceId, {
+              status,
+              view: tab.view,
+            })}
+            className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
+              isActive
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
+            }`}
+          >
+            {tab.label} ({counts[tab.view]})
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+function buildSpaceApplicationsViewHref(
+  spaceId: string,
+  params: { status: string; view: ApplicationListView },
+): string {
+  const searchParams = new URLSearchParams();
+  searchParams.set("view", params.view);
+  searchParams.set("status", params.status);
+  return `${buildSpaceApplicationsHref(spaceId)}?${searchParams.toString()}`;
 }

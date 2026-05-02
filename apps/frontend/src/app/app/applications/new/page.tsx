@@ -1,195 +1,50 @@
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { Card, CardContent } from "@/components/ui/card";
+import { buildSpaceApplicationNewHref } from "@/features/applications/application-routes";
 import {
-  DynamicFieldInput,
-  readDynamicValuesFromFormData,
-  type DynamicFormField,
-} from "../_components/dynamic-fields";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-
-type FormTemplate = {
-  id: string;
-  groupId: string;
-  name: string;
-  status: string;
-  fields: DynamicFormField[];
-};
-
-type ApprovalFlow = {
-  id: string;
-  formTemplateId: string;
-  name: string;
-  isActive: boolean;
-};
+  backendAuthFetchJson,
+  BackendHttpError,
+} from "@/lib/server/backend-auth-fetch";
+import { unwrapData } from "@/lib/server/api-envelope";
 
 type Space = {
   id: string;
-  name: string;
 };
 
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
-
-async function createApplicationAction(formData: FormData): Promise<void> {
-  "use server";
-  const formTemplateId = formData.get("selectedFormTemplateId");
-  const groupId = formData.get("selectedGroupId");
-  const approvalFlowId = formData.get("approvalFlowId");
-  const fieldsJson = formData.get("selectedFormFieldsJson");
-  if (
-    typeof formTemplateId !== "string" ||
-    typeof groupId !== "string" ||
-    typeof fieldsJson !== "string"
-  ) {
-    redirect("/app/applications/new?error=invalid_input");
-  }
-
-  let fields: DynamicFormField[];
+export default async function LegacyNewApplicationPage() {
   try {
-    const parsed: unknown = JSON.parse(fieldsJson);
-    if (!Array.isArray(parsed)) {
-      throw new Error("fields must be array");
+    const spacesRaw = await backendAuthFetchJson("/groups");
+    const spaces = unwrapData<{ groups?: Space[] }>(spacesRaw).groups ?? [];
+    const spaceId = spaces[0]?.id;
+    if (spaceId) {
+      redirect(buildSpaceApplicationNewHref(spaceId));
     }
-    fields = parsed as DynamicFormField[];
-  } catch {
-    redirect("/app/applications/new?error=invalid_fields");
-  }
-  const values = readDynamicValuesFromFormData(fields, formData);
 
-  const created = await backendAuthFetchJson("/applications", {
-    method: "POST",
-    body: {
-      formTemplateId,
-      groupId,
-      approvalFlowId:
-        typeof approvalFlowId === "string" && approvalFlowId.length > 0
-          ? approvalFlowId
-          : undefined,
-      values,
-    },
-  });
-  const app = unwrapData<{ id: string }>(created);
-  revalidatePath("/app/applications");
-  revalidatePath(`/app/applications/${app.id}`);
-  redirect("/app/applications");
-}
-
-type PageProps = {
-  searchParams?: Promise<{ error?: string; templateId?: string }>;
-};
-
-export default async function NewApplicationPage({ searchParams }: PageProps) {
-  const params = (await searchParams) ?? {};
-  const error = params.error;
-
-  const spacesRaw = await backendAuthFetchJson("/groups");
-  const spaces = unwrapData<{ groups?: Space[] }>(spacesRaw).groups ?? [];
-  const activeSpaceId = spaces[0]?.id ?? "";
-  const templatesRaw = activeSpaceId
-    ? await backendAuthFetchJson(
-        `/form-templates?groupId=${encodeURIComponent(activeSpaceId)}`,
-      )
-    : null;
-  const templates =
-    templatesRaw === null
-      ? []
-      : unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
-  const selectedTemplate =
-    templates.find((template) => template.status === "published") ?? templates[0];
-  const selectedTemplateId = selectedTemplate?.id ?? "";
-
-  const flowsRaw = activeSpaceId
-    ? await backendAuthFetchJson(
-        `/approval-flows?groupId=${encodeURIComponent(activeSpaceId)}`,
-      )
-    : null;
-  const flows =
-    flowsRaw === null
-      ? []
-      : unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
-  const selectableFlows = flows.filter((f) => f.formTemplateId === selectedTemplateId);
-
-  return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">申請作成</h2>
-        <p className="text-muted-foreground">
-          フォーム定義に沿って入力し、下書き申請を作成します
-        </p>
-      </div>
-
-      {error ? (
-        <Card className="border-destructive/50">
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-muted-foreground">参加スペースがありません</p>
+        </CardContent>
+      </Card>
+    );
+  } catch (error) {
+    if (error instanceof BackendHttpError) {
+      return (
+        <Card>
           <CardContent className="pt-6">
             <p className="text-destructive">
-              入力エラーです。必須項目と入力形式を確認してください。
+              申請作成画面の取得に失敗しました（status: {error.status}）
             </p>
           </CardContent>
         </Card>
-      ) : null}
-
-      {selectedTemplate ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>申請内容入力</CardTitle>
-            <CardDescription>
-              {selectedTemplate.name} の入力フォームで新規申請を作成します
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form action={createApplicationAction} className="space-y-6">
-              <input type="hidden" name="selectedFormTemplateId" value={selectedTemplate.id} />
-              <input type="hidden" name="selectedGroupId" value={selectedTemplate.groupId} />
-              <input
-                type="hidden"
-                name="selectedFormFieldsJson"
-                value={JSON.stringify(selectedTemplate.fields)}
-              />
-
-              <div className="space-y-2">
-                <Label htmlFor="approvalFlowId">承認フロー（任意）</Label>
-                <select
-                  id="approvalFlowId"
-                  name="approvalFlowId"
-                  defaultValue=""
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">自動選択</option>
-                  {selectableFlows.map((flow) => (
-                    <option key={flow.id} value={flow.id}>
-                      {flow.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="space-y-4">
-                {selectedTemplate.fields.map((field) => (
-                  <DynamicFieldInput key={field.id} field={field} value={undefined} />
-                ))}
-              </div>
-
-              <Button type="submit" size="lg">申請を作成</Button>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
-      {!selectedTemplate ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-sm text-muted-foreground">
-              利用できるフォームテンプレートがありません。
-            </p>
-          </CardContent>
-        </Card>
-      ) : null}
-    </div>
-  );
+      );
+    }
+    return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-destructive">申請作成画面の取得に失敗しました</p>
+        </CardContent>
+      </Card>
+    );
+  }
 }

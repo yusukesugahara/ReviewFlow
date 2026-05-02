@@ -204,6 +204,12 @@ npm run build          # Backend and frontend production builds
 npm run check          # lint + typecheck + test + build
 ```
 
+If backend build fails with `EACCES` under `apps/backend/dist`, the generated `dist` directory was likely written by a container user. Restore local ownership before rerunning checks:
+
+```bash
+docker compose exec -u root backend chown -R "$(id -u):$(id -g)" /workspace/apps/backend/dist
+```
+
 Current limitation:
 
 - Frontend E2E is intentionally separate because it requires a reachable backend test environment.

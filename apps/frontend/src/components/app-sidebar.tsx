@@ -36,7 +36,7 @@ type SidebarNavItem = {
   label: string;
   icon: LucideIcon;
   adminOnly?: boolean;
-  spacePath?: "applications";
+  spacePath?: "applications" | "applicationsNew";
 };
 
 const spaceNavItems: SidebarNavItem[] = [
@@ -64,8 +64,18 @@ const tenantAdminNavItems: SidebarNavItem[] = [
 ];
 
 const applicantNavItems: SidebarNavItem[] = [
-  { href: "/app/applications", label: "申請一覧", icon: ClipboardList },
-  { href: "/app/applications/new", label: "新規申請", icon: FileText },
+  {
+    href: "/space/applications",
+    label: "申請一覧",
+    icon: ClipboardList,
+    spacePath: "applications",
+  },
+  {
+    href: "/space/applications/new",
+    label: "新規申請",
+    icon: FileText,
+    spacePath: "applicationsNew",
+  },
 ];
 
 export function AppSidebar({
@@ -297,7 +307,7 @@ function SidebarLink({
   onNavigate,
 }: {
   href: string;
-  spacePath?: "applications";
+  spacePath?: "applications" | "applicationsNew";
   fallbackSpaceId?: string;
   icon: LucideIcon;
   children: ReactNode;
@@ -310,12 +320,14 @@ function SidebarLink({
     pathSpaceId ?? searchParams.get("spaceId") ?? fallbackSpaceId;
   const isSectionRoot = href === "/admin" || href === "/space";
   const scopedHref =
-    spacePath === "applications" && activeSpaceId
+    spacePath === "applicationsNew" && activeSpaceId
+      ? `/space/${encodeURIComponent(activeSpaceId)}/applications/new`
+      : spacePath === "applications" && activeSpaceId
       ? `/space/${encodeURIComponent(activeSpaceId)}/applications`
       : href.startsWith("/space") && activeSpaceId
         ? `${href}?spaceId=${encodeURIComponent(activeSpaceId)}`
         : href;
-  const isActive = spacePath === "applications"
+  const isActive = spacePath === "applications" || spacePath === "applicationsNew"
     ? pathname === scopedHref ||
       pathname.startsWith(`${scopedHref}/`) ||
       pathname === href

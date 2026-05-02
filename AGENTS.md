@@ -201,6 +201,7 @@ Do not:
 - Add a new package, framework, state library, ORM, or test runner without a clear reason.
 - Modify generated files manually when there is a generation command.
 - Commit `node_modules`, `.next`, `dist`, coverage output, local DB files, or `.env` files.
+- If `apps/backend/dist` becomes container-owned and backend build fails with `EACCES`, restore ownership with `docker compose exec -u root backend chown -R "$(id -u):$(id -g)" /workspace/apps/backend/dist`; `dist` is generated output.
 - Delete tests to make a build pass.
 - Suppress TypeScript or lint errors without explaining why in code or docs.
 
