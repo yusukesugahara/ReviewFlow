@@ -36,7 +36,7 @@ import { ApplicationsService } from './applications.service';
 class ApplicantSessionResponseDto {
   email!: string;
   tenantId!: string;
-  templateId!: string;
+  groupId!: string;
 }
 
 @ApiTags('public-applications')
@@ -57,7 +57,7 @@ export class PublicApplicationsController {
     return successResponse({
       email: actor.email,
       tenantId: actor.tenantId,
-      templateId: actor.templateId,
+      groupId: actor.groupId,
     });
   }
 

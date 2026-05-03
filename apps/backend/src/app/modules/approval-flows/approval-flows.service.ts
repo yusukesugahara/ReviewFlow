@@ -5,7 +5,6 @@ import { ClientErrorCodes, clientError } from '../../../common/errors';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
-import { FormTemplate } from '../../../models/entities/form-template.entity';
 import { GroupMember } from '../../../models/entities/group-member.entity';
 import { User } from '../../../models/entities/user.entity';
 import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
@@ -18,8 +17,6 @@ export class ApprovalFlowsService {
   constructor(
     @InjectRepository(ApprovalFlow)
     private readonly flows: Repository<ApprovalFlow>,
-    @InjectRepository(FormTemplate)
-    private readonly templates: Repository<FormTemplate>,
     @InjectRepository(GroupMember)
     private readonly members: Repository<GroupMember>,
     @InjectRepository(User)
@@ -65,17 +62,6 @@ export class ApprovalFlowsService {
     await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
     this.assertStepsValid(dto);
 
-    const tpl = await this.templates.findOne({
-      where: {
-        id: dto.formTemplateId,
-        tenantId: actor.tenantId,
-        groupId: dto.groupId,
-      },
-    });
-    if (!tpl) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
-    }
-
     const sortedSteps = [...dto.steps].sort(
       (a, b) => a.stepOrder - b.stepOrder,
     );
@@ -106,7 +92,6 @@ export class ApprovalFlowsService {
       const flow = flowRepo.create({
         tenantId: actor.tenantId,
         groupId: dto.groupId,
-        formTemplateId: dto.formTemplateId,
         name: dto.name.trim(),
         isActive: true,
       });
@@ -150,7 +135,7 @@ export class ApprovalFlowsService {
     const rows = await this.flows.find({
       where: {
         tenantId: actor.tenantId,
-        formTemplateId: actor.templateId,
+        groupId: actor.groupId,
         isActive: true,
       },
       relations: ['steps'],

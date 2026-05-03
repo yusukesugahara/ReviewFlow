@@ -10,14 +10,12 @@ import {
   UpdateDateColumn,
 } from 'typeorm';
 import { Tenant } from './tenant.entity';
-import { FormTemplate } from './form-template.entity';
 import { ApprovalStep } from './approval-step.entity';
 import { Group } from './group.entity';
 
 @Entity('approval_flows')
 @Index('IDX_approval_flows_tenant', ['tenantId'])
 @Index('IDX_approval_flows_tenant_group', ['tenantId', 'groupId'])
-@Index('IDX_approval_flows_template', ['formTemplateId'])
 export class ApprovalFlow {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -35,13 +33,6 @@ export class ApprovalFlow {
   @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'group_id' })
   group!: Group;
-
-  @Column({ name: 'form_template_id', type: 'varchar', length: 36 })
-  formTemplateId!: string;
-
-  @ManyToOne(() => FormTemplate, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'form_template_id' })
-  formTemplate!: FormTemplate;
 
   @Column({ type: 'varchar', length: 255 })
   name!: string;

@@ -3,7 +3,7 @@
 - tenants
 - users
 - invitations
-- form-templates
+- form-definitions
 - approval-flows
 - applications
 - correction-requests
@@ -25,7 +25,7 @@
 - TypeORM 呼び出しは Service 直書きでも可だが、複雑化したら Repository 相当へ分離する
 - DTO を必須にする
 - tenant_id 条件は共通関数で強制する
-- form_templates / approval_flows / approval_steps / applications / export_jobs は tenant_id と group_id の両方で scope する
+- form_definitions / approval_flows / approval_steps / applications / export_jobs は tenant_id と group_id の両方で scope する
 - UI/仕様では space、backend 実装では groups / group_members と呼ぶ
 - space 業務データでは tenant_admin はテナント内全 group、GroupMemberRole.admin は自 group の管理、GroupMemberRole.user は自 group 内の申請作成・自分の申請閲覧・割当承認のみ許可する
 - space access check は SpaceAccessService に集約し、各業務 Service は orchestration と業務固有 validation に寄せる
@@ -35,7 +35,7 @@
 - AuthService
 - TenantService
 - InvitationService
-- FormTemplateService
+- FormDefinitionService
 - ApprovalFlowService
 - ApplicationService
 - CorrectionRequestService

@@ -2,19 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes } from '../../../common/errors';
-import { FormTemplateStatus } from '../../../models/constants/form-template-status';
+import { FormDefinitionStatus } from '../../../models/constants/form-definition-status';
 import { FormFieldType } from '../../../models/constants/form-field-type';
 import { FormField } from '../../../models/entities/form-field.entity';
-import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { AuthService } from '../auth/auth.service';
 import { SpaceAccessService } from '../groups/space-access.service';
 import { MailService } from '../mail/mail.service';
-import { FormTemplatesService } from './form-templates.service';
+import { FormDefinitionsService } from './form-definitions.service';
 
-describe('FormTemplatesService', () => {
-  let service: FormTemplatesService;
+describe('FormDefinitionsService', () => {
+  let service: FormDefinitionsService;
   let templates: jest.Mocked<
-    Pick<Repository<FormTemplate>, 'find' | 'findOne' | 'create' | 'save'>
+    Pick<Repository<FormDefinition>, 'find' | 'findOne' | 'create' | 'save'>
   >;
   let fields: jest.Mocked<
     Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
@@ -34,9 +34,9 @@ describe('FormTemplatesService', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       create: jest.fn((x: object) => ({ ...x })),
-      save: jest.fn((x: FormTemplate) => Promise.resolve(x)),
+      save: jest.fn((x: FormDefinition) => Promise.resolve(x)),
     } as unknown as jest.Mocked<
-      Pick<Repository<FormTemplate>, 'find' | 'findOne' | 'create' | 'save'>
+      Pick<Repository<FormDefinition>, 'find' | 'findOne' | 'create' | 'save'>
     >;
     fields = {
       findOne: jest.fn(),
@@ -51,8 +51,8 @@ describe('FormTemplatesService', () => {
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
-        FormTemplatesService,
-        { provide: getRepositoryToken(FormTemplate), useValue: templates },
+        FormDefinitionsService,
+        { provide: getRepositoryToken(FormDefinition), useValue: templates },
         { provide: getRepositoryToken(FormField), useValue: fields },
         { provide: SpaceAccessService, useValue: spaceAccess },
         {
@@ -66,18 +66,18 @@ describe('FormTemplatesService', () => {
       ],
     }).compile();
 
-    service = module.get(FormTemplatesService);
+    service = module.get(FormDefinitionsService);
   });
 
-  it('create saves draft template', async () => {
+  it('create saves draft definition', async () => {
     const saved = {
       id: 't1',
       tenantId: 'ten1',
       name: 'A',
       description: null,
-      status: FormTemplateStatus.DRAFT,
+      status: FormDefinitionStatus.DRAFT,
       createdByUserId: 'u1',
-    } as FormTemplate;
+    } as FormDefinition;
     templates.save.mockResolvedValue(saved);
 
     const out = await service.create(actor, { groupId: 'g1', name: '  A  ' });
@@ -86,20 +86,20 @@ describe('FormTemplatesService', () => {
       expect.objectContaining({
         name: 'A',
         groupId: 'g1',
-        status: FormTemplateStatus.DRAFT,
+        status: FormDefinitionStatus.DRAFT,
         createdByUserId: 'u1',
       }),
     );
     expect(out.id).toBe('t1');
   });
 
-  it('addField rejects when template not draft', async () => {
+  it('addField rejects when definition not draft', async () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
-      status: FormTemplateStatus.PUBLISHED,
-    } as FormTemplate);
+      status: FormDefinitionStatus.PUBLISHED,
+    } as FormDefinition);
 
     await expect(
       service.addField(actor, 't1', {
@@ -110,7 +110,7 @@ describe('FormTemplatesService', () => {
         sortOrder: 0,
       }),
     ).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.FORM_TEMPLATE_IMMUTABLE,
+      errorCode: ClientErrorCodes.FORM_DEFINITION_IMMUTABLE,
     });
   });
 
@@ -119,11 +119,11 @@ describe('FormTemplatesService', () => {
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
-      status: FormTemplateStatus.ARCHIVED,
-    } as FormTemplate);
+      status: FormDefinitionStatus.ARCHIVED,
+    } as FormDefinition);
 
     await expect(service.publish(actor, 't1')).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.FORM_TEMPLATE_NOT_PUBLISHABLE,
+      errorCode: ClientErrorCodes.FORM_DEFINITION_NOT_PUBLISHABLE,
     });
   });
 });

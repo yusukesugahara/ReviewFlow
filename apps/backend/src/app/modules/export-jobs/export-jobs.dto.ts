@@ -15,11 +15,6 @@ export class CreateExportJobDto {
   @IsOptional()
   @IsIn(Object.values(ApplicationStatus))
   status?: ApplicationStatusValue;
-
-  @ApiPropertyOptional({ format: 'uuid' })
-  @IsOptional()
-  @IsUUID()
-  formTemplateId?: string;
 }
 
 export class ExportJobResponseDto {

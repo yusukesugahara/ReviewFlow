@@ -35,7 +35,7 @@ const expectErrorCode = (act: () => void, errorCode: string): void => {
 describe('ApplicationFormValueValidator', () => {
   const validator = new ApplicationFormValueValidator();
 
-  it('accepts values that match template fields', () => {
+  it('accepts values that match form definition fields', () => {
     const fieldsByKey = validator.buildFieldsByKey([
       field({ id: 'text-1', fieldKey: 'title', fieldType: FormFieldType.TEXT }),
       field({

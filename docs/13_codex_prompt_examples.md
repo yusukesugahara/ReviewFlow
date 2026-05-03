@@ -32,7 +32,7 @@ NestJS で applications module を実装してください。
 - POST /applications/:id/resubmit
 制約:
 - correction_request_items は1件以上必須
-- form_field_id がその application の form_template に属することを検証する
+- form_field_id がその application の form_definition に属することを検証する
 - resubmit 時に correction_request.status を resolved にする
 - audit_log を記録する
 

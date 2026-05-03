@@ -13,9 +13,9 @@ import {
   Min,
 } from 'class-validator';
 import { FORM_FIELD_TYPES } from '../../../models/constants/form-field-type';
-import type { FormTemplateStatusValue } from '../../../models/constants/form-template-status';
+import type { FormDefinitionStatusValue } from '../../../models/constants/form-definition-status';
 
-export class CreateFormTemplateDto {
+export class CreateFormDefinitionDto {
   @ApiProperty({ format: 'uuid' })
   @IsUUID()
   groupId!: string;
@@ -65,7 +65,7 @@ export class FormFieldResponseDto {
   createdAt!: string;
 }
 
-export class FormTemplateResponseDto {
+export class FormDefinitionResponseDto {
   @ApiProperty()
   id!: string;
 
@@ -79,7 +79,7 @@ export class FormTemplateResponseDto {
   description!: string | null;
 
   @ApiProperty({ enum: ['draft', 'published', 'archived'] })
-  status!: FormTemplateStatusValue;
+  status!: FormDefinitionStatusValue;
 
   @ApiProperty()
   createdByUserId!: string;
@@ -94,9 +94,9 @@ export class FormTemplateResponseDto {
   updatedAt!: string;
 }
 
-export class FormTemplatesListResponseDto {
-  @ApiProperty({ type: [FormTemplateResponseDto] })
-  templates!: FormTemplateResponseDto[];
+export class FormDefinitionsListResponseDto {
+  @ApiProperty({ type: [FormDefinitionResponseDto] })
+  definitions!: FormDefinitionResponseDto[];
 }
 
 export class CreateFormFieldDto {

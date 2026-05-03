@@ -11,7 +11,7 @@ import {
 } from 'typeorm';
 import type { ApplicationStatusValue } from '../constants/application-status';
 import { Tenant } from './tenant.entity';
-import { FormTemplate } from './form-template.entity';
+import { FormDefinition } from './form-definition.entity';
 import { ApprovalFlow } from './approval-flow.entity';
 import { ApplicationFieldValue } from './application-field-value.entity';
 import { User } from './user.entity';
@@ -62,12 +62,12 @@ export class Application {
   @Column({ name: 'applicant_email', type: 'varchar', length: 255 })
   applicantEmail!: string;
 
-  @Column({ name: 'form_template_id', type: 'varchar', length: 36 })
-  formTemplateId!: string;
+  @Column({ name: 'form_definition_id', type: 'varchar', length: 36 })
+  formDefinitionId!: string;
 
-  @ManyToOne(() => FormTemplate, { onDelete: 'RESTRICT' })
-  @JoinColumn({ name: 'form_template_id' })
-  formTemplate!: FormTemplate;
+  @ManyToOne(() => FormDefinition, { onDelete: 'RESTRICT' })
+  @JoinColumn({ name: 'form_definition_id' })
+  formDefinition!: FormDefinition;
 
   @Column({ name: 'approval_flow_id', type: 'varchar', length: 36 })
   approvalFlowId!: string;

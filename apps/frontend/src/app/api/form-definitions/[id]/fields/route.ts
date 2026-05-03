@@ -11,5 +11,5 @@ export async function POST(req: Request, context: RouteContext): Promise<NextRes
     return NextResponse.json({ message: "Method Not Allowed" }, { status: 405 });
   }
   const { id } = await context.params;
-  return proxyBackendRequestTo(`/form-templates/${id}/fields`, req);
+  return proxyBackendRequestTo(`/form-definitions/${id}/fields`, req);
 }

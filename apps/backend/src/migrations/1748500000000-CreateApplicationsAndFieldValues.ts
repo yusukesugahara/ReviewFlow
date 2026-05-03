@@ -29,7 +29,7 @@ export class CreateApplicationsAndFieldValues1748500000000 implements MigrationI
               isNullable: true,
             },
             {
-              name: 'form_template_id',
+              name: 'form_definition_id',
               type: 'varchar',
               length: '36',
               isNullable: false,
@@ -82,8 +82,8 @@ export class CreateApplicationsAndFieldValues1748500000000 implements MigrationI
               onDelete: 'RESTRICT',
             }),
             new TableForeignKey({
-              columnNames: ['form_template_id'],
-              referencedTableName: 'form_templates',
+              columnNames: ['form_definition_id'],
+              referencedTableName: 'form_definitions',
               referencedColumnNames: ['id'],
               onDelete: 'RESTRICT',
             }),

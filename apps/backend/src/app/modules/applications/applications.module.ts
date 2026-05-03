@@ -6,7 +6,7 @@ import { Application } from '../../../models/entities/application.entity';
 import { CorrectionRequestItem } from '../../../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
-import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
@@ -27,7 +27,7 @@ import { PublicApplicationsController } from './public-applications.controller';
       ApplicationFieldValue,
       CorrectionRequest,
       CorrectionRequestItem,
-      FormTemplate,
+      FormDefinition,
       ApprovalFlow,
     ]),
   ],

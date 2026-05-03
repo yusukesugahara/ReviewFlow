@@ -46,7 +46,7 @@ const spaceNavItems: SidebarNavItem[] = [
     icon: ClipboardList,
     spacePath: "applications",
   },
-  { href: "/space/application-setup", label: "フォームテンプレート", icon: FileText },
+  { href: "/space/application-setup", label: "フォーム定義", icon: FileText },
   { href: "/space", label: "承認フロー", icon: GitBranch },
   {
     href: "/admin/export-jobs",

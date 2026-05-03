@@ -50,15 +50,14 @@ export class ExportJobsService {
       'createdAt',
       'updatedAt',
       'applicantEmail',
-      'formTemplateId',
-      'formTemplateName',
+      'formDefinitionName',
       'approvalFlowId',
       'currentStepOrder',
     ];
 
     const fieldKeys = new Set<string>();
     for (const row of rows) {
-      for (const f of row.formTemplate?.fields ?? []) {
+      for (const f of row.formDefinition?.fields ?? []) {
         fieldKeys.add(f.fieldKey);
       }
     }
@@ -83,8 +82,7 @@ export class ExportJobsService {
         row.createdAt.toISOString(),
         row.updatedAt.toISOString(),
         row.applicantEmail,
-        row.formTemplateId,
-        row.formTemplate?.name ?? '',
+        row.formDefinition?.name ?? '',
         row.approvalFlowId,
         row.currentStepOrder ?? '',
       ];
@@ -106,9 +104,6 @@ export class ExportJobsService {
     const filterJson: Record<string, unknown> = {};
     if (dto.status) {
       filterJson.status = dto.status;
-    }
-    if (dto.formTemplateId) {
-      filterJson.formTemplateId = dto.formTemplateId;
     }
 
     const job = await this.jobs.save(
@@ -134,13 +129,12 @@ export class ExportJobsService {
         groupId: dto.groupId,
       };
       if (dto.status) where.status = dto.status;
-      if (dto.formTemplateId) where.formTemplateId = dto.formTemplateId;
 
       const rows = await this.applications.find({
         where,
         relations: [
-          'formTemplate',
-          'formTemplate.fields',
+          'formDefinition',
+          'formDefinition.fields',
           'fieldValues',
           'fieldValues.formField',
         ],

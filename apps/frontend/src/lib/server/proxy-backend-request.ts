@@ -12,7 +12,7 @@ export type AuthNestPath =
   | "/invitations"
   | "/invitations/accept"
   | "/users"
-  | "/form-templates"
+  | "/form-definitions"
   | "/approval-flows"
   | "/applications"
   | "/export-jobs"

@@ -10,13 +10,13 @@ import {
 } from 'typeorm';
 import type { FormFieldTypeValue } from '../constants/form-field-type';
 import { Tenant } from './tenant.entity';
-import { FormTemplate } from './form-template.entity';
+import { FormDefinition } from './form-definition.entity';
 
 @Entity('form_fields')
-@Index('UQ_form_fields_template_key', ['formTemplateId', 'fieldKey'], {
+@Index('UQ_form_fields_definition_key', ['formDefinitionId', 'fieldKey'], {
   unique: true,
 })
-@Index('IDX_form_fields_tenant_template', ['tenantId', 'formTemplateId'])
+@Index('IDX_form_fields_tenant_definition', ['tenantId', 'formDefinitionId'])
 export class FormField {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
@@ -28,12 +28,12 @@ export class FormField {
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'form_template_id', type: 'varchar', length: 36 })
-  formTemplateId!: string;
+  @Column({ name: 'form_definition_id', type: 'varchar', length: 36 })
+  formDefinitionId!: string;
 
-  @ManyToOne(() => FormTemplate, (t) => t.fields, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'form_template_id' })
-  formTemplate!: FormTemplate;
+  @ManyToOne(() => FormDefinition, (t) => t.fields, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'form_definition_id' })
+  formDefinition!: FormDefinition;
 
   @Column({ name: 'field_key', type: 'varchar', length: 128 })
   fieldKey!: string;

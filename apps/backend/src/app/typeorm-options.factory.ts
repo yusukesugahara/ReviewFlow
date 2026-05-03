@@ -12,7 +12,7 @@ import { ApprovalFlow } from '../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../models/entities/approval-step.entity';
 import { ExportJob } from '../models/entities/export-job.entity';
 import { FormField } from '../models/entities/form-field.entity';
-import { FormTemplate } from '../models/entities/form-template.entity';
+import { FormDefinition } from '../models/entities/form-definition.entity';
 import { GroupMember } from '../models/entities/group-member.entity';
 import { Group } from '../models/entities/group.entity';
 import { Invitation } from '../models/entities/invitation.entity';
@@ -44,7 +44,7 @@ export function buildTypeOrmOptions(
     ApprovalFlow,
     ApprovalStep,
     FormField,
-    FormTemplate,
+    FormDefinition,
     Group,
     GroupMember,
     Invitation,

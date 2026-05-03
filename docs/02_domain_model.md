@@ -25,7 +25,7 @@
 - 招待時ロール保持
 - 招待者（invited_by）としてテナント管理者を記録する想定
 
-## FormTemplate
+## FormDefinition
 申請フォーム定義の親。
 
 主な責務:

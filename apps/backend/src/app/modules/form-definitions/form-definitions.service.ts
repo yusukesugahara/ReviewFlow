@@ -7,9 +7,9 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
-import { FormTemplateStatus } from '../../../models/constants/form-template-status';
+import { FormDefinitionStatus } from '../../../models/constants/form-definition-status';
 import { FormField } from '../../../models/entities/form-field.entity';
-import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { MailService } from '../mail/mail.service';
 import {
   AuthService,
@@ -18,22 +18,22 @@ import {
 import { SpaceAccessService } from '../groups/space-access.service';
 import type {
   CreateFormFieldDto,
-  CreateFormTemplateDto,
+  CreateFormDefinitionDto,
   RequestFormAccessDto,
   UpdateFormFieldSettingsDto,
-} from './form-templates.dto';
+} from './form-definitions.dto';
 import {
   mapFormFieldToDto,
-  mapFormTemplateToDto,
-} from './form-templates.mapper';
+  mapFormDefinitionToDto,
+} from './form-definitions.mapper';
 
 @Injectable()
-export class FormTemplatesService {
-  private readonly logger = new Logger(FormTemplatesService.name);
+export class FormDefinitionsService {
+  private readonly logger = new Logger(FormDefinitionsService.name);
 
   constructor(
-    @InjectRepository(FormTemplate)
-    private readonly templates: Repository<FormTemplate>,
+    @InjectRepository(FormDefinition)
+    private readonly definitions: Repository<FormDefinition>,
     @InjectRepository(FormField)
     private readonly fields: Repository<FormField>,
     private readonly spaceAccess: SpaceAccessService,
@@ -44,71 +44,93 @@ export class FormTemplatesService {
   async listByGroup(
     actor: AuthUserPayload,
     groupId: string,
-  ): Promise<FormTemplate[]> {
+  ): Promise<FormDefinition[]> {
     await this.spaceAccess.assertCanManageGroup(actor, groupId);
-    return this.templates.find({
+    return this.definitions.find({
       where: { tenantId: actor.tenantId, groupId },
       relations: ['fields'],
-      order: { updatedAt: 'DESC' },
+      order: { updatedAt: 'DESC', fields: { sortOrder: 'ASC' } },
     });
+  }
+
+  async getOneByGroupForActor(
+    actor: AuthUserPayload,
+    groupId: string,
+  ): Promise<FormDefinition> {
+    await this.spaceAccess.assertCanManageGroup(actor, groupId);
+    const row = await this.definitions.findOne({
+      where: { tenantId: actor.tenantId, groupId },
+      relations: ['fields'],
+      order: { fields: { sortOrder: 'ASC' } },
+    });
+    if (!row) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
+    }
+    return row;
   }
 
   async create(
     actor: AuthUserPayload,
-    dto: CreateFormTemplateDto,
-  ): Promise<FormTemplate> {
+    dto: CreateFormDefinitionDto,
+  ): Promise<FormDefinition> {
     await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
-    const row = this.templates.create({
+    const existing = await this.definitions.findOne({
+      where: { tenantId: actor.tenantId, groupId: dto.groupId },
+    });
+    if (existing) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_ALREADY_EXISTS);
+    }
+    const row = this.definitions.create({
       tenantId: actor.tenantId,
       groupId: dto.groupId,
       name: dto.name.trim(),
       description: dto.description?.trim().length
         ? dto.description.trim()
         : null,
-      status: FormTemplateStatus.DRAFT,
+      status: FormDefinitionStatus.DRAFT,
       createdByUserId: actor.id,
     });
-    return this.templates.save(row);
+    return this.definitions.save(row);
   }
 
-  private async findDraftTemplateOrThrow(
+  private async findDraftDefinitionOrThrow(
     tenantId: string,
     id: string,
-  ): Promise<FormTemplate> {
-    const t = await this.templates.findOne({
+  ): Promise<FormDefinition> {
+    const t = await this.definitions.findOne({
       where: { id, tenantId },
       relations: ['fields'],
     });
     if (!t) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
-    if (t.status !== FormTemplateStatus.DRAFT) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_IMMUTABLE);
+    if (t.status !== FormDefinitionStatus.DRAFT) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_IMMUTABLE);
     }
     return t;
   }
 
-  private async assertCanManageTemplate(
+  private async assertCanManageDefinition(
     actor: AuthUserPayload,
-    template: FormTemplate,
+    definition: FormDefinition,
   ): Promise<void> {
-    await this.spaceAccess.assertCanManageGroup(actor, template.groupId);
+    await this.spaceAccess.assertCanManageGroup(actor, definition.groupId);
   }
 
   async addField(
     actor: AuthUserPayload,
-    templateId: string,
+    definitionId: string,
     dto: CreateFormFieldDto,
   ): Promise<FormField> {
-    const template = await this.findDraftTemplateOrThrow(
+    const definition = await this.findDraftDefinitionOrThrow(
       actor.tenantId,
-      templateId,
+      definitionId,
     );
-    await this.assertCanManageTemplate(actor, template);
+    await this.assertCanManageDefinition(actor, definition);
 
     const key = dto.fieldKey.trim();
     const existing = await this.fields.findOne({
-      where: { formTemplateId: templateId, fieldKey: key },
+      where: { formDefinitionId: definitionId, fieldKey: key },
     });
     if (existing) {
       throw clientError(ClientErrorCodes.FORM_FIELD_KEY_EXISTS);
@@ -116,7 +138,7 @@ export class FormTemplatesService {
 
     const row = this.fields.create({
       tenantId: actor.tenantId,
-      formTemplateId: templateId,
+      formDefinitionId: definitionId,
       fieldKey: key,
       label: dto.label.trim(),
       fieldType: dto.fieldType,
@@ -134,17 +156,17 @@ export class FormTemplatesService {
 
   async moveField(
     actor: AuthUserPayload,
-    templateId: string,
+    definitionId: string,
     fieldId: string,
     direction: 'up' | 'down',
   ): Promise<void> {
-    const template = await this.findDraftTemplateOrThrow(
+    const definition = await this.findDraftDefinitionOrThrow(
       actor.tenantId,
-      templateId,
+      definitionId,
     );
-    await this.assertCanManageTemplate(actor, template);
+    await this.assertCanManageDefinition(actor, definition);
     const rows = await this.fields.find({
-      where: { tenantId: actor.tenantId, formTemplateId: templateId },
+      where: { tenantId: actor.tenantId, formDefinitionId: definitionId },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
     });
     const fromIndex = rows.findIndex((f) => f.id === fieldId);
@@ -170,19 +192,19 @@ export class FormTemplatesService {
 
   async deleteField(
     actor: AuthUserPayload,
-    templateId: string,
+    definitionId: string,
     fieldId: string,
   ): Promise<void> {
-    const template = await this.findDraftTemplateOrThrow(
+    const definition = await this.findDraftDefinitionOrThrow(
       actor.tenantId,
-      templateId,
+      definitionId,
     );
-    await this.assertCanManageTemplate(actor, template);
+    await this.assertCanManageDefinition(actor, definition);
     const target = await this.fields.findOne({
       where: {
         id: fieldId,
         tenantId: actor.tenantId,
-        formTemplateId: templateId,
+        formDefinitionId: definitionId,
       },
     });
     if (!target) {
@@ -191,7 +213,7 @@ export class FormTemplatesService {
     await this.fields.remove(target);
 
     const remaining = await this.fields.find({
-      where: { tenantId: actor.tenantId, formTemplateId: templateId },
+      where: { tenantId: actor.tenantId, formDefinitionId: definitionId },
       order: { sortOrder: 'ASC', createdAt: 'ASC' },
     });
     const normalized = remaining.map((field, index) => {
@@ -205,20 +227,20 @@ export class FormTemplatesService {
 
   async updateFieldSettings(
     actor: AuthUserPayload,
-    templateId: string,
+    definitionId: string,
     fieldId: string,
     dto: UpdateFormFieldSettingsDto,
   ): Promise<void> {
-    const template = await this.findDraftTemplateOrThrow(
+    const definition = await this.findDraftDefinitionOrThrow(
       actor.tenantId,
-      templateId,
+      definitionId,
     );
-    await this.assertCanManageTemplate(actor, template);
+    await this.assertCanManageDefinition(actor, definition);
     const target = await this.fields.findOne({
       where: {
         id: fieldId,
         tenantId: actor.tenantId,
-        formTemplateId: templateId,
+        formDefinitionId: definitionId,
       },
     });
     if (!target) {
@@ -240,84 +262,88 @@ export class FormTemplatesService {
 
   async publish(
     actor: AuthUserPayload,
-    templateId: string,
-  ): Promise<FormTemplate> {
-    const t = await this.templates.findOne({
-      where: { id: templateId, tenantId: actor.tenantId },
+    definitionId: string,
+  ): Promise<FormDefinition> {
+    const t = await this.definitions.findOne({
+      where: { id: definitionId, tenantId: actor.tenantId },
       relations: ['fields'],
     });
     if (!t) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
-    if (t.status !== FormTemplateStatus.DRAFT) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_PUBLISHABLE);
+    if (t.status !== FormDefinitionStatus.DRAFT) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_PUBLISHABLE);
     }
-    await this.assertCanManageTemplate(actor, t);
-    t.status = FormTemplateStatus.PUBLISHED;
-    return this.templates.save(t);
+    await this.assertCanManageDefinition(actor, t);
+    t.status = FormDefinitionStatus.PUBLISHED;
+    return this.definitions.save(t);
   }
 
-  async getOne(tenantId: string, templateId: string): Promise<FormTemplate> {
-    const t = await this.templates.findOne({
-      where: { id: templateId, tenantId },
+  async getOne(
+    tenantId: string,
+    definitionId: string,
+  ): Promise<FormDefinition> {
+    const t = await this.definitions.findOne({
+      where: { id: definitionId, tenantId },
       relations: ['fields'],
     });
     if (!t) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
     return t;
   }
 
   async getOneForActor(
     actor: AuthUserPayload,
-    templateId: string,
-  ): Promise<FormTemplate> {
-    const template = await this.getOne(actor.tenantId, templateId);
-    await this.assertCanManageTemplate(actor, template);
-    return template;
+    definitionId: string,
+  ): Promise<FormDefinition> {
+    const definition = await this.getOne(actor.tenantId, definitionId);
+    await this.assertCanManageDefinition(actor, definition);
+    return definition;
   }
 
-  async getPublishedTemplateForApplicant(
+  async getPublishedDefinitionForApplicant(
     actor: ApplicantAccessTokenPayload,
-  ): Promise<FormTemplate> {
-    const template = await this.templates.findOne({
+  ): Promise<FormDefinition> {
+    const definition = await this.definitions.findOne({
       where: {
-        id: actor.templateId,
         tenantId: actor.tenantId,
-        status: FormTemplateStatus.PUBLISHED,
+        groupId: actor.groupId,
+        status: FormDefinitionStatus.PUBLISHED,
       },
       relations: ['fields'],
+      order: { fields: { sortOrder: 'ASC' } },
     });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    if (!definition) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
-    return template;
+    return definition;
   }
 
-  async requestAccess(templateId: string, dto: RequestFormAccessDto) {
-    const template = await this.templates.findOne({
-      where: { id: templateId, status: FormTemplateStatus.PUBLISHED },
+  async requestAccess(groupId: string, dto: RequestFormAccessDto) {
+    const definition = await this.definitions.findOne({
+      where: { groupId, status: FormDefinitionStatus.PUBLISHED },
     });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+    if (!definition) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
 
     const email = dto.email.toLowerCase();
     const accessToken = this.authService.issueApplicantAccessToken({
-      tenantId: template.tenantId,
+      tenantId: definition.tenantId,
       email,
-      templateId: template.id,
+      groupId: definition.groupId,
     });
 
     try {
       await this.mailService.sendApplicationAccessEmail({
         to: email,
-        templateName: template.name,
+        templateName: definition.name,
         accessToken,
       });
     } catch (error) {
       this.logger.error(
-        `failed to send form access email for template ${template.id} to ${email}`,
+        `failed to send form access email for definition ${definition.id} to ${email}`,
         error instanceof Error ? error.stack : undefined,
       );
       throw new InternalServerErrorException(
@@ -328,8 +354,8 @@ export class FormTemplatesService {
     return { accepted: true as const };
   }
 
-  toResponse(t: FormTemplate) {
-    return mapFormTemplateToDto(t);
+  toResponse(t: FormDefinition) {
+    return mapFormDefinitionToDto(t);
   }
 
   fieldToDto(f: FormField) {

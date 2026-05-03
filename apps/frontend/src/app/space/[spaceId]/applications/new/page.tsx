@@ -22,7 +22,7 @@ import {
 } from "@/features/applications/application-routes";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 
-type FormTemplate = {
+type FormDefinition = {
   id: string;
   groupId: string;
   name: string;
@@ -32,14 +32,13 @@ type FormTemplate = {
 
 type ApprovalFlow = {
   id: string;
-  formTemplateId: string;
   name: string;
   isActive: boolean;
 };
 
 type PageProps = {
   params: Promise<{ spaceId: string }>;
-  searchParams?: Promise<{ error?: string; templateId?: string }>;
+  searchParams?: Promise<{ error?: string }>;
 };
 
 function unwrapData<T>(raw: unknown): T {
@@ -54,10 +53,9 @@ async function createApplicationAction(
   formData: FormData,
 ): Promise<void> {
   "use server";
-  const formTemplateId = formData.get("selectedFormTemplateId");
   const approvalFlowId = formData.get("approvalFlowId");
   const fieldsJson = formData.get("selectedFormFieldsJson");
-  if (typeof formTemplateId !== "string" || typeof fieldsJson !== "string") {
+  if (typeof fieldsJson !== "string") {
     redirect(`${buildSpaceApplicationNewHref(spaceId)}?error=invalid_input`);
   }
 
@@ -76,7 +74,6 @@ async function createApplicationAction(
   const created = await backendAuthFetchJson("/applications", {
     method: "POST",
     body: {
-      formTemplateId,
       groupId: spaceId,
       approvalFlowId:
         typeof approvalFlowId === "string" && approvalFlowId.length > 0
@@ -101,28 +98,24 @@ export default async function SpaceNewApplicationPage({
 }: PageProps) {
   const [{ spaceId }, query] = await Promise.all([
     params,
-    searchParams ?? Promise.resolve({} as { error?: string; templateId?: string }),
+    searchParams ?? Promise.resolve({} as { error?: string }),
   ]);
   const error = query.error;
 
   const templatesRaw = await backendAuthFetchJson(
-    `/form-templates?groupId=${encodeURIComponent(spaceId)}`,
+    `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
   );
-  const templates =
-    unwrapData<{ templates?: FormTemplate[] }>(templatesRaw).templates ?? [];
-  const selectedTemplate =
-    templates.find((template) => template.id === query.templateId) ??
-    templates.find((template) => template.status === "published") ??
-    templates[0];
-  const selectedTemplateId = selectedTemplate?.id ?? "";
+  const definitions =
+    unwrapData<{ definitions?: FormDefinition[] }>(templatesRaw).definitions ?? [];
+  const formDefinition =
+    definitions.find((definition) => definition.status === "published") ??
+    definitions[0];
 
   const flowsRaw = await backendAuthFetchJson(
     `/approval-flows?groupId=${encodeURIComponent(spaceId)}`,
   );
   const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
-  const selectableFlows = flows.filter(
-    (flow) => flow.formTemplateId === selectedTemplateId,
-  );
+  const selectableFlows = flows.filter((flow) => flow.isActive);
 
   return (
     <div className="space-y-6">
@@ -148,12 +141,12 @@ export default async function SpaceNewApplicationPage({
         </Card>
       ) : null}
 
-      {selectedTemplate ? (
+      {formDefinition ? (
         <Card>
           <CardHeader>
             <CardTitle>申請内容入力</CardTitle>
             <CardDescription>
-              {selectedTemplate.name} の入力フォームで新規申請を作成します
+              {formDefinition.name} の入力フォームで新規申請を作成します
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -163,13 +156,8 @@ export default async function SpaceNewApplicationPage({
             >
               <input
                 type="hidden"
-                name="selectedFormTemplateId"
-                value={selectedTemplate.id}
-              />
-              <input
-                type="hidden"
                 name="selectedFormFieldsJson"
-                value={JSON.stringify(selectedTemplate.fields)}
+                value={JSON.stringify(formDefinition.fields)}
               />
 
               <div className="space-y-2">
@@ -190,7 +178,7 @@ export default async function SpaceNewApplicationPage({
               </div>
 
               <div className="space-y-4">
-                {selectedTemplate.fields.map((field) => (
+                {formDefinition.fields.map((field) => (
                   <DynamicFieldInput
                     key={field.id}
                     field={field}
@@ -209,7 +197,7 @@ export default async function SpaceNewApplicationPage({
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm text-muted-foreground">
-              利用できるフォームテンプレートがありません。
+              利用できるフォーム定義がありません。
             </p>
           </CardContent>
         </Card>

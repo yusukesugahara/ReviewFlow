@@ -7,7 +7,7 @@ import {
   type DraftField,
 } from "../_components/application-setup-draft-form";
 
-type CreateTemplateResponse = {
+type CreateDefinitionResponse = {
   id: string;
 };
 
@@ -35,7 +35,7 @@ type PageProps = {
   searchParams?: Promise<{
     setupError?: string;
     setupStatus?: string;
-    publishedTemplateId?: string;
+    publishedGroupId?: string;
     spaceId?: string;
   }>;
 };
@@ -222,7 +222,7 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
   let createdId = "";
 
   try {
-    const createdRaw = await backendAuthFetchJson("/form-templates", {
+    const createdRaw = await backendAuthFetchJson("/form-definitions", {
       method: "POST",
       body: {
         groupId: spaceId,
@@ -230,18 +230,18 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
         description: `${name.trim()} の申請フォーム`,
       },
     });
-    const created = unwrapData<CreateTemplateResponse>(createdRaw);
+    const created = unwrapData<CreateDefinitionResponse>(createdRaw);
     createdId = created.id;
 
     for (const field of fieldPayloads) {
-      await backendAuthFetchJson(`/form-templates/${createdId}/fields`, {
+      await backendAuthFetchJson(`/form-definitions/${createdId}/fields`, {
         method: "POST",
         body: field,
       });
     }
 
     if (resolvedIntent === "publish") {
-      await backendAuthFetchJson(`/form-templates/${createdId}/publish`, {
+      await backendAuthFetchJson(`/form-definitions/${createdId}/publish`, {
         method: "POST",
         body: {},
       });
@@ -251,7 +251,6 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
       method: "POST",
       body: {
         groupId: spaceId,
-        formTemplateId: createdId,
         name: `${name.trim()} 承認フロー`,
         steps,
       },
@@ -273,7 +272,7 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
   redirect(
     `/space/application-setup?setupStatus=${resolvedIntent === "publish" ? "published" : "draft_saved"}${
       resolvedIntent === "publish"
-        ? `&publishedTemplateId=${encodeURIComponent(createdId)}`
+        ? `&publishedGroupId=${encodeURIComponent(spaceId)}`
         : ""
     }`,
   );
@@ -286,7 +285,7 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
   const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
   const errorMessage = setupErrorMessage(params.setupError);
   const statusMessage = setupStatusMessage(params.setupStatus);
-  const publishedTemplateId = params.setupStatus === "published" ? params.publishedTemplateId : null;
+  const publishedGroupId = params.setupStatus === "published" ? params.publishedGroupId : null;
   const users = await listTenantUsers();
   const assignees = users
     .filter((user) => user.isActive)
@@ -308,7 +307,7 @@ export default async function AdminApplicationSetupPage({ searchParams }: PagePr
         action={submitApplicationSetupAction}
         errorMessage={errorMessage}
         statusMessage={statusMessage}
-        publishedTemplateId={publishedTemplateId}
+        publishedGroupId={publishedGroupId}
         assignees={assignees}
         spaceId={spaceId}
       />

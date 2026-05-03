@@ -20,7 +20,7 @@ This repository is intended to show practical engineering quality, not only a wo
 - Email/password authentication with HttpOnly cookie session handling on the frontend
 - System management console for spaces, invitations, export jobs, and audit logs
 - Space management console for form setup, applications, and users
-- Dynamic form template creation
+- Dynamic form definition creation
 - Approval flow setup with approval and return handling
 - Applicant-facing application flow
 - CSV export jobs

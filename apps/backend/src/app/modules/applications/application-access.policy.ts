@@ -68,7 +68,7 @@ export class ApplicationAccessPolicy {
   ): void {
     if (
       app.tenantId !== actor.tenantId ||
-      app.formTemplateId !== actor.templateId ||
+      app.groupId !== actor.groupId ||
       app.applicantEmail !== actor.email
     ) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);

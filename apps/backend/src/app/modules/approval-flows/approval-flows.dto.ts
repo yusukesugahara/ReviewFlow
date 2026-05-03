@@ -42,10 +42,6 @@ export class CreateApprovalFlowDto {
   @IsUUID()
   groupId!: string;
 
-  @ApiProperty({ format: 'uuid' })
-  @IsUUID()
-  formTemplateId!: string;
-
   @ApiProperty({ example: '経費申請フロー' })
   @IsString()
   @MinLength(1)
@@ -86,9 +82,6 @@ export class ApprovalFlowResponseDto {
 
   @ApiProperty()
   groupId!: string;
-
-  @ApiProperty()
-  formTemplateId!: string;
 
   @ApiProperty()
   name!: string;

@@ -6,14 +6,14 @@ import {
   TableIndex,
 } from 'typeorm';
 
-export class CreateFormTemplatesAndFields1748300000000 implements MigrationInterface {
-  name = 'CreateFormTemplatesAndFields1748300000000';
+export class CreateFormDefinitionsAndFields1748300000000 implements MigrationInterface {
+  name = 'CreateFormDefinitionsAndFields1748300000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    if (!(await queryRunner.hasTable('form_templates'))) {
+    if (!(await queryRunner.hasTable('form_definitions'))) {
       await queryRunner.createTable(
         new Table({
-          name: 'form_templates',
+          name: 'form_definitions',
           columns: [
             { name: 'id', type: 'varchar', length: '36', isPrimary: true },
             {
@@ -69,7 +69,7 @@ export class CreateFormTemplatesAndFields1748300000000 implements MigrationInter
           ],
           indices: [
             new TableIndex({
-              name: 'IDX_form_templates_tenant',
+              name: 'IDX_form_definitions_tenant',
               columnNames: ['tenant_id'],
             }),
           ],
@@ -90,7 +90,7 @@ export class CreateFormTemplatesAndFields1748300000000 implements MigrationInter
               isNullable: false,
             },
             {
-              name: 'form_template_id',
+              name: 'form_definition_id',
               type: 'varchar',
               length: '36',
               isNullable: false,
@@ -152,20 +152,20 @@ export class CreateFormTemplatesAndFields1748300000000 implements MigrationInter
               onDelete: 'CASCADE',
             }),
             new TableForeignKey({
-              columnNames: ['form_template_id'],
-              referencedTableName: 'form_templates',
+              columnNames: ['form_definition_id'],
+              referencedTableName: 'form_definitions',
               referencedColumnNames: ['id'],
               onDelete: 'CASCADE',
             }),
           ],
           indices: [
             new TableIndex({
-              name: 'IDX_form_fields_tenant_template',
-              columnNames: ['tenant_id', 'form_template_id'],
+              name: 'IDX_form_fields_tenant_definition',
+              columnNames: ['tenant_id', 'form_definition_id'],
             }),
             new TableIndex({
-              name: 'UQ_form_fields_template_key',
-              columnNames: ['form_template_id', 'field_key'],
+              name: 'UQ_form_fields_definition_key',
+              columnNames: ['form_definition_id', 'field_key'],
               isUnique: true,
             }),
           ],
@@ -176,6 +176,6 @@ export class CreateFormTemplatesAndFields1748300000000 implements MigrationInter
 
   public async down(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.dropTable('form_fields', true);
-    await queryRunner.dropTable('form_templates', true);
+    await queryRunner.dropTable('form_definitions', true);
   }
 }

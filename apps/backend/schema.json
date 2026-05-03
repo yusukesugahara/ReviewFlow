@@ -592,9 +592,9 @@
         ]
       }
     },
-    "/form-templates": {
+    "/form-definitions": {
       "get": {
-        "operationId": "FormTemplatesController_list",
+        "operationId": "FormDefinitionsController_list",
         "parameters": [
           {
             "name": "groupId",
@@ -625,7 +625,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplatesListResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionsListResponseDto"
                     }
                   }
                 }
@@ -641,20 +641,20 @@
             "nest-jwt": []
           }
         ],
-        "summary": "フォームテンプレート一覧（tenant_admin）",
+        "summary": "フォーム定義一覧（tenant_admin）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       },
       "post": {
-        "operationId": "FormTemplatesController_create",
+        "operationId": "FormDefinitionsController_create",
         "parameters": [],
         "requestBody": {
           "required": true,
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateFormTemplateDto"
+                "$ref": "#/components/schemas/CreateFormDefinitionDto"
               }
             }
           }
@@ -679,7 +679,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
                     }
                   }
                 }
@@ -695,15 +695,15 @@
             "nest-jwt": []
           }
         ],
-        "summary": "フォームテンプレート作成（下書き）",
+        "summary": "フォーム定義作成（下書き）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/{id}": {
+    "/form-definitions/{id}": {
       "get": {
-        "operationId": "FormTemplatesController_getOne",
+        "operationId": "FormDefinitionsController_getOne",
         "parameters": [
           {
             "name": "id",
@@ -734,7 +734,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
                     }
                   }
                 }
@@ -750,15 +750,15 @@
             "nest-jwt": []
           }
         ],
-        "summary": "フォームテンプレート取得（tenant_admin）",
+        "summary": "フォーム定義取得（tenant_admin）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/{id}/fields": {
+    "/form-definitions/{id}/fields": {
       "post": {
-        "operationId": "FormTemplatesController_addField",
+        "operationId": "FormDefinitionsController_addField",
         "parameters": [
           {
             "name": "id",
@@ -817,13 +817,13 @@
         ],
         "summary": "フォーム項目追加（下書きのみ）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/{id}/fields/{fieldId}/move": {
+    "/form-definitions/{id}/fields/{fieldId}/move": {
       "post": {
-        "operationId": "FormTemplatesController_moveField",
+        "operationId": "FormDefinitionsController_moveField",
         "parameters": [
           {
             "name": "id",
@@ -872,7 +872,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
                     }
                   }
                 }
@@ -890,13 +890,13 @@
         ],
         "summary": "フォーム項目の並び順変更（下書きのみ）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/{id}/fields/{fieldId}/delete": {
+    "/form-definitions/{id}/fields/{fieldId}/delete": {
       "post": {
-        "operationId": "FormTemplatesController_deleteField",
+        "operationId": "FormDefinitionsController_deleteField",
         "parameters": [
           {
             "name": "id",
@@ -935,7 +935,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
                     }
                   }
                 }
@@ -953,13 +953,13 @@
         ],
         "summary": "フォーム項目削除（下書きのみ）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/{id}/fields/{fieldId}/settings": {
+    "/form-definitions/{id}/fields/{fieldId}/settings": {
       "post": {
-        "operationId": "FormTemplatesController_updateFieldSettings",
+        "operationId": "FormDefinitionsController_updateFieldSettings",
         "parameters": [
           {
             "name": "id",
@@ -1008,7 +1008,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
                     }
                   }
                 }
@@ -1026,13 +1026,13 @@
         ],
         "summary": "フォーム項目設定更新（下書きのみ）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/{id}/publish": {
+    "/form-definitions/{id}/publish": {
       "post": {
-        "operationId": "FormTemplatesController_publish",
+        "operationId": "FormDefinitionsController_publish",
         "parameters": [
           {
             "name": "id",
@@ -1063,7 +1063,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
                     }
                   }
                 }
@@ -1079,18 +1079,18 @@
             "nest-jwt": []
           }
         ],
-        "summary": "フォームテンプレート公開（draft → published）",
+        "summary": "フォーム定義公開（draft → published）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/{id}/request-access": {
+    "/form-definitions/groups/{groupId}/request-access": {
       "post": {
-        "operationId": "FormTemplatesController_requestAccess",
+        "operationId": "FormDefinitionsController_requestAccess",
         "parameters": [
           {
-            "name": "id",
+            "name": "groupId",
             "required": true,
             "in": "path",
             "schema": {
@@ -1143,13 +1143,13 @@
         ],
         "summary": "フォーム案内メール送信（公開）",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/public/current": {
+    "/form-definitions/public/current": {
       "get": {
-        "operationId": "FormTemplatesController_getCurrentForApplicant",
+        "operationId": "FormDefinitionsController_getCurrentForApplicant",
         "parameters": [],
         "responses": {
           "200": {
@@ -1171,7 +1171,7 @@
                       "example": 200
                     },
                     "data": {
-                      "$ref": "#/components/schemas/FormTemplateResponseDto"
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
                     }
                   }
                 }
@@ -1184,15 +1184,15 @@
             "internal-api-key": []
           }
         ],
-        "summary": "公開申請用の現在テンプレート取得",
+        "summary": "公開申請用の現在フォーム定義取得",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
-    "/form-templates/public/current/approval-flows": {
+    "/form-definitions/public/current/approval-flows": {
       "get": {
-        "operationId": "FormTemplatesController_listCurrentFlowsForApplicant",
+        "operationId": "FormDefinitionsController_listCurrentFlowsForApplicant",
         "parameters": [],
         "responses": {
           "200": {
@@ -1229,7 +1229,7 @@
         ],
         "summary": "公開申請用の有効な承認フロー一覧",
         "tags": [
-          "form-templates"
+          "form-definitions"
         ]
       }
     },
@@ -1288,7 +1288,7 @@
         ]
       },
       "post": {
-        "description": "参照するフォームテンプレートは同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。",
+        "description": "参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。",
         "operationId": "ApprovalFlowsController_create",
         "parameters": [],
         "requestBody": {
@@ -3496,7 +3496,7 @@
           "createdAt"
         ]
       },
-      "FormTemplateResponseDto": {
+      "FormDefinitionResponseDto": {
         "type": "object",
         "properties": {
           "id": {
@@ -3546,21 +3546,21 @@
           "updatedAt"
         ]
       },
-      "FormTemplatesListResponseDto": {
+      "FormDefinitionsListResponseDto": {
         "type": "object",
         "properties": {
-          "templates": {
+          "definitions": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/FormTemplateResponseDto"
+              "$ref": "#/components/schemas/FormDefinitionResponseDto"
             }
           }
         },
         "required": [
-          "templates"
+          "definitions"
         ]
       },
-      "CreateFormTemplateDto": {
+      "CreateFormDefinitionDto": {
         "type": "object",
         "properties": {
           "groupId": {
@@ -3754,9 +3754,6 @@
           "groupId": {
             "type": "string"
           },
-          "formTemplateId": {
-            "type": "string"
-          },
           "name": {
             "type": "string"
           },
@@ -3779,7 +3776,6 @@
         "required": [
           "id",
           "groupId",
-          "formTemplateId",
           "name",
           "isActive",
           "steps",
@@ -3836,10 +3832,6 @@
             "type": "string",
             "format": "uuid"
           },
-          "formTemplateId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "name": {
             "type": "string",
             "example": "経費申請フロー"
@@ -3853,7 +3845,6 @@
         },
         "required": [
           "groupId",
-          "formTemplateId",
           "name",
           "steps"
         ]
@@ -4066,9 +4057,6 @@
           "status": {
             "type": "string"
           },
-          "formTemplateId": {
-            "type": "string"
-          },
           "approvalFlowId": {
             "type": "string"
           },
@@ -4094,7 +4082,6 @@
           "id",
           "groupId",
           "status",
-          "formTemplateId",
           "approvalFlowId",
           "applicantEmail",
           "createdAt",
@@ -4137,14 +4124,10 @@
             "type": "string",
             "format": "uuid"
           },
-          "formTemplateId": {
-            "type": "string",
-            "format": "uuid"
-          },
           "approvalFlowId": {
             "type": "string",
             "format": "uuid",
-            "description": "公開テンプレートに有効な承認フローが複数あるときは必須。1件のみなら省略可。"
+            "description": "スペースに有効な承認フローが複数あるときは必須。1件のみなら省略可。"
           },
           "values": {
             "type": "object",
@@ -4156,8 +4139,7 @@
           }
         },
         "required": [
-          "groupId",
-          "formTemplateId"
+          "groupId"
         ]
       },
       "ApplicationDetailDto": {
@@ -4170,9 +4152,6 @@
             "type": "string"
           },
           "status": {
-            "type": "string"
-          },
-          "formTemplateId": {
             "type": "string"
           },
           "approvalFlowId": {
@@ -4205,7 +4184,6 @@
           "id",
           "groupId",
           "status",
-          "formTemplateId",
           "approvalFlowId",
           "applicantEmail",
           "createdAt",
@@ -4503,10 +4481,6 @@
               "approved",
               "rejected"
             ]
-          },
-          "formTemplateId": {
-            "type": "string",
-            "format": "uuid"
           }
         },
         "required": [

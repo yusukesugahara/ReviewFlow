@@ -17,14 +17,10 @@ export class CreateApplicationDto {
   @IsUUID()
   groupId!: string;
 
-  @ApiProperty({ format: 'uuid' })
-  @IsUUID()
-  formTemplateId!: string;
-
   @ApiPropertyOptional({
     format: 'uuid',
     description:
-      '公開テンプレートに有効な承認フローが複数あるときは必須。1件のみなら省略可。',
+      'スペースに有効な承認フローが複数あるときは必須。1件のみなら省略可。',
   })
   @IsOptional()
   @IsUUID()
@@ -214,9 +210,6 @@ export class ApplicationSummaryDto {
 
   @ApiProperty()
   status!: ApplicationStatusValue;
-
-  @ApiProperty()
-  formTemplateId!: string;
 
   @ApiProperty()
   approvalFlowId!: string;

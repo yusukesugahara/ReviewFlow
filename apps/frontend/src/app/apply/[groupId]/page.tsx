@@ -7,15 +7,15 @@ import { Label } from "@/components/ui/label";
 
 async function requestAccessAction(formData: FormData): Promise<void> {
   "use server";
-  const templateId = formData.get("templateId");
+  const groupId = formData.get("groupId");
   const email = formData.get("email");
 
-  if (typeof templateId !== "string" || typeof email !== "string" || email.trim().length === 0) {
-    redirect(`/apply/${encodeURIComponent(String(templateId ?? ""))}?error=invalid_input`);
+  if (typeof groupId !== "string" || typeof email !== "string" || email.trim().length === 0) {
+    redirect(`/apply/${encodeURIComponent(String(groupId ?? ""))}?error=invalid_input`);
   }
 
   const env = getServerAuthEnv();
-  const res = await fetch(`${env.apiBaseUrl}/form-templates/${templateId}/request-access`, {
+  const res = await fetch(`${env.apiBaseUrl}/form-definitions/groups/${groupId}/request-access`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -25,14 +25,14 @@ async function requestAccessAction(formData: FormData): Promise<void> {
   });
 
   if (!res.ok) {
-    redirect(`/apply/${encodeURIComponent(templateId)}?error=send_failed`);
+    redirect(`/apply/${encodeURIComponent(groupId)}?error=send_failed`);
   }
 
-  redirect(`/apply/${encodeURIComponent(templateId)}?sent=1`);
+  redirect(`/apply/${encodeURIComponent(groupId)}?sent=1`);
 }
 
 type PageProps = {
-  params: Promise<{ templateId: string }>;
+  params: Promise<{ groupId: string }>;
   searchParams?: Promise<{ sent?: string; error?: string }>;
 };
 
@@ -40,7 +40,7 @@ export default async function PublicApplicationAccessPage({
   params,
   searchParams,
 }: PageProps) {
-  const { templateId } = await params;
+  const { groupId } = await params;
   const query = (await searchParams) ?? {};
   const sent = query.sent === "1";
   const error = query.error;
@@ -67,7 +67,7 @@ export default async function PublicApplicationAccessPage({
           ) : null}
 
           <form action={requestAccessAction} className="space-y-4">
-            <input type="hidden" name="templateId" value={templateId} />
+            <input type="hidden" name="groupId" value={groupId} />
             <div className="space-y-2">
               <Label htmlFor="email">メールアドレス</Label>
               <Input

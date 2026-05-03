@@ -90,29 +90,34 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'At least one space admin must remain in the space',
   },
-  FORM_TEMPLATE_NOT_FOUND: {
+  FORM_DEFINITION_NOT_FOUND: {
     status: HttpStatus.NOT_FOUND,
-    message: 'Form template not found in this workspace',
+    message: 'Form definition not found in this workspace',
   },
-  FORM_TEMPLATE_IMMUTABLE: {
+  FORM_DEFINITION_ALREADY_EXISTS: {
     status: HttpStatus.CONFLICT,
-    message: 'Form template can only be edited while in draft status',
+    message: 'This space already has a form definition',
   },
-  FORM_TEMPLATE_NOT_PUBLISHABLE: {
+  FORM_DEFINITION_IMMUTABLE: {
     status: HttpStatus.CONFLICT,
-    message: 'Only draft form templates can be published',
+    message: 'Form definition can only be edited while in draft status',
+  },
+  FORM_DEFINITION_NOT_PUBLISHABLE: {
+    status: HttpStatus.CONFLICT,
+    message: 'Only draft form definitions can be published',
   },
   FORM_FIELD_KEY_EXISTS: {
     status: HttpStatus.CONFLICT,
-    message: 'A field with this key already exists on the template',
+    message: 'A field with this key already exists on the form definition',
   },
   FORM_FIELD_NOT_FOUND: {
     status: HttpStatus.NOT_FOUND,
-    message: 'Form field not found on this template',
+    message: 'Form field not found on this form definition',
   },
-  APPROVAL_FORM_TEMPLATE_NOT_PUBLISHED: {
+  APPROVAL_FORM_DEFINITION_NOT_PUBLISHED: {
     status: HttpStatus.CONFLICT,
-    message: 'Approval flows can only be attached to published form templates',
+    message:
+      'Approval flows can only be attached to published form definitions',
   },
   APPROVAL_FLOW_STEPS_INVALID: {
     status: HttpStatus.BAD_REQUEST,
@@ -141,11 +146,11 @@ export const ClientErrorCatalog = {
   },
   APPLICATION_FORM_NOT_PUBLISHED: {
     status: HttpStatus.CONFLICT,
-    message: 'Applications can only be created from published form templates',
+    message: 'Applications can only be created from published form definitions',
   },
   APPLICATION_NO_APPROVAL_FLOW: {
     status: HttpStatus.CONFLICT,
-    message: 'No active approval flow exists for this form template',
+    message: 'No active approval flow exists for this space',
   },
   APPLICATION_APPROVAL_FLOW_AMBIGUOUS: {
     status: HttpStatus.CONFLICT,
@@ -177,7 +182,8 @@ export const ClientErrorCatalog = {
   },
   APPLICATION_RETURN_FIELDS_INVALID: {
     status: HttpStatus.BAD_REQUEST,
-    message: 'Return payload must reference valid form fields on this template',
+    message:
+      'Return payload must reference valid form fields on this form definition',
   },
   APPLICATION_CORRECTION_ALREADY_OPEN: {
     status: HttpStatus.CONFLICT,

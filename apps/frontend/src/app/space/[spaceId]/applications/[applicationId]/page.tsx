@@ -123,12 +123,17 @@ export default async function SpaceApplicationDetailPage({ params }: PageProps) 
     const appRaw = await backendAuthFetchJson(`/applications/${applicationId}`);
     const app = unwrapData<ApplicationDetailViewModel>(appRaw);
     const [templateRaw, correctionsRaw, correctionTargetsRaw] = await Promise.all([
-      backendAuthFetchJson(`/form-templates/${app.formTemplateId}`),
+      backendAuthFetchJson(
+        `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
+      ),
       backendAuthFetchJson(`/applications/${applicationId}/corrections`),
       backendAuthFetchJson(`/applications/${applicationId}/correction-targets`),
     ]);
-    const fields =
-      unwrapData<{ fields?: ApplicationFormField[] }>(templateRaw).fields ?? [];
+    const definition =
+      unwrapData<{ definitions?: { fields?: ApplicationFormField[] }[] }>(
+        templateRaw,
+      ).definitions?.[0] ?? null;
+    const fields = definition?.fields ?? [];
     const corrections =
       unwrapData<{ corrections?: ApplicationCorrection[] }>(correctionsRaw)
         .corrections ?? [];

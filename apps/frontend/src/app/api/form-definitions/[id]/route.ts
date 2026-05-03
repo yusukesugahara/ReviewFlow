@@ -11,5 +11,5 @@ export async function GET(req: Request, context: RouteContext): Promise<NextResp
     return NextResponse.json({ message: "Method Not Allowed" }, { status: 405 });
   }
   const { id } = await context.params;
-  return proxyBackendRequestTo(`/form-templates/${id}`, req);
+  return proxyBackendRequestTo(`/form-definitions/${id}`, req);
 }

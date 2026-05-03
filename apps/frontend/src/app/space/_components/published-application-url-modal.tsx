@@ -4,12 +4,12 @@ import { useEffect, useMemo, useState } from "react";
 import { CopyButton } from "./copy-button";
 
 type PublishedApplicationUrlModalProps = {
-  templateId?: string;
+  groupId?: string;
   open: boolean;
 };
 
 export function PublishedApplicationUrlModal({
-  templateId,
+  groupId,
   open,
 }: PublishedApplicationUrlModalProps) {
   const [isOpen, setIsOpen] = useState(open);
@@ -26,11 +26,11 @@ export function PublishedApplicationUrlModal({
   }, []);
 
   const applicationPath = useMemo(() => {
-    if (!templateId) {
+    if (!groupId) {
       return "";
     }
-    return `/apply/${encodeURIComponent(templateId)}`;
-  }, [templateId]);
+    return `/apply/${encodeURIComponent(groupId)}`;
+  }, [groupId]);
 
   const applicationUrl = origin && applicationPath ? `${origin}${applicationPath}` : applicationPath;
 

@@ -5,7 +5,7 @@
 - テナントスコープはサーバー側で強制する
 - 業務データは `tenant_id` と `group_id` の両方でスコープする。UI 上は group を space と呼ぶ。
 - space 業務 API は `groupId` を query/body で明示する。サーバー側で group の tenant と利用者の所属/権限を検証する。
-- 現段階では既存 path を維持する。次段階で `/groups/:groupId/form-templates` / `/groups/:groupId/applications` のような nested path へ寄せる。
+- 現段階では既存 path を維持する。次段階で `/groups/:groupId/form-definitions` / `/groups/:groupId/applications` のような nested path へ寄せる。
 - `audit_logs.group_id` は nullable。tenant-level event は `null`、space-level event は対象 `groupId` を保持する。
 
 ## Auth
@@ -84,17 +84,17 @@ request:
 - 自分自身のロールは変更不可。
 - **最後の 1 人の tenant_admin** を他ロールへ落とすことは不可。
 
-## Form Templates
+## Form Definitions
 
-### GET /form-templates
+### GET /form-definitions
 権限: tenant_admin, tenant_user（group admin）  
 query: `groupId` 必須。tenant_admin はテナント内 group、group admin は自分が admin の group のみ。
 
-### GET /form-templates/:id
+### GET /form-definitions/:id
 権限: tenant_admin, tenant_user（group admin）  
-単一テンプレート（`fields` 含む）を返す。
+単一フォーム定義（`fields` 含む）を返す。
 
-### POST /form-templates
+### POST /form-definitions
 権限: tenant_admin, tenant_user（group admin）
 request:
 ```json
@@ -105,7 +105,7 @@ request:
 }
 ```
 
-### POST /form-templates/:id/fields
+### POST /form-definitions/:id/fields
 権限: tenant_admin, tenant_user（group admin）
 request:
 ```json
@@ -121,7 +121,7 @@ request:
 }
 ```
 
-### POST /form-templates/:id/publish
+### POST /form-definitions/:id/publish
 権限: tenant_admin, tenant_user（group admin）
 
 ## Approval Flows
@@ -131,12 +131,12 @@ request:
 query: `groupId` 必須。指定 group 内の承認フロー一覧（`steps` を `step_order` 昇順で含む）。
 
 ### POST /approval-flows
-権限: tenant_admin, tenant_user（group admin）。参照する `formTemplateId` のテンプレートは同一テナント・同一 group に存在すること。`steps[].assigneeUserId` は同一 group 所属ユーザー。`steps[].stepOrder` は **1 からの連番**で重複不可。
+権限: tenant_admin, tenant_user（group admin）。参照する `formDefinitionId` のフォーム定義は同一テナント・同一 group に存在すること。`steps[].assigneeUserId` は同一 group 所属ユーザー。`steps[].stepOrder` は **1 からの連番**で重複不可。
 request:
 ```json
 {
   "groupId": "group_1",
-  "formTemplateId": "form_1",
+  "formDefinitionId": "form_1",
   "name": "経費申請フロー",
   "steps": [
     {
@@ -165,12 +165,12 @@ query: `groupId` 必須。
 - group user: 所属 group 内で、自分の申請または **in_review** かつ現在ステップの `assignee_user_id` が自分のもの
 
 ### POST /applications
-権限: tenant_user, tenant_admin。`groupId` 必須。`formTemplateId` は同一 group の **published** テンプレートのみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
+権限: tenant_user, tenant_admin。`groupId` 必須。`formDefinitionId` は同一 group の **published** フォーム定義のみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
 request:
 ```json
 {
   "groupId": "group_1",
-  "formTemplateId": "form_1",
+  "formDefinitionId": "form_1",
   "approvalFlowId": "optional-flow-uuid",
   "values": {
     "expense_title": "出張交通費",
@@ -252,7 +252,7 @@ request (任意フィルタ):
 {
   "groupId": "group_1",
   "status": "in_review",
-  "formTemplateId": "optional-template-uuid"
+  "formDefinitionId": "optional-definition-uuid"
 }
 ```
 - CSV は **列展開方式**（申請共通固定列 + `form_fields.field_key` ごとの列）。

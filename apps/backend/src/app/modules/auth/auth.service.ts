@@ -30,7 +30,7 @@ export type ApplicantAccessTokenPayload = {
   kind: 'applicant_access';
   tenantId: string;
   email: string;
-  templateId: string;
+  groupId: string;
 };
 
 @Injectable()
@@ -171,13 +171,13 @@ export class AuthService {
   issueApplicantAccessToken(input: {
     tenantId: string;
     email: string;
-    templateId: string;
+    groupId: string;
   }): string {
     const payload: ApplicantAccessTokenPayload = {
       kind: 'applicant_access',
       tenantId: input.tenantId,
       email: input.email,
-      templateId: input.templateId,
+      groupId: input.groupId,
     };
     return this.jwtService.sign(payload);
   }
@@ -188,7 +188,7 @@ export class AuthService {
       payload.kind !== 'applicant_access' ||
       !payload.tenantId ||
       !payload.email ||
-      !payload.templateId
+      !payload.groupId
     ) {
       throw clientError(ClientErrorCodes.AUTH_JWT_UNAUTHORIZED);
     }

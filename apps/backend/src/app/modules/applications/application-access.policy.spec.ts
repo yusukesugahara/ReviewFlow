@@ -21,7 +21,7 @@ const application = (overrides: Partial<Application> = {}): Application =>
     tenantId: 'tenant-1',
     applicantUserId: 'applicant-1',
     applicantEmail: 'applicant@example.com',
-    formTemplateId: 'template-1',
+    formDefinitionId: 'template-1',
     status: ApplicationStatus.IN_REVIEW,
     currentStepOrder: 1,
     approvalFlow: {

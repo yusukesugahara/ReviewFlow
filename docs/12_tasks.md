@@ -12,7 +12,7 @@
 - [ ] ロール管理を実装する
 
 # Phase 3: フォーム定義
-- [ ] form_templates を実装する
+- [ ] form_definitions を実装する
 - [ ] form_fields を実装する
 - [ ] フォーム作成APIを実装する
 - [ ] フォーム公開APIを実装する

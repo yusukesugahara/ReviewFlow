@@ -13,7 +13,6 @@ type ApprovalStep = {
 
 type ApprovalFlow = {
   id: string;
-  formTemplateId: string;
   name: string;
   isActive: boolean;
   steps: ApprovalStep[];
@@ -61,9 +60,6 @@ export function ApprovalFlowSelector({ flows }: ApprovalFlowSelectorProps) {
                   {flow.isActive ? "有効" : "無効"}
                 </Badge>
               </div>
-              <p className="text-xs text-muted-foreground font-mono">
-                Template: {flow.formTemplateId.slice(0, 12)}...
-              </p>
             </button>
           );
         })}

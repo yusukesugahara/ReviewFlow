@@ -2,10 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ClientErrorCodes } from '../../../common/errors';
-import { FormTemplateStatus } from '../../../models/constants/form-template-status';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
-import { FormTemplate } from '../../../models/entities/form-template.entity';
 import { GroupMember } from '../../../models/entities/group-member.entity';
 import { User } from '../../../models/entities/user.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
@@ -16,7 +14,6 @@ describe('ApprovalFlowsService', () => {
   let flows: jest.Mocked<
     Pick<Repository<ApprovalFlow>, 'find' | 'findOne' | 'manager'>
   >;
-  let templates: jest.Mocked<Pick<Repository<FormTemplate>, 'findOne'>>;
   let members: jest.Mocked<Pick<Repository<GroupMember>, 'findOne' | 'find'>>;
   let users: jest.Mocked<Pick<Repository<User>, 'find'>>;
   let spaceAccess: jest.Mocked<
@@ -30,9 +27,6 @@ describe('ApprovalFlowsService', () => {
   };
 
   beforeEach(async () => {
-    templates = {
-      findOne: jest.fn(),
-    };
     users = {
       find: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
     };
@@ -78,7 +72,6 @@ describe('ApprovalFlowsService', () => {
       providers: [
         ApprovalFlowsService,
         { provide: getRepositoryToken(ApprovalFlow), useValue: flows },
-        { provide: getRepositoryToken(FormTemplate), useValue: templates },
         { provide: getRepositoryToken(GroupMember), useValue: members },
         { provide: getRepositoryToken(User), useValue: users },
         { provide: SpaceAccessService, useValue: spaceAccess },
@@ -88,18 +81,11 @@ describe('ApprovalFlowsService', () => {
     service = module.get(ApprovalFlowsService);
   });
 
-  it('create allows draft template so setup can define flow before publish', async () => {
-    templates.findOne.mockResolvedValue({
-      id: 't1',
-      tenantId: 'ten1',
-      groupId: 'g1',
-      status: FormTemplateStatus.DRAFT,
-    } as FormTemplate);
+  it('create stores a group-scoped approval flow', async () => {
     flows.findOne.mockResolvedValue({
       id: 'flow-new',
       tenantId: 'ten1',
       groupId: 'g1',
-      formTemplateId: 't1',
       name: 'F',
       isActive: true,
       steps: [
@@ -116,7 +102,6 @@ describe('ApprovalFlowsService', () => {
     await expect(
       service.create(actor, {
         groupId: 'g1',
-        formTemplateId: 't1',
         name: 'F',
         steps: [
           {
@@ -129,22 +114,14 @@ describe('ApprovalFlowsService', () => {
       }),
     ).resolves.toMatchObject({
       id: 'flow-new',
-      formTemplateId: 't1',
+      groupId: 'g1',
     });
   });
 
   it('create rejects when step orders are not contiguous from 1', async () => {
-    templates.findOne.mockResolvedValue({
-      id: 't1',
-      tenantId: 'ten1',
-      groupId: 'g1',
-      status: FormTemplateStatus.PUBLISHED,
-    } as FormTemplate);
-
     await expect(
       service.create(actor, {
         groupId: 'g1',
-        formTemplateId: 't1',
         name: 'F',
         steps: [
           {

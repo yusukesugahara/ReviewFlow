@@ -7,7 +7,7 @@ import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
 import { CorrectionRequestStatus } from '../../../models/constants/correction-request-status';
-import { FormTemplateStatus } from '../../../models/constants/form-template-status';
+import { FormDefinitionStatus } from '../../../models/constants/form-definition-status';
 import { UserRole } from '../../../models/constants/user-role';
 import { ApplicationApproval } from '../../../models/entities/application-approval.entity';
 import { ApplicationFieldValue } from '../../../models/entities/application-field-value.entity';
@@ -15,7 +15,7 @@ import { Application } from '../../../models/entities/application.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { CorrectionRequestItem } from '../../../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
-import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../models/entities/form-field.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
 import type {
@@ -46,7 +46,7 @@ type ApplicationReadMapping =
   | { source: 'applicant'; actor: ApplicantSession; id: string };
 type SubmittableApplicationContext = {
   app: Application;
-  template: FormTemplate;
+  template: FormDefinition;
 };
 type ResubmittableApplicationContext = SubmittableApplicationContext & {
   openCorrection: CorrectionRequest;
@@ -65,8 +65,8 @@ export class ApplicationsService {
     private readonly correctionRequests: Repository<CorrectionRequest>,
     @InjectRepository(CorrectionRequestItem)
     private readonly correctionItems: Repository<CorrectionRequestItem>,
-    @InjectRepository(FormTemplate)
-    private readonly templates: Repository<FormTemplate>,
+    @InjectRepository(FormDefinition)
+    private readonly templates: Repository<FormDefinition>,
     @InjectRepository(ApprovalFlow)
     private readonly flows: Repository<ApprovalFlow>,
     private readonly spaceAccess: SpaceAccessService,
@@ -87,7 +87,6 @@ export class ApplicationsService {
   private async resolveActiveFlow(
     tenantId: string,
     groupId: string,
-    formTemplateId: string,
     approvalFlowId?: string,
   ): Promise<ApprovalFlow> {
     if (approvalFlowId) {
@@ -96,7 +95,6 @@ export class ApplicationsService {
           id: approvalFlowId,
           tenantId,
           groupId,
-          formTemplateId,
           isActive: true,
         },
         relations: ['steps'],
@@ -107,7 +105,7 @@ export class ApplicationsService {
       return flow;
     }
     const list = await this.flows.find({
-      where: { tenantId, groupId, formTemplateId, isActive: true },
+      where: { tenantId, groupId, isActive: true },
       relations: ['steps'],
     });
     if (list.length === 0) {
@@ -172,7 +170,7 @@ export class ApplicationsService {
     return this.apps.find({
       where: {
         tenantId: actor.tenantId,
-        formTemplateId: actor.templateId,
+        groupId: actor.groupId,
         applicantEmail: actor.email,
       },
       order: { createdAt: 'DESC' },
@@ -214,14 +212,15 @@ export class ApplicationsService {
     dto: CreateApplicationDto,
   ): Promise<Application> {
     const template = await this.templates.findOne({
-      where: { id: dto.formTemplateId, tenantId, groupId: dto.groupId },
+      where: {
+        tenantId,
+        groupId: dto.groupId,
+        status: FormDefinitionStatus.PUBLISHED,
+      },
       relations: ['fields'],
     });
     if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
-    }
-    if (template.status !== FormTemplateStatus.PUBLISHED) {
-      throw clientError(ClientErrorCodes.APPLICATION_FORM_NOT_PUBLISHED);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
 
     const values = dto.values ?? {};
@@ -233,7 +232,6 @@ export class ApplicationsService {
     const flow = await this.resolveActiveFlow(
       tenantId,
       dto.groupId,
-      template.id,
       dto.approvalFlowId,
     );
 
@@ -246,7 +244,7 @@ export class ApplicationsService {
         groupId: dto.groupId,
         applicantUserId,
         applicantEmail,
-        formTemplateId: template.id,
+        formDefinitionId: template.id,
         approvalFlowId: flow.id,
         status: ApplicationStatus.DRAFT,
         currentStepOrder: null,
@@ -285,7 +283,7 @@ export class ApplicationsService {
     actor: ApplicantSession,
     dto: CreateApplicationDto,
   ): Promise<Application> {
-    if (dto.formTemplateId !== actor.templateId) {
+    if (dto.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
     return this.createInternal(actor.tenantId, actor.email, null, dto);
@@ -328,11 +326,11 @@ export class ApplicationsService {
     app: Application,
   ): Promise<EditablePatchContext> {
     const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId, groupId: app.groupId },
+      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
       relations: ['fields'],
     });
     if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
 
     const fieldsByKey = this.formValueValidator.buildFieldsByKey(
@@ -434,7 +432,7 @@ export class ApplicationsService {
     dto: PatchApplicationDto,
   ): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.formTemplateId !== actor.templateId) {
+    if (app.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
     this.accessPolicy.assertApplicantOwns(actor, app);
@@ -451,11 +449,11 @@ export class ApplicationsService {
     this.transitionPolicy.assertDraft(app);
 
     const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId, groupId: app.groupId },
+      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
       relations: ['fields'],
     });
     if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
 
     return { app, template };
@@ -501,11 +499,11 @@ export class ApplicationsService {
     }
 
     const template = await this.templates.findOne({
-      where: { id: app.formTemplateId, tenantId, groupId: app.groupId },
+      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
       relations: ['fields'],
     });
     if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
 
     return { app, template, openCorrection };
@@ -550,7 +548,7 @@ export class ApplicationsService {
     id: string,
   ): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.formTemplateId !== actor.templateId) {
+    if (app.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
     this.accessPolicy.assertApplicantOwns(actor, app);
@@ -668,14 +666,14 @@ export class ApplicationsService {
 
     const template = await this.templates.findOne({
       where: {
-        id: app.formTemplateId,
+        id: app.formDefinitionId,
         tenantId: actor.tenantId,
         groupId: app.groupId,
       },
       relations: ['fields'],
     });
     if (!template) {
-      throw clientError(ClientErrorCodes.FORM_TEMPLATE_NOT_FOUND);
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
     const fieldIdsOnTemplate = new Set(
       (template.fields ?? []).map((f) => f.id),
@@ -755,7 +753,7 @@ export class ApplicationsService {
     id: string,
   ): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.formTemplateId !== actor.templateId) {
+    if (app.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
     this.accessPolicy.assertApplicantOwns(actor, app);
@@ -896,7 +894,7 @@ export class ApplicationsService {
         detail: true,
       },
     );
-    if (app.formTemplateId !== actor.templateId) {
+    if (app.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
     this.accessPolicy.assertApplicantOwns(actor, app);

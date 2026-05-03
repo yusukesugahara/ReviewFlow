@@ -21,7 +21,6 @@ type ApplicationDetail = {
   id: string;
   groupId?: string | null;
   status: string;
-  formTemplateId: string;
   values: Record<string, unknown>;
 };
 
@@ -84,10 +83,15 @@ export default async function SpaceApplicationEditPage({ params }: PageProps) {
     }
 
     const [templateRaw, targetsRaw] = await Promise.all([
-      backendAuthFetchJson(`/form-templates/${app.formTemplateId}`),
+      backendAuthFetchJson(
+        `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
+      ),
       backendAuthFetchJson(`/applications/${applicationId}/correction-targets`),
     ]);
-    const fields = unwrapData<{ fields?: FormField[] }>(templateRaw).fields ?? [];
+    const definition =
+      unwrapData<{ definitions?: { fields?: FormField[] }[] }>(templateRaw)
+        .definitions?.[0] ?? null;
+    const fields = definition?.fields ?? [];
     const targetItems =
       unwrapData<{ openCorrection?: { items?: CorrectionTargetItem[] } | null }>(targetsRaw)
         .openCorrection?.items ?? [];

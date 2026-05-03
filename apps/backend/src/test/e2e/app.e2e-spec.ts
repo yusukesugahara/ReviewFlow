@@ -30,13 +30,13 @@ type UsersListJsonBody = {
   data?: { users?: { id: string; email: string; role: string }[] };
 };
 type GroupCreateJsonBody = { data?: { id?: string } };
-type FormTemplatesListBody = {
-  data?: { templates?: { id: string; name: string; status: string }[] };
+type FormDefinitionsListBody = {
+  data?: { definitions?: { id: string; name: string; status: string }[] };
 };
-type FormTemplateCreateBody = {
+type FormDefinitionCreateBody = {
   data?: { id: string; name: string; status: string };
 };
-type FormTemplateGetBody = {
+type FormDefinitionGetBody = {
   data?: {
     id: string;
     name: string;
@@ -49,7 +49,6 @@ type ApprovalFlowsListBody = {
     flows?: {
       id: string;
       name: string;
-      formTemplateId: string;
       steps?: { stepOrder: number; stepName: string }[];
     }[];
   };
@@ -504,7 +503,7 @@ describe('App (e2e)', () => {
     );
   });
 
-  it('form-templates: create, add field, publish, list', async () => {
+  it('form-definitions: create, add field, publish, list', async () => {
     const http = app.getHttpServer();
     const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
 
@@ -530,16 +529,18 @@ describe('App (e2e)', () => {
     );
 
     const created = await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .send({ groupId, name: '経費申請', description: 'desc' })
       .expect(201);
-    const tid = (created.body as FormTemplateCreateBody).data?.id ?? '';
-    expect((created.body as FormTemplateCreateBody).data?.status).toBe('draft');
+    const tid = (created.body as FormDefinitionCreateBody).data?.id ?? '';
+    expect((created.body as FormDefinitionCreateBody).data?.status).toBe(
+      'draft',
+    );
 
     await request(http)
-      .post(`/form-templates/${tid}/fields`)
+      .post(`/form-definitions/${tid}/fields`)
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .send({
@@ -553,30 +554,30 @@ describe('App (e2e)', () => {
       .expect(201);
 
     await request(http)
-      .post(`/form-templates/${tid}/publish`)
+      .post(`/form-definitions/${tid}/publish`)
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
 
     const list = await request(http)
-      .get('/form-templates')
+      .get('/form-definitions')
       .query({ groupId })
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
-    const templates =
-      (list.body as FormTemplatesListBody).data?.templates ?? [];
-    const one = templates.find((t) => t.id === tid);
+    const definitions =
+      (list.body as FormDefinitionsListBody).data?.definitions ?? [];
+    const one = definitions.find((t) => t.id === tid);
     expect(one?.status).toBe('published');
     expect(one?.name).toBe('経費申請');
 
     const got = await request(http)
-      .get(`/form-templates/${tid}`)
+      .get(`/form-definitions/${tid}`)
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
-    expect((got.body as FormTemplateGetBody).data?.id).toBe(tid);
-    expect((got.body as FormTemplateGetBody).data?.fields?.length).toBe(1);
+    expect((got.body as FormDefinitionGetBody).data?.id).toBe(tid);
+    expect((got.body as FormDefinitionGetBody).data?.fields?.length).toBe(1);
 
     await request(http)
       .post('/approval-flows')
@@ -584,7 +585,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${tok}`)
       .send({
         groupId,
-        formTemplateId: tid,
         name: '経費申請フロー',
         steps: [
           {
@@ -611,7 +611,7 @@ describe('App (e2e)', () => {
       .expect(200);
     const flows = (flowsRes.body as ApprovalFlowsListBody).data?.flows ?? [];
     expect(flows.length).toBeGreaterThanOrEqual(1);
-    const flow = flows.find((f) => f.formTemplateId === tid);
+    const flow = flows.find((f) => f.name === '経費申請フロー');
     expect(flow?.name).toBe('経費申請フロー');
     expect(flow?.steps?.length).toBe(2);
   });
@@ -706,22 +706,22 @@ describe('App (e2e)', () => {
       (groupUserLogin.body as LoginJsonBody).data?.access_token ?? '';
 
     const createdTpl = await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${groupAdminTok}`)
       .send({ groupId: groupA, name: 'Group Admin Form' })
       .expect(201);
-    const tplA = (createdTpl.body as FormTemplateCreateBody).data?.id ?? '';
+    const tplA = (createdTpl.body as FormDefinitionCreateBody).data?.id ?? '';
 
     await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${groupUserTok}`)
       .send({ groupId: groupA, name: 'Forbidden Form' })
       .expect(403);
 
     await request(http)
-      .post(`/form-templates/${tplA}/fields`)
+      .post(`/form-definitions/${tplA}/fields`)
       .set(apiKey)
       .set('Authorization', `Bearer ${groupAdminTok}`)
       .send({
@@ -734,7 +734,7 @@ describe('App (e2e)', () => {
       })
       .expect(201);
     await request(http)
-      .post(`/form-templates/${tplA}/publish`)
+      .post(`/form-definitions/${tplA}/publish`)
       .set(apiKey)
       .set('Authorization', `Bearer ${groupAdminTok}`)
       .expect(200);
@@ -744,7 +744,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${groupAdminTok}`)
       .send({
         groupId: groupA,
-        formTemplateId: tplA,
         name: 'Group A Flow',
         steps: [
           {
@@ -763,25 +762,24 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${groupUserTok}`)
       .send({
         groupId: groupA,
-        formTemplateId: tplA,
         values: { title: 'allowed' },
       })
       .expect(201);
     const appAId = (appA.body as ApplicationCreateBody).data?.id ?? '';
 
     const tplB = await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({ groupId: groupB, name: 'Group B Form' })
       .expect(201);
-    const tplBId = (tplB.body as FormTemplateCreateBody).data?.id ?? '';
+    expect((tplB.body as FormDefinitionCreateBody).data?.id).toBeTruthy();
 
     await request(http)
       .post('/applications')
       .set(apiKey)
       .set('Authorization', `Bearer ${groupUserTok}`)
-      .send({ groupId: groupB, formTemplateId: tplBId, values: {} })
+      .send({ groupId: groupB, values: {} })
       .expect(403);
     await request(http)
       .get(`/applications/${appAId}`)
@@ -817,15 +815,15 @@ describe('App (e2e)', () => {
     );
 
     const createdTpl = await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({ groupId, name: '申請用フォーム' })
       .expect(201);
-    const tplId = (createdTpl.body as FormTemplateCreateBody).data?.id ?? '';
+    const tplId = (createdTpl.body as FormDefinitionCreateBody).data?.id ?? '';
 
     await request(http)
-      .post(`/form-templates/${tplId}/fields`)
+      .post(`/form-definitions/${tplId}/fields`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
@@ -839,7 +837,7 @@ describe('App (e2e)', () => {
       .expect(201);
 
     await request(http)
-      .post(`/form-templates/${tplId}/publish`)
+      .post(`/form-definitions/${tplId}/publish`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
@@ -850,7 +848,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
         groupId,
-        formTemplateId: tplId,
         name: '単一承認者フロー',
         steps: [
           {
@@ -922,7 +919,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${appTok}`)
       .send({
         groupId,
-        formTemplateId: tplId,
         values: { title: '下書きタイトル' },
       })
       .expect(201);
@@ -1017,15 +1013,15 @@ describe('App (e2e)', () => {
     );
 
     const tplRes = await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({ groupId, name: '差し戻し用' })
       .expect(201);
-    const tplId = (tplRes.body as FormTemplateCreateBody).data?.id ?? '';
+    const tplId = (tplRes.body as FormDefinitionCreateBody).data?.id ?? '';
 
     await request(http)
-      .post(`/form-templates/${tplId}/fields`)
+      .post(`/form-definitions/${tplId}/fields`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
@@ -1039,19 +1035,19 @@ describe('App (e2e)', () => {
       .expect(201);
 
     await request(http)
-      .post(`/form-templates/${tplId}/publish`)
+      .post(`/form-definitions/${tplId}/publish`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
 
     const tplDetail = await request(http)
-      .get(`/form-templates/${tplId}`)
+      .get(`/form-definitions/${tplId}`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
-    const fieldId = (tplDetail.body as FormTemplateGetBody).data?.fields?.find(
-      (f) => f.fieldKey === 'note',
-    )?.id;
+    const fieldId = (
+      tplDetail.body as FormDefinitionGetBody
+    ).data?.fields?.find((f) => f.fieldKey === 'note')?.id;
     expect(typeof fieldId).toBe('string');
 
     await request(http)
@@ -1060,7 +1056,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
         groupId,
-        formTemplateId: tplId,
         name: '差し戻し可フロー',
         steps: [
           {
@@ -1132,7 +1127,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
       .send({
         groupId,
-        formTemplateId: tplId,
         values: { note: 'v1' },
       })
       .expect(201);
@@ -1236,15 +1230,15 @@ describe('App (e2e)', () => {
     );
 
     const tpl = await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({ groupId, name: 'CSV対象フォーム' })
       .expect(201);
-    const tplId = (tpl.body as FormTemplateCreateBody).data?.id ?? '';
+    const tplId = (tpl.body as FormDefinitionCreateBody).data?.id ?? '';
 
     await request(http)
-      .post(`/form-templates/${tplId}/fields`)
+      .post(`/form-definitions/${tplId}/fields`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
@@ -1257,7 +1251,7 @@ describe('App (e2e)', () => {
       })
       .expect(201);
     await request(http)
-      .post(`/form-templates/${tplId}/fields`)
+      .post(`/form-definitions/${tplId}/fields`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
@@ -1270,7 +1264,7 @@ describe('App (e2e)', () => {
       })
       .expect(201);
     await request(http)
-      .post(`/form-templates/${tplId}/publish`)
+      .post(`/form-definitions/${tplId}/publish`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
@@ -1281,7 +1275,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
         groupId,
-        formTemplateId: tplId,
         name: 'CSVフロー',
         steps: [
           {
@@ -1327,7 +1320,6 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${appTok}`)
       .send({
         groupId,
-        formTemplateId: tplId,
         values: { expense_title: '旅費精算', amount: 12000 },
       })
       .expect(201);
@@ -1397,7 +1389,7 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
     await request(http)
-      .post('/form-templates')
+      .post('/form-definitions')
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
       .send({ groupId, name: 'Audit Form' })
@@ -1413,7 +1405,7 @@ describe('App (e2e)', () => {
     expect(rows.some((x) => x.targetType === 'users')).toBe(true);
     expect(
       rows.some(
-        (x) => x.targetType === 'form-templates' && x.groupId === groupId,
+        (x) => x.targetType === 'form-definitions' && x.groupId === groupId,
       ),
     ).toBe(true);
   });

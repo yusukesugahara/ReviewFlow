@@ -8,7 +8,7 @@
 - App Router を採用
 - server component / client component を適切に分離
 - API呼び出しは型安全なクライアントを用意
-- 動的フォームは FormTemplate と FormField 定義から生成
+- 動的フォームは FormDefinition と FormField 定義から生成
 
 ## バックエンド構成方針
 - NestJS module 単位に責務分離

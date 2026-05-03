@@ -31,7 +31,7 @@ import {
 } from "@/features/applications/application-routes";
 import { getCurrentSessionUser } from "@/lib/server/session";
 
-type FormTemplateRow = {
+type FormDefinitionRow = {
   id: string;
   name: string;
   status: string;
@@ -43,7 +43,6 @@ type ApplicationRow = {
   groupId: string;
   status: string;
   applicantEmail: string;
-  formTemplateId: string;
   createdAt: string;
 };
 
@@ -61,28 +60,21 @@ export async function SpaceApplicationsPageContent({
   view,
 }: SpaceApplicationsPageContentProps) {
   try {
-    const activeStatus = status === "draft" ? "draft" : "published";
     const activeView = parseApplicationListView(view);
-    const [templatesRaw, applicationsRaw, actor] = await Promise.all([
+    const [definitionsRaw, applicationsRaw, actor] = await Promise.all([
       backendAuthFetchJson(
-        `/form-templates?groupId=${encodeURIComponent(spaceId)}`,
+        `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
       ),
       backendAuthFetchJson(`/applications?groupId=${encodeURIComponent(spaceId)}`),
       getCurrentSessionUser(),
     ]);
 
-    const templates =
-      unwrapData<{ templates?: FormTemplateRow[] }>(templatesRaw).templates ?? [];
+    const definitions =
+      unwrapData<{ definitions?: FormDefinitionRow[] }>(definitionsRaw).definitions ?? [];
     const applicationRows =
       unwrapData<{ applications?: ApplicationRow[] }>(applicationsRaw)
         .applications ?? [];
 
-    const publishedTemplates = templates.filter(
-      (row) => row.status === "published",
-    );
-    const draftTemplates = templates.filter((row) => row.status !== "published");
-    const visibleTemplates =
-      activeStatus === "draft" ? draftTemplates : publishedTemplates;
     const visibleApplications = filterApplicationsByView(
       applicationRows,
       activeView,
@@ -107,47 +99,13 @@ export async function SpaceApplicationsPageContent({
           <CardHeader>
             <CardTitle>申請作成一覧</CardTitle>
             <CardDescription>
-              {templates.length}件の申請定義があります
+              {definitions.length}件の申請定義があります
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            <div className="flex items-center gap-2">
-              <Link
-                href={buildSpaceApplicationsViewHref(spaceId, {
-                  status: "published",
-                  view: activeView,
-                })}
-                className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
-                  activeStatus === "published"
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                申請 ({publishedTemplates.length})
-              </Link>
-              <Link
-                href={buildSpaceApplicationsViewHref(spaceId, {
-                  status: "draft",
-                  view: activeView,
-                })}
-                className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
-                  activeStatus === "draft"
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-                }`}
-              >
-                下書き ({draftTemplates.length})
-              </Link>
-            </div>
-            {templates.length === 0 ? (
+            {definitions.length === 0 ? (
               <p className="py-8 text-center text-muted-foreground">
                 申請作成データはまだありません
-              </p>
-            ) : visibleTemplates.length === 0 ? (
-              <p className="py-8 text-center text-muted-foreground">
-                {activeStatus === "draft"
-                  ? "下書きはありません"
-                  : "公開済みの申請はありません"}
               </p>
             ) : (
               <Table>
@@ -160,34 +118,30 @@ export async function SpaceApplicationsPageContent({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {visibleTemplates.map((template) => (
-                    <TableRow key={template.id}>
+                  {definitions.map((definition) => (
+                    <TableRow key={definition.id}>
                       <TableCell>
                         <div className="font-medium text-slate-900">
-                          {template.name}
+                          {definition.name}
                         </div>
                       </TableCell>
                       <TableCell>
                         <Badge
                           variant={
-                            template.status === "published" ? "default" : "outline"
+                            definition.status === "published" ? "default" : "outline"
                           }
                         >
-                          {template.status === "published" ? "公開済み" : "下書き"}
+                          {definition.status === "published" ? "公開済み" : "下書き"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
-                        {template.createdAt
-                          ? new Date(template.createdAt).toLocaleString("ja-JP")
+                        {definition.createdAt
+                          ? new Date(definition.createdAt).toLocaleString("ja-JP")
                           : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         <Button asChild variant="ghost" size="sm">
-                          <Link
-                            href={`/admin/template-management/${encodeURIComponent(template.id)}?spaceId=${encodeURIComponent(spaceId)}`}
-                          >
-                            詳細
-                          </Link>
+                          <Link href="/space/application-setup">編集</Link>
                         </Button>
                       </TableCell>
                     </TableRow>
@@ -222,7 +176,7 @@ export async function SpaceApplicationsPageContent({
                 all: applicationRows.length,
               }}
               spaceId={spaceId}
-              status={activeStatus}
+              status="published"
             />
             {visibleApplications.length === 0 ? (
               <ApplicationEmptyState
@@ -237,7 +191,6 @@ export async function SpaceApplicationsPageContent({
                   `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
                 }
                 showApplicantEmail
-                templateIdLength={8}
               />
             )}
           </CardContent>

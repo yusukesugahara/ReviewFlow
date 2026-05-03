@@ -31,24 +31,24 @@ import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
 import {
   CreateFormFieldDto,
-  CreateFormTemplateDto,
+  CreateFormDefinitionDto,
   FormFieldResponseDto,
   MoveFormFieldDto,
-  FormTemplateResponseDto,
-  FormTemplatesListResponseDto,
+  FormDefinitionResponseDto,
+  FormDefinitionsListResponseDto,
   RequestFormAccessDto,
   RequestFormAccessResponseDto,
   UpdateFormFieldSettingsDto,
-} from './form-templates.dto';
-import { FormTemplatesService } from './form-templates.service';
+} from './form-definitions.dto';
+import { FormDefinitionsService } from './form-definitions.service';
 import { ApprovalFlowsService } from '../approval-flows/approval-flows.service';
 import { ApprovalFlowsListResponseDto } from '../approval-flows/approval-flows.dto';
 
-@ApiTags('form-templates')
-@Controller('form-templates')
-export class FormTemplatesController {
+@ApiTags('form-definitions')
+@Controller('form-definitions')
+export class FormDefinitionsController {
   constructor(
-    private readonly formTemplates: FormTemplatesService,
+    private readonly formDefinitions: FormDefinitionsService,
     private readonly approvalFlows: ApprovalFlowsService,
   ) {}
 
@@ -57,15 +57,15 @@ export class FormTemplatesController {
   @Get()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'フォームテンプレート一覧（tenant_admin）' })
-  @ApiSuccessResponse(FormTemplatesListResponseDto)
+  @ApiOperation({ summary: 'フォーム定義一覧（tenant_admin）' })
+  @ApiSuccessResponse(FormDefinitionsListResponseDto)
   async list(
     @Query('groupId', ParseUUIDPipe) groupId: string,
     @CurrentUser() actor: AuthUserPayload,
-  ): Promise<SuccessResponse<FormTemplatesListResponseDto>> {
-    const rows = await this.formTemplates.listByGroup(actor, groupId);
+  ): Promise<SuccessResponse<FormDefinitionsListResponseDto>> {
+    const rows = await this.formDefinitions.listByGroup(actor, groupId);
     return successResponse({
-      templates: rows.map((t) => this.formTemplates.toResponse(t)),
+      definitions: rows.map((t) => this.formDefinitions.toResponse(t)),
     });
   }
 
@@ -74,14 +74,14 @@ export class FormTemplatesController {
   @Get(':id')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'フォームテンプレート取得（tenant_admin）' })
-  @ApiSuccessResponse(FormTemplateResponseDto)
+  @ApiOperation({ summary: 'フォーム定義取得（tenant_admin）' })
+  @ApiSuccessResponse(FormDefinitionResponseDto)
   async getOne(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: AuthUserPayload,
-  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    const row = await this.formTemplates.getOneForActor(actor, id);
-    return successResponse(this.formTemplates.toResponse(row));
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    const row = await this.formDefinitions.getOneForActor(actor, id);
+    return successResponse(this.formDefinitions.toResponse(row));
   }
 
   @AuthApi()
@@ -89,15 +89,15 @@ export class FormTemplatesController {
   @Post()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'フォームテンプレート作成（下書き）' })
-  @ApiSuccessResponseCreated(FormTemplateResponseDto)
+  @ApiOperation({ summary: 'フォーム定義作成（下書き）' })
+  @ApiSuccessResponseCreated(FormDefinitionResponseDto)
   async create(
-    @Body() dto: CreateFormTemplateDto,
+    @Body() dto: CreateFormDefinitionDto,
     @CurrentUser() actor: AuthUserPayload,
-  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    const saved = await this.formTemplates.create(actor, dto);
-    const full = await this.formTemplates.getOne(actor.tenantId, saved.id);
-    return successResponse(this.formTemplates.toResponse(full));
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    const saved = await this.formDefinitions.create(actor, dto);
+    const full = await this.formDefinitions.getOne(actor.tenantId, saved.id);
+    return successResponse(this.formDefinitions.toResponse(full));
   }
 
   @AuthApi()
@@ -112,8 +112,8 @@ export class FormTemplatesController {
     @Body() dto: CreateFormFieldDto,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<FormFieldResponseDto>> {
-    const field = await this.formTemplates.addField(actor, id, dto);
-    return successResponse(this.formTemplates.fieldToDto(field));
+    const field = await this.formDefinitions.addField(actor, id, dto);
+    return successResponse(this.formDefinitions.fieldToDto(field));
   }
 
   @AuthApi()
@@ -122,16 +122,16 @@ export class FormTemplatesController {
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'フォーム項目の並び順変更（下書きのみ）' })
-  @ApiSuccessResponse(FormTemplateResponseDto)
+  @ApiSuccessResponse(FormDefinitionResponseDto)
   async moveField(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('fieldId', ParseUUIDPipe) fieldId: string,
     @Body() dto: MoveFormFieldDto,
     @CurrentUser() actor: AuthUserPayload,
-  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    await this.formTemplates.moveField(actor, id, fieldId, dto.direction);
-    const full = await this.formTemplates.getOneForActor(actor, id);
-    return successResponse(this.formTemplates.toResponse(full));
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    await this.formDefinitions.moveField(actor, id, fieldId, dto.direction);
+    const full = await this.formDefinitions.getOneForActor(actor, id);
+    return successResponse(this.formDefinitions.toResponse(full));
   }
 
   @AuthApi()
@@ -140,15 +140,15 @@ export class FormTemplatesController {
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'フォーム項目削除（下書きのみ）' })
-  @ApiSuccessResponse(FormTemplateResponseDto)
+  @ApiSuccessResponse(FormDefinitionResponseDto)
   async deleteField(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('fieldId', ParseUUIDPipe) fieldId: string,
     @CurrentUser() actor: AuthUserPayload,
-  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    await this.formTemplates.deleteField(actor, id, fieldId);
-    const full = await this.formTemplates.getOneForActor(actor, id);
-    return successResponse(this.formTemplates.toResponse(full));
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    await this.formDefinitions.deleteField(actor, id, fieldId);
+    const full = await this.formDefinitions.getOneForActor(actor, id);
+    return successResponse(this.formDefinitions.toResponse(full));
   }
 
   @AuthApi()
@@ -157,16 +157,16 @@ export class FormTemplatesController {
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'フォーム項目設定更新（下書きのみ）' })
-  @ApiSuccessResponse(FormTemplateResponseDto)
+  @ApiSuccessResponse(FormDefinitionResponseDto)
   async updateFieldSettings(
     @Param('id', ParseUUIDPipe) id: string,
     @Param('fieldId', ParseUUIDPipe) fieldId: string,
     @Body() dto: UpdateFormFieldSettingsDto,
     @CurrentUser() actor: AuthUserPayload,
-  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    await this.formTemplates.updateFieldSettings(actor, id, fieldId, dto);
-    const full = await this.formTemplates.getOneForActor(actor, id);
-    return successResponse(this.formTemplates.toResponse(full));
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    await this.formDefinitions.updateFieldSettings(actor, id, fieldId, dto);
+    const full = await this.formDefinitions.getOneForActor(actor, id);
+    return successResponse(this.formDefinitions.toResponse(full));
   }
 
   @AuthApi()
@@ -174,28 +174,30 @@ export class FormTemplatesController {
   @Post(':id/publish')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'フォームテンプレート公開（draft → published）' })
-  @ApiSuccessResponse(FormTemplateResponseDto)
+  @ApiOperation({ summary: 'フォーム定義公開（draft → published）' })
+  @ApiSuccessResponse(FormDefinitionResponseDto)
   async publish(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: AuthUserPayload,
-  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
-    await this.formTemplates.publish(actor, id);
-    const full = await this.formTemplates.getOneForActor(actor, id);
-    return successResponse(this.formTemplates.toResponse(full));
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    await this.formDefinitions.publish(actor, id);
+    const full = await this.formDefinitions.getOneForActor(actor, id);
+    return successResponse(this.formDefinitions.toResponse(full));
   }
 
   @Api()
   @Throttle({ default: { limit: 10, ttl: 60_000 } })
-  @Post(':id/request-access')
+  @Post('groups/:groupId/request-access')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'フォーム案内メール送信（公開）' })
   @ApiSuccessResponse(RequestFormAccessResponseDto)
   async requestAccess(
-    @Param('id', ParseUUIDPipe) id: string,
+    @Param('groupId', ParseUUIDPipe) groupId: string,
     @Body() dto: RequestFormAccessDto,
   ): Promise<SuccessResponse<RequestFormAccessResponseDto>> {
-    return successResponse(await this.formTemplates.requestAccess(id, dto));
+    return successResponse(
+      await this.formDefinitions.requestAccess(groupId, dto),
+    );
   }
 
   @Api()
@@ -203,14 +205,14 @@ export class FormTemplatesController {
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
   @Get('public/current')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: '公開申請用の現在テンプレート取得' })
-  @ApiSuccessResponse(FormTemplateResponseDto)
+  @ApiOperation({ summary: '公開申請用の現在フォーム定義取得' })
+  @ApiSuccessResponse(FormDefinitionResponseDto)
   async getCurrentForApplicant(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
-  ): Promise<SuccessResponse<FormTemplateResponseDto>> {
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
     const row =
-      await this.formTemplates.getPublishedTemplateForApplicant(actor);
-    return successResponse(this.formTemplates.toResponse(row));
+      await this.formDefinitions.getPublishedDefinitionForApplicant(actor);
+    return successResponse(this.formDefinitions.toResponse(row));
   }
 
   @Api()

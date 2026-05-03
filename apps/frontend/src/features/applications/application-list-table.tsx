@@ -14,7 +14,6 @@ export type ApplicationListRow = {
   id: string;
   groupId?: string | null;
   status: string;
-  formTemplateId: string;
   createdAt: string;
   applicantEmail?: string;
 };
@@ -24,7 +23,6 @@ type ApplicationListTableProps = {
   getDetailHref: (row: ApplicationListRow) => string;
   actionLabel?: string;
   showApplicantEmail?: boolean;
-  templateIdLength?: number;
 };
 
 export function ApplicationListTable({
@@ -32,7 +30,6 @@ export function ApplicationListTable({
   getDetailHref,
   actionLabel = "詳細",
   showApplicantEmail = false,
-  templateIdLength = 12,
 }: ApplicationListTableProps) {
   return (
     <Table>
@@ -40,7 +37,6 @@ export function ApplicationListTable({
         <TableRow>
           <TableHead>ステータス</TableHead>
           {showApplicantEmail ? <TableHead>申請者</TableHead> : null}
-          <TableHead>テンプレート</TableHead>
           <TableHead>作成日時</TableHead>
           <TableHead className="text-right">操作</TableHead>
         </TableRow>
@@ -56,9 +52,6 @@ export function ApplicationListTable({
                 {row.applicantEmail ?? "-"}
               </TableCell>
             ) : null}
-            <TableCell className="font-mono text-xs">
-              {row.formTemplateId.slice(0, templateIdLength)}...
-            </TableCell>
             <TableCell className="text-muted-foreground">
               {new Date(row.createdAt).toLocaleString("ja-JP")}
             </TableCell>

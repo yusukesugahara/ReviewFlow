@@ -22,12 +22,6 @@ export class CreateApprovalFlowsAndSteps1748400000000 implements MigrationInterf
               length: '36',
               isNullable: false,
             },
-            {
-              name: 'form_template_id',
-              type: 'varchar',
-              length: '36',
-              isNullable: false,
-            },
             { name: 'name', type: 'varchar', length: '255', isNullable: false },
             {
               name: 'is_active',
@@ -53,21 +47,11 @@ export class CreateApprovalFlowsAndSteps1748400000000 implements MigrationInterf
               referencedColumnNames: ['id'],
               onDelete: 'CASCADE',
             }),
-            new TableForeignKey({
-              columnNames: ['form_template_id'],
-              referencedTableName: 'form_templates',
-              referencedColumnNames: ['id'],
-              onDelete: 'CASCADE',
-            }),
           ],
           indices: [
             new TableIndex({
               name: 'IDX_approval_flows_tenant',
               columnNames: ['tenant_id'],
-            }),
-            new TableIndex({
-              name: 'IDX_approval_flows_template',
-              columnNames: ['form_template_id'],
             }),
           ],
         }),

@@ -17,7 +17,7 @@ export type CurrentSessionUser = {
 export type ApplicantSession = {
   email: string;
   tenantId: string;
-  templateId: string;
+  groupId: string;
 };
 
 export async function getAccessTokenFromCookie(): Promise<string | null> {

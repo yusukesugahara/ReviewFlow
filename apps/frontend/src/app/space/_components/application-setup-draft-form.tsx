@@ -30,7 +30,7 @@ type ApplicationSetupDraftFormProps = {
   action: (formData: FormData) => void | Promise<void>;
   errorMessage?: string | null;
   statusMessage?: string | null;
-  publishedTemplateId?: string | null;
+  publishedGroupId?: string | null;
   assignees: ApprovalAssigneeOption[];
   spaceId: string;
 };
@@ -134,7 +134,7 @@ export function ApplicationSetupDraftForm({
   action,
   errorMessage,
   statusMessage,
-  publishedTemplateId,
+  publishedGroupId,
   assignees,
   spaceId,
 }: ApplicationSetupDraftFormProps) {
@@ -165,8 +165,8 @@ export function ApplicationSetupDraftForm({
   return (
     <form action={action} className="space-y-8">
       <PublishedApplicationUrlModal
-        open={Boolean(publishedTemplateId)}
-        templateId={publishedTemplateId ?? undefined}
+        open={Boolean(publishedGroupId)}
+        groupId={publishedGroupId ?? undefined}
       />
       <input type="hidden" name="fieldsJson" value={fieldsJson} />
       <input type="hidden" name="spaceId" value={spaceId} />

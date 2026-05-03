@@ -30,7 +30,7 @@
 - expires_at: datetime
 - created_at: datetime
 
-## form_templates
+## form_definitions
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
 - group_id: string (FK -> groups.id)
@@ -44,7 +44,7 @@
 ## form_fields
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
-- form_template_id: string (FK -> form_templates.id)
+- form_definition_id: string (FK -> form_definitions.id)
 - field_key: string
 - label: string
 - field_type: enum(text, textarea, number, date, select, radio, checkbox)
@@ -60,7 +60,7 @@
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)
 - group_id: string (FK -> groups.id)
-- form_template_id: string (FK -> form_templates.id)
+- form_definition_id: string (FK -> form_definitions.id)
 - name: string
 - is_active: boolean
 - created_at: datetime
@@ -84,7 +84,7 @@
 - group_id: string (FK -> groups.id)
 - applicant_user_id: string nullable (FK -> users.id)
 - applicant_email: string
-- form_template_id: string (FK -> form_templates.id)
+- form_definition_id: string (FK -> form_definitions.id)
 - approval_flow_id: string (FK -> approval_flows.id)
 - current_step_order: int nullable
 - status: enum(draft, submitted, in_review, returned, approved, rejected)
@@ -155,8 +155,8 @@
 
 ## インデックス方針
 - users: unique(tenant_id, email)
-- form_templates: index(tenant_id, group_id)
-- form_fields: index(tenant_id, form_template_id, sort_order)
+- form_definitions: index(tenant_id, group_id)
+- form_fields: index(tenant_id, form_definition_id, sort_order)
 - approval_flows: index(tenant_id, group_id)
 - approval_steps: index(tenant_id, group_id)
 - approval_steps: unique(approval_flow_id, step_order)

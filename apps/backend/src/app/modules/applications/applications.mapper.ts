@@ -15,7 +15,6 @@ export function mapApplicationToSummary(
     id: row.id,
     groupId: row.groupId,
     status: row.status,
-    formTemplateId: row.formTemplateId,
     approvalFlowId: row.approvalFlowId,
     applicantEmail: row.applicantEmail,
     currentStepOrder: row.currentStepOrder,

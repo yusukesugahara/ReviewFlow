@@ -7,7 +7,7 @@ import {
 } from 'typeorm';
 
 const groupScopedTables = [
-  'form_templates',
+  'form_definitions',
   'approval_flows',
   'approval_steps',
   'applications',
@@ -42,6 +42,7 @@ export class AddGroupScopeToBusinessData1765200000000 implements MigrationInterf
         new TableIndex({
           name: `IDX_${table}_tenant_group`,
           columnNames: ['tenant_id', 'group_id'],
+          isUnique: table === 'form_definitions',
         }),
       );
     }

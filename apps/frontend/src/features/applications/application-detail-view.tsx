@@ -14,7 +14,6 @@ export type ApplicationDetailViewModel = {
   id: string;
   groupId?: string | null;
   status: string;
-  formTemplateId: string;
   createdAt?: string;
   updatedAt?: string;
   applicantEmail?: string;
@@ -146,13 +145,6 @@ function ApplicationBasicInfo({
           <InfoRow
             label="現在のステップ"
             value={application.currentStepOrder ?? "-"}
-          />
-        ) : null}
-        {!showApplicantEmail ? (
-          <InfoRow
-            label="テンプレートID"
-            value={`${application.formTemplateId.slice(0, 12)}...`}
-            mono
           />
         ) : null}
         {showTimestamps && application.createdAt ? (

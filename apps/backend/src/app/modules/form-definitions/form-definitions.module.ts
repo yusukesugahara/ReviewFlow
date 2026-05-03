@@ -1,25 +1,25 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FormField } from '../../../models/entities/form-field.entity';
-import { FormTemplate } from '../../../models/entities/form-template.entity';
+import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApprovalFlowsModule } from '../approval-flows/approval-flows.module';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
-import { FormTemplatesController } from './form-templates.controller';
-import { FormTemplatesService } from './form-templates.service';
+import { FormDefinitionsController } from './form-definitions.controller';
+import { FormDefinitionsService } from './form-definitions.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([FormTemplate, FormField]),
+    TypeOrmModule.forFeature([FormDefinition, FormField]),
     ApprovalFlowsModule,
     AuthModule,
     GroupsModule,
     MailModule,
   ],
-  controllers: [FormTemplatesController],
-  providers: [FormTemplatesService, ApplicantAccessGuard],
-  exports: [FormTemplatesService],
+  controllers: [FormDefinitionsController],
+  providers: [FormDefinitionsService, ApplicantAccessGuard],
+  exports: [FormDefinitionsService],
 })
-export class FormTemplatesModule {}
+export class FormDefinitionsModule {}

@@ -1,9 +1,9 @@
 import type {
   FormFieldResponseDto,
-  FormTemplateResponseDto,
-} from './form-templates.dto';
+  FormDefinitionResponseDto,
+} from './form-definitions.dto';
 import type { FormField } from '../../../models/entities/form-field.entity';
-import type { FormTemplate } from '../../../models/entities/form-template.entity';
+import type { FormDefinition } from '../../../models/entities/form-definition.entity';
 
 export function mapFormFieldToDto(f: FormField): FormFieldResponseDto {
   return {
@@ -20,7 +20,9 @@ export function mapFormFieldToDto(f: FormField): FormFieldResponseDto {
   };
 }
 
-export function mapFormTemplateToDto(t: FormTemplate): FormTemplateResponseDto {
+export function mapFormDefinitionToDto(
+  t: FormDefinition,
+): FormDefinitionResponseDto {
   const fields = (t.fields ?? [])
     .slice()
     .sort((a, b) => a.sortOrder - b.sortOrder);

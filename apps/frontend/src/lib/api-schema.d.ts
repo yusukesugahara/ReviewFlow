@@ -191,33 +191,33 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/form-templates": {
+    "/form-definitions": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** フォームテンプレート一覧（tenant_admin） */
-        get: operations["FormTemplatesController_list"];
+        /** フォーム定義一覧（tenant_admin） */
+        get: operations["FormDefinitionsController_list"];
         put?: never;
-        /** フォームテンプレート作成（下書き） */
-        post: operations["FormTemplatesController_create"];
+        /** フォーム定義作成（下書き） */
+        post: operations["FormDefinitionsController_create"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/form-templates/{id}": {
+    "/form-definitions/{id}": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** フォームテンプレート取得（tenant_admin） */
-        get: operations["FormTemplatesController_getOne"];
+        /** フォーム定義取得（tenant_admin） */
+        get: operations["FormDefinitionsController_getOne"];
         put?: never;
         post?: never;
         delete?: never;
@@ -226,7 +226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/form-templates/{id}/fields": {
+    "/form-definitions/{id}/fields": {
         parameters: {
             query?: never;
             header?: never;
@@ -236,14 +236,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** フォーム項目追加（下書きのみ） */
-        post: operations["FormTemplatesController_addField"];
+        post: operations["FormDefinitionsController_addField"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/form-templates/{id}/fields/{fieldId}/move": {
+    "/form-definitions/{id}/fields/{fieldId}/move": {
         parameters: {
             query?: never;
             header?: never;
@@ -253,14 +253,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** フォーム項目の並び順変更（下書きのみ） */
-        post: operations["FormTemplatesController_moveField"];
+        post: operations["FormDefinitionsController_moveField"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/form-templates/{id}/fields/{fieldId}/delete": {
+    "/form-definitions/{id}/fields/{fieldId}/delete": {
         parameters: {
             query?: never;
             header?: never;
@@ -270,14 +270,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** フォーム項目削除（下書きのみ） */
-        post: operations["FormTemplatesController_deleteField"];
+        post: operations["FormDefinitionsController_deleteField"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/form-templates/{id}/fields/{fieldId}/settings": {
+    "/form-definitions/{id}/fields/{fieldId}/settings": {
         parameters: {
             query?: never;
             header?: never;
@@ -287,14 +287,14 @@ export interface paths {
         get?: never;
         put?: never;
         /** フォーム項目設定更新（下書きのみ） */
-        post: operations["FormTemplatesController_updateFieldSettings"];
+        post: operations["FormDefinitionsController_updateFieldSettings"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/form-templates/{id}/publish": {
+    "/form-definitions/{id}/publish": {
         parameters: {
             query?: never;
             header?: never;
@@ -303,15 +303,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** フォームテンプレート公開（draft → published） */
-        post: operations["FormTemplatesController_publish"];
+        /** フォーム定義公開（draft → published） */
+        post: operations["FormDefinitionsController_publish"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/form-templates/{id}/request-access": {
+    "/form-definitions/groups/{groupId}/request-access": {
         parameters: {
             query?: never;
             header?: never;
@@ -321,22 +321,22 @@ export interface paths {
         get?: never;
         put?: never;
         /** フォーム案内メール送信（公開） */
-        post: operations["FormTemplatesController_requestAccess"];
+        post: operations["FormDefinitionsController_requestAccess"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/form-templates/public/current": {
+    "/form-definitions/public/current": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** 公開申請用の現在テンプレート取得 */
-        get: operations["FormTemplatesController_getCurrentForApplicant"];
+        /** 公開申請用の現在フォーム定義取得 */
+        get: operations["FormDefinitionsController_getCurrentForApplicant"];
         put?: never;
         post?: never;
         delete?: never;
@@ -345,7 +345,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/form-templates/public/current/approval-flows": {
+    "/form-definitions/public/current/approval-flows": {
         parameters: {
             query?: never;
             header?: never;
@@ -353,7 +353,7 @@ export interface paths {
             cookie?: never;
         };
         /** 公開申請用の有効な承認フロー一覧 */
-        get: operations["FormTemplatesController_listCurrentFlowsForApplicant"];
+        get: operations["FormDefinitionsController_listCurrentFlowsForApplicant"];
         put?: never;
         post?: never;
         delete?: never;
@@ -374,7 +374,7 @@ export interface paths {
         put?: never;
         /**
          * 承認フロー作成（tenant_admin）
-         * @description 参照するフォームテンプレートは同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。
+         * @description 参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。
          */
         post: operations["ApprovalFlowsController_create"];
         delete?: never;
@@ -999,7 +999,7 @@ export interface components {
             sortOrder: number;
             createdAt: string;
         };
-        FormTemplateResponseDto: {
+        FormDefinitionResponseDto: {
             id: string;
             groupId: string;
             name: string;
@@ -1011,10 +1011,10 @@ export interface components {
             createdAt: string;
             updatedAt: string;
         };
-        FormTemplatesListResponseDto: {
-            templates: components["schemas"]["FormTemplateResponseDto"][];
+        FormDefinitionsListResponseDto: {
+            definitions: components["schemas"]["FormDefinitionResponseDto"][];
         };
-        CreateFormTemplateDto: {
+        CreateFormDefinitionDto: {
             /** Format: uuid */
             groupId: string;
             /** @example 経費申請 */
@@ -1078,7 +1078,6 @@ export interface components {
         ApprovalFlowResponseDto: {
             id: string;
             groupId: string;
-            formTemplateId: string;
             name: string;
             isActive: boolean;
             steps: components["schemas"]["ApprovalStepResponseDto"][];
@@ -1104,8 +1103,6 @@ export interface components {
         CreateApprovalFlowDto: {
             /** Format: uuid */
             groupId: string;
-            /** Format: uuid */
-            formTemplateId: string;
             /** @example 経費申請フロー */
             name: string;
             steps: components["schemas"]["CreateApprovalFlowStepDto"][];
@@ -1171,7 +1168,6 @@ export interface components {
             id: string;
             groupId: string;
             status: string;
-            formTemplateId: string;
             approvalFlowId: string;
             applicantEmail: string;
             currentStepOrder?: Record<string, never> | null;
@@ -1189,11 +1185,9 @@ export interface components {
         CreateApplicationDto: {
             /** Format: uuid */
             groupId: string;
-            /** Format: uuid */
-            formTemplateId: string;
             /**
              * Format: uuid
-             * @description 公開テンプレートに有効な承認フローが複数あるときは必須。1件のみなら省略可。
+             * @description スペースに有効な承認フローが複数あるときは必須。1件のみなら省略可。
              */
             approvalFlowId?: string;
             /**
@@ -1210,7 +1204,6 @@ export interface components {
             id: string;
             groupId: string;
             status: string;
-            formTemplateId: string;
             approvalFlowId: string;
             applicantEmail: string;
             currentStepOrder?: Record<string, never> | null;
@@ -1305,8 +1298,6 @@ export interface components {
             groupId: string;
             /** @enum {string} */
             status?: "draft" | "submitted" | "in_review" | "returned" | "approved" | "rejected";
-            /** Format: uuid */
-            formTemplateId?: string;
         };
         ErrorResponseDto: {
             /**
@@ -1649,7 +1640,7 @@ export interface operations {
             };
         };
     };
-    FormTemplatesController_list: {
+    FormDefinitionsController_list: {
         parameters: {
             query: {
                 groupId: string;
@@ -1671,13 +1662,13 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplatesListResponseDto"];
+                        data: components["schemas"]["FormDefinitionsListResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_create: {
+    FormDefinitionsController_create: {
         parameters: {
             query?: never;
             header?: never;
@@ -1686,7 +1677,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateFormTemplateDto"];
+                "application/json": components["schemas"]["CreateFormDefinitionDto"];
             };
         };
         responses: {
@@ -1701,13 +1692,13 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplateResponseDto"];
+                        data: components["schemas"]["FormDefinitionResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_getOne: {
+    FormDefinitionsController_getOne: {
         parameters: {
             query?: never;
             header?: never;
@@ -1729,13 +1720,13 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplateResponseDto"];
+                        data: components["schemas"]["FormDefinitionResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_addField: {
+    FormDefinitionsController_addField: {
         parameters: {
             query?: never;
             header?: never;
@@ -1767,7 +1758,7 @@ export interface operations {
             };
         };
     };
-    FormTemplatesController_moveField: {
+    FormDefinitionsController_moveField: {
         parameters: {
             query?: never;
             header?: never;
@@ -1794,13 +1785,13 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplateResponseDto"];
+                        data: components["schemas"]["FormDefinitionResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_deleteField: {
+    FormDefinitionsController_deleteField: {
         parameters: {
             query?: never;
             header?: never;
@@ -1823,13 +1814,13 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplateResponseDto"];
+                        data: components["schemas"]["FormDefinitionResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_updateFieldSettings: {
+    FormDefinitionsController_updateFieldSettings: {
         parameters: {
             query?: never;
             header?: never;
@@ -1856,13 +1847,13 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplateResponseDto"];
+                        data: components["schemas"]["FormDefinitionResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_publish: {
+    FormDefinitionsController_publish: {
         parameters: {
             query?: never;
             header?: never;
@@ -1884,18 +1875,18 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplateResponseDto"];
+                        data: components["schemas"]["FormDefinitionResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_requestAccess: {
+    FormDefinitionsController_requestAccess: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                id: string;
+                groupId: string;
             };
             cookie?: never;
         };
@@ -1922,7 +1913,7 @@ export interface operations {
             };
         };
     };
-    FormTemplatesController_getCurrentForApplicant: {
+    FormDefinitionsController_getCurrentForApplicant: {
         parameters: {
             query?: never;
             header?: never;
@@ -1942,13 +1933,13 @@ export interface operations {
                          * @enum {number}
                          */
                         status: 200;
-                        data: components["schemas"]["FormTemplateResponseDto"];
+                        data: components["schemas"]["FormDefinitionResponseDto"];
                     };
                 };
             };
         };
     };
-    FormTemplatesController_listCurrentFlowsForApplicant: {
+    FormDefinitionsController_listCurrentFlowsForApplicant: {
         parameters: {
             query?: never;
             header?: never;
