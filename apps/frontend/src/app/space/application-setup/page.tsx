@@ -2,6 +2,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { BackendHttpError, backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { listTenantUsers } from "@/lib/server/users-repository";
+import { SpaceEmptyState } from "@/features/spaces/space-empty-state";
+import { getCurrentSessionUser } from "@/lib/server/session";
 import {
   ApplicationSetupDraftForm,
   type DraftField,
@@ -280,9 +282,15 @@ async function submitApplicationSetupAction(formData: FormData): Promise<void> {
 
 export default async function AdminApplicationSetupPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
-  const spacesRaw = await backendAuthFetchJson("/groups");
+  const [spacesRaw, me] = await Promise.all([
+    backendAuthFetchJson("/groups"),
+    getCurrentSessionUser(),
+  ]);
   const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
   const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
+  if (!spaceId) {
+    return <SpaceEmptyState userRoles={me?.roles ?? []} />;
+  }
   const errorMessage = setupErrorMessage(params.setupError);
   const statusMessage = setupStatusMessage(params.setupStatus);
   const publishedGroupId = params.setupStatus === "published" ? params.publishedGroupId : null;

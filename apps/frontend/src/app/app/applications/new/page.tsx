@@ -6,6 +6,8 @@ import {
   BackendHttpError,
 } from "@/lib/server/backend-auth-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
+import { SpaceEmptyState } from "@/features/spaces/space-empty-state";
+import { getCurrentSessionUser } from "@/lib/server/session";
 
 type Space = {
   id: string;
@@ -13,20 +15,17 @@ type Space = {
 
 export default async function LegacyNewApplicationPage() {
   try {
-    const spacesRaw = await backendAuthFetchJson("/groups");
+    const [spacesRaw, me] = await Promise.all([
+      backendAuthFetchJson("/groups"),
+      getCurrentSessionUser(),
+    ]);
     const spaces = unwrapData<{ groups?: Space[] }>(spacesRaw).groups ?? [];
     const spaceId = spaces[0]?.id;
     if (spaceId) {
       redirect(buildSpaceApplicationNewHref(spaceId));
     }
 
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-muted-foreground">参加スペースがありません</p>
-        </CardContent>
-      </Card>
-    );
+    return <SpaceEmptyState userRoles={me?.roles ?? []} />;
   } catch (error) {
     if (error instanceof BackendHttpError) {
       return (

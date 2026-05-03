@@ -3,6 +3,8 @@ import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-aut
 import { unwrapData } from "@/lib/server/api-envelope";
 import { Card, CardContent } from "@/components/ui/card";
 import { buildSpaceApplicationsHref } from "@/features/applications/application-routes";
+import { SpaceEmptyState } from "@/features/spaces/space-empty-state";
+import { getCurrentSessionUser } from "@/lib/server/session";
 
 type Space = {
   id: string;
@@ -15,20 +17,17 @@ type PageProps = {
 export default async function LegacyReviewApplicationsPage({ searchParams }: PageProps) {
   try {
     const params = (await searchParams) ?? {};
-    const spacesRaw = await backendAuthFetchJson("/groups");
+    const [spacesRaw, me] = await Promise.all([
+      backendAuthFetchJson("/groups"),
+      getCurrentSessionUser(),
+    ]);
     const spaces = unwrapData<{ groups?: Space[] }>(spacesRaw).groups ?? [];
     const spaceId = params.spaceId ?? spaces[0]?.id;
     if (spaceId) {
       redirect(buildSpaceApplicationsHref(spaceId));
     }
 
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-muted-foreground">参加スペースがありません</p>
-        </CardContent>
-      </Card>
-    );
+    return <SpaceEmptyState userRoles={me?.roles ?? []} />;
   } catch (error) {
     if (error instanceof BackendHttpError) {
       return (

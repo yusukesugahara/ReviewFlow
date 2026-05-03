@@ -2,6 +2,8 @@ import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-aut
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { SpaceEmptyState } from "@/features/spaces/space-empty-state";
+import { getCurrentSessionUser } from "@/lib/server/session";
 import { MetricCard } from "./_components/metric-card";
 
 type AppSummary = { id: string; status: string; applicantEmail: string };
@@ -21,9 +23,15 @@ type PageProps = {
 export default async function AdminDashboardPage({ searchParams }: PageProps) {
   try {
     const params = (await searchParams) ?? {};
-    const spacesRaw = await backendAuthFetchJson("/groups");
+    const [spacesRaw, me] = await Promise.all([
+      backendAuthFetchJson("/groups"),
+      getCurrentSessionUser(),
+    ]);
     const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
     const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
+    if (!spaceId) {
+      return <SpaceEmptyState userRoles={me?.roles ?? []} />;
+    }
     const appsRaw = await backendAuthFetchJson(
       `/applications?groupId=${encodeURIComponent(spaceId)}`,
     );

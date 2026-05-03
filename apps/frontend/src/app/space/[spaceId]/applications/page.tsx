@@ -2,7 +2,7 @@ import { SpaceApplicationsPageContent } from "../../_components/space-applicatio
 
 type PageProps = {
   params: Promise<{ spaceId: string }>;
-  searchParams?: Promise<{ status?: string; view?: string }>;
+  searchParams?: Promise<{ view?: string }>;
 };
 
 export default async function SpaceApplicationsPage({
@@ -11,14 +11,8 @@ export default async function SpaceApplicationsPage({
 }: PageProps) {
   const [{ spaceId }, query] = await Promise.all([
     params,
-    searchParams ?? Promise.resolve({} as { status?: string; view?: string }),
+    searchParams ?? Promise.resolve({} as { view?: string }),
   ]);
 
-  return (
-    <SpaceApplicationsPageContent
-      spaceId={spaceId}
-      status={query.status}
-      view={query.view}
-    />
-  );
+  return <SpaceApplicationsPageContent spaceId={spaceId} view={query.view} />;
 }

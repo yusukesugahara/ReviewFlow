@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
+import { SpaceEmptyState } from "@/features/spaces/space-empty-state";
+import { getCurrentSessionUser } from "@/lib/server/session";
 
 type PageProps = {
   searchParams?: Promise<{ status?: string; spaceId?: string }>;
@@ -14,9 +16,10 @@ export default async function LegacySpaceApplicationsPage({
   searchParams,
 }: PageProps) {
   const query = (await searchParams) ?? {};
-  const spaceId = query.spaceId ?? (await getFallbackSpaceId());
-  if (!spaceId) {
-    redirect("/space");
+  const { spaceId, userRoles } = await getFallbackSpaceContext();
+  const resolvedSpaceId = query.spaceId ?? spaceId;
+  if (!resolvedSpaceId) {
+    return <SpaceEmptyState userRoles={userRoles} />;
   }
   const params = new URLSearchParams();
 
@@ -25,14 +28,20 @@ export default async function LegacySpaceApplicationsPage({
   }
 
   redirect(
-    `/space/${encodeURIComponent(spaceId)}/applications${
+    `/space/${encodeURIComponent(resolvedSpaceId)}/applications${
       params.size > 0 ? `?${params.toString()}` : ""
     }`,
   );
 }
 
-async function getFallbackSpaceId(): Promise<string> {
-  const spacesRaw = await backendAuthFetchJson("/groups");
+async function getFallbackSpaceContext(): Promise<{
+  spaceId: string;
+  userRoles: string[];
+}> {
+  const [spacesRaw, me] = await Promise.all([
+    backendAuthFetchJson("/groups"),
+    getCurrentSessionUser(),
+  ]);
   const spaces = unwrapData<{ groups?: Space[] }>(spacesRaw).groups ?? [];
-  return spaces[0]?.id ?? "";
+  return { spaceId: spaces[0]?.id ?? "", userRoles: me?.roles ?? [] };
 }

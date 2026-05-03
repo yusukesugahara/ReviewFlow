@@ -50,13 +50,11 @@ type ApplicationListView = "mine" | "review" | "all";
 
 type SpaceApplicationsPageContentProps = {
   spaceId: string;
-  status?: string;
   view?: string;
 };
 
 export async function SpaceApplicationsPageContent({
   spaceId,
-  status,
   view,
 }: SpaceApplicationsPageContentProps) {
   try {
