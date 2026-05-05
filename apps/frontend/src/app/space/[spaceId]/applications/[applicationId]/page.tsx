@@ -6,20 +6,20 @@ import { unwrapData } from "@/lib/server/api-envelope";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { getApplicationCapabilities } from "@/features/applications/application-capabilities";
-import { ApplicantApplicationActions } from "@/features/applications/applicant-application-actions";
+import { getApplicationCapabilities } from "@/features/applications/model/application-capabilities";
+import { ApplicantApplicationActions } from "@/features/applications/components/applicant-application-actions";
 import {
   ApplicationDetailView,
   type ApplicationCorrection,
   type ApplicationCorrectionTargetItem,
   type ApplicationDetailViewModel,
   type ApplicationFormField,
-} from "@/features/applications/application-detail-view";
+} from "@/features/applications/components/application-detail-view";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationEditHrefByIds,
-} from "@/features/applications/application-routes";
-import { ReviewerApplicationActions } from "@/features/applications/reviewer-application-actions";
+} from "@/features/applications/model/application-routes";
+import { ReviewerApplicationActions } from "@/features/applications/components/reviewer-application-actions";
 
 type PageProps = {
   params: Promise<{ spaceId: string; applicationId: string }>;

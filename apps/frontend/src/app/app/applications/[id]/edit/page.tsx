@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import {
   buildSpaceApplicationEditHref,
   buildSpaceApplicationDetailHref,
-} from "@/features/applications/application-routes";
+} from "@/features/applications/model/application-routes";
 
 type ApplicationDetail = {
   id: string;

@@ -10,7 +10,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { userRoleLabel } from "@/lib/role-labels";
+import { userRoleLabel } from "@/lib/constants/role-labels";
 
 const editableRoles = new Set<UpdateUserRoleInput["role"]>([
   "tenant_admin",

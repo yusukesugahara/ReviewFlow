@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { userRoleLabel } from "@/lib/role-labels";
+import { userRoleLabel } from "@/lib/constants/role-labels";
 import { CopyButton } from "../_components/copy-button";
 
 type InvitationResponse = {

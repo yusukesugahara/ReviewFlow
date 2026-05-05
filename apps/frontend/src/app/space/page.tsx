@@ -2,7 +2,7 @@ import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-aut
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { SpaceEmptyState } from "@/features/spaces/space-empty-state";
+import { SpaceEmptyState } from "@/features/spaces/components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import { MetricCard } from "./_components/metric-card";
 

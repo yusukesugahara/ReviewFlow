@@ -22,13 +22,13 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { ApplicationEmptyState } from "@/features/applications/application-empty-state";
-import { ApplicationListTable } from "@/features/applications/application-list-table";
+import { ApplicationEmptyState } from "@/features/applications/components/application-empty-state";
+import { ApplicationListTable } from "@/features/applications/components/application-list-table";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
   buildSpaceApplicationsHref,
-} from "@/features/applications/application-routes";
+} from "@/features/applications/model/application-routes";
 import { getCurrentSessionUser } from "@/lib/server/session";
 
 type FormDefinitionRow = {

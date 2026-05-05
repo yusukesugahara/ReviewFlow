@@ -3,8 +3,8 @@ import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-aut
 import { Card, CardContent } from "@/components/ui/card";
 import {
   type ApplicationDetailViewModel,
-} from "@/features/applications/application-detail-view";
-import { buildSpaceApplicationDetailHref } from "@/features/applications/application-routes";
+} from "@/features/applications/components/application-detail-view";
+import { buildSpaceApplicationDetailHref } from "@/features/applications/model/application-routes";
 
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {

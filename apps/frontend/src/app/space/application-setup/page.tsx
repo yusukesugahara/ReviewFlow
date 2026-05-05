@@ -2,7 +2,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { BackendHttpError, backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { listTenantUsers } from "@/lib/server/users-repository";
-import { SpaceEmptyState } from "@/features/spaces/space-empty-state";
+import { SpaceEmptyState } from "@/features/spaces/components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import {
   ApplicationSetupDraftForm,

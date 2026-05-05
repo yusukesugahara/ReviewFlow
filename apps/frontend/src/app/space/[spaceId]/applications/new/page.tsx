@@ -5,7 +5,7 @@ import {
   DynamicFieldInput,
   readDynamicValuesFromFormData,
   type DynamicFormField,
-} from "@/app/app/applications/_components/dynamic-fields";
+} from "@/features/applications/components/dynamic-fields";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -19,7 +19,7 @@ import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
   buildSpaceApplicationsHref,
-} from "@/features/applications/application-routes";
+} from "@/features/applications/model/application-routes";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 
 type FormDefinition = {
