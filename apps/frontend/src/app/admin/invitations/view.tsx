@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { userRoleLabel } from "@/lib/constants/role-labels";
+import { TENANT_ROLE_OPTIONS, TENANT_ROLES } from "@/lib/constants/roles";
 import { CopyButton } from "@/features/admin/components/copy-button";
 import { createInvitationAction } from "./actions";
 
@@ -67,11 +68,14 @@ export function AdminInvitationsView({
               <select
                 id="role"
                 name="role"
-                defaultValue="tenant_user"
+                defaultValue={TENANT_ROLES.user}
                 className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm"
               >
-                <option value="tenant_user">テナントユーザー</option>
-                <option value="tenant_admin">テナント管理者</option>
+                {TENANT_ROLE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
               </select>
             </div>
             <Button type="submit">招待URLを発行</Button>

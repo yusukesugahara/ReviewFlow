@@ -1,3 +1,8 @@
+import {
+  APPLICATION_STATUSES,
+  APPLICATION_STATUS_LABELS,
+} from "@/lib/constants/applications";
+
 export type ApplicationStatusBadgeVariant =
   | "default"
   | "secondary"
@@ -8,12 +13,12 @@ export function getApplicationStatusBadgeVariant(
   status: string,
 ): ApplicationStatusBadgeVariant {
   switch (status) {
-    case "approved":
+    case APPLICATION_STATUSES.approved:
       return "default";
-    case "in_review":
+    case APPLICATION_STATUSES.inReview:
       return "secondary";
-    case "returned":
-    case "rejected":
+    case APPLICATION_STATUSES.returned:
+    case APPLICATION_STATUSES.rejected:
       return "destructive";
     default:
       return "outline";
@@ -21,13 +26,5 @@ export function getApplicationStatusBadgeVariant(
 }
 
 export function getApplicationStatusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    draft: "下書き",
-    submitted: "提出済み",
-    in_review: "レビュー中",
-    returned: "差し戻し",
-    approved: "承認",
-    rejected: "却下",
-  };
-  return labels[status] ?? status;
+  return APPLICATION_STATUS_LABELS[status as keyof typeof APPLICATION_STATUS_LABELS] ?? status;
 }

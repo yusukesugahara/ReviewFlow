@@ -4,6 +4,7 @@ import {
 } from "@/lib/server/backend-auth-fetch";
 import { SpaceEmptyState } from "@/features/spaces/components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
+import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { AdminDashboardView } from "./view";
 
 type AppSummary = { id: string; status: string; applicantEmail: string };
@@ -49,7 +50,10 @@ export default async function AdminDashboardPage({ searchParams }: PageProps) {
         unwrapData<{ corrections?: CorrectionEntry[] }>(cRaw).corrections ??
         [];
       correctionCount += corrections.length;
-      if (corrections.length > 0 && app.status === "in_review") {
+      if (
+        corrections.length > 0 &&
+        app.status === APPLICATION_STATUSES.inReview
+      ) {
         resubmitCount += 1;
       }
     }

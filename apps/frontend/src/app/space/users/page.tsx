@@ -11,10 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { userRoleLabel } from "@/lib/constants/role-labels";
+import { TENANT_ROLE_OPTIONS, TENANT_ROLES } from "@/lib/constants/roles";
 
 const editableRoles = new Set<UpdateUserRoleInput["role"]>([
-  "tenant_admin",
-  "tenant_user",
+  TENANT_ROLES.admin,
+  TENANT_ROLES.user,
 ]);
 
 function isUpdateUserRole(role: string): role is UpdateUserRoleInput["role"] {
@@ -93,8 +94,11 @@ export default async function AdminUsersPage() {
                             defaultValue={user.role}
                           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                         >
-                          <option value="tenant_admin">テナント管理者</option>
-                          <option value="tenant_user">テナントユーザー</option>
+                          {TENANT_ROLE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
                         </select>
                           <Button size="sm" type="submit" variant="outline">
                             更新

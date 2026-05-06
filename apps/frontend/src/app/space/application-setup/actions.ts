@@ -6,6 +6,14 @@ import {
   BackendHttpError,
   backendAuthFetchJson,
 } from "@/lib/server/backend-auth-fetch";
+import {
+  APPLICATION_SETUP_ERRORS,
+  APPLICATION_SETUP_STATUSES,
+} from "@/lib/constants/application-setup";
+import {
+  FIELD_TYPES,
+  fieldTypeNeedsOptions,
+} from "@/lib/constants/form-fields";
 import type { DraftField } from "@/features/spaces/components/application-setup-draft-form";
 
 type CreateDefinitionResponse = {
@@ -66,14 +74,6 @@ function parseOptions(optionsText: string): { label: string; value: string }[] {
     .map((line) => ({ label: line, value: line }));
 }
 
-function needsOptions(fieldType: string): boolean {
-  return (
-    fieldType === "select" ||
-    fieldType === "radio" ||
-    fieldType === "checkbox"
-  );
-}
-
 function normalizeFieldKey(
   label: string,
   index: number,
@@ -128,7 +128,7 @@ function readDraftFields(fieldsJson: FormDataEntryValue | null): DraftField[] {
           raw.fieldType === "radio" ||
           raw.fieldType === "checkbox"
             ? raw.fieldType
-            : "text",
+            : FIELD_TYPES.text,
         required: raw.required,
         placeholder: typeof raw.placeholder === "string" ? raw.placeholder : "",
         helpText: typeof raw.helpText === "string" ? raw.helpText : "",
@@ -149,7 +149,9 @@ function toFieldPayloads(fields: DraftField[]): FieldPayload[] {
       required: field.required,
       placeholder: field.placeholder.trim(),
       helpText: field.helpText.trim(),
-      options: needsOptions(field.fieldType) ? parseOptions(field.optionsText) : [],
+      options: fieldTypeNeedsOptions(field.fieldType)
+        ? parseOptions(field.optionsText)
+        : [],
       sortOrder: index,
     };
   });
@@ -165,28 +167,40 @@ export async function submitApplicationSetupAction(
   const spaceId = formData.get("spaceId");
 
   if (typeof name !== "string" || name.trim().length === 0) {
-    redirect("/space/application-setup?setupError=invalid_name");
+    redirect(
+      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+    );
   }
   if (typeof spaceId !== "string" || spaceId.length === 0) {
-    redirect("/space/application-setup?setupError=invalid_name");
+    redirect(
+      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+    );
   }
   if (typeof stepLines !== "string") {
-    redirect("/space/application-setup?setupError=invalid_steps");
+    redirect(
+      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+    );
   }
 
   let fields: DraftField[];
   try {
     fields = readDraftFields(fieldsJson);
   } catch {
-    redirect("/space/application-setup?setupError=invalid_fields");
+    redirect(
+      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+    );
   }
   if (fields.length === 0) {
-    redirect("/space/application-setup?setupError=invalid_fields");
+    redirect(
+      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+    );
   }
 
   const steps = parseSteps(stepLines);
   if (steps.length === 0) {
-    redirect("/space/application-setup?setupError=invalid_steps");
+    redirect(
+      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+    );
   }
 
   const resolvedIntent: SetupIntent = intent === "publish" ? "publish" : "draft";
@@ -236,16 +250,20 @@ export async function submitApplicationSetupAction(
     ) {
       revalidatePath("/space/application-setup");
       redirect(
-        "/space/application-setup?setupError=approval_flow_requires_publish",
+        `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.approvalFlowRequiresPublish}`,
       );
     }
-    redirect("/space/application-setup?setupError=save_failed");
+    redirect(
+      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.saveFailed}`,
+    );
   }
 
   revalidatePath("/space/application-setup");
   redirect(
     `/space/application-setup?setupStatus=${
-      resolvedIntent === "publish" ? "published" : "draft_saved"
+      resolvedIntent === "publish"
+        ? APPLICATION_SETUP_STATUSES.published
+        : APPLICATION_SETUP_STATUSES.draftSaved
     }${
       resolvedIntent === "publish"
         ? `&publishedGroupId=${encodeURIComponent(spaceId)}`

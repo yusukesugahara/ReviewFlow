@@ -5,16 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  FIELD_TYPE_OPTIONS,
+  FIELD_TYPES,
+  fieldTypeNeedsOptions,
+  fieldTypeSupportsPlaceholder,
+  isFieldType,
+  type FieldType,
+} from "@/lib/constants/form-fields";
 import { OrderMoveButtons } from "./order-move-buttons";
-
-type FieldType =
-  | "text"
-  | "textarea"
-  | "number"
-  | "date"
-  | "select"
-  | "radio"
-  | "checkbox";
 
 type FormField = {
   id: string;
@@ -47,26 +46,8 @@ type AddFieldFormProps = {
   disabled: boolean;
 };
 
-const FIELD_TYPES: { value: FieldType; label: string }[] = [
-  { value: "text", label: "テキスト" },
-  { value: "textarea", label: "複数行テキスト" },
-  { value: "number", label: "数値" },
-  { value: "date", label: "日付" },
-  { value: "select", label: "選択" },
-  { value: "radio", label: "ラジオボタン" },
-  { value: "checkbox", label: "チェックボックス" },
-];
-
 function asFieldType(value: string): FieldType {
-  return FIELD_TYPES.some((item) => item.value === value) ? (value as FieldType) : "text";
-}
-
-function needsOptions(fieldType: FieldType): boolean {
-  return fieldType === "select" || fieldType === "radio" || fieldType === "checkbox";
-}
-
-function supportsPlaceholder(fieldType: FieldType): boolean {
-  return fieldType === "text" || fieldType === "textarea" || fieldType === "number" || fieldType === "select";
+  return isFieldType(value) ? value : FIELD_TYPES.text;
 }
 
 function optionsToLines(options: unknown[] | null | undefined): string {
@@ -117,7 +98,7 @@ function TypeSelect({
       onChange={(event) => onChange(asFieldType(event.target.value))}
       className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
     >
-      {FIELD_TYPES.map((item) => (
+      {FIELD_TYPE_OPTIONS.map((item) => (
         <option key={item.value} value={item.value}>
           {item.label}
         </option>
@@ -147,7 +128,7 @@ function TypeSpecificInputs({
 }) {
   return (
     <div className="grid gap-3 border-t pt-3 md:grid-cols-2">
-      {supportsPlaceholder(fieldType) ? (
+      {fieldTypeSupportsPlaceholder(fieldType) ? (
         <div className="space-y-2">
           <Label htmlFor={`placeholder-${fieldType}`}>プレースホルダー</Label>
           <Input
@@ -156,7 +137,11 @@ function TypeSpecificInputs({
             value={placeholder}
             onChange={(event) => onPlaceholderChange(event.target.value)}
             disabled={disabled}
-            placeholder={fieldType === "select" ? "例: 選択してください" : "入力例や補足"}
+            placeholder={
+              fieldType === FIELD_TYPES.select
+                ? "例: 選択してください"
+                : "入力例や補足"
+            }
           />
         </div>
       ) : (
@@ -173,7 +158,7 @@ function TypeSpecificInputs({
           placeholder="入力欄の下に表示する説明"
         />
       </div>
-      {needsOptions(fieldType) ? (
+      {fieldTypeNeedsOptions(fieldType) ? (
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor={`options-${fieldType}`}>選択肢</Label>
           <Textarea

@@ -4,6 +4,7 @@ import {
   BackendHttpError,
 } from "@/lib/server/backend-auth-fetch";
 import { AdminSpacesView } from "./view";
+import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   AvailableUserSummary,
   GroupMemberSummary,
@@ -57,9 +58,8 @@ type PageProps = {
 export default async function AdminSpacesPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const me = await getCurrentSessionUser();
-  const isSystemAdmin = me?.roles.includes("tenant_admin") ?? false;
-  const canCreateSpace =
-    isSystemAdmin || (me?.roles.includes("tenant_admin") ?? false);
+  const isSystemAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
+  const canCreateSpace = isSystemAdmin;
 
   try {
     const [groupsRaw, usersRaw] = await Promise.all([

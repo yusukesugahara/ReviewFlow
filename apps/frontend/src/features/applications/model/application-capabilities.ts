@@ -1,4 +1,5 @@
 import type { CurrentSessionUser } from "@/lib/server/session";
+import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import type { ApplicationDetailViewModel } from "../components/application-detail-view";
 
 export type ApplicationCapabilities = {
@@ -16,13 +17,17 @@ export function getApplicationCapabilities(
 ): ApplicationCapabilities {
   const isApplicant =
     actor !== null && actor.email.toLowerCase() === application.applicantEmail?.toLowerCase();
-  const isInReview = application.status === "in_review";
+  const isInReview = application.status === APPLICATION_STATUSES.inReview;
 
   return {
     canEditApplication:
-      isApplicant && (application.status === "draft" || application.status === "returned"),
-    canSubmitApplication: isApplicant && application.status === "draft",
-    canResubmitApplication: isApplicant && application.status === "returned",
+      isApplicant &&
+      (application.status === APPLICATION_STATUSES.draft ||
+        application.status === APPLICATION_STATUSES.returned),
+    canSubmitApplication:
+      isApplicant && application.status === APPLICATION_STATUSES.draft,
+    canResubmitApplication:
+      isApplicant && application.status === APPLICATION_STATUSES.returned,
     canApproveApplication: isInReview,
     canRejectApplication: isInReview,
     canReturnApplication: isInReview,

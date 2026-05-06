@@ -14,6 +14,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { spaceRoleLabel } from "@/lib/constants/role-labels";
 import {
+  SPACE_ROLE_OPTIONS,
+  SPACE_ROLES,
+  TENANT_ROLE_OPTIONS,
+  TENANT_ROLES,
+} from "@/lib/constants/roles";
+import {
   Table,
   TableBody,
   TableCell,
@@ -136,10 +142,13 @@ export function SpaceList({
                         <select
                           className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                           name="role"
-                          defaultValue="user"
+                          defaultValue={SPACE_ROLES.user}
                         >
-                          <option value="user">スペースユーザー</option>
-                          <option value="admin">スペース管理者</option>
+                          {SPACE_ROLE_OPTIONS.map((option) => (
+                            <option key={option.value} value={option.value}>
+                              {option.label}
+                            </option>
+                          ))}
                         </select>
                         <Button size="sm" type="submit">
                           追加
@@ -174,13 +183,14 @@ export function SpaceList({
                           <select
                             id={`tenant-role-${group.id}`}
                             name="tenantRole"
-                            defaultValue="tenant_user"
+                            defaultValue={TENANT_ROLES.user}
                             className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                           >
-                            <option value="tenant_user">テナントユーザー</option>
-                            <option value="tenant_admin">
-                              テナント管理者
-                            </option>
+                            {TENANT_ROLE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
                         <div className="space-y-1">
@@ -190,11 +200,14 @@ export function SpaceList({
                           <select
                             id={`group-role-${group.id}`}
                             name="groupRole"
-                            defaultValue="user"
+                            defaultValue={SPACE_ROLES.user}
                             className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                           >
-                            <option value="user">スペースユーザー</option>
-                            <option value="admin">スペース管理者</option>
+                            {SPACE_ROLE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
                           </select>
                         </div>
                         <div className="flex items-end">
@@ -255,8 +268,14 @@ export function SpaceList({
                                     defaultValue={member.role}
                                     className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                                   >
-                                    <option value="user">スペースユーザー</option>
-                                    <option value="admin">スペース管理者</option>
+                                    {SPACE_ROLE_OPTIONS.map((option) => (
+                                      <option
+                                        key={option.value}
+                                        value={option.value}
+                                      >
+                                        {option.label}
+                                      </option>
+                                    ))}
                                   </select>
                                   <Button
                                     size="sm"

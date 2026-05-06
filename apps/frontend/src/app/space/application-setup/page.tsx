@@ -2,6 +2,13 @@ import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { listTenantUsers } from "@/lib/server/users-repository";
 import { SpaceEmptyState } from "@/features/spaces/components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
+import {
+  APPLICATION_SETUP_ERROR_MESSAGES,
+  APPLICATION_SETUP_STATUS_MESSAGES,
+  APPLICATION_SETUP_STATUSES,
+  type ApplicationSetupError,
+  type ApplicationSetupStatus,
+} from "@/lib/constants/application-setup";
 import { AdminApplicationSetupView } from "./view";
 
 type PageProps = {
@@ -21,31 +28,15 @@ function unwrapData<T>(raw: unknown): T {
 }
 
 function setupErrorMessage(error?: string): string | null {
-  switch (error) {
-    case "invalid_name":
-      return "申請名を入力してください。";
-    case "invalid_fields":
-      return "フォーム項目を1件以上設定してください。";
-    case "invalid_steps":
-      return "承認ステップを1件以上設定してください。";
-    case "approval_flow_requires_publish":
-      return "下書き保存は完了しました。承認フローは公開済みフォームにしか保存できないバックエンドが起動中です。backend を再起動するか、申請公開で保存してください。";
-    case "save_failed":
-      return "保存に失敗しました。入力内容を確認して再度実行してください。";
-    default:
-      return null;
-  }
+  return error && error in APPLICATION_SETUP_ERROR_MESSAGES
+    ? APPLICATION_SETUP_ERROR_MESSAGES[error as ApplicationSetupError]
+    : null;
 }
 
 function setupStatusMessage(status?: string): string | null {
-  switch (status) {
-    case "draft_saved":
-      return "下書きを保存しました。";
-    case "published":
-      return "申請を公開しました。";
-    default:
-      return null;
-  }
+  return status && status in APPLICATION_SETUP_STATUS_MESSAGES
+    ? APPLICATION_SETUP_STATUS_MESSAGES[status as ApplicationSetupStatus]
+    : null;
 }
 
 export default async function AdminApplicationSetupPage({
@@ -75,7 +66,9 @@ export default async function AdminApplicationSetupPage({
       assignees={assignees}
       errorMessage={setupErrorMessage(params.setupError)}
       publishedGroupId={
-        params.setupStatus === "published" ? (params.publishedGroupId ?? null) : null
+        params.setupStatus === APPLICATION_SETUP_STATUSES.published
+          ? (params.publishedGroupId ?? null)
+          : null
       }
       spaceId={spaceId}
       statusMessage={setupStatusMessage(params.setupStatus)}

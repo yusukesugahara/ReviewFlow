@@ -19,6 +19,12 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  APPLICATION_LIST_VIEW_OPTIONS,
+  APPLICATION_LIST_VIEWS,
+  APPLICATION_STATUSES,
+  type ApplicationListView,
+} from "@/lib/constants/applications";
 import { ApplicationEmptyState } from "@/features/applications/components/application-empty-state";
 import { ApplicationListTable } from "@/features/applications/components/application-list-table";
 import {
@@ -41,8 +47,6 @@ export type ApplicationRow = {
   applicantEmail: string;
   createdAt: string;
 };
-
-type ApplicationListView = "mine" | "review" | "all";
 
 type SpaceApplicationsPageContentProps = {
   actorEmail?: string;
@@ -127,10 +131,14 @@ export function SpaceApplicationsPageContent({
                       <TableCell>
                         <Badge
                           variant={
-                            definition.status === "published" ? "default" : "outline"
+                            definition.status === APPLICATION_STATUSES.published
+                              ? "default"
+                              : "outline"
                           }
                         >
-                          {definition.status === "published" ? "公開済み" : "下書き"}
+                          {definition.status === APPLICATION_STATUSES.published
+                            ? "公開済み"
+                            : "下書き"}
                         </Badge>
                       </TableCell>
                       <TableCell className="text-muted-foreground">
@@ -175,7 +183,7 @@ export function SpaceApplicationsPageContent({
                 all: applications.length,
               }}
               spaceId={spaceId}
-              status="published"
+              status={APPLICATION_STATUSES.published}
             />
             {visibleApplications.length === 0 ? (
               <ApplicationEmptyState
@@ -199,10 +207,13 @@ export function SpaceApplicationsPageContent({
 }
 
 function parseApplicationListView(view: string | undefined): ApplicationListView {
-  if (view === "review" || view === "all") {
+  if (
+    view === APPLICATION_LIST_VIEWS.review ||
+    view === APPLICATION_LIST_VIEWS.all
+  ) {
     return view;
   }
-  return "mine";
+  return APPLICATION_LIST_VIEWS.mine;
 }
 
 function filterApplicationsByView(
@@ -210,11 +221,11 @@ function filterApplicationsByView(
   view: ApplicationListView,
   actorEmail: string | undefined,
 ): ApplicationRow[] {
-  if (view === "all") {
+  if (view === APPLICATION_LIST_VIEWS.all) {
     return rows;
   }
-  if (view === "review") {
-    return rows.filter((row) => row.status === "in_review");
+  if (view === APPLICATION_LIST_VIEWS.review) {
+    return rows.filter((row) => row.status === APPLICATION_STATUSES.inReview);
   }
   if (!actorEmail) {
     return [];
@@ -226,10 +237,10 @@ function filterApplicationsByView(
 }
 
 function getApplicationEmptyMessage(view: ApplicationListView): string {
-  if (view === "review") {
+  if (view === APPLICATION_LIST_VIEWS.review) {
     return "レビュー対象の申請はありません";
   }
-  if (view === "all") {
+  if (view === APPLICATION_LIST_VIEWS.all) {
     return "スペース内の申請はまだありません";
   }
   return "自分の申請はまだありません";
@@ -239,7 +250,7 @@ function getApplicationEmptyAction(
   view: ApplicationListView,
   spaceId: string,
 ): ReactNode {
-  if (view === "review") {
+  if (view === APPLICATION_LIST_VIEWS.review) {
     return undefined;
   }
   return (
@@ -260,15 +271,9 @@ function ApplicationListViewTabs({
   spaceId: string;
   status: string;
 }) {
-  const tabs: { view: ApplicationListView; label: string }[] = [
-    { view: "mine", label: "自分の申請" },
-    { view: "review", label: "レビュー対象" },
-    { view: "all", label: "すべて" },
-  ];
-
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {tabs.map((tab) => {
+      {APPLICATION_LIST_VIEW_OPTIONS.map((tab) => {
         const isActive = activeView === tab.view;
         return (
           <Link

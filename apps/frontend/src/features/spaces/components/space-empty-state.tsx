@@ -2,13 +2,14 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TENANT_ROLES } from "@/lib/constants/roles";
 
 type SpaceEmptyStateProps = {
   userRoles: string[];
 };
 
 export function SpaceEmptyState({ userRoles }: SpaceEmptyStateProps) {
-  if (userRoles.includes("tenant_admin")) {
+  if (userRoles.includes(TENANT_ROLES.admin)) {
     return (
       <BaseSpaceEmptyState
         title="スペースがありません"

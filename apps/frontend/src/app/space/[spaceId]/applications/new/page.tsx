@@ -21,6 +21,7 @@ import {
   buildSpaceApplicationsHref,
 } from "@/features/applications/model/application-routes";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 type FormDefinition = {
   id: string;
@@ -108,7 +109,9 @@ export default async function SpaceNewApplicationPage({
   const definitions =
     unwrapData<{ definitions?: FormDefinition[] }>(templatesRaw).definitions ?? [];
   const formDefinition =
-    definitions.find((definition) => definition.status === "published") ??
+    definitions.find(
+      (definition) => definition.status === APPLICATION_STATUSES.published,
+    ) ??
     definitions[0];
 
   const flowsRaw = await backendAuthFetchJson(

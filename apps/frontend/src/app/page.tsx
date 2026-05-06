@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/lib/server/session";
+import { TENANT_ROLES } from "@/lib/constants/roles";
 
 export default async function HomePage() {
   const me = await getCurrentSessionUser();
@@ -7,7 +8,7 @@ export default async function HomePage() {
     redirect("/login");
   }
 
-  if (me.roles.includes("tenant_admin")) {
+  if (me.roles.includes(TENANT_ROLES.admin)) {
     redirect("/admin/spaces");
   }
   redirect("/app/applications");

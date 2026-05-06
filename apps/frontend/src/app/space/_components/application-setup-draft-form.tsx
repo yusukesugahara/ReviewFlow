@@ -8,13 +8,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  FIELD_TYPE_OPTIONS,
+  FIELD_TYPES,
+  fieldTypeNeedsOptions,
+  fieldTypeSupportsPlaceholder,
+  type FieldType,
+} from "@/lib/constants/form-fields";
+import {
   ApprovalStepsBuilder,
   type ApprovalAssigneeOption,
 } from "./approval-steps-builder";
 import { OrderMoveButtons } from "./order-move-buttons";
 import { PublishedApplicationUrlModal } from "./published-application-url-modal";
-
-type FieldType = "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox";
 
 export type { ApprovalAssigneeOption };
 
@@ -37,34 +42,16 @@ type ApplicationSetupDraftFormProps = {
   spaceId: string;
 };
 
-const FIELD_TYPES: { value: FieldType; label: string }[] = [
-  { value: "text", label: "テキスト" },
-  { value: "textarea", label: "複数行テキスト" },
-  { value: "number", label: "数値" },
-  { value: "date", label: "日付" },
-  { value: "select", label: "選択" },
-  { value: "radio", label: "ラジオボタン" },
-  { value: "checkbox", label: "チェックボックス" },
-];
-
 function createDefaultField(index: number): DraftField {
   return {
     id: `field-${index + 1}`,
     label: `フォーム${index + 1}`,
-    fieldType: "text",
+    fieldType: FIELD_TYPES.text,
     required: true,
     placeholder: "",
     helpText: "",
     optionsText: "",
   };
-}
-
-function needsOptions(fieldType: FieldType): boolean {
-  return fieldType === "select" || fieldType === "radio" || fieldType === "checkbox";
-}
-
-function supportsPlaceholder(fieldType: FieldType): boolean {
-  return fieldType === "text" || fieldType === "textarea" || fieldType === "number" || fieldType === "select";
 }
 
 function optionLines(optionsText: string): string[] {
@@ -88,10 +75,10 @@ function FieldPreview({ field, index }: { field: DraftField; index: number }) {
         {field.helpText.trim().length > 0 ? (
           <p className="text-sm text-muted-foreground">{field.helpText.trim()}</p>
         ) : null}
-        {field.fieldType === "textarea" ? (
+        {field.fieldType === FIELD_TYPES.textarea ? (
           <Textarea placeholder={field.placeholder.trim()} rows={5} className="min-h-32 bg-white" disabled />
         ) : null}
-        {field.fieldType === "select" ? (
+        {field.fieldType === FIELD_TYPES.select ? (
           <select
             className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm disabled:opacity-100"
             disabled
@@ -105,7 +92,8 @@ function FieldPreview({ field, index }: { field: DraftField; index: number }) {
             ))}
           </select>
         ) : null}
-        {field.fieldType === "radio" || field.fieldType === "checkbox" ? (
+        {field.fieldType === FIELD_TYPES.radio ||
+        field.fieldType === FIELD_TYPES.checkbox ? (
           <div className="space-y-2">
             {(options.length > 0 ? options : ["選択肢1", "選択肢2"]).map((option) => (
               <label key={option} className="flex items-center gap-2 text-sm text-slate-700">
@@ -119,9 +107,18 @@ function FieldPreview({ field, index }: { field: DraftField; index: number }) {
             ))}
           </div>
         ) : null}
-        {!["textarea", "select", "radio", "checkbox"].includes(field.fieldType) ? (
+        {field.fieldType !== FIELD_TYPES.textarea &&
+        field.fieldType !== FIELD_TYPES.select &&
+        field.fieldType !== FIELD_TYPES.radio &&
+        field.fieldType !== FIELD_TYPES.checkbox ? (
           <Input
-            type={field.fieldType === "number" ? "number" : field.fieldType === "date" ? "date" : "text"}
+            type={
+              field.fieldType === FIELD_TYPES.number
+                ? "number"
+                : field.fieldType === FIELD_TYPES.date
+                  ? "date"
+                  : "text"
+            }
             placeholder={field.placeholder.trim()}
             disabled
             className="bg-white disabled:opacity-100"
@@ -243,7 +240,7 @@ export function ApplicationSetupDraftForm({
                       onChange={(event) => updateField(field.id, { fieldType: event.target.value as FieldType })}
                       className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm"
                     >
-                      {FIELD_TYPES.map((item) => (
+                      {FIELD_TYPE_OPTIONS.map((item) => (
                         <option key={item.value} value={item.value}>
                           {item.label}
                         </option>
@@ -263,14 +260,18 @@ export function ApplicationSetupDraftForm({
                 </label>
 
                 <div className="grid gap-3 border-t pt-3 md:grid-cols-2">
-                  {supportsPlaceholder(field.fieldType) ? (
+                  {fieldTypeSupportsPlaceholder(field.fieldType) ? (
                     <div className="space-y-2">
                       <Label htmlFor={`placeholder-${field.id}`}>プレースホルダー</Label>
                       <Input
                         id={`placeholder-${field.id}`}
                         value={field.placeholder}
                         onChange={(event) => updateField(field.id, { placeholder: event.target.value })}
-                        placeholder={field.fieldType === "select" ? "例: 選択してください" : "入力例や補足"}
+                        placeholder={
+                          field.fieldType === FIELD_TYPES.select
+                            ? "例: 選択してください"
+                            : "入力例や補足"
+                        }
                       />
                     </div>
                   ) : null}
@@ -283,7 +284,7 @@ export function ApplicationSetupDraftForm({
                       placeholder="入力欄の下に表示する説明"
                     />
                   </div>
-                  {needsOptions(field.fieldType) ? (
+                  {fieldTypeNeedsOptions(field.fieldType) ? (
                     <div className="space-y-2 md:col-span-2">
                       <Label htmlFor={`options-${field.id}`}>選択肢</Label>
                       <Textarea
