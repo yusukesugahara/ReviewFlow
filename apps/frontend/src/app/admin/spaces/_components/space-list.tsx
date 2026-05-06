@@ -25,7 +25,7 @@ import type {
   AvailableUserSummary,
   GroupMemberSummary,
   GroupSummary,
-} from "../page";
+} from "../types";
 
 type SpaceListItem = {
   group: GroupSummary;

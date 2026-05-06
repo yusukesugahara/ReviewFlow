@@ -1,10 +1,7 @@
+"use client";
+
 import type { ReactNode } from "react";
 import Link from "next/link";
-import {
-  backendAuthFetchJson,
-  BackendHttpError,
-} from "@/lib/server/backend-auth-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
 import {
   Card,
   CardContent,
@@ -29,16 +26,15 @@ import {
   buildSpaceApplicationNewHref,
   buildSpaceApplicationsHref,
 } from "@/features/applications/model/application-routes";
-import { getCurrentSessionUser } from "@/lib/server/session";
 
-type FormDefinitionRow = {
+export type FormDefinitionRow = {
   id: string;
   name: string;
   status: string;
   createdAt?: string;
 };
 
-type ApplicationRow = {
+export type ApplicationRow = {
   id: string;
   groupId: string;
   status: string;
@@ -49,37 +45,42 @@ type ApplicationRow = {
 type ApplicationListView = "mine" | "review" | "all";
 
 type SpaceApplicationsPageContentProps = {
+  actorEmail?: string;
+  applications: ApplicationRow[];
+  definitions: FormDefinitionRow[];
+  fetchErrorStatus?: number;
   spaceId: string;
   view?: string;
 };
 
-export async function SpaceApplicationsPageContent({
+export function SpaceApplicationsPageContent({
+  actorEmail,
+  applications,
+  definitions,
+  fetchErrorStatus,
   spaceId,
   view,
 }: SpaceApplicationsPageContentProps) {
-  try {
-    const activeView = parseApplicationListView(view);
-    const [definitionsRaw, applicationsRaw, actor] = await Promise.all([
-      backendAuthFetchJson(
-        `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
-      ),
-      backendAuthFetchJson(`/applications?groupId=${encodeURIComponent(spaceId)}`),
-      getCurrentSessionUser(),
-    ]);
-
-    const definitions =
-      unwrapData<{ definitions?: FormDefinitionRow[] }>(definitionsRaw).definitions ?? [];
-    const applicationRows =
-      unwrapData<{ applications?: ApplicationRow[] }>(applicationsRaw)
-        .applications ?? [];
-
-    const visibleApplications = filterApplicationsByView(
-      applicationRows,
-      activeView,
-      actor?.email,
-    );
-
+  if (fetchErrorStatus !== undefined) {
     return (
+      <Card>
+        <CardContent className="pt-6">
+          <p className="text-destructive">
+            申請一覧の取得に失敗しました（status: {fetchErrorStatus}）
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  const activeView = parseApplicationListView(view);
+  const visibleApplications = filterApplicationsByView(
+    applications,
+    activeView,
+    actorEmail,
+  );
+
+  return (
       <div className="space-y-6">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
@@ -162,16 +163,16 @@ export async function SpaceApplicationsPageContent({
               activeView={activeView}
               counts={{
                 mine: filterApplicationsByView(
-                  applicationRows,
+                  applications,
                   "mine",
-                  actor?.email,
+                  actorEmail,
                 ).length,
                 review: filterApplicationsByView(
-                  applicationRows,
+                  applications,
                   "review",
-                  actor?.email,
+                  actorEmail,
                 ).length,
-                all: applicationRows.length,
+                all: applications.length,
               }}
               spaceId={spaceId}
               status="published"
@@ -194,27 +195,7 @@ export async function SpaceApplicationsPageContent({
           </CardContent>
         </Card>
       </div>
-    );
-  } catch (error) {
-    if (error instanceof BackendHttpError) {
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-destructive">
-              申請一覧の取得に失敗しました（status: {error.status}）
-            </p>
-          </CardContent>
-        </Card>
-      );
-    }
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-destructive">申請一覧の取得に失敗しました</p>
-        </CardContent>
-      </Card>
-    );
-  }
+  );
 }
 
 function parseApplicationListView(view: string | undefined): ApplicationListView {

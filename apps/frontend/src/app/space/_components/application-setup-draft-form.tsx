@@ -16,6 +16,8 @@ import { PublishedApplicationUrlModal } from "./published-application-url-modal"
 
 type FieldType = "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox";
 
+export type { ApprovalAssigneeOption };
+
 export type DraftField = {
   id: string;
   label: string;
