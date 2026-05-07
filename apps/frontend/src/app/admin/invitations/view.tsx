@@ -13,7 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { userRoleLabel } from "@/lib/constants/role-labels";
 import { TENANT_ROLE_OPTIONS, TENANT_ROLES } from "@/lib/constants/roles";
-import { CopyButton } from "@/features/admin/components/copy-button";
+import { CopyButton } from "@/app/admin/_components/copy-button";
 import { createInvitationAction } from "./actions";
 
 type AdminInvitationsViewProps = {

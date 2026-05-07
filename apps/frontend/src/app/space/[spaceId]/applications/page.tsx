@@ -8,7 +8,7 @@ import {
   SpaceApplicationsPageContent,
   type ApplicationRow,
   type FormDefinitionRow,
-} from "@/features/spaces/components/space-applications-page-content";
+} from "@/app/space/_components/space-applications-page-content";
 
 type PageProps = {
   params: Promise<{ spaceId: string }>;

@@ -6,7 +6,7 @@ import {
   DynamicFieldInput,
   readDynamicValuesFromFormData,
   type DynamicFormField,
-} from "@/features/applications/components/dynamic-fields";
+} from "@/app/_components/applications/dynamic-fields";
 import {
   Card,
   CardContent,
@@ -15,7 +15,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { buildSpaceApplicationDetailHref } from "@/features/applications/model/application-routes";
+import { buildSpaceApplicationDetailHref } from "@/app/_components/applications/application-routes";
 
 type ApplicationDetail = {
   id: string;

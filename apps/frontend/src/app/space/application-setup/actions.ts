@@ -14,7 +14,7 @@ import {
   FIELD_TYPES,
   fieldTypeNeedsOptions,
 } from "@/lib/constants/form-fields";
-import type { DraftField } from "@/features/spaces/components/application-setup-draft-form";
+import type { DraftField } from "@/app/space/_components/application-setup-draft-form";
 
 type CreateDefinitionResponse = {
   id: string;

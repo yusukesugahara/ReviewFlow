@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { MetricCard } from "@/features/spaces/components/metric-card";
+import { MetricCard } from "@/app/space/_components/metric-card";
 
 type AdminDashboardViewProps = {
   avgReturns: string;

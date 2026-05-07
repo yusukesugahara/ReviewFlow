@@ -2,8 +2,8 @@ import { redirect } from "next/navigation";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { Card, CardContent } from "@/components/ui/card";
-import { buildSpaceApplicationsHref } from "@/features/applications/model/application-routes";
-import { SpaceEmptyState } from "@/features/spaces/components/space-empty-state";
+import { buildSpaceApplicationsHref } from "@/app/_components/applications/application-routes";
+import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
 
 type Space = {

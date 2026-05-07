@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import type { ApplicationCapabilities } from "../model/application-capabilities";
+import type { ApplicationCapabilities } from "./application-capabilities";
 type ApplicantApplicationActionsProps = {
   capabilities: Pick<
     ApplicationCapabilities,

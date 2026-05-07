@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { SpaceEmptyState } from "@/features/spaces/components/space-empty-state";
+import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
 
 type PageProps = {

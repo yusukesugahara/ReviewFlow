@@ -25,13 +25,13 @@ import {
   APPLICATION_STATUSES,
   type ApplicationListView,
 } from "@/lib/constants/applications";
-import { ApplicationEmptyState } from "@/features/applications/components/application-empty-state";
-import { ApplicationListTable } from "@/features/applications/components/application-list-table";
+import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
+import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
   buildSpaceApplicationsHref,
-} from "@/features/applications/model/application-routes";
+} from "@/app/_components/applications/application-routes";
 
 export type FormDefinitionRow = {
   id: string;

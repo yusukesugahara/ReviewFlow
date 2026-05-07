@@ -1,6 +1,6 @@
 import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
 import { listTenantUsers } from "@/lib/server/users-repository";
-import { SpaceEmptyState } from "@/features/spaces/components/space-empty-state";
+import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,

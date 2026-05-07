@@ -1,8 +1,8 @@
 "use client";
 
 import { Card, CardContent } from "@/components/ui/card";
-import { SpaceManagementHeader } from "@/features/admin/spaces/components/space-management-header";
-import { SpaceList } from "@/features/admin/spaces/components/space-list";
+import { SpaceManagementHeader } from "@/app/admin/spaces/_components/space-management-header";
+import { SpaceList } from "@/app/admin/spaces/_components/space-list";
 import {
   addMemberAction,
   createSpaceAction,

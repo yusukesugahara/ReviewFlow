@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   getApplicationStatusBadgeVariant,
   getApplicationStatusLabel,
-} from "../model/application-status";
+} from "./application-status";
 
 type ApplicationStatusBadgeProps = {
   status: string;

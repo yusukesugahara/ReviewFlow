@@ -3,7 +3,7 @@
 import {
   ApplicationSetupDraftForm,
   type ApprovalAssigneeOption,
-} from "@/features/spaces/components/application-setup-draft-form";
+} from "@/app/space/_components/application-setup-draft-form";
 import { submitApplicationSetupAction } from "./actions";
 
 type AdminApplicationSetupViewProps = {

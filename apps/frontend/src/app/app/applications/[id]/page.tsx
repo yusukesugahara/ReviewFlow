@@ -6,8 +6,8 @@ import {
 import { Card, CardContent } from "@/components/ui/card";
 import {
   type ApplicationDetailViewModel,
-} from "@/features/applications/components/application-detail-view";
-import { buildSpaceApplicationDetailHref } from "@/features/applications/model/application-routes";
+} from "@/app/_components/applications/application-detail-view";
+import { buildSpaceApplicationDetailHref } from "@/app/_components/applications/application-routes";
 
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
