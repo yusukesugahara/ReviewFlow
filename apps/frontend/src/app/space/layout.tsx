@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { AppSidebar, type AppSidebarSpace } from "@/components/app-sidebar";
-import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
 import { getCurrentSessionUser } from "@/lib/server/session";
 
 export const dynamic = "force-dynamic";

@@ -1,4 +1,4 @@
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";

@@ -4,7 +4,7 @@ import { buildSpaceApplicationNewHref } from "@/app/_components/applications/app
 import {
   backendAuthFetchJson,
   BackendHttpError,
-} from "@/lib/server/backend-auth-fetch";
+} from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";

@@ -5,7 +5,8 @@ import {
   ACCESS_TOKEN_COOKIE_NAME,
   APPLICANT_ACCESS_TOKEN_COOKIE_NAME,
 } from "@/lib/constants/auth.constants";
-import { postAuthMe } from "@/lib/server/auth-api";
+import type { AuthMeSuccessJson } from "@/lib/schema";
+import { backendFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 
 export type CurrentSessionUser = {
   id: string;
@@ -19,6 +20,43 @@ export type ApplicantSession = {
   tenantId: string;
   groupId: string;
 };
+
+function isAuthMeSuccessJson(json: unknown): json is AuthMeSuccessJson {
+  if (!json || typeof json !== "object") {
+    return false;
+  }
+  const root = json as Record<string, unknown>;
+  const data = root.data;
+  if (root.status !== 200 || !data || typeof data !== "object") {
+    return false;
+  }
+  const d = data as Record<string, unknown>;
+  return (
+    typeof d.id === "string" &&
+    typeof d.email === "string" &&
+    typeof d.tenantId === "string" &&
+    Array.isArray(d.roles) &&
+    d.roles.every((role) => typeof role === "string")
+  );
+}
+
+async function getAuthMe(accessToken: string): Promise<CurrentSessionUser | null> {
+  try {
+    const json = await backendFetchJson("/auth/me", {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!isAuthMeSuccessJson(json)) {
+      return null;
+    }
+    return json.data;
+  } catch (error) {
+    if (error instanceof BackendHttpError) {
+      return null;
+    }
+    throw error;
+  }
+}
 
 export async function getAccessTokenFromCookie(): Promise<string | null> {
   const store = await cookies();
@@ -35,14 +73,5 @@ export async function getCurrentSessionUser(): Promise<CurrentSessionUser | null
   if (!token) {
     return null;
   }
-  let me: Awaited<ReturnType<typeof postAuthMe>>;
-  try {
-    me = await postAuthMe(token);
-  } catch {
-    return null;
-  }
-  if (!me.ok) {
-    return null;
-  }
-  return me.me;
+  return getAuthMe(token);
 }

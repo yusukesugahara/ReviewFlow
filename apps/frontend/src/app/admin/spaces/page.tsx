@@ -2,7 +2,7 @@ import { getCurrentSessionUser } from "@/lib/server/session";
 import {
   backendAuthFetchJson,
   BackendHttpError,
-} from "@/lib/server/backend-auth-fetch";
+} from "@/lib/server/backend-fetch";
 import { AdminSpacesView } from "./view";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {

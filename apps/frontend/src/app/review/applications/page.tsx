@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { Card, CardContent } from "@/components/ui/card";
 import { buildSpaceApplicationsHref } from "@/app/_components/applications/application-routes";

@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
-import { errorMessageFromBody, postAuthRegister } from "@/lib/server/auth-api";
+import { backendFetchJson, BackendHttpError, errorMessageFromBody } from "@/lib/server/backend-fetch";
+import type { AuthRegisterSuccessJson, RegisterRequestBody } from "@/lib/schema";
 import { persistAccessTokenCookie } from "../login/actions";
 
 export type SignupSchema = AuthCredentials & { next?: string };
@@ -26,6 +27,43 @@ function authCredentialsFromFormData(formData: FormData): SignupSchema {
  */
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
   return errorMessageFromBody(result.body);
+}
+
+function isAuthIssueTokensSuccessJson(json: unknown): json is AuthRegisterSuccessJson {
+  if (!json || typeof json !== "object") {
+    return false;
+  }
+  const root = json as Record<string, unknown>;
+  const data = root.data;
+  return (
+    (root.status === 200 || root.status === 201) &&
+    !!data &&
+    typeof data === "object" &&
+    typeof (data as { access_token?: unknown }).access_token === "string"
+  );
+}
+
+async function postAuthRegister(
+  body: RegisterRequestBody,
+): Promise<
+  | { ok: true; accessToken: string }
+  | { ok: false; status: number; body: unknown }
+> {
+  try {
+    const json = await backendFetchJson("/auth/register", {
+      method: "POST",
+      body,
+    });
+    if (!isAuthIssueTokensSuccessJson(json)) {
+      return { ok: false, status: 201, body: json };
+    }
+    return { ok: true, accessToken: json.data.access_token };
+  } catch (error) {
+    if (error instanceof BackendHttpError) {
+      return { ok: false, status: error.status, body: error.body };
+    }
+    throw error;
+  }
 }
 
 /**

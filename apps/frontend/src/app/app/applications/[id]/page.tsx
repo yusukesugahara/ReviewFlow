@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import {
   backendApplicantFetchJson,
-  ApplicantBackendHttpError,
-} from "@/lib/server/backend-applicant-fetch";
+  BackendHttpError,
+} from "@/lib/server/backend-fetch";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   type ApplicationDetailViewModel,
@@ -38,7 +38,7 @@ export default async function ApplicationDetailPage({
       </Card>
     );
   } catch (error) {
-    if (error instanceof ApplicantBackendHttpError) {
+    if (error instanceof BackendHttpError) {
       return (
         <Card>
           <CardContent className="pt-6">

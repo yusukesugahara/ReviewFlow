@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import { Card, CardContent } from "@/components/ui/card";

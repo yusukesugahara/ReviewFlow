@@ -1,7 +1,7 @@
 import {
   backendAuthFetchJson,
   BackendHttpError,
-} from "@/lib/server/backend-auth-fetch";
+} from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import {

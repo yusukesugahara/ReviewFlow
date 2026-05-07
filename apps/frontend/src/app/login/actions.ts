@@ -6,7 +6,8 @@ import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
-import { errorMessageFromBody, postAuthLogin } from "@/lib/server/auth-api";
+import { backendFetchJson, BackendHttpError, errorMessageFromBody } from "@/lib/server/backend-fetch";
+import type { AuthLoginSuccessJson, LoginRequestBody } from "@/lib/schema";
 
 export type LoginSchema = AuthCredentials & { next?: string };
 
@@ -33,6 +34,43 @@ function resolveSafeNextPath(next?: string): string {
 
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
   return errorMessageFromBody(result.body);
+}
+
+function isAuthIssueTokensSuccessJson(json: unknown): json is AuthLoginSuccessJson {
+  if (!json || typeof json !== "object") {
+    return false;
+  }
+  const root = json as Record<string, unknown>;
+  const data = root.data;
+  return (
+    (root.status === 200 || root.status === 201) &&
+    !!data &&
+    typeof data === "object" &&
+    typeof (data as { access_token?: unknown }).access_token === "string"
+  );
+}
+
+async function postAuthLogin(
+  body: LoginRequestBody,
+): Promise<
+  | { ok: true; accessToken: string }
+  | { ok: false; status: number; body: unknown }
+> {
+  try {
+    const json = await backendFetchJson("/auth/login", {
+      method: "POST",
+      body,
+    });
+    if (!isAuthIssueTokensSuccessJson(json)) {
+      return { ok: false, status: 200, body: json };
+    }
+    return { ok: true, accessToken: json.data.access_token };
+  } catch (error) {
+    if (error instanceof BackendHttpError) {
+      return { ok: false, status: error.status, body: error.body };
+    }
+    throw error;
+  }
 }
 
 const FALLBACK_MAX_AGE_SEC = 60 * 60 * 24 * 7;

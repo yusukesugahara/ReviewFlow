@@ -20,7 +20,7 @@ import {
   buildSpaceApplicationNewHref,
   buildSpaceApplicationsHref,
 } from "@/app/_components/applications/application-routes";
-import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 type FormDefinition = {

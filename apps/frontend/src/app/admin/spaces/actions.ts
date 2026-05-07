@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import {
   backendAuthFetchJson,
   BackendHttpError,
-} from "@/lib/server/backend-auth-fetch";
+} from "@/lib/server/backend-fetch";
 
 function spaceErrorMessage(error: unknown, fallback: string) {
   if (!(error instanceof BackendHttpError)) {

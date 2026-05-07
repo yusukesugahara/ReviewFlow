@@ -1,11 +1,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { BackendHttpError } from "@/lib/server/backend-auth-fetch";
-import {
-  listTenantUsers,
-  updateTenantUserRole,
-  type UpdateUserRoleInput,
-} from "@/lib/server/users-repository";
+import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
+import { unwrapData } from "@/lib/server/api-envelope";
+import type {
+  TenantUserSummary,
+  TenantUsersListResponse,
+  UpdateUserRoleInput,
+} from "@/lib/schema";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,22 @@ const editableRoles = new Set<UpdateUserRoleInput["role"]>([
 
 function isUpdateUserRole(role: string): role is UpdateUserRoleInput["role"] {
   return editableRoles.has(role as UpdateUserRoleInput["role"]);
+}
+
+async function listTenantUsers(): Promise<TenantUserSummary[]> {
+  const raw = await backendAuthFetchJson("/users");
+  return unwrapData<TenantUsersListResponse>(raw).users;
+}
+
+async function updateTenantUserRole(
+  userId: string,
+  input: UpdateUserRoleInput,
+): Promise<TenantUserSummary> {
+  const raw = await backendAuthFetchJson(`/users/${userId}/role`, {
+    method: "PATCH",
+    body: input,
+  });
+  return unwrapData<TenantUserSummary>(raw);
 }
 
 async function updateRoleAction(userId: string, formData: FormData): Promise<void> {

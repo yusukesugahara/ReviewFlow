@@ -1,5 +1,5 @@
-import { backendAuthFetchJson } from "@/lib/server/backend-auth-fetch";
-import { listTenantUsers } from "@/lib/server/users-repository";
+import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
+import type { TenantUsersListResponse } from "@/lib/schema";
 import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import {
@@ -19,12 +19,16 @@ type PageProps = {
     spaceId?: string;
   }>;
 };
-
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
     throw new Error("invalid success envelope");
   }
   return (raw as { data: T }).data;
+}
+
+async function listTenantUsers(): Promise<TenantUsersListResponse["users"]> {
+  const raw = await backendAuthFetchJson("/users");
+  return unwrapData<TenantUsersListResponse>(raw).users;
 }
 
 function setupErrorMessage(error?: string): string | null {

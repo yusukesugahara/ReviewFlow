@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import {
   BackendHttpError,
   backendAuthFetchJson,
-} from "@/lib/server/backend-auth-fetch";
+} from "@/lib/server/backend-fetch";
 import {
   APPLICATION_SETUP_ERRORS,
   APPLICATION_SETUP_STATUSES,

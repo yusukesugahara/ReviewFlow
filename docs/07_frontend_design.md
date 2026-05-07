@@ -34,12 +34,12 @@
 - 修正コメントは該当フィールド直下に表示する
 
 ## フォルダ責務
-- `src/app`: ルーティング層。`page.tsx` / `layout.tsx` / Route Handler を配置し、業務ロジックは持たせない
-- `src/features`: 機能単位の実装層。UI コンポーネントと機能ロジックを同居させる
-- `src/features/*/components`: 画面や機能に紐づくコンポーネント
-- `src/features/*/model`: ステータス判定・遷移ルート計算などの機能ロジック
+- `src/app`: ルーティング層。`page.tsx` / `layout.tsx` / `actions.ts` とルート配下の `_components` を配置する
+- `src/app/**/_components`: 画面やルートに紐づくコンポーネント。複数ルートで使うものは `src/app/_components` に置く
 - `src/components/ui`: 機能非依存の再利用 UI
-- `src/lib`: API クライアント、サーバー呼び出し、定数、汎用ユーティリティなど横断基盤
+- `src/lib`: fetch の共通ベース、定数、汎用ユーティリティなど横断基盤
+
+`src/app/api` は置かない。バックエンド呼び出しはサーバー側の `page.tsx` / `actions.ts` から行い、`INTERNAL_API_KEY` はブラウザへ露出させない。
 
 ## データ取得方針
 - ページ単位で必要データを取得

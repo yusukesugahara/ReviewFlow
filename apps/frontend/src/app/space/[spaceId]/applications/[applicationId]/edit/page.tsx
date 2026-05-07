@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 import {
   DynamicFieldInput,
   readDynamicValuesFromFormData,

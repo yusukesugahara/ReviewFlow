@@ -1,6 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -123,8 +123,8 @@ export default async function ExportJobsPage({ searchParams }: ExportJobsPagePro
               作成日時: {new Date(latestJob.createdAt).toLocaleString("ja-JP")}
             </div>
             {latestJob.status === "completed" ? (
-              <Button asChild>
-                <a href={`/api/export-jobs/${latestJob.id}/download`}>CSVをダウンロード</a>
+              <Button type="button" disabled>
+                CSV生成済み
               </Button>
             ) : null}
           </CardContent>

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-auth-fetch";
+import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   type ApplicationDetailViewModel,
