@@ -38,6 +38,40 @@ export interface paths {
         patch: operations["UsersController_updateRole"];
         trace?: never;
     };
+    "/users/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** テナント内ユーザーの復活（tenant_admin） */
+        patch: operations["UsersController_restore"];
+        trace?: never;
+    };
+    "/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** テナント内ユーザーの削除（tenant_admin） */
+        delete: operations["UsersController_remove"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/auth/register": {
         parameters: {
             query?: never;
@@ -1375,6 +1409,53 @@ export interface operations {
                         data: components["schemas"]["TenantUserSummaryDto"];
                     };
                 };
+            };
+        };
+    };
+    UsersController_restore: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["TenantUserSummaryDto"];
+                    };
+                };
+            };
+        };
+    };
+    UsersController_remove: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

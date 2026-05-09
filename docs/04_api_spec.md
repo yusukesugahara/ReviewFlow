@@ -84,6 +84,21 @@ request:
 - 自分自身のロールは変更不可。
 - **最後の 1 人の tenant_admin** を他ロールへ落とすことは不可。
 
+### DELETE /users/:id
+権限: tenant_admin  
+同一テナント内ユーザーを削除する。実装上は `is_active = false` にする論理削除。
+
+- 自分自身は削除不可。
+- **最後の 1 人の有効な tenant_admin** は削除不可。
+- 削除済みユーザーはログインおよび既存 JWT での認証が不可。
+
+### PATCH /users/:id/restore
+権限: tenant_admin  
+論理削除済みユーザーを復活する。`is_active = true` に戻す。
+
+- 対象ユーザーは同一テナント内に存在する必要がある。
+- 復活後は通常のログインと JWT 認証が可能。
+
 ### POST /groups/:groupId/members
 権限: tenant_admin  
 同一テナント内の既存ユーザーをスペースメンバーとして追加する。

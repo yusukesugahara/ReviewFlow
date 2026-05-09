@@ -149,4 +149,82 @@ describe('UsersService', () => {
       expect(repo.save).toHaveBeenCalled();
     });
   });
+
+  describe('deactivateInTenant', () => {
+    it('forbids deleting own account', async () => {
+      await expect(
+        service.deactivateInTenant('t1', 'same-id', 'same-id'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.USER_DELETE_SELF_FORBIDDEN,
+      });
+    });
+
+    it('throws when user not in tenant', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(
+        service.deactivateInTenant('t1', 'missing', 'actor-id'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
+      });
+    });
+
+    it('protects the last active tenant_admin from deletion', async () => {
+      repo.findOne.mockResolvedValue({
+        id: 'u-admin',
+        tenantId: 't1',
+        role: UserRole.TENANT_ADMIN,
+        isActive: true,
+      } as User);
+      repo.count.mockResolvedValue(1);
+
+      await expect(
+        service.deactivateInTenant('t1', 'u-admin', 'actor-id'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.LAST_TENANT_ADMIN_PROTECTED,
+      });
+    });
+
+    it('deactivates another user when allowed', async () => {
+      const target = {
+        id: 'u-member',
+        tenantId: 't1',
+        role: UserRole.TENANT_USER,
+        isActive: true,
+      } as User;
+      repo.findOne.mockResolvedValue(target);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      await service.deactivateInTenant('t1', 'u-member', 'actor-id');
+
+      expect(target.isActive).toBe(false);
+      expect(repo.save).toHaveBeenCalledWith(target);
+    });
+  });
+
+  describe('restoreInTenant', () => {
+    it('throws when user not in tenant', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(
+        service.restoreInTenant('t1', 'missing'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
+      });
+    });
+
+    it('reactivates a user', async () => {
+      const target = {
+        id: 'u-member',
+        tenantId: 't1',
+        role: UserRole.TENANT_USER,
+        isActive: false,
+      } as User;
+      repo.findOne.mockResolvedValue(target);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.restoreInTenant('t1', 'u-member');
+
+      expect(out.isActive).toBe(true);
+      expect(repo.save).toHaveBeenCalledWith(target);
+    });
+  });
 });

@@ -58,6 +58,10 @@ export const ClientErrorCatalog = {
     status: HttpStatus.FORBIDDEN,
     message: 'Cannot change your own role from this endpoint',
   },
+  USER_DELETE_SELF_FORBIDDEN: {
+    status: HttpStatus.FORBIDDEN,
+    message: 'Cannot delete your own account from this endpoint',
+  },
   USER_ROLE_NOT_ASSIGNABLE: {
     status: HttpStatus.BAD_REQUEST,
     message: 'Role cannot be assigned via this API',

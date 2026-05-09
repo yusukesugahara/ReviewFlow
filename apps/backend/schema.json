@@ -112,6 +112,93 @@
         ]
       }
     },
+    "/users/{id}/restore": {
+      "patch": {
+        "operationId": "UsersController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/TenantUserSummaryDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "テナント内ユーザーの復活（tenant_admin）",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/users/{id}": {
+      "delete": {
+        "operationId": "UsersController_remove",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "テナント内ユーザーの削除（tenant_admin）",
+        "tags": [
+          "users"
+        ]
+      }
+    },
     "/auth/register": {
       "post": {
         "operationId": "AuthController_register",

@@ -1,5 +1,6 @@
 import {
   Controller,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
@@ -84,5 +85,36 @@ export class UsersController {
       actor.id,
     );
     return successResponse(toSummary(updated));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Patch(':id/restore')
+  @Roles(UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'テナント内ユーザーの復活（tenant_admin）' })
+  @ApiSuccessResponse(TenantUserSummaryDto)
+  async restore(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<TenantUserSummaryDto>> {
+    const restored = await this.usersService.restoreInTenant(
+      actor.tenantId,
+      id,
+    );
+    return successResponse(toSummary(restored));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Delete(':id')
+  @Roles(UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({ summary: 'テナント内ユーザーの削除（tenant_admin）' })
+  async remove(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<void> {
+    await this.usersService.deactivateInTenant(actor.tenantId, id, actor.id);
   }
 }

@@ -27,7 +27,9 @@ type InviteCreateJsonBody = {
   data?: { token?: string; email?: string; role?: string; expiresAt?: string };
 };
 type UsersListJsonBody = {
-  data?: { users?: { id: string; email: string; role: string }[] };
+  data?: {
+    users?: { id: string; email: string; role: string; isActive?: boolean }[];
+  };
 };
 type GroupCreateJsonBody = { data?: { id?: string } };
 type FormDefinitionsListBody = {
@@ -443,7 +445,7 @@ describe('App (e2e)', () => {
     );
   });
 
-  it('GET /users lists tenant members; PATCH role updates member', async () => {
+  it('GET /users lists tenant members; PATCH role updates member; DELETE deactivates member', async () => {
     const http = app.getHttpServer();
     const apiKey = { 'X-API-Key': 'e2e-internal-api-key' };
 
@@ -501,6 +503,46 @@ describe('App (e2e)', () => {
     expect((patchRes.body as { data?: { role?: string } }).data?.role).toBe(
       'tenant_user',
     );
+
+    await request(http)
+      .delete(`/users/${member?.id}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(204);
+
+    const list3 = await request(http)
+      .get('/users')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    const deleted = ((list3.body as UsersListJsonBody).data?.users ?? []).find(
+      (u) => u.email === 'list-member@e2e.test',
+    );
+    expect(deleted?.isActive).toBe(false);
+
+    const deletedLogin = await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'list-member@e2e.test', password: 'password12' })
+      .expect(401);
+    expect((deletedLogin.body as ErrorJsonBody).errorCode).toBe(
+      'AUTH_INVALID_CREDENTIALS',
+    );
+
+    const restoreRes = await request(http)
+      .patch(`/users/${member?.id}/restore`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    expect(
+      (restoreRes.body as { data?: { isActive?: boolean } }).data?.isActive,
+    ).toBe(true);
+
+    await request(http)
+      .post('/auth/login')
+      .set(apiKey)
+      .send({ email: 'list-member@e2e.test', password: 'password12' })
+      .expect(200);
   });
 
   it('form-definitions: create, add field, publish, list', async () => {

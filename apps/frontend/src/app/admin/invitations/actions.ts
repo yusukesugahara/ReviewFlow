@@ -44,6 +44,53 @@ function invitationErrorMessage(error: unknown) {
   return `招待の作成に失敗しました（status: ${error.status}）`;
 }
 
+function userDeleteErrorMessage(error: unknown) {
+  if (!(error instanceof BackendHttpError)) {
+    return "ユーザーの削除に失敗しました";
+  }
+
+  const body = error.body;
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+
+  if (error.status === 403) {
+    return "このユーザーを削除する権限がありません";
+  }
+  if (error.status === 404) {
+    return "削除対象のユーザーが見つかりません";
+  }
+  if (error.status === 409) {
+    return "最後のテナント管理者は削除できません";
+  }
+  return `ユーザーの削除に失敗しました（status: ${error.status}）`;
+}
+
+function userRestoreErrorMessage(error: unknown) {
+  if (!(error instanceof BackendHttpError)) {
+    return "ユーザーの復活に失敗しました";
+  }
+
+  const body = error.body;
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+
+  if (error.status === 403) {
+    return "このユーザーを復活する権限がありません";
+  }
+  if (error.status === 404) {
+    return "復活対象のユーザーが見つかりません";
+  }
+  return `ユーザーの復活に失敗しました（status: ${error.status}）`;
+}
+
 export async function createInvitationAction(
   formData: FormData,
 ): Promise<void> {
@@ -77,4 +124,37 @@ export async function createInvitationAction(
     expiresAt: created.expiresAt,
   });
   redirect(`/admin/invitations?${nextParams.toString()}`);
+}
+
+export async function deleteUserAction(userId: string): Promise<void> {
+  try {
+    await backendAuthFetchJson(`/users/${userId}`, {
+      method: "DELETE",
+    });
+  } catch (error) {
+    const nextParams = new URLSearchParams({
+      error: userDeleteErrorMessage(error),
+    });
+    redirect(`/admin/invitations?${nextParams.toString()}`);
+  }
+
+  revalidatePath("/admin/invitations");
+  redirect("/admin/invitations");
+}
+
+export async function restoreUserAction(userId: string): Promise<void> {
+  try {
+    await backendAuthFetchJson(`/users/${userId}/restore`, {
+      method: "PATCH",
+      body: {},
+    });
+  } catch (error) {
+    const nextParams = new URLSearchParams({
+      error: userRestoreErrorMessage(error),
+    });
+    redirect(`/admin/invitations?${nextParams.toString()}`);
+  }
+
+  revalidatePath("/admin/invitations");
+  redirect("/admin/invitations");
 }
