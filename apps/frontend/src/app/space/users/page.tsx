@@ -13,23 +13,15 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { spaceRoleLabel } from "@/lib/constants/role-labels";
 import {
   SPACE_ROLE_OPTIONS,
   SPACE_ROLES,
   TENANT_ROLES,
 } from "@/lib/constants/roles";
+import { formatDateJa } from "@/lib/date-format";
 import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
+import { SpaceUsersTable } from "./space-users-table";
 
 type GroupSummary = {
   id: string;
@@ -38,6 +30,7 @@ type GroupSummary = {
 
 type GroupMemberSummary = {
   id: string;
+  userId: string;
   email: string;
   name: string | null;
   role: "admin" | "user";
@@ -231,42 +224,14 @@ export default async function SpaceUsersPage({ searchParams }: PageProps) {
                 ユーザーが見つかりません
               </p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>名前</TableHead>
-                    <TableHead>メール</TableHead>
-                    <TableHead>スペースロール</TableHead>
-                    <TableHead>追加日</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {members.map((member) => (
-                    <TableRow key={member.id}>
-                      <TableCell className="font-medium">
-                        {member.name ?? "-"}
-                      </TableCell>
-                      <TableCell className="font-mono text-xs">
-                        {member.email}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            member.role === SPACE_ROLES.admin
-                              ? "default"
-                              : "outline"
-                          }
-                        >
-                          {spaceRoleLabel(member.role)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(member.createdAt).toLocaleDateString("ja-JP")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+              <SpaceUsersTable
+                currentUserId={me?.id ?? null}
+                members={members.map((member) => ({
+                  ...member,
+                  createdAtLabel: formatDateJa(member.createdAt),
+                }))}
+                spaceId={spaceId}
+              />
             )}
           </CardContent>
         </Card>

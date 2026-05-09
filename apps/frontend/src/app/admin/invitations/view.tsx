@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/table";
 import { userRoleLabel } from "@/lib/constants/role-labels";
 import { TENANT_ROLE_OPTIONS, TENANT_ROLES } from "@/lib/constants/roles";
+import { formatDateJa, formatDateTimeJa } from "@/lib/date-format";
 import type { TenantUserSummary } from "@/lib/schema";
 import { CopyButton } from "@/app/admin/_components/copy-button";
 import {
@@ -131,7 +132,7 @@ export function AdminInvitationsView({
               <CopyButton value={invitationUrl} />
               {expiresAt ? (
                 <p className="text-xs text-muted-foreground">
-                  有効期限: {new Date(expiresAt).toLocaleString("ja-JP")}
+                  有効期限: {formatDateTimeJa(expiresAt)}
                 </p>
               ) : null}
             </div>
@@ -205,7 +206,7 @@ function UserTable({
                 <Badge variant="outline">{userRoleLabel(user.role)}</Badge>
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {new Date(user.createdAt).toLocaleDateString("ja-JP")}
+                {formatDateJa(user.createdAt)}
               </TableCell>
               <TableCell className="text-right">
                 {user.id === currentUserId ? (

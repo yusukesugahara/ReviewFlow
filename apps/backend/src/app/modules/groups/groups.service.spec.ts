@@ -218,4 +218,37 @@ describe('GroupsService', () => {
       errorCode: ClientErrorCodes.LAST_GROUP_ADMIN_PROTECTED,
     });
   });
+
+  it('allows a group admin to remove a group member', async () => {
+    groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
+    membersRepo.findOne
+      .mockResolvedValueOnce({ userId: 'admin-1', role: GroupMemberRole.ADMIN })
+      .mockResolvedValueOnce({
+        id: 'member-2',
+        userId: 'user-2',
+        role: GroupMemberRole.USER,
+      });
+
+    await service.removeMember('group-1', 'user-2', groupAdmin);
+
+    expect(membersRepo.delete).toHaveBeenCalledWith('member-2');
+  });
+
+  it('rejects removing members by non group admins', async () => {
+    groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
+    membersRepo.findOne.mockResolvedValue(null);
+
+    await expect(
+      service.removeMember('group-1', 'user-2', {
+        id: 'user-1',
+        email: 'user@example.com',
+        tenantId: 'tenant-1',
+        roles: [UserRole.TENANT_USER],
+      }),
+    ).rejects.toMatchObject({
+      errorCode: ClientErrorCodes.GROUP_ADMIN_REQUIRED,
+    });
+
+    expect(membersRepo.delete).not.toHaveBeenCalled();
+  });
 });

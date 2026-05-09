@@ -115,6 +115,14 @@ request:
 - 対象ユーザーは同一テナント内に存在する必要がある。
 - 既にスペースメンバーの場合は重複エラー。
 
+### DELETE /groups/:groupId/members/:userId
+権限: tenant_admin / 対象スペースの space admin  
+対象ユーザーをスペースメンバーから削除する。
+
+- 対象スペースは同一テナント内に存在する必要がある。
+- space admin は自分が admin のスペースでのみ実行できる。
+- **最後の 1 人の space admin** は削除不可。
+
 ## Form Definitions
 
 ### GET /form-definitions
