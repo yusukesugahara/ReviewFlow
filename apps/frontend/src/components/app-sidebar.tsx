@@ -48,19 +48,19 @@ const spaceNavItems: SidebarNavItem[] = [
   },
   { href: "/space/application-setup", label: "フォーム定義", icon: FileText },
   { href: "/space", label: "承認フロー", icon: GitBranch },
+  { href: "/space/users", label: "メンバー", icon: Users },
+];
+
+const tenantAdminNavItems: SidebarNavItem[] = [
+  { href: "/admin/spaces", label: "スペース", icon: ShieldCheck },
+  { href: "/admin/invitations", label: "ユーザー", icon: Users },
+  { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
   {
     href: "/admin/export-jobs",
     label: "CSV出力ジョブ",
     icon: FileText,
     adminOnly: true,
   },
-  { href: "/space/users", label: "メンバー", icon: Users },
-];
-
-const tenantAdminNavItems: SidebarNavItem[] = [
-  { href: "/admin/invitations", label: "ユーザー", icon: Users },
-  { href: "/admin/spaces", label: "スペース", icon: ShieldCheck },
-  { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
 ];
 
 const applicantNavItems: SidebarNavItem[] = [
