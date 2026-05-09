@@ -84,6 +84,22 @@ request:
 - 自分自身のロールは変更不可。
 - **最後の 1 人の tenant_admin** を他ロールへ落とすことは不可。
 
+### POST /groups/:groupId/members
+権限: tenant_admin  
+同一テナント内の既存ユーザーをスペースメンバーとして追加する。
+
+request:
+```json
+{
+  "userId": "00000000-0000-4000-8000-000000000002",
+  "role": "user"
+}
+```
+
+- `role` は `admin` / `user`。
+- 対象ユーザーは同一テナント内に存在する必要がある。
+- 既にスペースメンバーの場合は重複エラー。
+
 ## Form Definitions
 
 ### GET /form-definitions

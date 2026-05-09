@@ -1587,7 +1587,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペースへユーザー追加（tenant_admin / space admin）",
+        "summary": "スペースへユーザー追加（tenant_admin）",
         "tags": [
           "groups"
         ]

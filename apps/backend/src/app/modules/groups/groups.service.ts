@@ -131,7 +131,7 @@ export class GroupsService {
     dto: AddGroupMemberDto,
     actor: AuthUserPayload,
   ): Promise<GroupMember> {
-    await this.assertCanManageGroup(groupId, actor);
+    await this.assertTenantAdminCanManageGroup(groupId, actor);
 
     const user = await this.usersService.findByIdAndTenant(
       dto.userId,
@@ -258,6 +258,16 @@ export class GroupsService {
       },
     });
     if (!actorMember) {
+      throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
+    }
+  }
+
+  private async assertTenantAdminCanManageGroup(
+    groupId: string,
+    actor: AuthUserPayload,
+  ): Promise<void> {
+    await this.findGroupInTenant(groupId, actor.tenantId);
+    if (!this.isSystemAdmin(actor)) {
       throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
     }
   }

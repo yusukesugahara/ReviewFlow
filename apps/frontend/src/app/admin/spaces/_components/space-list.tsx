@@ -118,42 +118,44 @@ export function SpaceList({
                 <CardContent className="space-y-5">
                   {canManageSpace ? (
                     <div className="grid gap-3">
-                      <form
-                        action={addMemberAction.bind(null, group.id)}
-                        className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_auto]"
-                      >
-                        <div className="space-y-1 md:col-span-3">
-                          <p className="text-sm font-medium">
-                            既存ユーザーを追加
-                          </p>
-                        </div>
-                        <select
-                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                          name="userId"
-                          required
+                      {isSystemAdmin ? (
+                        <form
+                          action={addMemberAction.bind(null, group.id)}
+                          className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_auto]"
                         >
-                          <option value="">追加するユーザーを選択</option>
-                          {addableUsers.map((user) => (
-                            <option key={user.id} value={user.id}>
-                              {user.name ?? user.email} / {user.email}
-                            </option>
-                          ))}
-                        </select>
-                        <select
-                          className="h-9 rounded-md border border-input bg-background px-2 text-sm"
-                          name="role"
-                          defaultValue={SPACE_ROLES.user}
-                        >
-                          {SPACE_ROLE_OPTIONS.map((option) => (
-                            <option key={option.value} value={option.value}>
-                              {option.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Button size="sm" type="submit">
-                          追加
-                        </Button>
-                      </form>
+                          <div className="space-y-1 md:col-span-3">
+                            <p className="text-sm font-medium">
+                              既存ユーザーを追加
+                            </p>
+                          </div>
+                          <select
+                            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                            name="userId"
+                            required
+                          >
+                            <option value="">追加するユーザーを選択</option>
+                            {addableUsers.map((user) => (
+                              <option key={user.id} value={user.id}>
+                                {user.name ?? user.email} / {user.email}
+                              </option>
+                            ))}
+                          </select>
+                          <select
+                            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                            name="role"
+                            defaultValue={SPACE_ROLES.user}
+                          >
+                            {SPACE_ROLE_OPTIONS.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                          <Button size="sm" type="submit">
+                            追加
+                          </Button>
+                        </form>
+                      ) : null}
 
                       <form
                         action={inviteSpaceMemberAction.bind(null, group.id)}

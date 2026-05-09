@@ -30,6 +30,7 @@ describe('GroupsService', () => {
   let dataSource: { transaction: jest.Mock };
   let usersService: {
     findAllByIdsInTenant: jest.Mock;
+    findAllByTenant: jest.Mock;
     findByIdAndTenant: jest.Mock;
   };
 
@@ -43,13 +44,6 @@ describe('GroupsService', () => {
   const groupAdmin = {
     id: 'admin-1',
     email: 'admin@example.com',
-    tenantId: 'tenant-1',
-    roles: [UserRole.TENANT_USER],
-  };
-
-  const regularUser = {
-    id: 'user-1',
-    email: 'user@example.com',
     tenantId: 'tenant-1',
     roles: [UserRole.TENANT_USER],
   };
@@ -93,6 +87,7 @@ describe('GroupsService', () => {
     };
     usersService = {
       findAllByIdsInTenant: jest.fn(),
+      findAllByTenant: jest.fn(),
       findByIdAndTenant: jest.fn(),
     };
 
@@ -160,11 +155,9 @@ describe('GroupsService', () => {
     });
   });
 
-  it('allows a group admin to add a member', async () => {
+  it('allows a tenant admin to add a member', async () => {
     groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
-    membersRepo.findOne
-      .mockResolvedValueOnce({ userId: 'admin-1', role: GroupMemberRole.ADMIN })
-      .mockResolvedValueOnce(null);
+    membersRepo.findOne.mockResolvedValueOnce(null);
     usersService.findByIdAndTenant.mockResolvedValue({
       id: 'user-1',
       email: 'user@example.com',
@@ -174,7 +167,7 @@ describe('GroupsService', () => {
     const out = await service.addMember(
       'group-1',
       { userId: 'user-1', role: GroupMemberRole.USER },
-      groupAdmin,
+      systemAdmin,
     );
 
     expect(out.user.email).toBe('user@example.com');
@@ -182,20 +175,19 @@ describe('GroupsService', () => {
       expect.objectContaining({
         groupId: 'group-1',
         userId: 'user-1',
-        invitedByUserId: 'admin-1',
+        invitedByUserId: 'sys-1',
       }),
     );
   });
 
-  it('rejects member management by non group admins', async () => {
+  it('rejects adding members by non tenant admins', async () => {
     groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
-    membersRepo.findOne.mockResolvedValue(null);
 
     await expect(
       service.addMember(
         'group-1',
         { userId: 'user-2', role: GroupMemberRole.USER },
-        regularUser,
+        groupAdmin,
       ),
     ).rejects.toMatchObject({
       errorCode: ClientErrorCodes.GROUP_ADMIN_REQUIRED,

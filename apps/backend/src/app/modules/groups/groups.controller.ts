@@ -158,9 +158,10 @@ export class GroupsController {
   @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post(':groupId/members')
+  @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'スペースへユーザー追加（tenant_admin / space admin）',
+    summary: 'スペースへユーザー追加（tenant_admin）',
   })
   @ApiSuccessResponseCreated(GroupMemberSummaryDto)
   async addMember(

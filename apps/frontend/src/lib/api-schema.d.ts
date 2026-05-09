@@ -428,7 +428,7 @@ export interface paths {
         /** スペースメンバー一覧（tenant_admin / space admin） */
         get: operations["GroupsController_listMembers"];
         put?: never;
-        /** スペースへユーザー追加（tenant_admin / space admin） */
+        /** スペースへユーザー追加（tenant_admin） */
         post: operations["GroupsController_addMember"];
         delete?: never;
         options?: never;
