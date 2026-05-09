@@ -5,6 +5,7 @@ export type GroupSummary = {
   createdByUserId: string;
   createdAt: string;
   updatedAt: string;
+  currentUserRole?: "admin" | "user" | null;
 };
 
 export type GroupMemberSummary = {

@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 export type AppSidebarSpace = {
   id: string;
   name: string;
+  currentUserRole?: "admin" | "user" | null;
 };
 
 type AppSidebarProps = {
@@ -36,6 +37,7 @@ type SidebarNavItem = {
   label: string;
   icon: LucideIcon;
   adminOnly?: boolean;
+  spaceAdminOnly?: boolean;
   spacePath?: "applications" | "applicationsNew";
 };
 
@@ -46,9 +48,19 @@ const spaceNavItems: SidebarNavItem[] = [
     icon: ClipboardList,
     spacePath: "applications",
   },
-  { href: "/space/application-setup", label: "フォーム定義", icon: FileText },
-  { href: "/space", label: "承認フロー", icon: GitBranch },
-  { href: "/space/users", label: "メンバー", icon: Users },
+  {
+    href: "/space/application-setup",
+    label: "フォーム定義",
+    icon: FileText,
+    spaceAdminOnly: true,
+  },
+  {
+    href: "/space",
+    label: "承認フロー",
+    icon: GitBranch,
+    spaceAdminOnly: true,
+  },
+  { href: "/space/users", label: "メンバー", icon: Users, spaceAdminOnly: true },
 ];
 
 const tenantAdminNavItems: SidebarNavItem[] = [
@@ -179,6 +191,15 @@ function SidebarContent({
   userEmail?: string;
   onNavigate?: () => void;
 }) {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const pathSpaceId = getPathSpaceId(pathname);
+  const activeSpaceId =
+    pathSpaceId ?? searchParams.get("spaceId") ?? spaces[0]?.id ?? null;
+  const activeSpace = spaces.find((space) => space.id === activeSpaceId);
+  const canManageActiveSpace =
+    isTenantAdmin || activeSpace?.currentUserRole === "admin";
+
   return (
     <div className="flex min-h-0 flex-1 flex-col overflow-y-auto px-3 py-4">
       {variant === "workspace" ? (
@@ -192,6 +213,7 @@ function SidebarContent({
         <nav className="grid gap-1">
           {(variant === "workspace" ? spaceNavItems : applicantNavItems)
             .filter((item) => !item.adminOnly || isTenantAdmin)
+            .filter((item) => !item.spaceAdminOnly || canManageActiveSpace)
             .map((item) => (
               <SidebarLink
                 key={item.href}

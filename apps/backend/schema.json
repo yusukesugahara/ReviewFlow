@@ -3956,6 +3956,15 @@
           },
           "updatedAt": {
             "type": "string"
+          },
+          "currentUserRole": {
+            "type": "string",
+            "description": "ログインユーザーのこのスペースでのロール。未参加の tenant_admin は null。",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "nullable": true
           }
         },
         "required": [

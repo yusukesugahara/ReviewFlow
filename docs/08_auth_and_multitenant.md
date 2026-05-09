@@ -20,6 +20,7 @@
 - JwtAuthGuard
 - RolesGuard
 - TenantScopeGuard 相当の共通処理
+- スペース権限は JWT の `role` だけで判定せず、対象 `groupId` の `group_members.role` を参照する。ユーザーはスペースごとに異なるロールを持てる。
 
 ## 重要ルール
 - すべての業務テーブルに tenant_id を持たせる

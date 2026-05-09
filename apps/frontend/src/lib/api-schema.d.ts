@@ -1148,6 +1148,11 @@ export interface components {
             createdByUserId: string;
             createdAt: string;
             updatedAt: string;
+            /**
+             * @description ログインユーザーのこのスペースでのロール。未参加の tenant_admin は null。
+             * @enum {string|null}
+             */
+            currentUserRole?: "admin" | "user" | null;
         };
         GroupsListResponseDto: {
             groups: components["schemas"]["GroupSummaryDto"][];

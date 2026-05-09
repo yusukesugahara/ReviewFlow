@@ -39,7 +39,9 @@ import {
 } from './groups.dto';
 import { GroupsService } from './groups.service';
 
-function toGroupSummary(group: Group): GroupSummaryDto {
+type GroupWithCurrentUserRole = Group & { currentUserRole?: string | null };
+
+function toGroupSummary(group: GroupWithCurrentUserRole): GroupSummaryDto {
   return {
     id: group.id,
     name: group.name,
@@ -47,6 +49,7 @@ function toGroupSummary(group: Group): GroupSummaryDto {
     createdByUserId: group.createdByUserId,
     createdAt: group.createdAt.toISOString(),
     updatedAt: group.updatedAt.toISOString(),
+    currentUserRole: group.currentUserRole ?? null,
   };
 }
 

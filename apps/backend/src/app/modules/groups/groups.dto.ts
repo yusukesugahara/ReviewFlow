@@ -71,6 +71,14 @@ export class GroupSummaryDto {
 
   @ApiProperty()
   updatedAt!: string;
+
+  @ApiPropertyOptional({
+    description:
+      'ログインユーザーのこのスペースでのロール。未参加の tenant_admin は null。',
+    enum: GROUP_MEMBER_ROLES,
+    nullable: true,
+  })
+  currentUserRole!: string | null;
 }
 
 export class GroupsListResponseDto {

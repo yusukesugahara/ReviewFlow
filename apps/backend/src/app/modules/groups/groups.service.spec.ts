@@ -104,6 +104,52 @@ describe('GroupsService', () => {
     service = module.get(GroupsService);
   });
 
+  it('returns current user space roles independently per group', async () => {
+    membersRepo.find.mockResolvedValue([
+      {
+        role: GroupMemberRole.ADMIN,
+        group: { id: 'group-a', name: 'Aスペース' },
+      },
+      {
+        role: GroupMemberRole.USER,
+        group: { id: 'group-b', name: 'Bスペース' },
+      },
+    ]);
+
+    const out = await service.list(groupAdmin);
+
+    expect(out).toEqual([
+      expect.objectContaining({
+        id: 'group-a',
+        currentUserRole: GroupMemberRole.ADMIN,
+      }),
+      expect.objectContaining({
+        id: 'group-b',
+        currentUserRole: GroupMemberRole.USER,
+      }),
+    ]);
+  });
+
+  it('returns tenant admin groups with membership role when present', async () => {
+    groupsRepo.find.mockResolvedValue([
+      { id: 'group-a', name: 'Aスペース' },
+      { id: 'group-b', name: 'Bスペース' },
+    ]);
+    membersRepo.find.mockResolvedValue([
+      { groupId: 'group-a', role: GroupMemberRole.ADMIN },
+    ]);
+
+    const out = await service.list(systemAdmin);
+
+    expect(out).toEqual([
+      expect.objectContaining({
+        id: 'group-a',
+        currentUserRole: GroupMemberRole.ADMIN,
+      }),
+      expect.objectContaining({ id: 'group-b', currentUserRole: null }),
+    ]);
+  });
+
   it('creates a group with initial group admins', async () => {
     groupsRepo.findOne.mockResolvedValue(null);
     usersService.findAllByIdsInTenant.mockResolvedValue([

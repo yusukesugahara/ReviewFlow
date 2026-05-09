@@ -29,10 +29,23 @@ export class GroupsService {
 
   async list(actor: AuthUserPayload): Promise<Group[]> {
     if (this.isSystemAdmin(actor)) {
-      return this.groups.find({
-        where: { tenantId: actor.tenantId },
-        order: { createdAt: 'ASC' },
-      });
+      const [groups, memberships] = await Promise.all([
+        this.groups.find({
+          where: { tenantId: actor.tenantId },
+          order: { createdAt: 'ASC' },
+        }),
+        this.members.find({
+          where: { tenantId: actor.tenantId, userId: actor.id },
+        }),
+      ]);
+      const roleByGroupId = new Map(
+        memberships.map((member) => [member.groupId, member.role]),
+      );
+      return groups.map((group) =>
+        Object.assign(group, {
+          currentUserRole: roleByGroupId.get(group.id) ?? null,
+        }),
+      );
     }
 
     const rows = await this.members.find({
@@ -40,7 +53,9 @@ export class GroupsService {
       relations: { group: true },
       order: { createdAt: 'ASC' },
     });
-    return rows.map((row) => row.group);
+    return rows.map((row) =>
+      Object.assign(row.group, { currentUserRole: row.role }),
+    );
   }
 
   async create(dto: CreateGroupDto, actor: AuthUserPayload): Promise<Group> {

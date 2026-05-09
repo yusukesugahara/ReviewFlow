@@ -24,11 +24,34 @@
 - tenant_id: string (FK -> tenants.id)
 - email: string
 - role: enum(tenant_admin, tenant_user)
+- group_id: string nullable (FK -> groups.id)
+- group_role: enum(admin, user) nullable
 - token: string
 - status: enum(pending, accepted, expired, revoked)
 - invited_by_user_id: string (FK -> users.id)
 - expires_at: datetime
 - created_at: datetime
+
+## groups
+- id: string (PK)
+- tenant_id: string (FK -> tenants.id)
+- name: string
+- description: string nullable
+- created_by_user_id: string (FK -> users.id)
+- created_at: datetime
+- updated_at: datetime
+
+## group_members
+- id: string (PK)
+- tenant_id: string (FK -> tenants.id)
+- group_id: string (FK -> groups.id)
+- user_id: string (FK -> users.id)
+- role: enum(admin, user)
+- invited_by_user_id: string nullable (FK -> users.id)
+- created_at: datetime
+- updated_at: datetime
+
+`group_members.role` はスペースごとのロールであり、同じユーザーでもスペースごとに異なる値を持てる。例: A スペースでは `admin`、B スペースでは `user`。
 
 ## form_definitions
 - id: string (PK)
@@ -155,6 +178,8 @@
 
 ## インデックス方針
 - users: unique(tenant_id, email)
+- groups: unique(tenant_id, name)
+- group_members: unique(tenant_id, group_id, user_id), index(tenant_id, user_id)
 - form_definitions: index(tenant_id, group_id)
 - form_fields: index(tenant_id, form_definition_id, sort_order)
 - approval_flows: index(tenant_id, group_id)
