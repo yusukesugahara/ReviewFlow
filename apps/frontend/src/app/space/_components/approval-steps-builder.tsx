@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { OrderMoveButtons } from "./order-move-buttons";
 
-type StepItem = {
+export type ApprovalStepItem = {
   id: string;
   stepName: string;
   assigneeUserId: string;
@@ -20,13 +20,13 @@ export type ApprovalAssigneeOption = {
 };
 
 type ApprovalStepsBuilderProps = {
-  defaultSteps?: StepItem[];
+  defaultSteps?: ApprovalStepItem[];
   assignees: ApprovalAssigneeOption[];
 };
 
 export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsBuilderProps) {
   const defaultAssigneeId = assignees[0]?.id ?? "";
-  const [steps, setSteps] = useState<StepItem[]>(
+  const [steps, setSteps] = useState<ApprovalStepItem[]>(
     defaultSteps && defaultSteps.length > 0
       ? defaultSteps
       : [

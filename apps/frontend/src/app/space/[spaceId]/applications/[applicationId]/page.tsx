@@ -23,6 +23,7 @@ import { ReviewerApplicationActions } from "@/app/_components/applications/revie
 
 type PageProps = {
   params: Promise<{ spaceId: string; applicationId: string }>;
+  searchParams?: Promise<{ definitionId?: string }>;
 };
 
 async function submitAction(applicationId: string): Promise<void> {
@@ -116,23 +117,33 @@ function redirectToApplicationDetail(application: ApplicationDetailViewModel): n
   redirect("/space");
 }
 
-export default async function SpaceApplicationDetailPage({ params }: PageProps) {
-  const { spaceId, applicationId } = await params;
+export default async function SpaceApplicationDetailPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const [{ spaceId, applicationId }, query] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve({} as { definitionId?: string }),
+  ]);
 
   try {
     const appRaw = await backendAuthFetchJson(`/applications/${applicationId}`);
     const app = unwrapData<ApplicationDetailViewModel>(appRaw);
+    const definitionId = app.formDefinitionId ?? query.definitionId;
     const [templateRaw, correctionsRaw, correctionTargetsRaw] = await Promise.all([
-      backendAuthFetchJson(
-        `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
-      ),
+      definitionId
+        ? backendAuthFetchJson(`/form-definitions/${definitionId}`)
+        : backendAuthFetchJson(
+            `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
+          ),
       backendAuthFetchJson(`/applications/${applicationId}/corrections`),
       backendAuthFetchJson(`/applications/${applicationId}/correction-targets`),
     ]);
-    const definition =
-      unwrapData<{ definitions?: { fields?: ApplicationFormField[] }[] }>(
-        templateRaw,
-      ).definitions?.[0] ?? null;
+    const definition = definitionId
+      ? unwrapData<{ fields?: ApplicationFormField[] }>(templateRaw)
+      : (unwrapData<{ definitions?: { fields?: ApplicationFormField[] }[] }>(
+          templateRaw,
+        ).definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
     const corrections =
       unwrapData<{ corrections?: ApplicationCorrection[] }>(correctionsRaw)
@@ -166,7 +177,14 @@ export default async function SpaceApplicationDetailPage({ params }: PageProps) 
             </Button>
             <ApplicantApplicationActions
               capabilities={capabilities}
-              editHref={buildSpaceApplicationEditHrefByIds(spaceId, app.id)}
+              editHref={
+                definitionId
+                  ? `${buildSpaceApplicationEditHrefByIds(
+                      spaceId,
+                      app.id,
+                    )}?definitionId=${encodeURIComponent(definitionId)}`
+                  : buildSpaceApplicationEditHrefByIds(spaceId, app.id)
+              }
               submitAction={submitAction.bind(null, app.id)}
               resubmitAction={resubmitAction.bind(null, app.id)}
             />

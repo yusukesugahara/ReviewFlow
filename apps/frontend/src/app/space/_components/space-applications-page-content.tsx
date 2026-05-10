@@ -9,15 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   APPLICATION_LIST_VIEW_OPTIONS,
@@ -33,14 +24,8 @@ import {
   buildSpaceApplicationsHref,
 } from "@/app/_components/applications/application-routes";
 
-export type FormDefinitionRow = {
-  id: string;
-  name: string;
-  status: string;
-  createdAt?: string;
-};
-
 export type ApplicationRow = {
+  formDefinitionId?: string | null;
   id: string;
   groupId: string;
   status: string;
@@ -51,7 +36,6 @@ export type ApplicationRow = {
 type SpaceApplicationsPageContentProps = {
   actorEmail?: string;
   applications: ApplicationRow[];
-  definitions: FormDefinitionRow[];
   fetchErrorStatus?: number;
   spaceId: string;
   view?: string;
@@ -60,7 +44,6 @@ type SpaceApplicationsPageContentProps = {
 export function SpaceApplicationsPageContent({
   actorEmail,
   applications,
-  definitions,
   fetchErrorStatus,
   spaceId,
   view,
@@ -90,74 +73,13 @@ export function SpaceApplicationsPageContent({
           <div>
             <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
             <p className="text-muted-foreground">
-              申請作成画面で作成した申請定義と、提出済みの申請を確認できます
+              新規作成した申請とレビュー状況を確認できます
             </p>
           </div>
           <Button asChild>
             <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
           </Button>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>申請作成一覧</CardTitle>
-            <CardDescription>
-              {definitions.length}件の申請定義があります
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {definitions.length === 0 ? (
-              <p className="py-8 text-center text-muted-foreground">
-                申請作成データはまだありません
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>申請名</TableHead>
-                    <TableHead>ステータス</TableHead>
-                    <TableHead>作成日時</TableHead>
-                    <TableHead className="text-right">操作</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {definitions.map((definition) => (
-                    <TableRow key={definition.id}>
-                      <TableCell>
-                        <div className="font-medium text-slate-900">
-                          {definition.name}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={
-                            definition.status === APPLICATION_STATUSES.published
-                              ? "default"
-                              : "outline"
-                          }
-                        >
-                          {definition.status === APPLICATION_STATUSES.published
-                            ? "公開済み"
-                            : "下書き"}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {definition.createdAt
-                          ? new Date(definition.createdAt).toLocaleString("ja-JP")
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <Button asChild variant="ghost" size="sm">
-                          <Link href="/space/application-setup">編集</Link>
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
 
         <Card>
           <CardHeader>

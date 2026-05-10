@@ -1,4 +1,5 @@
 export type ApplicationSpaceRouteSource = {
+  formDefinitionId?: string | null;
   id: string;
   groupId?: string | null;
 };
@@ -27,7 +28,10 @@ export function buildSpaceApplicationDetailHref(
     return null;
   }
 
-  return `${buildSpaceApplicationsHref(spaceId)}/${encodeURIComponent(application.id)}`;
+  const href = `${buildSpaceApplicationsHref(spaceId)}/${encodeURIComponent(application.id)}`;
+  return application.formDefinitionId
+    ? `${href}?definitionId=${encodeURIComponent(application.formDefinitionId)}`
+    : href;
 }
 
 export function buildSpaceApplicationEditHref(

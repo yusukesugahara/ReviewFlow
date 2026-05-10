@@ -16,6 +16,7 @@ import {
 } from "@/lib/constants/form-fields";
 import {
   ApprovalStepsBuilder,
+  type ApprovalStepItem,
   type ApprovalAssigneeOption,
 } from "./approval-steps-builder";
 import { OrderMoveButtons } from "./order-move-buttons";
@@ -39,7 +40,11 @@ type ApplicationSetupDraftFormProps = {
   statusMessage?: string | null;
   publishedGroupId?: string | null;
   assignees: ApprovalAssigneeOption[];
+  initialFields?: DraftField[];
+  initialName?: string;
+  initialSteps?: ApprovalStepItem[];
   spaceId: string;
+  returnPath?: string;
 };
 
 function createDefaultField(index: number): DraftField {
@@ -135,9 +140,17 @@ export function ApplicationSetupDraftForm({
   statusMessage,
   publishedGroupId,
   assignees,
+  initialFields,
+  initialName,
+  initialSteps,
   spaceId,
+  returnPath,
 }: ApplicationSetupDraftFormProps) {
-  const [fields, setFields] = useState<DraftField[]>([createDefaultField(0)]);
+  const [fields, setFields] = useState<DraftField[]>(
+    initialFields && initialFields.length > 0
+      ? initialFields
+      : [createDefaultField(0)],
+  );
 
   const fieldsJson = useMemo(() => JSON.stringify(fields), [fields]);
   const hasFields = fields.length > 0;
@@ -169,6 +182,9 @@ export function ApplicationSetupDraftForm({
       />
       <input type="hidden" name="fieldsJson" value={fieldsJson} />
       <input type="hidden" name="spaceId" value={spaceId} />
+      {returnPath ? (
+        <input type="hidden" name="returnPath" value={returnPath} />
+      ) : null}
 
       {errorMessage ? (
         <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -184,13 +200,19 @@ export function ApplicationSetupDraftForm({
 
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl">1. フォーム設定</CardTitle>
+          <CardTitle className="text-xl">1. 申請項目設定</CardTitle>
           <CardDescription>申請名と入力項目を設定します。ここではまだ保存されません。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="space-y-2">
             <Label htmlFor="templateName">申請名</Label>
-            <Input id="templateName" name="name" placeholder="例: 経費申請" required />
+            <Input
+              id="templateName"
+              name="name"
+              placeholder="例: 経費申請"
+              required
+              defaultValue={initialName ?? ""}
+            />
           </div>
 
           <div className="space-y-4">
@@ -229,7 +251,7 @@ export function ApplicationSetupDraftForm({
                       id={`label-${field.id}`}
                       value={field.label}
                       onChange={(event) => updateField(field.id, { label: event.target.value })}
-                      placeholder={`例: 申請理由（空欄ならフォーム${index + 1}）`}
+                    placeholder={`例: 申請理由（空欄ならフォーム${index + 1}）`}
                     />
                   </div>
                   <div className="space-y-2">
@@ -322,18 +344,18 @@ export function ApplicationSetupDraftForm({
           <CardDescription>承認ステップを設定します。ここではまだ保存されません。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <ApprovalStepsBuilder assignees={assignees} />
+          <ApprovalStepsBuilder assignees={assignees} defaultSteps={initialSteps} />
         </CardContent>
       </Card>
 
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
           <CardTitle className="text-xl">3. 保存</CardTitle>
-          <CardDescription>ここで初めてバックエンドに送信します。</CardDescription>
+          <CardDescription>ここで新しい申請を作成します。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-wrap gap-2">
-            <Badge variant={hasFields ? "default" : "outline"}>フォーム項目 {hasFields ? "OK" : "未完了"}</Badge>
+            <Badge variant={hasFields ? "default" : "outline"}>申請項目 {hasFields ? "OK" : "未完了"}</Badge>
             <Badge variant="default">承認フロー OK</Badge>
           </div>
           <div className="flex items-center justify-end gap-2">
@@ -341,7 +363,7 @@ export function ApplicationSetupDraftForm({
               下書き保存
             </Button>
             <Button type="submit" name="intent" value="publish" variant="outline">
-              申請公開
+              公開
             </Button>
           </div>
         </CardContent>

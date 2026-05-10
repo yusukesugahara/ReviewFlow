@@ -2,13 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  BackendHttpError,
-  backendAuthFetchJson,
-} from "@/lib/server/backend-fetch";
+import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
 import {
   APPLICATION_SETUP_ERRORS,
-  APPLICATION_SETUP_STATUSES,
 } from "@/lib/constants/application-setup";
 import {
   FIELD_TYPES,
@@ -20,7 +16,13 @@ type CreateDefinitionResponse = {
   id: string;
 };
 
-type SetupIntent = "draft" | "publish";
+type CreateApprovalFlowResponse = {
+  id: string;
+};
+
+type CreateApplicationResponse = {
+  id: string;
+};
 
 type ApprovalStepPayload = {
   stepOrder: number;
@@ -163,22 +165,26 @@ export async function submitApplicationSetupAction(
   const name = formData.get("name");
   const fieldsJson = formData.get("fieldsJson");
   const stepLines = formData.get("stepLines");
-  const intent = formData.get("intent");
   const spaceId = formData.get("spaceId");
+  const returnPath = formData.get("returnPath");
+  const redirectBase =
+    typeof returnPath === "string" && returnPath.startsWith("/space/")
+      ? returnPath
+      : "/space/application-setup";
 
   if (typeof name !== "string" || name.trim().length === 0) {
     redirect(
-      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
     );
   }
   if (typeof spaceId !== "string" || spaceId.length === 0) {
     redirect(
-      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
     );
   }
   if (typeof stepLines !== "string") {
     redirect(
-      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
     );
   }
 
@@ -187,25 +193,25 @@ export async function submitApplicationSetupAction(
     fields = readDraftFields(fieldsJson);
   } catch {
     redirect(
-      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
     );
   }
   if (fields.length === 0) {
     redirect(
-      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
     );
   }
 
   const steps = parseSteps(stepLines);
   if (steps.length === 0) {
     redirect(
-      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
     );
   }
 
-  const resolvedIntent: SetupIntent = intent === "publish" ? "publish" : "draft";
   const fieldPayloads = toFieldPayloads(fields);
-  let createdId = "";
+  let createdDefinitionId = "";
+  let createdApplicationId = "";
 
   try {
     const createdRaw = await backendAuthFetchJson("/form-definitions", {
@@ -213,27 +219,31 @@ export async function submitApplicationSetupAction(
       body: {
         groupId: spaceId,
         name: name.trim(),
-        description: `${name.trim()} の申請フォーム`,
+        description: `${name.trim()} の申請`,
       },
     });
     const created = unwrapData<CreateDefinitionResponse>(createdRaw);
-    createdId = created.id;
+    createdDefinitionId = created.id;
 
     for (const field of fieldPayloads) {
-      await backendAuthFetchJson(`/form-definitions/${createdId}/fields`, {
-        method: "POST",
-        body: field,
-      });
+      await backendAuthFetchJson(
+        `/form-definitions/${createdDefinitionId}/fields`,
+        {
+          method: "POST",
+          body: field,
+        },
+      );
     }
 
-    if (resolvedIntent === "publish") {
-      await backendAuthFetchJson(`/form-definitions/${createdId}/publish`, {
+    await backendAuthFetchJson(
+      `/form-definitions/${createdDefinitionId}/publish`,
+      {
         method: "POST",
         body: {},
-      });
-    }
+      },
+    );
 
-    await backendAuthFetchJson("/approval-flows", {
+    const flowRaw = await backendAuthFetchJson("/approval-flows", {
       method: "POST",
       body: {
         groupId: spaceId,
@@ -241,33 +251,29 @@ export async function submitApplicationSetupAction(
         steps,
       },
     });
-  } catch (error) {
-    if (
-      error instanceof BackendHttpError &&
-      resolvedIntent === "draft" &&
-      createdId.length > 0 &&
-      error.status === 409
-    ) {
-      revalidatePath("/space/application-setup");
-      redirect(
-        `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.approvalFlowRequiresPublish}`,
-      );
-    }
+    const flow = unwrapData<CreateApprovalFlowResponse>(flowRaw);
+
+    const applicationRaw = await backendAuthFetchJson("/applications", {
+      method: "POST",
+      body: {
+        groupId: spaceId,
+        approvalFlowId: flow.id,
+        values: {},
+      },
+    });
+    const application = unwrapData<CreateApplicationResponse>(applicationRaw);
+    createdApplicationId = application.id;
+  } catch {
     redirect(
-      `/space/application-setup?setupError=${APPLICATION_SETUP_ERRORS.saveFailed}`,
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.saveFailed}`,
     );
   }
 
-  revalidatePath("/space/application-setup");
-  redirect(
-    `/space/application-setup?setupStatus=${
-      resolvedIntent === "publish"
-        ? APPLICATION_SETUP_STATUSES.published
-        : APPLICATION_SETUP_STATUSES.draftSaved
-    }${
-      resolvedIntent === "publish"
-        ? `&publishedGroupId=${encodeURIComponent(spaceId)}`
-        : ""
-    }`,
-  );
+  const listPath = `/space/${encodeURIComponent(spaceId)}/applications`;
+  const detailPath = `${listPath}/${encodeURIComponent(
+    createdApplicationId,
+  )}?definitionId=${encodeURIComponent(createdDefinitionId)}`;
+  revalidatePath(redirectBase);
+  revalidatePath(listPath);
+  redirect(detailPath);
 }

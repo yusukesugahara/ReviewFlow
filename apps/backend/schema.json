@@ -4156,6 +4156,9 @@
           "approvalFlowId": {
             "type": "string"
           },
+          "formDefinitionId": {
+            "type": "string"
+          },
           "applicantEmail": {
             "type": "string"
           },
@@ -4179,6 +4182,7 @@
           "groupId",
           "status",
           "approvalFlowId",
+          "formDefinitionId",
           "applicantEmail",
           "createdAt",
           "updatedAt"
@@ -4253,6 +4257,9 @@
           "approvalFlowId": {
             "type": "string"
           },
+          "formDefinitionId": {
+            "type": "string"
+          },
           "applicantEmail": {
             "type": "string"
           },
@@ -4281,6 +4288,7 @@
           "groupId",
           "status",
           "approvalFlowId",
+          "formDefinitionId",
           "applicantEmail",
           "createdAt",
           "updatedAt",

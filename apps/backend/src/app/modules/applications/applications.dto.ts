@@ -215,6 +215,9 @@ export class ApplicationSummaryDto {
   approvalFlowId!: string;
 
   @ApiProperty()
+  formDefinitionId!: string;
+
+  @ApiProperty()
   applicantEmail!: string;
 
   @ApiPropertyOptional({ nullable: true })

@@ -16,6 +16,7 @@ export function mapApplicationToSummary(
     groupId: row.groupId,
     status: row.status,
     approvalFlowId: row.approvalFlowId,
+    formDefinitionId: row.formDefinitionId,
     applicantEmail: row.applicantEmail,
     currentStepOrder: row.currentStepOrder,
     submittedAt: row.submittedAt ? row.submittedAt.toISOString() : null,

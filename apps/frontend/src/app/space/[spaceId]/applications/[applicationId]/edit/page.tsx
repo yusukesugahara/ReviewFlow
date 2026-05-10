@@ -1,23 +1,25 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
 import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 import {
-  DynamicFieldInput,
-  readDynamicValuesFromFormData,
   type DynamicFormField,
 } from "@/app/_components/applications/dynamic-fields";
 import {
+  ApplicationSetupDraftForm,
+  type ApprovalAssigneeOption,
+  type DraftField,
+} from "@/app/space/_components/application-setup-draft-form";
+import type { ApprovalStepItem } from "@/app/space/_components/approval-steps-builder";
+import { submitApplicationSetupAction } from "@/app/space/application-setup/actions";
+import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { buildSpaceApplicationDetailHref } from "@/app/_components/applications/application-routes";
+import { isFieldType } from "@/lib/constants/form-fields";
 
 type ApplicationDetail = {
+  approvalFlowId?: string;
+  formDefinitionId?: string;
   id: string;
   groupId?: string | null;
   status: string;
@@ -26,13 +28,30 @@ type ApplicationDetail = {
 
 type FormField = DynamicFormField;
 
-type CorrectionTargetItem = {
-  fieldKey: string;
-  comment: string | null;
+type FormDefinition = {
+  fields?: FormField[];
+  name?: string;
+};
+
+type ApprovalFlow = {
+  id: string;
+  steps?: Array<{
+    id: string;
+    stepName: string;
+    assigneeUserId: string;
+    canReturn: boolean;
+  }>;
+};
+
+type GroupMemberSummary = {
+  email: string;
+  name: string | null;
+  userId: string;
 };
 
 type PageProps = {
   params: Promise<{ spaceId: string; applicationId: string }>;
+  searchParams?: Promise<{ definitionId?: string }>;
 };
 
 function unwrapData<T>(raw: unknown): T {
@@ -42,33 +61,57 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
-async function patchApplicationAction(
-  applicationId: string,
-  fields: FormField[],
-  editableFieldKeys: string[],
-  formData: FormData,
-): Promise<void> {
-  "use server";
-  const editableSet = new Set(editableFieldKeys);
-  const values = readDynamicValuesFromFormData(fields, formData, editableSet);
-
-  const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}`, {
-    method: "PATCH",
-    body: { values },
-  });
-  const updated = unwrapData<ApplicationDetail>(updatedRaw);
-  const detailHref = buildSpaceApplicationDetailHref(updated);
-  if (detailHref) {
-    revalidatePath(detailHref);
-    revalidatePath(`${detailHref}/edit`);
-    revalidatePath(`/space/${encodeURIComponent(updated.groupId ?? "")}/applications`);
-    redirect(detailHref);
+function optionTextFromFieldOptions(options: unknown[] | null | undefined): string {
+  if (!Array.isArray(options)) {
+    return "";
   }
-  redirect("/space");
+  return options
+    .map((option) => {
+      if (typeof option === "string") {
+        return option;
+      }
+      if (option && typeof option === "object") {
+        const label = (option as { label?: unknown }).label;
+        return typeof label === "string" ? label : "";
+      }
+      return "";
+    })
+    .filter((label) => label.length > 0)
+    .join("\n");
 }
 
-export default async function SpaceApplicationEditPage({ params }: PageProps) {
-  const { spaceId, applicationId } = await params;
+function toDraftField(field: FormField, index: number): DraftField {
+  return {
+    id: field.id || `field-${index + 1}`,
+    label: field.label,
+    fieldType: isFieldType(field.fieldType) ? field.fieldType : "text",
+    required: field.required,
+    placeholder: field.placeholder ?? "",
+    helpText: field.helpText ?? "",
+    optionsText: optionTextFromFieldOptions(field.options),
+  };
+}
+
+function toApprovalStepItem(
+  step: NonNullable<ApprovalFlow["steps"]>[number],
+  index: number,
+): ApprovalStepItem {
+  return {
+    id: step.id || `step-${index + 1}`,
+    stepName: step.stepName,
+    assigneeUserId: step.assigneeUserId,
+    canReturn: step.canReturn,
+  };
+}
+
+export default async function SpaceApplicationEditPage({
+  params,
+  searchParams,
+}: PageProps) {
+  const [{ spaceId, applicationId }, query] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve({} as { definitionId?: string }),
+  ]);
   try {
     const appRaw = await backendAuthFetchJson(`/applications/${applicationId}`);
     const app = unwrapData<ApplicationDetail>(appRaw);
@@ -82,29 +125,31 @@ export default async function SpaceApplicationEditPage({ params }: PageProps) {
       );
     }
 
-    const [templateRaw, targetsRaw] = await Promise.all([
-      backendAuthFetchJson(
-        `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
-      ),
-      backendAuthFetchJson(`/applications/${applicationId}/correction-targets`),
+    const definitionId = app.formDefinitionId ?? query.definitionId;
+    const [templateRaw, flowsRaw, membersRaw] = await Promise.all([
+      definitionId
+        ? backendAuthFetchJson(`/form-definitions/${definitionId}`)
+        : backendAuthFetchJson(
+            `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
+          ),
+      backendAuthFetchJson(`/approval-flows?groupId=${encodeURIComponent(spaceId)}`),
+      backendAuthFetchJson(`/groups/${spaceId}/members`),
     ]);
-    const definition =
-      unwrapData<{ definitions?: { fields?: FormField[] }[] }>(templateRaw)
-        .definitions?.[0] ?? null;
+    const definition = definitionId
+      ? unwrapData<FormDefinition>(templateRaw)
+      : (unwrapData<{ definitions?: FormDefinition[] }>(templateRaw)
+          .definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
-    const targetItems =
-      unwrapData<{ openCorrection?: { items?: CorrectionTargetItem[] } | null }>(targetsRaw)
-        .openCorrection?.items ?? [];
-    const returnedEditable = new Set(targetItems.map((target) => target.fieldKey));
-
-    const editableFieldKeys = fields
-      .filter((field) => {
-        if (app.status === "draft") {
-          return true;
-        }
-        return returnedEditable.has(field.fieldKey);
-      })
-      .map((field) => field.fieldKey);
+    const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
+    const approvalFlow = flows.find((flow) => flow.id === app.approvalFlowId);
+    const members =
+      unwrapData<{ members?: GroupMemberSummary[] }>(membersRaw).members ?? [];
+    const assignees: ApprovalAssigneeOption[] = members.map((member) => ({
+      id: member.userId,
+      label: member.name ? `${member.name} (${member.email})` : member.email,
+    }));
+    const initialFields = fields.map(toDraftField);
+    const initialSteps = (approvalFlow?.steps ?? []).map(toApprovalStepItem);
 
     return (
       <div className="space-y-6">
@@ -112,9 +157,7 @@ export default async function SpaceApplicationEditPage({ params }: PageProps) {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">申請編集</h2>
             <p className="text-muted-foreground">
-              {app.status === "returned"
-                ? "差し戻し対象の項目のみ編集できます"
-                : "下書き申請を編集できます"}
+              新規作成と同じフォームで申請項目と承認フローを編集します
             </p>
           </div>
           <Button asChild variant="outline">
@@ -123,47 +166,15 @@ export default async function SpaceApplicationEditPage({ params }: PageProps) {
             </Link>
           </Button>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>申請内容</CardTitle>
-            <CardDescription>
-              {app.status === "returned"
-                ? "差し戻されたフィールドを修正してください"
-                : "すべてのフィールドを編集できます"}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form action={patchApplicationAction.bind(null, applicationId, fields, editableFieldKeys)} className="space-y-4">
-              {fields.map((field) => {
-                const disabled =
-                  app.status === "returned" && !returnedEditable.has(field.fieldKey);
-                const defaultValue = app.values[field.fieldKey];
-                const targetComment = targetItems.find(
-                  (item) => item.fieldKey === field.fieldKey,
-                )?.comment;
-                return (
-                  <DynamicFieldInput
-                    key={field.id}
-                    field={field}
-                    value={defaultValue}
-                    disabled={disabled}
-                    afterInput={
-                      targetComment ? (
-                        <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-sm text-amber-700">
-                          差し戻しコメント: {targetComment}
-                        </p>
-                      ) : undefined
-                    }
-                  />
-                );
-              })}
-              <Button type="submit" size="lg">
-                保存する
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <ApplicationSetupDraftForm
+          action={submitApplicationSetupAction}
+          assignees={assignees}
+          initialFields={initialFields}
+          initialName={definition?.name ?? ""}
+          initialSteps={initialSteps}
+          returnPath={`/space/${encodeURIComponent(spaceId)}/applications/new`}
+          spaceId={spaceId}
+        />
       </div>
     );
   } catch (error) {

@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { ApplicationStatusBadge } from "./application-status-badge";
 
 export type ApplicationDetailViewModel = {
+  formDefinitionId?: string;
   id: string;
   groupId?: string | null;
   status: string;

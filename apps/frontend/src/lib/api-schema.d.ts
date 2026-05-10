@@ -1208,6 +1208,7 @@ export interface components {
             groupId: string;
             status: string;
             approvalFlowId: string;
+            formDefinitionId: string;
             applicantEmail: string;
             currentStepOrder?: Record<string, never> | null;
             submittedAt?: Record<string, never> | null;
@@ -1244,6 +1245,7 @@ export interface components {
             groupId: string;
             status: string;
             approvalFlowId: string;
+            formDefinitionId: string;
             applicantEmail: string;
             currentStepOrder?: Record<string, never> | null;
             submittedAt?: Record<string, never> | null;

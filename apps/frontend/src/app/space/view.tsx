@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MetricCard } from "@/app/space/_components/metric-card";
+import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
 
 type AdminDashboardViewProps = {
   avgReturns: string;
@@ -58,7 +59,7 @@ export function AdminDashboardView({
           </div>
           <div className="flex flex-wrap gap-2">
             <Button asChild size="sm">
-              <Link href="/space/application-setup">申請作成</Link>
+              <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
             </Button>
             <Button asChild size="sm" variant="outline">
               <Link

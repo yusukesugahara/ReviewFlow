@@ -7,7 +7,6 @@ import { getCurrentSessionUser } from "@/lib/server/session";
 import {
   SpaceApplicationsPageContent,
   type ApplicationRow,
-  type FormDefinitionRow,
 } from "@/app/space/_components/space-applications-page-content";
 
 type PageProps = {
@@ -25,10 +24,7 @@ export default async function SpaceApplicationsPage({
   ]);
 
   try {
-    const [definitionsRaw, applicationsRaw, actor] = await Promise.all([
-      backendAuthFetchJson(
-        `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
-      ),
+    const [applicationsRaw, actor] = await Promise.all([
       backendAuthFetchJson(`/applications?groupId=${encodeURIComponent(spaceId)}`),
       getCurrentSessionUser(),
     ]);
@@ -40,10 +36,6 @@ export default async function SpaceApplicationsPage({
           unwrapData<{ applications?: ApplicationRow[] }>(applicationsRaw)
             .applications ?? []
         }
-        definitions={
-          unwrapData<{ definitions?: FormDefinitionRow[] }>(definitionsRaw)
-            .definitions ?? []
-        }
         spaceId={spaceId}
         view={query.view}
       />
@@ -52,7 +44,6 @@ export default async function SpaceApplicationsPage({
     return (
       <SpaceApplicationsPageContent
         applications={[]}
-        definitions={[]}
         fetchErrorStatus={error instanceof BackendHttpError ? error.status : 500}
         spaceId={spaceId}
         view={query.view}

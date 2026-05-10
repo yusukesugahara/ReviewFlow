@@ -7,7 +7,6 @@ import { usePathname, useSearchParams } from "next/navigation";
 import {
   ClipboardList,
   FileText,
-  GitBranch,
   type LucideIcon,
   Menu,
   ShieldCheck,
@@ -49,16 +48,10 @@ const spaceNavItems: SidebarNavItem[] = [
     spacePath: "applications",
   },
   {
-    href: "/space/application-setup",
-    label: "フォーム定義",
+    href: "/space/applications/new",
+    label: "新規申請",
     icon: FileText,
-    spaceAdminOnly: true,
-  },
-  {
-    href: "/space",
-    label: "承認フロー",
-    icon: GitBranch,
-    spaceAdminOnly: true,
+    spacePath: "applicationsNew",
   },
   { href: "/space/users", label: "メンバー", icon: Users, spaceAdminOnly: true },
 ];
