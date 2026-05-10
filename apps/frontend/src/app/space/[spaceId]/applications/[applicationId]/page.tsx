@@ -1,7 +1,11 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
+import {
+  backendAuthFetchJson,
+  BackendHttpError,
+  errorMessageFromBody,
+} from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import { Card, CardContent } from "@/components/ui/card";
@@ -23,52 +27,77 @@ import { ReviewerApplicationActions } from "@/app/_components/applications/revie
 
 type PageProps = {
   params: Promise<{ spaceId: string; applicationId: string }>;
-  searchParams?: Promise<{ definitionId?: string }>;
+  searchParams?: Promise<{ actionError?: string; definitionId?: string }>;
 };
 
-async function submitAction(applicationId: string): Promise<void> {
+async function submitAction(spaceId: string, applicationId: string): Promise<void> {
   "use server";
-  const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/submit`, {
-    method: "POST",
-    body: {},
-  });
-  const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-  redirectToApplicationDetail(updated);
+  try {
+    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/submit`, {
+      method: "POST",
+      body: {},
+    });
+    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
+    redirectToApplicationDetail(updated);
+  } catch (error) {
+    redirectToApplicationActionError(spaceId, applicationId, error);
+  }
 }
 
-async function resubmitAction(applicationId: string): Promise<void> {
+async function resubmitAction(spaceId: string, applicationId: string): Promise<void> {
   "use server";
-  const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/resubmit`, {
-    method: "POST",
-    body: {},
-  });
-  const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-  redirectToApplicationDetail(updated);
+  try {
+    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/resubmit`, {
+      method: "POST",
+      body: {},
+    });
+    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
+    redirectToApplicationDetail(updated);
+  } catch (error) {
+    redirectToApplicationActionError(spaceId, applicationId, error);
+  }
 }
 
-async function approveAction(applicationId: string, formData: FormData): Promise<void> {
+async function approveAction(
+  spaceId: string,
+  applicationId: string,
+  formData: FormData,
+): Promise<void> {
   "use server";
   const comment = formData.get("comment");
-  const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/approve`, {
-    method: "POST",
-    body: { comment: typeof comment === "string" ? comment : undefined },
-  });
-  const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-  redirectToApplicationDetail(updated);
+  try {
+    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/approve`, {
+      method: "POST",
+      body: { comment: typeof comment === "string" ? comment : undefined },
+    });
+    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
+    redirectToApplicationDetail(updated);
+  } catch (error) {
+    redirectToApplicationActionError(spaceId, applicationId, error);
+  }
 }
 
-async function rejectAction(applicationId: string, formData: FormData): Promise<void> {
+async function rejectAction(
+  spaceId: string,
+  applicationId: string,
+  formData: FormData,
+): Promise<void> {
   "use server";
   const comment = formData.get("comment");
-  const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/reject`, {
-    method: "POST",
-    body: { comment: typeof comment === "string" ? comment : undefined },
-  });
-  const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-  redirectToApplicationDetail(updated);
+  try {
+    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/reject`, {
+      method: "POST",
+      body: { comment: typeof comment === "string" ? comment : undefined },
+    });
+    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
+    redirectToApplicationDetail(updated);
+  } catch (error) {
+    redirectToApplicationActionError(spaceId, applicationId, error);
+  }
 }
 
 async function returnAction(
+  spaceId: string,
   applicationId: string,
   fieldMap: Array<{ id: string; key: string }>,
   formData: FormData,
@@ -92,18 +121,22 @@ async function returnAction(
     return;
   }
 
-  const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/return`, {
-    method: "POST",
-    body: {
-      overallComment:
-        typeof overallComment === "string" && overallComment.trim().length > 0
-          ? overallComment
-          : undefined,
-      fields,
-    },
-  });
-  const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-  redirectToApplicationDetail(updated);
+  try {
+    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/return`, {
+      method: "POST",
+      body: {
+        overallComment:
+          typeof overallComment === "string" && overallComment.trim().length > 0
+            ? overallComment
+            : undefined,
+        fields,
+      },
+    });
+    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
+    redirectToApplicationDetail(updated);
+  } catch (error) {
+    redirectToApplicationActionError(spaceId, applicationId, error);
+  }
 }
 
 function redirectToApplicationDetail(application: ApplicationDetailViewModel): never {
@@ -117,13 +150,70 @@ function redirectToApplicationDetail(application: ApplicationDetailViewModel): n
   redirect("/space");
 }
 
+function redirectToApplicationActionError(
+  spaceId: string,
+  applicationId: string,
+  error: unknown,
+): never {
+  const detailHref = buildSpaceApplicationDetailHref({
+    id: applicationId,
+    groupId: spaceId,
+  });
+  const params = new URLSearchParams({
+    actionError: applicationActionErrorMessage(error),
+  });
+  redirect(`${detailHref ?? "/space"}?${params.toString()}`);
+}
+
+function applicationActionErrorMessage(error: unknown): string {
+  if (!(error instanceof BackendHttpError)) {
+    return "申請の操作に失敗しました";
+  }
+
+  const errorCode =
+    error.body && typeof error.body === "object" && "errorCode" in error.body
+      ? (error.body as { errorCode: unknown }).errorCode
+      : null;
+
+  if (errorCode === "APPLICATION_NOT_DRAFT") {
+    return "下書き状態の申請のみ提出できます。画面を更新して状態を確認してください。";
+  }
+  if (errorCode === "APPLICATION_REQUIRED_FIELDS_MISSING") {
+    return "必須項目を入力してから提出してください。";
+  }
+  if (errorCode === "APPLICATION_ACCESS_DENIED") {
+    return "この申請を操作する権限がありません。";
+  }
+  if (errorCode === "APPLICATION_NO_APPROVAL_FLOW") {
+    return "このスペースに有効な承認フローがありません。";
+  }
+  if (errorCode === "APPLICATION_NOT_IN_REVIEW") {
+    return "承認待ち状態の申請のみ操作できます。画面を更新して状態を確認してください。";
+  }
+  if (errorCode === "APPLICATION_APPROVAL_FORBIDDEN") {
+    return "現在の承認ステップを操作する権限がありません。";
+  }
+  if (errorCode === "APPLICATION_RETURN_NOT_ALLOWED") {
+    return "現在の承認ステップでは差し戻しできません。";
+  }
+  if (errorCode === "APPLICATION_RETURN_FIELDS_INVALID") {
+    return "差し戻し対象の項目が不正です。画面を更新して再度お試しください。";
+  }
+  if (errorCode === "APPLICATION_CORRECTION_ALREADY_OPEN") {
+    return "この申請には未解決の差し戻し依頼が既にあります。";
+  }
+
+  return `${errorMessageFromBody(error.body)}（status: ${error.status}）`;
+}
+
 export default async function SpaceApplicationDetailPage({
   params,
   searchParams,
 }: PageProps) {
   const [{ spaceId, applicationId }, query] = await Promise.all([
     params,
-    searchParams ?? Promise.resolve({} as { definitionId?: string }),
+    searchParams ??
+      Promise.resolve({} as { actionError?: string; definitionId?: string }),
   ]);
 
   try {
@@ -169,34 +259,41 @@ export default async function SpaceApplicationDetailPage({
         showCorrectionHistory
         showOpenCorrectionSummary
         actions={
-          <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline">
-              <Link href={`/space/${encodeURIComponent(spaceId)}/applications`}>
-                一覧へ戻る
-              </Link>
-            </Button>
-            <ApplicantApplicationActions
-              capabilities={capabilities}
-              editHref={
-                definitionId
-                  ? `${buildSpaceApplicationEditHrefByIds(
-                      spaceId,
-                      app.id,
-                    )}?definitionId=${encodeURIComponent(definitionId)}`
-                  : buildSpaceApplicationEditHrefByIds(spaceId, app.id)
-              }
-              submitAction={submitAction.bind(null, app.id)}
-              resubmitAction={resubmitAction.bind(null, app.id)}
-            />
+          <div className="space-y-3">
+            {query.actionError ? (
+              <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
+                {query.actionError}
+              </p>
+            ) : null}
+            <div className="flex flex-wrap gap-2">
+              <Button asChild variant="outline">
+                <Link href={`/space/${encodeURIComponent(spaceId)}/applications`}>
+                  一覧へ戻る
+                </Link>
+              </Button>
+              <ApplicantApplicationActions
+                capabilities={capabilities}
+                editHref={
+                  definitionId
+                    ? `${buildSpaceApplicationEditHrefByIds(
+                        spaceId,
+                        app.id,
+                      )}?definitionId=${encodeURIComponent(definitionId)}`
+                    : buildSpaceApplicationEditHrefByIds(spaceId, app.id)
+                }
+                submitAction={submitAction.bind(null, spaceId, app.id)}
+                resubmitAction={resubmitAction.bind(null, spaceId, app.id)}
+              />
+            </div>
           </div>
         }
         reviewerActions={
           <ReviewerApplicationActions
             fields={fields}
             capabilities={capabilities}
-            approveAction={approveAction.bind(null, app.id)}
-            rejectAction={rejectAction.bind(null, app.id)}
-            returnAction={returnAction.bind(null, app.id, fieldMap)}
+            approveAction={approveAction.bind(null, spaceId, app.id)}
+            rejectAction={rejectAction.bind(null, spaceId, app.id)}
+            returnAction={returnAction.bind(null, spaceId, app.id, fieldMap)}
           />
         }
       />
