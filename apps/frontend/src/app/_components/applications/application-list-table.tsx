@@ -10,6 +10,12 @@ import {
 } from "@/components/ui/table";
 import { ApplicationStatusBadge } from "./application-status-badge";
 
+const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
+  dateStyle: "short",
+  timeStyle: "medium",
+  timeZone: "Asia/Tokyo",
+});
+
 export type ApplicationListRow = {
   formDefinitionId?: string | null;
   id: string;
@@ -54,7 +60,7 @@ export function ApplicationListTable({
               </TableCell>
             ) : null}
             <TableCell className="text-muted-foreground">
-              {new Date(row.createdAt).toLocaleString("ja-JP")}
+              {dateTimeFormatter.format(new Date(row.createdAt))}
             </TableCell>
             <TableCell className="text-right">
               <Button asChild variant="ghost" size="sm">

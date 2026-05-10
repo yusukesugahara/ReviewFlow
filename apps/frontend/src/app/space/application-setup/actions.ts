@@ -2,7 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
+import {
+  BackendHttpError,
+  backendAuthFetchJson,
+  errorMessageFromBody,
+} from "@/lib/server/backend-fetch";
 import {
   APPLICATION_SETUP_ERRORS,
 } from "@/lib/constants/application-setup";
@@ -22,6 +26,11 @@ type CreateApprovalFlowResponse = {
 
 type CreateApplicationResponse = {
   id: string;
+};
+
+type BackendErrorBody = {
+  errorCode?: unknown;
+  message?: unknown;
 };
 
 type ApprovalStepPayload = {
@@ -48,6 +57,23 @@ function unwrapData<T>(raw: unknown): T {
     throw new Error("invalid success envelope");
   }
   return (raw as { data: T }).data;
+}
+
+function setupErrorRedirectUrl(base: string, error: unknown): string {
+  const params = new URLSearchParams({
+    setupError: APPLICATION_SETUP_ERRORS.saveFailed,
+  });
+  if (error instanceof BackendHttpError) {
+    const body = error.body as BackendErrorBody;
+    const message = errorMessageFromBody(error.body);
+    const errorCode =
+      typeof body.errorCode === "string" ? body.errorCode : undefined;
+    const detail = errorCode
+      ? `${errorCode}: ${message}`
+      : `${error.status}: ${message}`;
+    params.set("setupErrorDetail", detail);
+  }
+  return `${base}?${params.toString()}`;
 }
 
 function parseSteps(stepsJson: string): ApprovalStepPayload[] {
@@ -286,10 +312,8 @@ export async function submitApplicationSetupAction(
     });
     const application = unwrapData<CreateApplicationResponse>(applicationRaw);
     createdApplicationId = application.id;
-  } catch {
-    redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.saveFailed}`,
-    );
+  } catch (error) {
+    redirect(setupErrorRedirectUrl(redirectBase, error));
   }
 
   const listPath = `/space/${encodeURIComponent(spaceId)}/applications`;

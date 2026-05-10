@@ -36,6 +36,7 @@ type PageProps = {
   searchParams?: Promise<{
     publishedGroupId?: string;
     setupError?: string;
+    setupErrorDetail?: string;
     setupStatus?: string;
   }>;
 };
@@ -50,6 +51,12 @@ function unwrapData<T>(raw: unknown): T {
 function setupErrorMessage(error?: string): string | null {
   return error && error in APPLICATION_SETUP_ERROR_MESSAGES
     ? APPLICATION_SETUP_ERROR_MESSAGES[error as ApplicationSetupError]
+    : null;
+}
+
+function setupErrorDetailMessage(detail?: string): string | null {
+  return typeof detail === "string" && detail.trim().length > 0
+    ? detail.trim()
     : null;
 }
 
@@ -109,7 +116,14 @@ export default async function SpaceNewApplicationPage({
           <ApplicationSetupDraftForm
             action={submitApplicationSetupAction}
             assignees={assignees}
-            errorMessage={setupErrorMessage(query.setupError)}
+            errorMessage={
+              [
+                setupErrorMessage(query.setupError),
+                setupErrorDetailMessage(query.setupErrorDetail),
+              ]
+                .filter(Boolean)
+                .join(" ")
+            }
             publishedGroupId={
               query.setupStatus === APPLICATION_SETUP_STATUSES.published
                 ? (query.publishedGroupId ?? null)

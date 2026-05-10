@@ -67,7 +67,7 @@ export class ApprovalFlowsService {
     const ids =
       step.assigneeUserIds && step.assigneeUserIds.length > 0
         ? step.assigneeUserIds
-        : [step.assigneeUserId];
+        : [step.assigneeUserId ?? ''];
     return Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
   }
 

@@ -342,10 +342,17 @@ function SidebarLink({
       : href.startsWith("/space") && activeSpaceId
         ? `${href}?spaceId=${encodeURIComponent(activeSpaceId)}`
         : href;
+  const isApplicationNewActive =
+    spacePath === "applicationsNew" &&
+    (pathname === scopedHref || pathname === href);
+  const isApplicationsActive =
+    spacePath === "applications" &&
+    (pathname === scopedHref ||
+      (pathname.startsWith(`${scopedHref}/`) &&
+        pathname !== `${scopedHref}/new`) ||
+      pathname === href);
   const isActive = spacePath === "applications" || spacePath === "applicationsNew"
-    ? pathname === scopedHref ||
-      pathname.startsWith(`${scopedHref}/`) ||
-      pathname === href
+    ? isApplicationsActive || isApplicationNewActive
     : isSectionRoot
       ? pathname === href
       : pathname === href || pathname.startsWith(`${href}/`);

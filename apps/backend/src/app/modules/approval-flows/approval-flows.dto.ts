@@ -11,6 +11,7 @@ import {
   MaxLength,
   Min,
   MinLength,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 
@@ -28,10 +29,15 @@ export class CreateApprovalFlowStepDto {
 
   @ApiProperty({
     format: 'uuid',
+    required: false,
     description: 'このステップを承認するテナント内ユーザーID',
   })
+  @ValidateIf(
+    (step: CreateApprovalFlowStepDto) =>
+      !step.assigneeUserIds || step.assigneeUserIds.length === 0,
+  )
   @IsUUID()
-  assigneeUserId!: string;
+  assigneeUserId?: string;
 
   @ApiProperty({
     format: 'uuid',
@@ -43,7 +49,7 @@ export class CreateApprovalFlowStepDto {
   @IsOptional()
   @IsArray()
   @ArrayMinSize(1)
-  @IsUUID('4', { each: true })
+  @IsUUID('all', { each: true })
   assigneeUserIds?: string[];
 
   @ApiProperty({ example: true })
