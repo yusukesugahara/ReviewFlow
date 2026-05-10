@@ -172,7 +172,7 @@ request:
 query: `groupId` 必須。指定 group 内の承認フロー一覧（`steps` を `step_order` 昇順で含む）。
 
 ### POST /approval-flows
-権限: tenant_admin, tenant_user（group admin）。参照する `formDefinitionId` のフォーム定義は同一テナント・同一 group に存在すること。`steps[].assigneeUserId` は同一 group 所属ユーザー。`steps[].stepOrder` は **1 からの連番**で重複不可。
+権限: tenant_admin, tenant_user（group admin）。参照する `formDefinitionId` のフォーム定義は同一テナント・同一 group に存在すること。`steps[].assigneeUserIds` は同一 group 所属ユーザーの配列で、1ステップに複数人を登録できる。後方互換のため `steps[].assigneeUserId` も受け付けるが、`assigneeUserIds` 指定時はこちらを優先する。`steps[].stepOrder` は **1 からの連番**で重複不可。
 request:
 ```json
 {
@@ -184,12 +184,14 @@ request:
       "stepOrder": 1,
       "stepName": "一次承認",
       "assigneeUserId": "tenant_user",
+      "assigneeUserIds": ["tenant_user", "tenant_admin"],
       "canReturn": true
     },
     {
       "stepOrder": 2,
       "stepName": "最終承認",
       "assigneeUserId": "tenant_admin",
+      "assigneeUserIds": ["tenant_admin"],
       "canReturn": true
     }
   ]
@@ -203,7 +205,7 @@ request:
 query: `groupId` 必須。
 - tenant_admin: テナント内の指定 group の申請
 - group admin: 自分が admin の group の申請
-- group user: 所属 group 内で、自分の申請または **in_review** かつ現在ステップの `assignee_user_id` が自分のもの
+- group user: 所属 group 内で、自分の申請または **in_review** かつ現在ステップの `assignee_user_ids` に自分が含まれるもの
 
 ### POST /applications
 権限: tenant_user, tenant_admin。`groupId` 必須。`formDefinitionId` は同一 group の **published** フォーム定義のみ。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
@@ -246,7 +248,7 @@ response:
 
 ### POST /applications/:id/approve
 権限: tenant_user, tenant_admin  
-`in_review` のときのみ。tenant_admin はテナント内 group、group admin は自分が admin の group、group user は現在ステップの `assignee_user_id` が自分の申請のみ実行可能。最終ステップ承認後は `approved`。任意 `comment`。
+`in_review` のときのみ。tenant_admin はテナント内 group、group admin は自分が admin の group、group user は現在ステップの `assignee_user_ids` に自分が含まれる申請のみ実行可能。最終ステップ承認後は `approved`。任意 `comment`。
 
 ### POST /applications/:id/return
 権限: tenant_user, tenant_admin  

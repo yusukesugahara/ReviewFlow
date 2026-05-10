@@ -24,7 +24,7 @@
 - 直列承認のみ
 - 1フォームに対して1有効フロー
 - ステップは step_order で順序管理
-- 現在ステップの assignee_user_id に応じて承認可能者を判断
+- 現在ステップの assignee_user_ids に含まれるユーザーが承認可能。既存データ互換のため assignee_user_ids が未設定の場合は assignee_user_id を代表承認者として扱う。
 
 ## 承認ロジック
 - 中間承認: 次ステップに進める
@@ -33,5 +33,5 @@
 - 却下: rejected
 
 ## 承認権限判定
-- 自分のユーザーIDが current step の assignee_user_id と一致すること
+- 自分のユーザーIDが current step の assignee_user_ids に含まれること
 - tenant_id が一致すること

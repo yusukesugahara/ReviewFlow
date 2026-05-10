@@ -118,6 +118,53 @@ describe('ApprovalFlowsService', () => {
     });
   });
 
+  it('create accepts multiple assignees for a single approval step', async () => {
+    users.find.mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
+    members.find.mockResolvedValue([
+      { userId: 'user-1' },
+      { userId: 'user-2' },
+    ]);
+    flows.findOne.mockResolvedValue({
+      id: 'flow-new',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      name: 'F',
+      isActive: true,
+      steps: [
+        {
+          id: 'step-1',
+          stepOrder: 1,
+          stepName: 'S1',
+          assigneeUserId: 'user-1',
+          assigneeUserIds: ['user-1', 'user-2'],
+          canReturn: false,
+        },
+      ],
+    } as ApprovalFlow);
+
+    await expect(
+      service.create(actor, {
+        groupId: 'g1',
+        name: 'F',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: 'S1',
+            assigneeUserId: 'user-1',
+            assigneeUserIds: ['user-1', 'user-2'],
+            canReturn: false,
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({
+      steps: [
+        {
+          assigneeUserIds: ['user-1', 'user-2'],
+        },
+      ],
+    });
+  });
+
   it('create rejects when step orders are not contiguous from 1', async () => {
     await expect(
       service.create(actor, {

@@ -97,6 +97,7 @@
 - step_order: int
 - step_name: string
 - assignee_user_id: string (FK -> users.id)
+- assignee_user_ids: json/text nullable
 - can_return: boolean
 - created_at: datetime
 - updated_at: datetime

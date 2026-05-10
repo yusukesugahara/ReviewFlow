@@ -8,6 +8,7 @@ type ApprovalStep = {
   stepOrder: number;
   stepName: string;
   assigneeUserId: string;
+  assigneeUserIds?: string[];
   canReturn: boolean;
 };
 
@@ -88,14 +89,19 @@ export function ApprovalFlowSelector({ flows }: ApprovalFlowSelectorProps) {
                 {selectedFlow.steps
                   .slice()
                   .sort((a, b) => a.stepOrder - b.stepOrder)
-                  .map((step) => (
-                    <div key={step.id} className="flex items-center gap-2 text-sm">
+                  .map((step) => {
+                    const assigneeUserIds =
+                      step.assigneeUserIds && step.assigneeUserIds.length > 0
+                        ? step.assigneeUserIds
+                        : [step.assigneeUserId];
+                    return (
+                    <div key={step.id} className="flex flex-wrap items-center gap-2 text-sm">
                       <Badge variant="outline" className="w-8 justify-center">
                         {step.stepOrder}
                       </Badge>
                       <span className="font-medium">{step.stepName}</span>
                       <Badge variant="secondary" className="text-xs">
-                        承認者: {step.assigneeUserId.slice(0, 8)}...
+                        承認者: {assigneeUserIds.length}人
                       </Badge>
                       {step.canReturn ? (
                         <Badge variant="outline" className="text-xs">
@@ -103,7 +109,8 @@ export function ApprovalFlowSelector({ flows }: ApprovalFlowSelectorProps) {
                         </Badge>
                       ) : null}
                     </div>
-                  ))}
+                    );
+                  })}
               </div>
             </div>
           </div>

@@ -39,6 +39,7 @@ type ApprovalFlow = {
     id: string;
     stepName: string;
     assigneeUserId: string;
+    assigneeUserIds?: string[];
     canReturn: boolean;
   }>;
 };
@@ -99,7 +100,10 @@ function toApprovalStepItem(
   return {
     id: step.id || `step-${index + 1}`,
     stepName: step.stepName,
-    assigneeUserId: step.assigneeUserId,
+    assigneeUserIds:
+      step.assigneeUserIds && step.assigneeUserIds.length > 0
+        ? step.assigneeUserIds
+        : [step.assigneeUserId],
     canReturn: step.canReturn,
   };
 }

@@ -65,6 +65,26 @@ describe('ApplicationAccessPolicy', () => {
     );
   });
 
+  it('allows any assignee registered on the current approval step to act', () => {
+    expect(
+      policy.canActOnReview(
+        actor('reviewer-2'),
+        application({
+          approvalFlow: {
+            steps: [
+              {
+                id: 'step-1',
+                stepOrder: 1,
+                assigneeUserId: 'reviewer-1',
+                assigneeUserIds: ['reviewer-1', 'reviewer-2'],
+              },
+            ],
+          },
+        } as Partial<Application>),
+      ),
+    ).toBe(true);
+  });
+
   it('allows a past approver to read a non-draft application', async () => {
     await expect(
       policy.assertCanRead(

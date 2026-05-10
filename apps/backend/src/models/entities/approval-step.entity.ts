@@ -55,6 +55,13 @@ export class ApprovalStep {
   @JoinColumn({ name: 'assignee_user_id' })
   assigneeUser!: User;
 
+  @Column({
+    name: 'assignee_user_ids',
+    type: 'simple-json',
+    nullable: true,
+  })
+  assigneeUserIds!: string[] | null;
+
   @Column({ name: 'can_return', default: false })
   canReturn!: boolean;
 

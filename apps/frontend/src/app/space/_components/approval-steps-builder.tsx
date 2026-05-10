@@ -10,7 +10,7 @@ import { OrderMoveButtons } from "./order-move-buttons";
 export type ApprovalStepItem = {
   id: string;
   stepName: string;
-  assigneeUserId: string;
+  assigneeUserIds: string[];
   canReturn: boolean;
 };
 
@@ -33,13 +33,13 @@ export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsB
           {
             id: "step-1",
             stepName: "一次承認",
-            assigneeUserId: defaultAssigneeId,
+            assigneeUserIds: defaultAssigneeId ? [defaultAssigneeId] : [],
             canReturn: true,
           },
           {
             id: "step-2",
             stepName: "最終承認",
-            assigneeUserId: defaultAssigneeId,
+            assigneeUserIds: defaultAssigneeId ? [defaultAssigneeId] : [],
             canReturn: false,
           },
         ]
@@ -47,10 +47,7 @@ export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsB
   const [draggingId, setDraggingId] = useState<string | null>(null);
 
   const serializedStepLines = useMemo(
-    () =>
-      steps
-        .map((s) => `${s.stepName},${s.assigneeUserId},${String(s.canReturn)}`)
-        .join("\n"),
+    () => JSON.stringify(steps),
     [steps]
   );
 
@@ -61,7 +58,7 @@ export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsB
       {
         id: `step-${nextIndex}`,
         stepName: `承認ステップ${nextIndex}`,
-        assigneeUserId: defaultAssigneeId,
+        assigneeUserIds: defaultAssigneeId ? [defaultAssigneeId] : [],
         canReturn: true,
       },
     ]);
@@ -91,9 +88,23 @@ export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsB
     setDraggingId(null);
   };
 
+  const toggleAssignee = (stepId: string, assigneeId: string, checked: boolean) => {
+    setSteps((prev) =>
+      prev.map((step) => {
+        if (step.id !== stepId) {
+          return step;
+        }
+        const nextIds = checked
+          ? [...step.assigneeUserIds, assigneeId]
+          : step.assigneeUserIds.filter((id) => id !== assigneeId);
+        return { ...step, assigneeUserIds: Array.from(new Set(nextIds)) };
+      })
+    );
+  };
+
   return (
     <div className="space-y-4">
-      <input type="hidden" name="stepLines" value={serializedStepLines} />
+      <input type="hidden" name="stepsJson" value={serializedStepLines} />
 
       <div className="space-y-2">
         <p className="text-sm font-medium text-slate-700">ステップ一覧</p>
@@ -112,7 +123,7 @@ export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsB
                 onDrop={() => onDropTo(step.id)}
                 className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
               >
-                <div className="grid gap-3 md:grid-cols-[120px_1fr_220px_120px] md:items-end">
+                <div className="grid gap-3 md:grid-cols-[120px_1fr_minmax(240px,1.2fr)_120px] md:items-start">
                   <div className="space-y-2">
                     <Label>順序</Label>
                     <div className="flex h-9 items-center gap-2">
@@ -132,24 +143,24 @@ export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsB
                   </div>
                   <div className="space-y-2">
                     <Label>承認者</Label>
-                    <select
-                      value={step.assigneeUserId}
-                      onChange={(e) =>
-                        setSteps((prev) =>
-                          prev.map((s) =>
-                            s.id === step.id ? { ...s, assigneeUserId: e.target.value } : s
-                          )
-                        )
-                      }
-                      className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm"
-                      required
-                    >
+                    <div className="max-h-40 space-y-2 overflow-y-auto rounded-md border border-input bg-background p-3">
                       {assignees.map((assignee) => (
-                        <option key={assignee.id} value={assignee.id}>
-                          {assignee.label}
-                        </option>
+                        <label key={assignee.id} className="flex items-start gap-2 text-sm text-slate-700">
+                          <input
+                            type="checkbox"
+                            checked={step.assigneeUserIds.includes(assignee.id)}
+                            onChange={(event) =>
+                              toggleAssignee(step.id, assignee.id, event.target.checked)
+                            }
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300"
+                          />
+                          <span>{assignee.label}</span>
+                        </label>
                       ))}
-                    </select>
+                    </div>
+                    {step.assigneeUserIds.length === 0 ? (
+                      <p className="text-xs text-destructive">承認者を1人以上選択してください。</p>
+                    ) : null}
                   </div>
                   <div className="space-y-2">
                     <Label>差し戻し</Label>

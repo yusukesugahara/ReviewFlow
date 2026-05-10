@@ -1106,6 +1106,7 @@ export interface components {
             stepOrder: number;
             stepName: string;
             assigneeUserId: string;
+            assigneeUserIds: unknown[][];
             canReturn: boolean;
             createdAt: string;
         };
@@ -1131,6 +1132,8 @@ export interface components {
              * @description このステップを承認するテナント内ユーザーID
              */
             assigneeUserId: string;
+            /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
+            assigneeUserIds?: unknown[][];
             /** @example true */
             canReturn: boolean;
         };

@@ -53,6 +53,22 @@ export class ApprovalFlowsService {
         throw clientError(ClientErrorCodes.APPROVAL_FLOW_STEPS_INVALID);
       }
     }
+    for (const step of dto.steps) {
+      const assigneeUserIds = this.normalizeAssigneeUserIds(step);
+      if (assigneeUserIds.length === 0) {
+        throw clientError(ClientErrorCodes.APPROVAL_FLOW_STEPS_INVALID);
+      }
+    }
+  }
+
+  private normalizeAssigneeUserIds(
+    step: CreateApprovalFlowDto['steps'][number],
+  ): string[] {
+    const ids =
+      step.assigneeUserIds && step.assigneeUserIds.length > 0
+        ? step.assigneeUserIds
+        : [step.assigneeUserId];
+    return Array.from(new Set(ids.map((id) => id.trim()).filter(Boolean)));
   }
 
   async create(
@@ -66,7 +82,9 @@ export class ApprovalFlowsService {
       (a, b) => a.stepOrder - b.stepOrder,
     );
     const assigneeIds = Array.from(
-      new Set(sortedSteps.map((step) => step.assigneeUserId)),
+      new Set(
+        sortedSteps.flatMap((step) => this.normalizeAssigneeUserIds(step)),
+      ),
     );
     const assignees = await this.users.find({
       where: assigneeIds.map((id) => ({ id, tenantId: actor.tenantId })),
@@ -98,6 +116,7 @@ export class ApprovalFlowsService {
       const saved = await flowRepo.save(flow);
       newFlowId = saved.id;
       for (const s of sortedSteps) {
+        const assigneeUserIds = this.normalizeAssigneeUserIds(s);
         await stepRepo.save(
           stepRepo.create({
             tenantId: actor.tenantId,
@@ -105,7 +124,8 @@ export class ApprovalFlowsService {
             approvalFlowId: saved.id,
             stepOrder: s.stepOrder,
             stepName: s.stepName.trim(),
-            assigneeUserId: s.assigneeUserId,
+            assigneeUserId: assigneeUserIds[0],
+            assigneeUserIds,
             canReturn: s.canReturn,
           }),
         );

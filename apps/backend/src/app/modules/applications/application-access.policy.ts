@@ -26,7 +26,11 @@ export class ApplicationAccessPolicy {
     if (!step) {
       return false;
     }
-    return step.assigneeUserId === actor.id;
+    const assigneeUserIds =
+      step.assigneeUserIds && step.assigneeUserIds.length > 0
+        ? step.assigneeUserIds
+        : [step.assigneeUserId];
+    return assigneeUserIds.includes(actor.id);
   }
 
   canActOnReview(actor: AuthUserPayload, app: Application): boolean {

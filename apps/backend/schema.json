@@ -3816,6 +3816,12 @@
           "assigneeUserId": {
             "type": "string"
           },
+          "assigneeUserIds": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
           "canReturn": {
             "type": "boolean"
           },
@@ -3828,6 +3834,7 @@
           "stepOrder",
           "stepName",
           "assigneeUserId",
+          "assigneeUserIds",
           "canReturn",
           "createdAt"
         ]
@@ -3899,6 +3906,14 @@
             "type": "string",
             "format": "uuid",
             "description": "このステップを承認するテナント内ユーザーID"
+          },
+          "assigneeUserIds": {
+            "description": "このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。",
+            "type": "array",
+            "items": {
+              "type": "array",
+              "format": "uuid"
+            }
           },
           "canReturn": {
             "type": "boolean",

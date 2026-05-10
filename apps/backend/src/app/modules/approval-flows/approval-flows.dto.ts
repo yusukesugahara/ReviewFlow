@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsInt,
+  IsOptional,
   IsString,
   IsUUID,
   MaxLength,
@@ -31,6 +32,19 @@ export class CreateApprovalFlowStepDto {
   })
   @IsUUID()
   assigneeUserId!: string;
+
+  @ApiProperty({
+    format: 'uuid',
+    isArray: true,
+    required: false,
+    description:
+      'このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @IsUUID('4', { each: true })
+  assigneeUserIds?: string[];
 
   @ApiProperty({ example: true })
   @IsBoolean()
@@ -68,6 +82,9 @@ export class ApprovalStepResponseDto {
 
   @ApiProperty()
   assigneeUserId!: string;
+
+  @ApiProperty({ isArray: true })
+  assigneeUserIds!: string[];
 
   @ApiProperty()
   canReturn!: boolean;

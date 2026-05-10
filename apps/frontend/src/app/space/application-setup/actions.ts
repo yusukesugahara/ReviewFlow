@@ -28,6 +28,7 @@ type ApprovalStepPayload = {
   stepOrder: number;
   stepName: string;
   assigneeUserId: string;
+  assigneeUserIds: string[];
   canReturn: boolean;
 };
 
@@ -49,22 +50,37 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
-function parseSteps(stepLines: string): ApprovalStepPayload[] {
-  const lines = stepLines
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line) => line.length > 0);
+function parseSteps(stepsJson: string): ApprovalStepPayload[] {
+  const parsed: unknown = JSON.parse(stepsJson);
+  if (!Array.isArray(parsed)) {
+    return [];
+  }
 
-  return lines.map((line, index) => {
-    const [stepNameRaw = "", assigneeUserIdRaw = "", canReturnRaw = ""] = line
-      .split(",")
-      .map((value) => value?.trim() ?? "");
-    return {
+  return parsed.flatMap((item, index): ApprovalStepPayload[] => {
+    if (!item || typeof item !== "object") {
+      return [];
+    }
+    const raw = item as Record<string, unknown>;
+    const stepNameRaw = typeof raw.stepName === "string" ? raw.stepName.trim() : "";
+    const assigneeUserIds = Array.isArray(raw.assigneeUserIds)
+      ? raw.assigneeUserIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+      : typeof raw.assigneeUserId === "string" && raw.assigneeUserId.length > 0
+        ? [raw.assigneeUserId]
+        : [];
+    if (assigneeUserIds.length === 0) {
+      return [];
+    }
+    const [primaryAssigneeUserId] = assigneeUserIds;
+    if (!primaryAssigneeUserId) {
+      return [];
+    }
+    return [{
       stepOrder: index + 1,
       stepName: stepNameRaw || `Step ${index + 1}`,
-      assigneeUserId: assigneeUserIdRaw,
-      canReturn: canReturnRaw === "true",
-    };
+      assigneeUserId: primaryAssigneeUserId,
+      assigneeUserIds: Array.from(new Set(assigneeUserIds)),
+      canReturn: raw.canReturn === true,
+    }];
   });
 }
 
@@ -164,7 +180,7 @@ export async function submitApplicationSetupAction(
 ): Promise<void> {
   const name = formData.get("name");
   const fieldsJson = formData.get("fieldsJson");
-  const stepLines = formData.get("stepLines");
+  const stepsJson = formData.get("stepsJson");
   const spaceId = formData.get("spaceId");
   const returnPath = formData.get("returnPath");
   const redirectBase =
@@ -182,7 +198,7 @@ export async function submitApplicationSetupAction(
       `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
     );
   }
-  if (typeof stepLines !== "string") {
+  if (typeof stepsJson !== "string") {
     redirect(
       `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
     );
@@ -202,7 +218,14 @@ export async function submitApplicationSetupAction(
     );
   }
 
-  const steps = parseSteps(stepLines);
+  let steps: ApprovalStepPayload[];
+  try {
+    steps = parseSteps(stepsJson);
+  } catch {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+    );
+  }
   if (steps.length === 0) {
     redirect(
       `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,

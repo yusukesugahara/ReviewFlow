@@ -13,6 +13,10 @@ export function mapApprovalStepToDto(
     stepOrder: row.stepOrder,
     stepName: row.stepName,
     assigneeUserId: row.assigneeUserId,
+    assigneeUserIds:
+      row.assigneeUserIds && row.assigneeUserIds.length > 0
+        ? row.assigneeUserIds
+        : [row.assigneeUserId],
     canReturn: row.canReturn,
     createdAt: row.createdAt.toISOString(),
   };
