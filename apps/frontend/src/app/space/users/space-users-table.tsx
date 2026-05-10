@@ -1,6 +1,6 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -51,10 +51,48 @@ export function SpaceUsersTable({
     null,
   );
   const [actionMenu, setActionMenu] = useState<ActionMenuState | null>(null);
+  const actionMenuRef = useRef<HTMLDivElement>(null);
+  const actionButtonRefs = useRef(new Map<string, HTMLButtonElement>());
   const deleteTitleId = useId();
   const deleteDescriptionId = useId();
   const roleTitleId = useId();
   const roleDescriptionId = useId();
+
+  useEffect(() => {
+    if (!actionMenu) {
+      return;
+    }
+
+    const openUserId = actionMenu.member.userId;
+
+    function handlePointerDown(event: PointerEvent) {
+      const target = event.target;
+      if (!(target instanceof Node)) {
+        return;
+      }
+
+      const menu = actionMenuRef.current;
+      const button = actionButtonRefs.current.get(openUserId);
+      if (menu?.contains(target) || button?.contains(target)) {
+        return;
+      }
+
+      setActionMenu(null);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setActionMenu(null);
+      }
+    }
+
+    document.addEventListener("pointerdown", handlePointerDown);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [actionMenu]);
 
   function toggleActionMenu(
     member: SpaceUserTableMember,
@@ -118,6 +156,13 @@ export function SpaceUsersTable({
                     aria-haspopup="menu"
                     aria-label={`${member.email} の操作`}
                     className="h-8 w-8 p-0"
+                    ref={(element) => {
+                      if (element) {
+                        actionButtonRefs.current.set(member.userId, element);
+                      } else {
+                        actionButtonRefs.current.delete(member.userId);
+                      }
+                    }}
                     type="button"
                     variant="ghost"
                     onClick={(event) =>
@@ -136,6 +181,7 @@ export function SpaceUsersTable({
       {actionMenu ? (
         <div
           className="fixed z-50 w-48 rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg"
+          ref={actionMenuRef}
           role="menu"
           style={{ left: actionMenu.left, top: actionMenu.top }}
         >
