@@ -268,6 +268,9 @@ export default async function SpaceApplicationDetailPage({
     const capabilities = getApplicationCapabilities(app, actor);
     const fieldMap = fields.map((field) => ({ id: field.id, key: field.fieldKey }));
     const missingRequiredFields = getMissingRequiredFields(fields, app.values);
+    const publicApplicationUrlPath = definitionId
+      ? `/apply/${encodeURIComponent(spaceId)}?formDefinitionId=${encodeURIComponent(definitionId)}`
+      : `/apply/${encodeURIComponent(spaceId)}`;
     const actionCapabilities = {
       ...capabilities,
       canSubmitApplication:
@@ -286,6 +289,7 @@ export default async function SpaceApplicationDetailPage({
         showTimestamps
         showCorrectionHistory
         showOpenCorrectionSummary
+        publicApplicationUrlPath={publicApplicationUrlPath}
         actions={
           <div className="space-y-3">
             {query.actionError ? (

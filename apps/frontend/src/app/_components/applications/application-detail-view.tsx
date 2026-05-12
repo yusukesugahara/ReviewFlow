@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApplicationStatusBadge } from "./application-status-badge";
+import { PublicApplicationUrlCard } from "./public-application-url-card";
 
 export type ApplicationDetailViewModel = {
   formDefinitionId?: string;
@@ -61,6 +62,7 @@ type ApplicationDetailViewProps = {
   showTimestamps?: boolean;
   showCorrectionHistory?: boolean;
   showOpenCorrectionSummary?: boolean;
+  publicApplicationUrlPath?: string;
 };
 
 export function ApplicationDetailView({
@@ -76,6 +78,7 @@ export function ApplicationDetailView({
   showTimestamps = false,
   showCorrectionHistory = false,
   showOpenCorrectionSummary = false,
+  publicApplicationUrlPath,
 }: ApplicationDetailViewProps) {
   return (
     <div className="space-y-6">
@@ -98,6 +101,10 @@ export function ApplicationDetailView({
         showCurrentStep={showCurrentStep}
         showTimestamps={showTimestamps}
       />
+
+      {publicApplicationUrlPath ? (
+        <PublicApplicationUrlCard path={publicApplicationUrlPath} />
+      ) : null}
 
       <ApplicationFieldsCard
         application={application}
