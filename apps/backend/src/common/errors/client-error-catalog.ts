@@ -102,6 +102,11 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'This space already has a form definition',
   },
+  FORM_DEFINITION_AMBIGUOUS: {
+    status: HttpStatus.BAD_REQUEST,
+    message:
+      'Multiple published form definitions exist in this space; specify formDefinitionId',
+  },
   FORM_DEFINITION_IMMUTABLE: {
     status: HttpStatus.CONFLICT,
     message: 'Form definition can only be edited while in draft status',

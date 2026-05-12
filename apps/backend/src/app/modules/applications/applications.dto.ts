@@ -20,6 +20,15 @@ export class CreateApplicationDto {
   @ApiPropertyOptional({
     format: 'uuid',
     description:
+      '利用する公開済みフォーム定義。スペースに公開済みフォームが複数あるときは必須。',
+  })
+  @IsOptional()
+  @IsUUID()
+  formDefinitionId?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
       'スペースに有効な承認フローが複数あるときは必須。1件のみなら省略可。',
   })
   @IsOptional()

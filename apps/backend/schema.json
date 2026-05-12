@@ -4238,6 +4238,11 @@
             "type": "string",
             "format": "uuid"
           },
+          "formDefinitionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "利用する公開済みフォーム定義。スペースに公開済みフォームが複数あるときは必須。"
+          },
           "approvalFlowId": {
             "type": "string",
             "format": "uuid",

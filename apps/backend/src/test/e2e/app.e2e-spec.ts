@@ -580,6 +580,14 @@ describe('App (e2e)', () => {
     expect((created.body as FormDefinitionCreateBody).data?.status).toBe(
       'draft',
     );
+    const secondCreated = await request(http)
+      .post('/form-definitions')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .send({ groupId, name: '稟議申請', description: 'desc' })
+      .expect(201);
+    const secondTid =
+      (secondCreated.body as FormDefinitionCreateBody).data?.id ?? '';
 
     await request(http)
       .post(`/form-definitions/${tid}/fields`)
@@ -601,6 +609,26 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${tok}`)
       .expect(200);
 
+    await request(http)
+      .post(`/form-definitions/${secondTid}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .send({
+        fieldKey: 'subject',
+        label: '件名',
+        fieldType: 'text',
+        required: true,
+        sortOrder: 1,
+        options: [],
+      })
+      .expect(201);
+
+    await request(http)
+      .post(`/form-definitions/${secondTid}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+
     const list = await request(http)
       .get('/form-definitions')
       .query({ groupId })
@@ -612,6 +640,9 @@ describe('App (e2e)', () => {
     const one = definitions.find((t) => t.id === tid);
     expect(one?.status).toBe('published');
     expect(one?.name).toBe('経費申請');
+    const second = definitions.find((t) => t.id === secondTid);
+    expect(second?.status).toBe('published');
+    expect(second?.name).toBe('稟議申請');
 
     const got = await request(http)
       .get(`/form-definitions/${tid}`)
@@ -656,6 +687,18 @@ describe('App (e2e)', () => {
     const flow = flows.find((f) => f.name === '経費申請フロー');
     expect(flow?.name).toBe('経費申請フロー');
     expect(flow?.steps?.length).toBe(2);
+
+    await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .send({
+        groupId,
+        formDefinitionId: secondTid,
+        approvalFlowId: flow?.id,
+        values: {},
+      })
+      .expect(201);
   });
 
   it('space scope: group roles gate templates and applications', async () => {

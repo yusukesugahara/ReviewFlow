@@ -1131,7 +1131,7 @@ export interface components {
              * Format: uuid
              * @description このステップを承認するテナント内ユーザーID
              */
-            assigneeUserId: string;
+            assigneeUserId?: string;
             /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
             assigneeUserIds?: unknown[][];
             /** @example true */
@@ -1228,6 +1228,11 @@ export interface components {
         CreateApplicationDto: {
             /** Format: uuid */
             groupId: string;
+            /**
+             * Format: uuid
+             * @description 利用する公開済みフォーム定義。スペースに公開済みフォームが複数あるときは必須。
+             */
+            formDefinitionId?: string;
             /**
              * Format: uuid
              * @description スペースに有効な承認フローが複数あるときは必須。1件のみなら省略可。

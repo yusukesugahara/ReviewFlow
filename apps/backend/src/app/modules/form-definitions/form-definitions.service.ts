@@ -74,12 +74,6 @@ export class FormDefinitionsService {
     dto: CreateFormDefinitionDto,
   ): Promise<FormDefinition> {
     await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
-    const existing = await this.definitions.findOne({
-      where: { tenantId: actor.tenantId, groupId: dto.groupId },
-    });
-    if (existing) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_ALREADY_EXISTS);
-    }
     const row = this.definitions.create({
       tenantId: actor.tenantId,
       groupId: dto.groupId,

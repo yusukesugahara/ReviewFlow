@@ -8,6 +8,8 @@
 - created_at: datetime
 - updated_at: datetime
 
+同一 `tenant_id` / `group_id` に複数のフォーム定義を保持できる。申請レコードは作成時に利用した `form_definition_id` を保持する。
+
 ## users
 - id: string (PK)
 - tenant_id: string (FK -> tenants.id)

@@ -306,6 +306,7 @@ export async function submitApplicationSetupAction(
       method: "POST",
       body: {
         groupId: spaceId,
+        formDefinitionId: createdDefinitionId,
         approvalFlowId: flow.id,
         values: {},
       },

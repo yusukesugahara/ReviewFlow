@@ -211,14 +211,7 @@ export class ApplicationsService {
     applicantUserId: string | null,
     dto: CreateApplicationDto,
   ): Promise<Application> {
-    const template = await this.templates.findOne({
-      where: {
-        tenantId,
-        groupId: dto.groupId,
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-      relations: ['fields'],
-    });
+    const template = await this.resolvePublishedTemplate(tenantId, dto);
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -269,6 +262,36 @@ export class ApplicationsService {
       detail: true,
     });
     return created;
+  }
+
+  private async resolvePublishedTemplate(
+    tenantId: string,
+    dto: CreateApplicationDto,
+  ): Promise<FormDefinition | null> {
+    if (dto.formDefinitionId) {
+      return this.templates.findOne({
+        where: {
+          id: dto.formDefinitionId,
+          tenantId,
+          groupId: dto.groupId,
+          status: FormDefinitionStatus.PUBLISHED,
+        },
+        relations: ['fields'],
+      });
+    }
+
+    const templates = await this.templates.find({
+      where: {
+        tenantId,
+        groupId: dto.groupId,
+        status: FormDefinitionStatus.PUBLISHED,
+      },
+      relations: ['fields'],
+    });
+    if (templates.length > 1) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_AMBIGUOUS);
+    }
+    return templates[0] ?? null;
   }
 
   async create(

@@ -19,9 +19,6 @@ import { Group } from './group.entity';
 @Entity('form_definitions')
 @Index('IDX_form_definitions_tenant', ['tenantId'])
 @Index('IDX_form_definitions_tenant_group', ['tenantId', 'groupId'])
-@Index('UQ_form_definitions_tenant_group', ['tenantId', 'groupId'], {
-  unique: true,
-})
 export class FormDefinition {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
