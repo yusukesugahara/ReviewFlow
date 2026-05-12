@@ -362,61 +362,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/form-definitions/public/current": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 公開申請用の現在フォーム定義取得 */
-        get: operations["FormDefinitionsController_getCurrentForApplicant"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/form-definitions/public/current/approval-flows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 公開申請用の有効な承認フロー一覧 */
-        get: operations["FormDefinitionsController_listCurrentFlowsForApplicant"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/approval-flows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 承認フロー一覧（tenant_admin） */
-        get: operations["ApprovalFlowsController_list"];
-        put?: never;
-        /**
-         * 承認フロー作成（tenant_admin）
-         * @description 参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。
-         */
-        post: operations["ApprovalFlowsController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/groups": {
         parameters: {
             query?: never;
@@ -533,6 +478,27 @@ export interface paths {
         post?: never;
         /** スペースメンバー削除（tenant_admin / space admin） */
         delete: operations["GroupsController_removeMember"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/approval-flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 承認フロー一覧（tenant_admin） */
+        get: operations["ApprovalFlowsController_list"];
+        put?: never;
+        /**
+         * 承認フロー作成（tenant_admin）
+         * @description 参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。
+         */
+        post: operations["ApprovalFlowsController_create"];
+        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -706,127 +672,6 @@ export interface paths {
          * @description draft / published は全項目。returned はオープンな correction の対象フィールドのみ。
          */
         patch: operations["ApplicationsController_patch"];
-        trace?: never;
-    };
-    "/public/applications/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 公開申請セッション情報 */
-        get: operations["PublicApplicationsController_session"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/public/applications": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 公開申請一覧 */
-        get: operations["PublicApplicationsController_list"];
-        put?: never;
-        /** 公開申請作成（下書き） */
-        post: operations["PublicApplicationsController_create"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/public/applications/{id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 公開申請詳細 */
-        get: operations["PublicApplicationsController_getOne"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /** 公開申請更新 */
-        patch: operations["PublicApplicationsController_patch"];
-        trace?: never;
-    };
-    "/public/applications/{id}/submit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 公開申請提出 */
-        post: operations["PublicApplicationsController_submit"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/public/applications/{id}/resubmit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** 公開申請再提出 */
-        post: operations["PublicApplicationsController_resubmit"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/public/applications/{id}/correction-targets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 公開申請の修正対象取得 */
-        get: operations["PublicApplicationsController_correctionTargets"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/public/applications/{id}/corrections": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 公開申請の差し戻し履歴 */
-        get: operations["PublicApplicationsController_corrections"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
         trace?: never;
     };
     "/export-jobs": {
@@ -1101,49 +946,6 @@ export interface components {
             /** @example user@example.com */
             email: string;
         };
-        ApprovalStepResponseDto: {
-            id: string;
-            stepOrder: number;
-            stepName: string;
-            assigneeUserId: string;
-            assigneeUserIds: unknown[][];
-            canReturn: boolean;
-            createdAt: string;
-        };
-        ApprovalFlowResponseDto: {
-            id: string;
-            groupId: string;
-            name: string;
-            isActive: boolean;
-            steps: components["schemas"]["ApprovalStepResponseDto"][];
-            createdAt: string;
-            updatedAt: string;
-        };
-        ApprovalFlowsListResponseDto: {
-            flows: components["schemas"]["ApprovalFlowResponseDto"][];
-        };
-        CreateApprovalFlowStepDto: {
-            /** @example 1 */
-            stepOrder: number;
-            /** @example 一次承認 */
-            stepName: string;
-            /**
-             * Format: uuid
-             * @description このステップを承認するテナント内ユーザーID
-             */
-            assigneeUserId?: string;
-            /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
-            assigneeUserIds?: unknown[][];
-            /** @example true */
-            canReturn: boolean;
-        };
-        CreateApprovalFlowDto: {
-            /** Format: uuid */
-            groupId: string;
-            /** @example 経費申請フロー */
-            name: string;
-            steps: components["schemas"]["CreateApprovalFlowStepDto"][];
-        };
         GroupSummaryDto: {
             id: string;
             name: string;
@@ -1205,6 +1007,49 @@ export interface components {
              * @enum {string}
              */
             role: "admin" | "user";
+        };
+        ApprovalStepResponseDto: {
+            id: string;
+            stepOrder: number;
+            stepName: string;
+            assigneeUserId: string;
+            assigneeUserIds: unknown[][];
+            canReturn: boolean;
+            createdAt: string;
+        };
+        ApprovalFlowResponseDto: {
+            id: string;
+            groupId: string;
+            name: string;
+            isActive: boolean;
+            steps: components["schemas"]["ApprovalStepResponseDto"][];
+            createdAt: string;
+            updatedAt: string;
+        };
+        ApprovalFlowsListResponseDto: {
+            flows: components["schemas"]["ApprovalFlowResponseDto"][];
+        };
+        CreateApprovalFlowStepDto: {
+            /** @example 1 */
+            stepOrder: number;
+            /** @example 一次承認 */
+            stepName: string;
+            /**
+             * Format: uuid
+             * @description このステップを承認するテナント内ユーザーID
+             */
+            assigneeUserId?: string;
+            /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
+            assigneeUserIds?: unknown[][];
+            /** @example true */
+            canReturn: boolean;
+        };
+        CreateApprovalFlowDto: {
+            /** Format: uuid */
+            groupId: string;
+            /** @example 経費申請フロー */
+            name: string;
+            steps: components["schemas"]["CreateApprovalFlowStepDto"][];
         };
         ApplicationSummaryDto: {
             id: string;
@@ -1346,7 +1191,6 @@ export interface components {
                 [key: string]: unknown;
             };
         };
-        ApplicantSessionResponseDto: Record<string, never>;
         ExportJobResponseDto: {
             id: string;
             groupId: string;
@@ -2027,116 +1871,6 @@ export interface operations {
             };
         };
     };
-    FormDefinitionsController_getCurrentForApplicant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["FormDefinitionResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    FormDefinitionsController_listCurrentFlowsForApplicant: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    ApprovalFlowsController_list: {
-        parameters: {
-            query: {
-                groupId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    ApprovalFlowsController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateApprovalFlowDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApprovalFlowResponseDto"];
-                    };
-                };
-            };
-        };
-    };
     GroupsController_list: {
         parameters: {
             query?: never;
@@ -2369,6 +2103,64 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    ApprovalFlowsController_list: {
+        parameters: {
+            query: {
+                groupId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApprovalFlowsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApprovalFlowDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowResponseDto"];
+                    };
+                };
             };
         };
     };
@@ -2693,260 +2485,6 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["ApplicationDetailDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_session: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApplicantSessionResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_list: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApplicationsListResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateApplicationDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApplicationCreateResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_getOne: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApplicationDetailDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PatchApplicationDto"];
-            };
-        };
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApplicationDetailDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_submit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApplicationDetailDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_resubmit: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApplicationDetailDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_correctionTargets: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["CorrectionTargetsResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    PublicApplicationsController_corrections: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                id: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["CorrectionsListResponseDto"];
                     };
                 };
             };

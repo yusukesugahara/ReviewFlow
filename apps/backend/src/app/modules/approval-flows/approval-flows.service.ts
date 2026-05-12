@@ -7,7 +7,6 @@ import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../../../models/entities/approval-step.entity';
 import { GroupMember } from '../../../models/entities/group-member.entity';
 import { User } from '../../../models/entities/user.entity';
-import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import { SpaceAccessService } from '../groups/space-access.service';
 import type { CreateApprovalFlowDto } from './approval-flows.dto';
 import { mapApprovalFlowToDto } from './approval-flows.mapper';
@@ -147,26 +146,6 @@ export class ApprovalFlowsService {
       row.steps.sort((a, b) => a.stepOrder - b.stepOrder);
     }
     return row;
-  }
-
-  async listActiveForApplicant(
-    actor: ApplicantAccessTokenPayload,
-  ): Promise<ApprovalFlow[]> {
-    const rows = await this.flows.find({
-      where: {
-        tenantId: actor.tenantId,
-        groupId: actor.groupId,
-        isActive: true,
-      },
-      relations: ['steps'],
-      order: { updatedAt: 'DESC' },
-    });
-    for (const row of rows) {
-      if (row.steps?.length) {
-        row.steps.sort((a, b) => a.stepOrder - b.stepOrder);
-      }
-    }
-    return rows;
   }
 
   toDto(row: ApprovalFlow) {

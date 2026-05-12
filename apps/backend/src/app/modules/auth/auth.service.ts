@@ -185,19 +185,6 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
-  verifyApplicantAccessToken(token: string): ApplicantAccessTokenPayload {
-    const payload = this.jwtService.verify<ApplicantAccessTokenPayload>(token);
-    if (
-      payload.kind !== 'applicant_access' ||
-      !payload.tenantId ||
-      !payload.email ||
-      !payload.groupId
-    ) {
-      throw clientError(ClientErrorCodes.AUTH_JWT_UNAUTHORIZED);
-    }
-    return payload;
-  }
-
   private issueTokens(user: User) {
     const payload: AccessTokenPayload = {
       sub: user.id,

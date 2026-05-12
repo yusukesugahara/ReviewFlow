@@ -167,16 +167,13 @@ request:
 権限: tenant_admin, tenant_user（group admin）
 
 ### POST /form-definitions/groups/:groupId/request-access
-公開申請フォームの案内メールを送信する。query の `formDefinitionId` は任意だが、同一 group に公開済みフォーム定義が複数ある場合は必須。送信される申請者アクセストークンには `groupId` と `formDefinitionId` を含め、公開申請作成時はこのフォーム定義を使用する。
+公開申請フォームの案内メールを送信する。query の `formDefinitionId` は任意だが、同一 group に公開済みフォーム定義が複数ある場合は必須。
 request:
 ```json
 {
   "email": "applicant@example.com"
 }
 ```
-
-### GET /form-definitions/public/current
-申請者アクセストークンに紐づく公開フォーム定義を返す。トークンに `formDefinitionId` が含まれる場合は、その同一テナント・同一 group の published フォーム定義のみを返す。
 
 ## Approval Flows
 

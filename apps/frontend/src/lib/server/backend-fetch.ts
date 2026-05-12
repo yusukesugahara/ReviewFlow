@@ -2,10 +2,7 @@ import "server-only";
 
 import { cookies } from "next/headers";
 import { getServerAuthEnv } from "@/lib/env";
-import {
-  ACCESS_TOKEN_COOKIE_NAME,
-  APPLICANT_ACCESS_TOKEN_COOKIE_NAME,
-} from "@/lib/constants/auth.constants";
+import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 
 export class BackendHttpError extends Error {
   constructor(
@@ -79,25 +76,6 @@ export async function backendAuthFetchJson(
     headers: {
       ...(options.headers ?? {}),
       Authorization: `Bearer ${token}`,
-    },
-  });
-}
-
-export async function backendApplicantFetchJson(
-  path: string,
-  options: BackendFetchOptions = {},
-): Promise<unknown> {
-  const store = await cookies();
-  const token = store.get(APPLICANT_ACCESS_TOKEN_COOKIE_NAME)?.value ?? null;
-  if (!token) {
-    throw new BackendHttpError(401, {}, "applicant access token missing");
-  }
-
-  return backendFetchJson(path, {
-    ...options,
-    headers: {
-      ...(options.headers ?? {}),
-      "X-Applicant-Access-Token": token,
     },
   });
 }

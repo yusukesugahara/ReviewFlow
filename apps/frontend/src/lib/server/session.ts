@@ -1,10 +1,7 @@
 import "server-only";
 
 import { cookies } from "next/headers";
-import {
-  ACCESS_TOKEN_COOKIE_NAME,
-  APPLICANT_ACCESS_TOKEN_COOKIE_NAME,
-} from "@/lib/constants/auth.constants";
+import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import type { AuthMeSuccessJson } from "@/lib/schema";
 import { backendFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
 
@@ -13,12 +10,6 @@ export type CurrentSessionUser = {
   email: string;
   tenantId: string;
   roles: string[];
-};
-
-export type ApplicantSession = {
-  email: string;
-  tenantId: string;
-  groupId: string;
 };
 
 function isAuthMeSuccessJson(json: unknown): json is AuthMeSuccessJson {
@@ -61,11 +52,6 @@ async function getAuthMe(accessToken: string): Promise<CurrentSessionUser | null
 export async function getAccessTokenFromCookie(): Promise<string | null> {
   const store = await cookies();
   return store.get(ACCESS_TOKEN_COOKIE_NAME)?.value ?? null;
-}
-
-export async function getApplicantAccessTokenFromCookie(): Promise<string | null> {
-  const store = await cookies();
-  return store.get(APPLICANT_ACCESS_TOKEN_COOKIE_NAME)?.value ?? null;
 }
 
 export async function getCurrentSessionUser(): Promise<CurrentSessionUser | null> {

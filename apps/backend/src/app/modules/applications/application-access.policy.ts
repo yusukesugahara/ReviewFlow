@@ -4,7 +4,6 @@ import type { AuthUserPayload } from '../../../decorators/current-user.decorator
 import { ApplicationStatus } from '../../../models/constants/application-status';
 import { UserRole } from '../../../models/constants/user-role';
 import type { Application } from '../../../models/entities/application.entity';
-import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 
 type CountApprovalsByActor = (
   applicationId: string,
@@ -64,18 +63,5 @@ export class ApplicationAccessPolicy {
       }
     }
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-  }
-
-  assertApplicantOwns(
-    actor: ApplicantAccessTokenPayload,
-    app: Application,
-  ): void {
-    if (
-      app.tenantId !== actor.tenantId ||
-      app.groupId !== actor.groupId ||
-      app.applicantEmail !== actor.email
-    ) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
   }
 }

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
-import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
@@ -35,15 +34,11 @@ import { ApplicationAccessPolicy } from './application-access.policy';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 
-type ApplicantSession = ApplicantAccessTokenPayload;
 type EditablePatchContext = {
   app: Application;
   fieldsByKey: Map<string, FormField>;
   allowedFieldIds?: Set<string>;
 };
-type ApplicationReadMapping =
-  | { source: 'actor'; actor: AuthUserPayload; id: string }
-  | { source: 'applicant'; actor: ApplicantSession; id: string };
 type SubmittableApplicationContext = {
   app: Application;
   template: FormDefinition;
@@ -166,17 +161,6 @@ export class ApplicationsService {
     );
   }
 
-  async listForApplicant(actor: ApplicantSession): Promise<Application[]> {
-    return this.apps.find({
-      where: {
-        tenantId: actor.tenantId,
-        groupId: actor.groupId,
-        applicantEmail: actor.email,
-      },
-      order: { createdAt: 'DESC' },
-    });
-  }
-
   async getOneForActor(
     actor: AuthUserPayload,
     id: string,
@@ -191,17 +175,6 @@ export class ApplicationsService {
       (applicationId, actorId) =>
         this.countApprovalsByActor(applicationId, actorId),
     );
-    return row;
-  }
-
-  async getOneForApplicant(
-    actor: ApplicantSession,
-    id: string,
-  ): Promise<Application> {
-    const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
-      detail: true,
-    });
-    this.accessPolicy.assertApplicantOwns(actor, row);
     return row;
   }
 
@@ -303,19 +276,6 @@ export class ApplicationsService {
   ): Promise<Application> {
     await this.spaceAccess.assertCanUseGroup(actor, dto.groupId);
     return this.createInternal(actor.tenantId, actor.email, actor.id, dto);
-  }
-
-  async createForApplicant(
-    actor: ApplicantSession,
-    dto: CreateApplicationDto,
-  ): Promise<Application> {
-    if (dto.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    return this.createInternal(actor.tenantId, actor.email, null, {
-      ...dto,
-      formDefinitionId: actor.formDefinitionId ?? dto.formDefinitionId,
-    });
   }
 
   private async loadApplicantEditableApplication(
@@ -465,15 +425,6 @@ export class ApplicationsService {
     });
   }
 
-  private async mapApplicationForSource(
-    mapping: ApplicationReadMapping,
-  ): Promise<Application> {
-    if (mapping.source === 'actor') {
-      return this.getOneForActor(mapping.actor, mapping.id);
-    }
-    return this.getOneForApplicant(mapping.actor, mapping.id);
-  }
-
   async patch(
     actor: AuthUserPayload,
     id: string,
@@ -498,29 +449,7 @@ export class ApplicationsService {
       dto.values ?? {},
     );
     await this.saveApplicationPatch(app, dto, fieldValues);
-    return this.mapApplicationForSource({ source: 'actor', actor, id });
-  }
-
-  async patchForApplicant(
-    actor: ApplicantSession,
-    id: string,
-    dto: PatchApplicationDto,
-  ): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    if (dto.formDefinitionId || dto.approvalFlowId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    this.accessPolicy.assertApplicantOwns(actor, app);
-    const context = await this.loadEditablePatchContext(actor.tenantId, app);
-    const fieldValues = await this.applyFieldValuePatch(
-      context,
-      dto.values ?? {},
-    );
-    await this.saveApplicationPatch(app, dto, fieldValues);
-    return this.mapApplicationForSource({ source: 'applicant', actor, id });
+    return this.getOneForActor(actor, id);
   }
 
   private async loadSubmittableApplicationContext(
@@ -621,25 +550,7 @@ export class ApplicationsService {
     );
     this.validateApplicationReadyToSubmit(context);
     await this.applySubmitTransition(context);
-    return this.mapApplicationForSource({ source: 'actor', actor, id });
-  }
-
-  async submitForApplicant(
-    actor: ApplicantSession,
-    id: string,
-  ): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    this.accessPolicy.assertApplicantOwns(actor, app);
-    const context = await this.loadSubmittableApplicationContext(
-      actor.tenantId,
-      app,
-    );
-    this.validateApplicationReadyToSubmit(context);
-    await this.applySubmitTransition(context);
-    return this.mapApplicationForSource({ source: 'applicant', actor, id });
+    return this.getOneForActor(actor, id);
   }
 
   async approve(
@@ -826,25 +737,7 @@ export class ApplicationsService {
     );
     this.validateApplicationReadyToSubmit(context);
     await this.applyResubmitTransition(context);
-    return this.mapApplicationForSource({ source: 'actor', actor, id });
-  }
-
-  async resubmitForApplicant(
-    actor: ApplicantSession,
-    id: string,
-  ): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    this.accessPolicy.assertApplicantOwns(actor, app);
-    const context = await this.loadResubmittableApplicationContext(
-      actor.tenantId,
-      app,
-    );
-    this.validateApplicationReadyToSubmit(context);
-    await this.applyResubmitTransition(context);
-    return this.mapApplicationForSource({ source: 'applicant', actor, id });
+    return this.getOneForActor(actor, id);
   }
 
   async getCorrectionsForActor(actor: AuthUserPayload, id: string) {
@@ -858,20 +751,6 @@ export class ApplicationsService {
       (applicationId, actorId) =>
         this.countApprovalsByActor(applicationId, actorId),
     );
-
-    const rows = await this.correctionRequests.find({
-      where: { applicationId: app.id, tenantId: actor.tenantId },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
-    return mapCorrectionsList(rows);
-  }
-
-  async getCorrectionsForApplicant(actor: ApplicantSession, id: string) {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
-      detail: false,
-    });
-    this.accessPolicy.assertApplicantOwns(actor, app);
 
     const rows = await this.correctionRequests.find({
       where: { applicationId: app.id, tenantId: actor.tenantId },
@@ -960,25 +839,6 @@ export class ApplicationsService {
       (applicationId, actorId) =>
         this.countApprovalsByActor(applicationId, actorId),
     );
-
-    return this.buildCorrectionTargetsResponse(app);
-  }
-
-  async getCorrectionTargetsForApplicant(
-    actor: ApplicantSession,
-    applicationId: string,
-  ): Promise<CorrectionTargetsResponseDto> {
-    const app = await this.loadApplicationOrThrow(
-      actor.tenantId,
-      applicationId,
-      {
-        detail: true,
-      },
-    );
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    this.accessPolicy.assertApplicantOwns(actor, app);
 
     return this.buildCorrectionTargetsResponse(app);
   }
