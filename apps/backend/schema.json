@@ -788,6 +788,92 @@
         ]
       }
     },
+    "/form-definitions/public/current": {
+      "get": {
+        "operationId": "FormDefinitionsController_getCurrentForApplicant",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請用の現在フォーム定義取得",
+        "tags": [
+          "form-definitions"
+        ]
+      }
+    },
+    "/form-definitions/public/current/approval-flows": {
+      "get": {
+        "operationId": "FormDefinitionsController_listCurrentFlowsForApplicant",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalFlowsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請用の有効な承認フロー一覧",
+        "tags": [
+          "form-definitions"
+        ]
+      }
+    },
     "/form-definitions/{id}": {
       "get": {
         "operationId": "FormDefinitionsController_getOne",
@@ -1241,6 +1327,116 @@
         ]
       }
     },
+    "/approval-flows": {
+      "get": {
+        "operationId": "ApprovalFlowsController_list",
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalFlowsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "承認フロー一覧（tenant_admin）",
+        "tags": [
+          "approval-flows"
+        ]
+      },
+      "post": {
+        "description": "参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。",
+        "operationId": "ApprovalFlowsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApprovalFlowDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalFlowResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "承認フロー作成（tenant_admin）",
+        "tags": [
+          "approval-flows"
+        ]
+      }
+    },
     "/groups": {
       "get": {
         "operationId": "GroupsController_list",
@@ -1688,116 +1884,6 @@
         "summary": "スペースメンバー削除（tenant_admin / space admin）",
         "tags": [
           "groups"
-        ]
-      }
-    },
-    "/approval-flows": {
-      "get": {
-        "operationId": "ApprovalFlowsController_list",
-        "parameters": [
-          {
-            "name": "groupId",
-            "required": true,
-            "in": "query",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "status",
-                    "data"
-                  ],
-                  "properties": {
-                    "status": {
-                      "type": "number",
-                      "enum": [
-                        200
-                      ],
-                      "example": 200
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApprovalFlowsListResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "internal-api-key": []
-          },
-          {
-            "nest-jwt": []
-          }
-        ],
-        "summary": "承認フロー一覧（tenant_admin）",
-        "tags": [
-          "approval-flows"
-        ]
-      },
-      "post": {
-        "description": "参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。",
-        "operationId": "ApprovalFlowsController_create",
-        "parameters": [],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/CreateApprovalFlowDto"
-              }
-            }
-          }
-        },
-        "responses": {
-          "201": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "status",
-                    "data"
-                  ],
-                  "properties": {
-                    "status": {
-                      "type": "number",
-                      "enum": [
-                        200
-                      ],
-                      "example": 200
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/ApprovalFlowResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "internal-api-key": []
-          },
-          {
-            "nest-jwt": []
-          }
-        ],
-        "summary": "承認フロー作成（tenant_admin）",
-        "tags": [
-          "approval-flows"
         ]
       }
     },
@@ -2445,6 +2531,59 @@
         "summary": "値更新",
         "tags": [
           "applications"
+        ]
+      }
+    },
+    "/public/applications": {
+      "post": {
+        "operationId": "PublicApplicationsController_create",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CreateApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "公開申請フォーム送信",
+        "tags": [
+          "public-applications"
         ]
       }
     },
@@ -3111,6 +3250,96 @@
           "definitions"
         ]
       },
+      "ApprovalStepResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stepOrder": {
+            "type": "number"
+          },
+          "stepName": {
+            "type": "string"
+          },
+          "assigneeUserId": {
+            "type": "string"
+          },
+          "assigneeUserIds": {
+            "type": "array",
+            "items": {
+              "type": "array"
+            }
+          },
+          "canReturn": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "stepOrder",
+          "stepName",
+          "assigneeUserId",
+          "assigneeUserIds",
+          "canReturn",
+          "createdAt"
+        ]
+      },
+      "ApprovalFlowResponseDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "groupId": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalStepResponseDto"
+            }
+          },
+          "createdAt": {
+            "type": "string"
+          },
+          "updatedAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "groupId",
+          "name",
+          "isActive",
+          "steps",
+          "createdAt",
+          "updatedAt"
+        ]
+      },
+      "ApprovalFlowsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "flows": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApprovalFlowResponseDto"
+            }
+          }
+        },
+        "required": [
+          "flows"
+        ]
+      },
       "CreateFormDefinitionDto": {
         "type": "object",
         "properties": {
@@ -3263,6 +3492,65 @@
         },
         "required": [
           "email"
+        ]
+      },
+      "CreateApprovalFlowStepDto": {
+        "type": "object",
+        "properties": {
+          "stepOrder": {
+            "type": "number",
+            "example": 1
+          },
+          "stepName": {
+            "type": "string",
+            "example": "一次承認"
+          },
+          "assigneeUserId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "このステップを承認するテナント内ユーザーID"
+          },
+          "assigneeUserIds": {
+            "description": "このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。",
+            "type": "array",
+            "items": {
+              "type": "array",
+              "format": "uuid"
+            }
+          },
+          "canReturn": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "stepOrder",
+          "stepName",
+          "canReturn"
+        ]
+      },
+      "CreateApprovalFlowDto": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "name": {
+            "type": "string",
+            "example": "経費申請フロー"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateApprovalFlowStepDto"
+            }
+          }
+        },
+        "required": [
+          "groupId",
+          "name",
+          "steps"
         ]
       },
       "GroupSummaryDto": {
@@ -3468,155 +3756,6 @@
         },
         "required": [
           "role"
-        ]
-      },
-      "ApprovalStepResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "stepOrder": {
-            "type": "number"
-          },
-          "stepName": {
-            "type": "string"
-          },
-          "assigneeUserId": {
-            "type": "string"
-          },
-          "assigneeUserIds": {
-            "type": "array",
-            "items": {
-              "type": "array"
-            }
-          },
-          "canReturn": {
-            "type": "boolean"
-          },
-          "createdAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "stepOrder",
-          "stepName",
-          "assigneeUserId",
-          "assigneeUserIds",
-          "canReturn",
-          "createdAt"
-        ]
-      },
-      "ApprovalFlowResponseDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "groupId": {
-            "type": "string"
-          },
-          "name": {
-            "type": "string"
-          },
-          "isActive": {
-            "type": "boolean"
-          },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ApprovalStepResponseDto"
-            }
-          },
-          "createdAt": {
-            "type": "string"
-          },
-          "updatedAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "groupId",
-          "name",
-          "isActive",
-          "steps",
-          "createdAt",
-          "updatedAt"
-        ]
-      },
-      "ApprovalFlowsListResponseDto": {
-        "type": "object",
-        "properties": {
-          "flows": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/ApprovalFlowResponseDto"
-            }
-          }
-        },
-        "required": [
-          "flows"
-        ]
-      },
-      "CreateApprovalFlowStepDto": {
-        "type": "object",
-        "properties": {
-          "stepOrder": {
-            "type": "number",
-            "example": 1
-          },
-          "stepName": {
-            "type": "string",
-            "example": "一次承認"
-          },
-          "assigneeUserId": {
-            "type": "string",
-            "format": "uuid",
-            "description": "このステップを承認するテナント内ユーザーID"
-          },
-          "assigneeUserIds": {
-            "description": "このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。",
-            "type": "array",
-            "items": {
-              "type": "array",
-              "format": "uuid"
-            }
-          },
-          "canReturn": {
-            "type": "boolean",
-            "example": true
-          }
-        },
-        "required": [
-          "stepOrder",
-          "stepName",
-          "canReturn"
-        ]
-      },
-      "CreateApprovalFlowDto": {
-        "type": "object",
-        "properties": {
-          "groupId": {
-            "type": "string",
-            "format": "uuid"
-          },
-          "name": {
-            "type": "string",
-            "example": "経費申請フロー"
-          },
-          "steps": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/CreateApprovalFlowStepDto"
-            }
-          }
-        },
-        "required": [
-          "groupId",
-          "name",
-          "steps"
         ]
       },
       "ApplicationSummaryDto": {

@@ -175,6 +175,27 @@ request:
 }
 ```
 
+### GET /form-definitions/public/current
+申請者アクセストークンで、公開申請フォームに表示するフォーム定義を取得する。
+
+### GET /form-definitions/public/current/approval-flows
+申請者アクセストークンで、公開申請フォーム送信用の有効な承認フロー一覧を取得する。
+
+### POST /public/applications
+申請者アクセストークンで公開申請フォームを送信する。作成した申請は入力値を検証したうえでレビュー状態に進める。
+request:
+```json
+{
+  "groupId": "group_1",
+  "formDefinitionId": "form_1",
+  "approvalFlowId": "flow_1",
+  "values": {
+    "expense_title": "出張交通費",
+    "amount": 12000
+  }
+}
+```
+
 ## Approval Flows
 
 ### GET /approval-flows

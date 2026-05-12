@@ -1,11 +1,26 @@
 import { cookies } from "next/headers";
+import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 import { APPLICANT_ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 
-export async function GET(request: Request) {
+function buildRedirectUrl(request: NextRequest) {
+  const forwardedProto = request.headers.get("x-forwarded-proto");
+  const forwardedHost = request.headers.get("x-forwarded-host");
+  const host = forwardedHost ?? request.headers.get("host");
+  const proto =
+    forwardedProto ?? (process.env.NODE_ENV === "production" ? "https" : "http");
+
+  if (host) {
+    return new URL("/apply/form", `${proto}://${host}`);
+  }
+
+  return new URL("/apply/form", request.url);
+}
+
+export async function GET(request: NextRequest) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
-  const redirectUrl = new URL("/space", url);
+  const redirectUrl = buildRedirectUrl(request);
 
   if (!token) {
     redirectUrl.searchParams.set("error", "missing_token");

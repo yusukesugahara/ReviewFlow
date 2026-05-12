@@ -12,6 +12,7 @@ import { FormField } from '../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { MailService } from '../mail/mail.service';
 import { AuthService } from '../auth/auth.service';
+import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import { SpaceAccessService } from '../groups/space-access.service';
 import type {
   CreateFormFieldDto,
@@ -290,6 +291,25 @@ export class FormDefinitionsService {
   ): Promise<FormDefinition> {
     const definition = await this.getOne(actor.tenantId, definitionId);
     await this.assertCanManageDefinition(actor, definition);
+    return definition;
+  }
+
+  async getPublishedDefinitionForApplicant(
+    actor: ApplicantAccessTokenPayload,
+  ): Promise<FormDefinition> {
+    const definition = await this.definitions.findOne({
+      where: {
+        ...(actor.formDefinitionId ? { id: actor.formDefinitionId } : {}),
+        tenantId: actor.tenantId,
+        groupId: actor.groupId,
+        status: FormDefinitionStatus.PUBLISHED,
+      },
+      relations: ['fields'],
+      order: { fields: { sortOrder: 'ASC' } },
+    });
+    if (!definition) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
+    }
     return definition;
   }
 

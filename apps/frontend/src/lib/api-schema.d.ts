@@ -243,6 +243,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/form-definitions/public/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請用の現在フォーム定義取得 */
+        get: operations["FormDefinitionsController_getCurrentForApplicant"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-definitions/public/current/approval-flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 公開申請用の有効な承認フロー一覧 */
+        get: operations["FormDefinitionsController_listCurrentFlowsForApplicant"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/form-definitions/{id}": {
         parameters: {
             query?: never;
@@ -356,6 +390,27 @@ export interface paths {
         put?: never;
         /** フォーム案内メール送信（公開） */
         post: operations["FormDefinitionsController_requestAccess"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/approval-flows": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** 承認フロー一覧（tenant_admin） */
+        get: operations["ApprovalFlowsController_list"];
+        put?: never;
+        /**
+         * 承認フロー作成（tenant_admin）
+         * @description 参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。
+         */
+        post: operations["ApprovalFlowsController_create"];
         delete?: never;
         options?: never;
         head?: never;
@@ -478,27 +533,6 @@ export interface paths {
         post?: never;
         /** スペースメンバー削除（tenant_admin / space admin） */
         delete: operations["GroupsController_removeMember"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/approval-flows": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** 承認フロー一覧（tenant_admin） */
-        get: operations["ApprovalFlowsController_list"];
-        put?: never;
-        /**
-         * 承認フロー作成（tenant_admin）
-         * @description 参照するフォーム定義は同一テナントに存在する必要があります。stepOrder は 1 から連番で重複不可。
-         */
-        post: operations["ApprovalFlowsController_create"];
-        delete?: never;
         options?: never;
         head?: never;
         patch?: never;
@@ -672,6 +706,23 @@ export interface paths {
          * @description draft / published は全項目。returned はオープンな correction の対象フィールドのみ。
          */
         patch: operations["ApplicationsController_patch"];
+        trace?: never;
+    };
+    "/public/applications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 公開申請フォーム送信 */
+        post: operations["PublicApplicationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/export-jobs": {
@@ -893,6 +944,27 @@ export interface components {
         FormDefinitionsListResponseDto: {
             definitions: components["schemas"]["FormDefinitionResponseDto"][];
         };
+        ApprovalStepResponseDto: {
+            id: string;
+            stepOrder: number;
+            stepName: string;
+            assigneeUserId: string;
+            assigneeUserIds: unknown[][];
+            canReturn: boolean;
+            createdAt: string;
+        };
+        ApprovalFlowResponseDto: {
+            id: string;
+            groupId: string;
+            name: string;
+            isActive: boolean;
+            steps: components["schemas"]["ApprovalStepResponseDto"][];
+            createdAt: string;
+            updatedAt: string;
+        };
+        ApprovalFlowsListResponseDto: {
+            flows: components["schemas"]["ApprovalFlowResponseDto"][];
+        };
         CreateFormDefinitionDto: {
             /** Format: uuid */
             groupId: string;
@@ -945,6 +1017,28 @@ export interface components {
         RequestFormAccessDto: {
             /** @example user@example.com */
             email: string;
+        };
+        CreateApprovalFlowStepDto: {
+            /** @example 1 */
+            stepOrder: number;
+            /** @example 一次承認 */
+            stepName: string;
+            /**
+             * Format: uuid
+             * @description このステップを承認するテナント内ユーザーID
+             */
+            assigneeUserId?: string;
+            /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
+            assigneeUserIds?: unknown[][];
+            /** @example true */
+            canReturn: boolean;
+        };
+        CreateApprovalFlowDto: {
+            /** Format: uuid */
+            groupId: string;
+            /** @example 経費申請フロー */
+            name: string;
+            steps: components["schemas"]["CreateApprovalFlowStepDto"][];
         };
         GroupSummaryDto: {
             id: string;
@@ -1007,49 +1101,6 @@ export interface components {
              * @enum {string}
              */
             role: "admin" | "user";
-        };
-        ApprovalStepResponseDto: {
-            id: string;
-            stepOrder: number;
-            stepName: string;
-            assigneeUserId: string;
-            assigneeUserIds: unknown[][];
-            canReturn: boolean;
-            createdAt: string;
-        };
-        ApprovalFlowResponseDto: {
-            id: string;
-            groupId: string;
-            name: string;
-            isActive: boolean;
-            steps: components["schemas"]["ApprovalStepResponseDto"][];
-            createdAt: string;
-            updatedAt: string;
-        };
-        ApprovalFlowsListResponseDto: {
-            flows: components["schemas"]["ApprovalFlowResponseDto"][];
-        };
-        CreateApprovalFlowStepDto: {
-            /** @example 1 */
-            stepOrder: number;
-            /** @example 一次承認 */
-            stepName: string;
-            /**
-             * Format: uuid
-             * @description このステップを承認するテナント内ユーザーID
-             */
-            assigneeUserId?: string;
-            /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
-            assigneeUserIds?: unknown[][];
-            /** @example true */
-            canReturn: boolean;
-        };
-        CreateApprovalFlowDto: {
-            /** Format: uuid */
-            groupId: string;
-            /** @example 経費申請フロー */
-            name: string;
-            steps: components["schemas"]["CreateApprovalFlowStepDto"][];
         };
         ApplicationSummaryDto: {
             id: string;
@@ -1657,6 +1708,58 @@ export interface operations {
             };
         };
     };
+    FormDefinitionsController_getCurrentForApplicant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormDefinitionResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormDefinitionsController_listCurrentFlowsForApplicant: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
     FormDefinitionsController_getOne: {
         parameters: {
             query?: never;
@@ -1870,6 +1973,64 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["RequestFormAccessResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApprovalFlowsController_list: {
+        parameters: {
+            query: {
+                groupId: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApprovalFlowsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApprovalFlowDto"];
+            };
+        };
+        responses: {
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowResponseDto"];
                     };
                 };
             };
@@ -2107,64 +2268,6 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
-            };
-        };
-    };
-    ApprovalFlowsController_list: {
-        parameters: {
-            query: {
-                groupId: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApprovalFlowsListResponseDto"];
-                    };
-                };
-            };
-        };
-    };
-    ApprovalFlowsController_create: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CreateApprovalFlowDto"];
-            };
-        };
-        responses: {
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": {
-                        /**
-                         * @example 200
-                         * @enum {number}
-                         */
-                        status: 200;
-                        data: components["schemas"]["ApprovalFlowResponseDto"];
-                    };
-                };
             };
         };
     };
@@ -2478,6 +2581,36 @@ export interface operations {
         };
         responses: {
             200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
+    PublicApplicationsController_create: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateApplicationDto"];
+            };
+        };
+        responses: {
+            201: {
                 headers: {
                     [name: string]: unknown;
                 };

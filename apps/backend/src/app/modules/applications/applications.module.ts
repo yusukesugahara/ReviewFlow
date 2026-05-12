@@ -9,11 +9,13 @@ import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
+import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationAccessPolicy } from './application-access.policy';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
+import { PublicApplicationsController } from './public-applications.controller';
 
 @Module({
   imports: [
@@ -29,9 +31,10 @@ import { ApplicationsService } from './applications.service';
       ApprovalFlow,
     ]),
   ],
-  controllers: [ApplicationsController],
+  controllers: [ApplicationsController, PublicApplicationsController],
   providers: [
     ApplicationsService,
+    ApplicantAccessGuard,
     ApplicationAccessPolicy,
     ApplicationFormValueValidator,
     ApplicationTransitionPolicy,

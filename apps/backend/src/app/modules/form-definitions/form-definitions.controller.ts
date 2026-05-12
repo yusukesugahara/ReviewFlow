@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
@@ -17,12 +18,15 @@ import {
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
 } from '../../decorators';
+import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
+import { CurrentApplicantSession } from '../../../decorators/current-applicant-session.decorator';
 import {
   CurrentUser,
   type AuthUserPayload,
 } from '../../../decorators/current-user.decorator';
 import { Roles } from '../../../decorators/roles.decorator';
 import { UserRole } from '../../../models/constants/user-role';
+import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
 import {
@@ -37,11 +41,16 @@ import {
   UpdateFormFieldSettingsDto,
 } from './form-definitions.dto';
 import { FormDefinitionsService } from './form-definitions.service';
+import { ApprovalFlowsService } from '../approval-flows/approval-flows.service';
+import { ApprovalFlowsListResponseDto } from '../approval-flows/approval-flows.dto';
 
 @ApiTags('form-definitions')
 @Controller('form-definitions')
 export class FormDefinitionsController {
-  constructor(private readonly formDefinitions: FormDefinitionsService) {}
+  constructor(
+    private readonly formDefinitions: FormDefinitionsService,
+    private readonly approvalFlows: ApprovalFlowsService,
+  ) {}
 
   @AuthApi()
   @Throttle({ default: { limit: 120, ttl: 60_000 } })
@@ -57,6 +66,37 @@ export class FormDefinitionsController {
     const rows = await this.formDefinitions.listByGroup(actor, groupId);
     return successResponse({
       definitions: rows.map((t) => this.formDefinitions.toResponse(t)),
+    });
+  }
+
+  @Api()
+  @UseGuards(ApplicantAccessGuard)
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get('public/current')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '公開申請用の現在フォーム定義取得' })
+  @ApiSuccessResponse(FormDefinitionResponseDto)
+  async getCurrentForApplicant(
+    @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    const row =
+      await this.formDefinitions.getPublishedDefinitionForApplicant(actor);
+    return successResponse(this.formDefinitions.toResponse(row));
+  }
+
+  @Api()
+  @UseGuards(ApplicantAccessGuard)
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Get('public/current/approval-flows')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: '公開申請用の有効な承認フロー一覧' })
+  @ApiSuccessResponse(ApprovalFlowsListResponseDto)
+  async listCurrentFlowsForApplicant(
+    @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
+  ): Promise<SuccessResponse<ApprovalFlowsListResponseDto>> {
+    const rows = await this.approvalFlows.listActiveForApplicant(actor);
+    return successResponse({
+      flows: rows.map((row) => this.approvalFlows.toDto(row)),
     });
   }
 

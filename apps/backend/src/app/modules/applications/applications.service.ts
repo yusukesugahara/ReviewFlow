@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
+import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
@@ -34,6 +35,7 @@ import { ApplicationAccessPolicy } from './application-access.policy';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 
+type ApplicantSession = ApplicantAccessTokenPayload;
 type EditablePatchContext = {
   app: Application;
   fieldsByKey: Map<string, FormField>;
@@ -308,6 +310,34 @@ export class ApplicationsService {
   ): Promise<Application> {
     await this.spaceAccess.assertCanUseGroup(actor, dto.groupId);
     return this.createInternal(actor.tenantId, actor.email, actor.id, dto);
+  }
+
+  async createAndSubmitForApplicant(
+    actor: ApplicantSession,
+    dto: CreateApplicationDto,
+  ): Promise<Application> {
+    if (dto.groupId !== actor.groupId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    const created = await this.createInternal(
+      actor.tenantId,
+      actor.email,
+      null,
+      {
+        ...dto,
+        formDefinitionId: actor.formDefinitionId ?? dto.formDefinitionId,
+        status: ApplicationStatus.DRAFT,
+      },
+    );
+    const context = await this.loadSubmittableApplicationContext(
+      actor.tenantId,
+      created,
+    );
+    this.validateApplicationReadyToSubmit(context);
+    await this.applySubmitTransition(context);
+    return this.loadApplicationOrThrow(actor.tenantId, created.id, {
+      detail: true,
+    });
   }
 
   private async loadApplicantEditableApplication(
