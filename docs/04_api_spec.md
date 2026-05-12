@@ -166,6 +166,18 @@ request:
 ### POST /form-definitions/:id/publish
 権限: tenant_admin, tenant_user（group admin）
 
+### POST /form-definitions/groups/:groupId/request-access
+公開申請フォームの案内メールを送信する。query の `formDefinitionId` は任意だが、同一 group に公開済みフォーム定義が複数ある場合は必須。送信される申請者アクセストークンには `groupId` と `formDefinitionId` を含め、公開申請作成時はこのフォーム定義を使用する。
+request:
+```json
+{
+  "email": "applicant@example.com"
+}
+```
+
+### GET /form-definitions/public/current
+申請者アクセストークンに紐づく公開フォーム定義を返す。トークンに `formDefinitionId` が含まれる場合は、その同一テナント・同一 group の published フォーム定義のみを返す。
+
 ## Approval Flows
 
 ### GET /approval-flows
@@ -209,13 +221,14 @@ query: `groupId` 必須。
 - group user: 所属 group 内で、自分の申請または **in_review** かつ現在ステップの `assignee_user_ids` に自分が含まれるもの
 
 ### POST /applications
-権限: tenant_user, tenant_admin。`groupId` 必須。`formDefinitionId` は同一 group の **published** フォーム定義のみ。公開済みフォームが1件だけなら後方互換のため省略可だが、複数ある場合は必須。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
+権限: tenant_user, tenant_admin。`groupId` 必須。`formDefinitionId` は同一 group の **published** フォーム定義のみ。公開済みフォームが1件だけなら後方互換のため省略可だが、複数ある場合は必須。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`status` は `draft` または `published` を指定でき、省略時は `draft`。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。
 request:
 ```json
 {
   "groupId": "group_1",
   "formDefinitionId": "form_1",
   "approvalFlowId": "optional-flow-uuid",
+  "status": "published",
   "values": {
     "expense_title": "出張交通費",
     "amount": 12000
@@ -232,11 +245,12 @@ response:
 
 ### PATCH /applications/:id
 権限: tenant_user
-- 現実装: **draft のみ**更新可能（`values` は field_key 単位でマージ）。
+- **draft / published** は `values` の field_key 単位更新に加え、`formDefinitionId` / `approvalFlowId` の差し替えが可能。申請編集画面では編集内容から新しい published フォーム定義と有効な承認フローを作成し、既存申請へ紐づけ直す。
 - returned の場合は correction_request_items 対象フィールドのみ更新可能（別フェーズ）
 
 ### POST /applications/:id/submit
 権限: tenant_user
+`draft` または `published` から `in_review` に遷移する。
 
 ### GET /applications/:id
 権限:

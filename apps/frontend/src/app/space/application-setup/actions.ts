@@ -209,6 +209,8 @@ export async function submitApplicationSetupAction(
   const stepsJson = formData.get("stepsJson");
   const spaceId = formData.get("spaceId");
   const returnPath = formData.get("returnPath");
+  const intent = formData.get("intent");
+  const applicationStatus = intent === "publish" ? "published" : "draft";
   const redirectBase =
     typeof returnPath === "string" && returnPath.startsWith("/space/")
       ? returnPath
@@ -308,6 +310,7 @@ export async function submitApplicationSetupAction(
         groupId: spaceId,
         formDefinitionId: createdDefinitionId,
         approvalFlowId: flow.id,
+        status: applicationStatus,
         values: {},
       },
     });
@@ -323,5 +326,127 @@ export async function submitApplicationSetupAction(
   )}?definitionId=${encodeURIComponent(createdDefinitionId)}`;
   revalidatePath(redirectBase);
   revalidatePath(listPath);
+  redirect(detailPath);
+}
+
+export async function updateApplicationSetupAction(
+  applicationId: string,
+  formData: FormData,
+): Promise<void> {
+  const name = formData.get("name");
+  const fieldsJson = formData.get("fieldsJson");
+  const stepsJson = formData.get("stepsJson");
+  const spaceId = formData.get("spaceId");
+  const returnPath = formData.get("returnPath");
+  const redirectBase =
+    typeof returnPath === "string" && returnPath.startsWith("/space/")
+      ? returnPath
+      : `/space/${typeof spaceId === "string" ? encodeURIComponent(spaceId) : ""}/applications/${encodeURIComponent(applicationId)}/edit`;
+
+  if (typeof name !== "string" || name.trim().length === 0) {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+    );
+  }
+  if (typeof spaceId !== "string" || spaceId.length === 0) {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+    );
+  }
+  if (typeof stepsJson !== "string") {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+    );
+  }
+
+  let fields: DraftField[];
+  try {
+    fields = readDraftFields(fieldsJson);
+  } catch {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+    );
+  }
+  if (fields.length === 0) {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+    );
+  }
+
+  let steps: ApprovalStepPayload[];
+  try {
+    steps = parseSteps(stepsJson);
+  } catch {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+    );
+  }
+  if (steps.length === 0) {
+    redirect(
+      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+    );
+  }
+
+  const fieldPayloads = toFieldPayloads(fields);
+  let createdDefinitionId = "";
+
+  try {
+    const createdRaw = await backendAuthFetchJson("/form-definitions", {
+      method: "POST",
+      body: {
+        groupId: spaceId,
+        name: name.trim(),
+        description: `${name.trim()} の申請`,
+      },
+    });
+    const created = unwrapData<CreateDefinitionResponse>(createdRaw);
+    createdDefinitionId = created.id;
+
+    for (const field of fieldPayloads) {
+      await backendAuthFetchJson(
+        `/form-definitions/${createdDefinitionId}/fields`,
+        {
+          method: "POST",
+          body: field,
+        },
+      );
+    }
+
+    await backendAuthFetchJson(
+      `/form-definitions/${createdDefinitionId}/publish`,
+      {
+        method: "POST",
+        body: {},
+      },
+    );
+
+    const flowRaw = await backendAuthFetchJson("/approval-flows", {
+      method: "POST",
+      body: {
+        groupId: spaceId,
+        name: `${name.trim()} 承認フロー`,
+        steps,
+      },
+    });
+    const flow = unwrapData<CreateApprovalFlowResponse>(flowRaw);
+
+    await backendAuthFetchJson(`/applications/${applicationId}`, {
+      method: "PATCH",
+      body: {
+        formDefinitionId: createdDefinitionId,
+        approvalFlowId: flow.id,
+        values: {},
+      },
+    });
+  } catch (error) {
+    redirect(setupErrorRedirectUrl(redirectBase, error));
+  }
+
+  const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(
+    applicationId,
+  )}?definitionId=${encodeURIComponent(createdDefinitionId)}`;
+  revalidatePath(redirectBase);
+  revalidatePath(`/space/${encodeURIComponent(spaceId)}/applications`);
+  revalidatePath(detailPath);
   redirect(detailPath);
 }

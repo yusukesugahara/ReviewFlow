@@ -5,11 +5,13 @@ import { CopyButton } from "./copy-button";
 
 type PublishedApplicationUrlModalProps = {
   groupId?: string;
+  formDefinitionId?: string;
   open: boolean;
 };
 
 export function PublishedApplicationUrlModal({
   groupId,
+  formDefinitionId,
   open,
 }: PublishedApplicationUrlModalProps) {
   const [isOpen, setIsOpen] = useState(open);
@@ -29,8 +31,12 @@ export function PublishedApplicationUrlModal({
     if (!groupId) {
       return "";
     }
-    return `/apply/${encodeURIComponent(groupId)}`;
-  }, [groupId]);
+    const path = `/apply/${encodeURIComponent(groupId)}`;
+    if (!formDefinitionId) {
+      return path;
+    }
+    return `${path}?formDefinitionId=${encodeURIComponent(formDefinitionId)}`;
+  }, [formDefinitionId, groupId]);
 
   const applicationUrl = origin && applicationPath ? `${origin}${applicationPath}` : applicationPath;
 

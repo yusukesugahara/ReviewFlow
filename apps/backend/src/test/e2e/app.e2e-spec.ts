@@ -696,9 +696,15 @@ describe('App (e2e)', () => {
         groupId,
         formDefinitionId: secondTid,
         approvalFlowId: flow?.id,
+        status: 'published',
         values: {},
       })
-      .expect(201);
+      .expect(201)
+      .expect((res) => {
+        expect((res.body as ApplicationCreateBody).data?.status).toBe(
+          'published',
+        );
+      });
   });
 
   it('space scope: group roles gate templates and applications', async () => {

@@ -147,11 +147,12 @@ export const ClientErrorCatalog = {
   },
   APPLICATION_NOT_DRAFT: {
     status: HttpStatus.CONFLICT,
-    message: 'Application is not in draft status',
+    message: 'Application is not in draft or published status',
   },
   APPLICATION_NOT_EDITABLE: {
     status: HttpStatus.CONFLICT,
-    message: 'Only draft applications can be edited via this endpoint',
+    message:
+      'Only draft, published, or returned applications can be edited via this endpoint',
   },
   APPLICATION_FORM_NOT_PUBLISHED: {
     status: HttpStatus.CONFLICT,

@@ -23,9 +23,12 @@ export function getApplicationCapabilities(
     canEditApplication:
       isApplicant &&
       (application.status === APPLICATION_STATUSES.draft ||
+        application.status === APPLICATION_STATUSES.published ||
         application.status === APPLICATION_STATUSES.returned),
     canSubmitApplication:
-      isApplicant && application.status === APPLICATION_STATUSES.draft,
+      isApplicant &&
+      (application.status === APPLICATION_STATUSES.draft ||
+        application.status === APPLICATION_STATUSES.published),
     canResubmitApplication:
       isApplicant && application.status === APPLICATION_STATUSES.returned,
     canApproveApplication: isInReview,

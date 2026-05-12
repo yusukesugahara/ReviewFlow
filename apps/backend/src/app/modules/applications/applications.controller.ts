@@ -225,7 +225,7 @@ export class ApplicationsController {
   @ApiOperation({
     summary: '値更新',
     description:
-      'draft は全項目。returned はオープンな correction の対象フィールドのみ。',
+      'draft / published は全項目。returned はオープンな correction の対象フィールドのみ。',
   })
   @ApiSuccessResponse(ApplicationDetailDto)
   async patch(

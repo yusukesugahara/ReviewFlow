@@ -19,6 +19,7 @@ import {
   type ApprovalStepItem,
   type ApprovalAssigneeOption,
 } from "./approval-steps-builder";
+import { DynamicFieldInput } from "@/app/_components/applications/dynamic-fields";
 import { OrderMoveButtons } from "./order-move-buttons";
 import { PublishedApplicationUrlModal } from "./published-application-url-modal";
 
@@ -26,6 +27,7 @@ export type { ApprovalAssigneeOption };
 
 export type DraftField = {
   id: string;
+  fieldKey?: string;
   label: string;
   fieldType: FieldType;
   required: boolean;
@@ -39,10 +41,12 @@ type ApplicationSetupDraftFormProps = {
   errorMessage?: string | null;
   statusMessage?: string | null;
   publishedGroupId?: string | null;
+  publishedFormDefinitionId?: string | null;
   assignees: ApprovalAssigneeOption[];
   initialFields?: DraftField[];
   initialName?: string;
   initialSteps?: ApprovalStepItem[];
+  initialValues?: Record<string, unknown>;
   spaceId: string;
   returnPath?: string;
 };
@@ -64,6 +68,53 @@ function optionLines(optionsText: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter((line, index, all) => line.length > 0 && all.indexOf(line) === index);
+}
+
+function normalizeFieldKey(
+  field: DraftField,
+  index: number,
+  usedKeys: Set<string>,
+): string {
+  const explicitKey = field.fieldKey?.trim();
+  const base =
+    explicitKey && /^[a-z0-9_]+$/.test(explicitKey)
+      ? explicitKey
+      : field.label
+          .trim()
+          .toLowerCase()
+          .replace(/\s+/g, "_")
+          .replace(/[^a-z0-9_]/g, "") || `field_${index + 1}`;
+  let key = base;
+  let suffix = 2;
+  while (usedKeys.has(key)) {
+    key = `${base}_${suffix}`;
+    suffix += 1;
+  }
+  usedKeys.add(key);
+  return key;
+}
+
+function toDynamicField(
+  field: DraftField,
+  index: number,
+  fieldKey: string,
+) {
+  const label = field.label.trim() || `フォーム${index + 1}`;
+  return {
+    id: field.id,
+    fieldKey,
+    label,
+    fieldType: field.fieldType,
+    required: field.required,
+    placeholder: field.placeholder.trim() || null,
+    helpText: field.helpText.trim() || null,
+    options: fieldTypeNeedsOptions(field.fieldType)
+      ? optionLines(field.optionsText).map((option) => ({
+          label: option,
+          value: option,
+        }))
+      : [],
+  };
 }
 
 function FieldPreview({ field, index }: { field: DraftField; index: number }) {
@@ -139,10 +190,12 @@ export function ApplicationSetupDraftForm({
   errorMessage,
   statusMessage,
   publishedGroupId,
+  publishedFormDefinitionId,
   assignees,
   initialFields,
   initialName,
   initialSteps,
+  initialValues,
   spaceId,
   returnPath,
 }: ApplicationSetupDraftFormProps) {
@@ -153,6 +206,13 @@ export function ApplicationSetupDraftForm({
   );
 
   const fieldsJson = useMemo(() => JSON.stringify(fields), [fields]);
+  const fieldsWithKeys = useMemo(() => {
+    const usedKeys = new Set<string>();
+    return fields.map((field, index) => ({
+      field,
+      fieldKey: normalizeFieldKey(field, index, usedKeys),
+    }));
+  }, [fields]);
   const hasFields = fields.length > 0;
 
   const updateField = (id: string, patch: Partial<DraftField>) => {
@@ -179,6 +239,7 @@ export function ApplicationSetupDraftForm({
       <PublishedApplicationUrlModal
         open={Boolean(publishedGroupId)}
         groupId={publishedGroupId ?? undefined}
+        formDefinitionId={publishedFormDefinitionId ?? undefined}
       />
       <input type="hidden" name="fieldsJson" value={fieldsJson} />
       <input type="hidden" name="spaceId" value={spaceId} />
@@ -340,7 +401,26 @@ export function ApplicationSetupDraftForm({
 
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl">2. 承認フロー設定</CardTitle>
+          <CardTitle className="text-xl">2. 申請内容入力</CardTitle>
+          <CardDescription>作成した項目に申請内容を入力します。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          {fieldsWithKeys.map(({ field, fieldKey }, index) => {
+            const dynamicField = toDynamicField(field, index, fieldKey);
+            return (
+              <DynamicFieldInput
+                key={`${field.id}-${fieldKey}`}
+                field={dynamicField}
+                value={initialValues?.[fieldKey]}
+              />
+            );
+          })}
+        </CardContent>
+      </Card>
+
+      <Card className="border-slate-200 bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-xl">3. 承認フロー設定</CardTitle>
           <CardDescription>承認ステップを設定します。ここではまだ保存されません。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -350,7 +430,7 @@ export function ApplicationSetupDraftForm({
 
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl">3. 保存</CardTitle>
+          <CardTitle className="text-xl">4. 保存</CardTitle>
           <CardDescription>ここで新しい申請を作成します。</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">

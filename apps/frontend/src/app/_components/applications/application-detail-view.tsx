@@ -27,6 +27,7 @@ export type ApplicationFormField = {
   fieldKey: string;
   label: string;
   fieldType: string;
+  required?: boolean;
   options?: unknown[] | null;
 };
 

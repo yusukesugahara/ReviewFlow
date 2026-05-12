@@ -176,7 +176,7 @@ function applicationActionErrorMessage(error: unknown): string {
       : null;
 
   if (errorCode === "APPLICATION_NOT_DRAFT") {
-    return "下書き状態の申請のみ提出できます。画面を更新して状態を確認してください。";
+    return "下書きまたは公開済みの申請のみ提出できます。画面を更新して状態を確認してください。";
   }
   if (errorCode === "APPLICATION_REQUIRED_FIELDS_MISSING") {
     return "必須項目を入力してから提出してください。";
@@ -204,6 +204,28 @@ function applicationActionErrorMessage(error: unknown): string {
   }
 
   return `${errorMessageFromBody(error.body)}（status: ${error.status}）`;
+}
+
+function hasRequiredValue(value: unknown): boolean {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+  return true;
+}
+
+function getMissingRequiredFields(
+  fields: ApplicationFormField[],
+  values: Record<string, unknown>,
+): ApplicationFormField[] {
+  return fields.filter(
+    (field) => field.required && !hasRequiredValue(values[field.fieldKey]),
+  );
 }
 
 export default async function SpaceApplicationDetailPage({
@@ -245,6 +267,12 @@ export default async function SpaceApplicationDetailPage({
     const actor = await getCurrentSessionUser();
     const capabilities = getApplicationCapabilities(app, actor);
     const fieldMap = fields.map((field) => ({ id: field.id, key: field.fieldKey }));
+    const missingRequiredFields = getMissingRequiredFields(fields, app.values);
+    const actionCapabilities = {
+      ...capabilities,
+      canSubmitApplication:
+        capabilities.canSubmitApplication && missingRequiredFields.length === 0,
+    };
 
     return (
       <ApplicationDetailView
@@ -272,7 +300,7 @@ export default async function SpaceApplicationDetailPage({
                 </Link>
               </Button>
               <ApplicantApplicationActions
-                capabilities={capabilities}
+                capabilities={actionCapabilities}
                 editHref={
                   definitionId
                     ? `${buildSpaceApplicationEditHrefByIds(
@@ -285,6 +313,12 @@ export default async function SpaceApplicationDetailPage({
                 resubmitAction={resubmitAction.bind(null, spaceId, app.id)}
               />
             </div>
+            {capabilities.canSubmitApplication &&
+            missingRequiredFields.length > 0 ? (
+              <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                必須項目が未入力のため提出できません。必要な入力値を登録してから提出してください。
+              </p>
+            ) : null}
           </div>
         }
         reviewerActions={

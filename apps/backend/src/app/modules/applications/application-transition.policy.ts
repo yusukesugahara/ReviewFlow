@@ -7,7 +7,10 @@ import type { ApprovalStep } from '../../../models/entities/approval-step.entity
 @Injectable()
 export class ApplicationTransitionPolicy {
   assertDraft(app: Application): void {
-    if (app.status !== ApplicationStatus.DRAFT) {
+    if (
+      app.status !== ApplicationStatus.DRAFT &&
+      app.status !== ApplicationStatus.PUBLISHED
+    ) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_DRAFT);
     }
   }

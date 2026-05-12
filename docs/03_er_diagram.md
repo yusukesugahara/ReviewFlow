@@ -113,7 +113,7 @@
 - form_definition_id: string (FK -> form_definitions.id)
 - approval_flow_id: string (FK -> approval_flows.id)
 - current_step_order: int nullable
-- status: enum(draft, submitted, in_review, returned, approved, rejected)
+- status: enum(draft, published, submitted, in_review, returned, approved, rejected)
 - submitted_at: datetime nullable
 - created_at: datetime
 - updated_at: datetime

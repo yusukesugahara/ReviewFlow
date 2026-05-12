@@ -105,7 +105,6 @@ export function SpaceApplicationsPageContent({
                 all: applications.length,
               }}
               spaceId={spaceId}
-              status={APPLICATION_STATUSES.published}
             />
             {visibleApplications.length === 0 ? (
               <ApplicationEmptyState
@@ -186,12 +185,10 @@ function ApplicationListViewTabs({
   activeView,
   counts,
   spaceId,
-  status,
 }: {
   activeView: ApplicationListView;
   counts: Record<ApplicationListView, number>;
   spaceId: string;
-  status: string;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -200,10 +197,7 @@ function ApplicationListViewTabs({
         return (
           <Link
             key={tab.view}
-            href={buildSpaceApplicationsViewHref(spaceId, {
-              status,
-              view: tab.view,
-            })}
+            href={buildSpaceApplicationsViewHref(spaceId, tab.view)}
             className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
               isActive
                 ? "border-primary bg-primary text-primary-foreground"
@@ -220,10 +214,9 @@ function ApplicationListViewTabs({
 
 function buildSpaceApplicationsViewHref(
   spaceId: string,
-  params: { status: string; view: ApplicationListView },
+  view: ApplicationListView,
 ): string {
   const searchParams = new URLSearchParams();
-  searchParams.set("view", params.view);
-  searchParams.set("status", params.status);
+  searchParams.set("view", view);
   return `${buildSpaceApplicationsHref(spaceId)}?${searchParams.toString()}`;
 }

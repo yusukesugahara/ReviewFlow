@@ -31,6 +31,7 @@ export type ApplicantAccessTokenPayload = {
   tenantId: string;
   email: string;
   groupId: string;
+  formDefinitionId?: string;
 };
 
 @Injectable()
@@ -172,12 +173,14 @@ export class AuthService {
     tenantId: string;
     email: string;
     groupId: string;
+    formDefinitionId?: string;
   }): string {
     const payload: ApplicantAccessTokenPayload = {
       kind: 'applicant_access',
       tenantId: input.tenantId,
       email: input.email,
       groupId: input.groupId,
+      formDefinitionId: input.formDefinitionId,
     };
     return this.jwtService.sign(payload);
   }

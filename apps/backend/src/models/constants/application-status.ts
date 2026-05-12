@@ -1,6 +1,7 @@
 /** `docs/03_er_diagram.md` applications.status */
 export const ApplicationStatus = {
   DRAFT: 'draft',
+  PUBLISHED: 'published',
   SUBMITTED: 'submitted',
   IN_REVIEW: 'in_review',
   RETURNED: 'returned',

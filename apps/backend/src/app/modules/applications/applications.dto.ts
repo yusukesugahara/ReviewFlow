@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsIn,
   IsObject,
   IsOptional,
   IsString,
@@ -10,7 +11,10 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import type { ApplicationStatusValue } from '../../../models/constants/application-status';
+import {
+  ApplicationStatus,
+  type ApplicationStatusValue,
+} from '../../../models/constants/application-status';
 
 export class CreateApplicationDto {
   @ApiProperty({ format: 'uuid' })
@@ -36,6 +40,15 @@ export class CreateApplicationDto {
   approvalFlowId?: string;
 
   @ApiPropertyOptional({
+    enum: [ApplicationStatus.DRAFT, ApplicationStatus.PUBLISHED],
+    description:
+      '作成直後の申請ステータス。省略時は draft。申請作成画面で公開したフォームは published を指定する。',
+  })
+  @IsOptional()
+  @IsIn([ApplicationStatus.DRAFT, ApplicationStatus.PUBLISHED])
+  status?: typeof ApplicationStatus.DRAFT | typeof ApplicationStatus.PUBLISHED;
+
+  @ApiPropertyOptional({
     type: 'object',
     additionalProperties: true,
     example: { expense_title: '出張交通費', amount: 12000 },
@@ -46,14 +59,33 @@ export class CreateApplicationDto {
 }
 
 export class PatchApplicationDto {
-  @ApiProperty({
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      '差し替える公開済みフォーム定義。draft / published の申請でのみ指定可能。',
+  })
+  @IsOptional()
+  @IsUUID()
+  formDefinitionId?: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      '差し替える有効な承認フロー。draft / published の申請でのみ指定可能。',
+  })
+  @IsOptional()
+  @IsUUID()
+  approvalFlowId?: string;
+
+  @ApiPropertyOptional({
     type: 'object',
     additionalProperties: true,
     description:
       'field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。',
   })
+  @IsOptional()
   @IsObject()
-  values!: Record<string, unknown>;
+  values?: Record<string, unknown>;
 }
 
 export class ApproveApplicationDto {

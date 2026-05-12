@@ -35,6 +35,7 @@ type PageProps = {
   params: Promise<{ spaceId: string }>;
   searchParams?: Promise<{
     publishedGroupId?: string;
+    publishedFormDefinitionId?: string;
     setupError?: string;
     setupErrorDetail?: string;
     setupStatus?: string;
@@ -127,6 +128,11 @@ export default async function SpaceNewApplicationPage({
             publishedGroupId={
               query.setupStatus === APPLICATION_SETUP_STATUSES.published
                 ? (query.publishedGroupId ?? null)
+                : null
+            }
+            publishedFormDefinitionId={
+              query.setupStatus === APPLICATION_SETUP_STATUSES.published
+                ? (query.publishedFormDefinitionId ?? null)
                 : null
             }
             returnPath={newApplicationHref}

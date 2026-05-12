@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 async function requestAccessAction(formData: FormData): Promise<void> {
   "use server";
   const groupId = formData.get("groupId");
+  const formDefinitionId = formData.get("formDefinitionId");
   const email = formData.get("email");
 
   if (typeof groupId !== "string" || typeof email !== "string" || email.trim().length === 0) {
@@ -15,7 +16,13 @@ async function requestAccessAction(formData: FormData): Promise<void> {
   }
 
   const env = getServerAuthEnv();
-  const res = await fetch(`${env.apiBaseUrl}/form-definitions/groups/${groupId}/request-access`, {
+  const accessUrl = new URL(
+    `${env.apiBaseUrl}/form-definitions/groups/${groupId}/request-access`,
+  );
+  if (typeof formDefinitionId === "string" && formDefinitionId.length > 0) {
+    accessUrl.searchParams.set("formDefinitionId", formDefinitionId);
+  }
+  const res = await fetch(accessUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -33,7 +40,7 @@ async function requestAccessAction(formData: FormData): Promise<void> {
 
 type PageProps = {
   params: Promise<{ groupId: string }>;
-  searchParams?: Promise<{ sent?: string; error?: string }>;
+  searchParams?: Promise<{ sent?: string; error?: string; formDefinitionId?: string }>;
 };
 
 export default async function PublicApplicationAccessPage({
@@ -44,6 +51,8 @@ export default async function PublicApplicationAccessPage({
   const query = (await searchParams) ?? {};
   const sent = query.sent === "1";
   const error = query.error;
+  const formDefinitionId =
+    typeof query.formDefinitionId === "string" ? query.formDefinitionId : "";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
@@ -68,6 +77,7 @@ export default async function PublicApplicationAccessPage({
 
           <form action={requestAccessAction} className="space-y-4">
             <input type="hidden" name="groupId" value={groupId} />
+            <input type="hidden" name="formDefinitionId" value={formDefinitionId} />
             <div className="space-y-2">
               <Label htmlFor="email">メールアドレス</Label>
               <Input

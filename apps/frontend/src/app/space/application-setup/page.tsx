@@ -7,6 +7,7 @@ type PageProps = {
     setupError?: string;
     setupStatus?: string;
     publishedGroupId?: string;
+    publishedFormDefinitionId?: string;
     spaceId?: string;
   }>;
 };
@@ -39,6 +40,9 @@ export default async function AdminApplicationSetupPage({
   }
   if (params.publishedGroupId) {
     nextParams.set("publishedGroupId", params.publishedGroupId);
+  }
+  if (params.publishedFormDefinitionId) {
+    nextParams.set("publishedFormDefinitionId", params.publishedFormDefinitionId);
   }
 
   const query = nextParams.toString();

@@ -239,7 +239,10 @@ export class ApplicationsService {
         applicantEmail,
         formDefinitionId: template.id,
         approvalFlowId: flow.id,
-        status: ApplicationStatus.DRAFT,
+        status:
+          dto.status === ApplicationStatus.PUBLISHED
+            ? ApplicationStatus.PUBLISHED
+            : ApplicationStatus.DRAFT,
         currentStepOrder: null,
         submittedAt: null,
       });
@@ -309,7 +312,10 @@ export class ApplicationsService {
     if (dto.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    return this.createInternal(actor.tenantId, actor.email, null, dto);
+    return this.createInternal(actor.tenantId, actor.email, null, {
+      ...dto,
+      formDefinitionId: actor.formDefinitionId ?? dto.formDefinitionId,
+    });
   }
 
   private async loadApplicantEditableApplication(
@@ -347,9 +353,22 @@ export class ApplicationsService {
   private async loadEditablePatchContext(
     tenantId: string,
     app: Application,
+    formDefinitionId?: string,
   ): Promise<EditablePatchContext> {
+    if (
+      formDefinitionId &&
+      app.status !== ApplicationStatus.DRAFT &&
+      app.status !== ApplicationStatus.PUBLISHED
+    ) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+    }
     const template = await this.templates.findOne({
-      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
+      where: {
+        id: formDefinitionId ?? app.formDefinitionId,
+        tenantId,
+        groupId: app.groupId,
+        ...(formDefinitionId ? { status: FormDefinitionStatus.PUBLISHED } : {}),
+      },
       relations: ['fields'],
     });
     if (!template) {
@@ -367,7 +386,10 @@ export class ApplicationsService {
         throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
       }
       allowedFieldIds = new Set(open.items.map((i) => i.formFieldId));
-    } else if (app.status !== ApplicationStatus.DRAFT) {
+    } else if (
+      app.status !== ApplicationStatus.DRAFT &&
+      app.status !== ApplicationStatus.PUBLISHED
+    ) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
 
@@ -416,14 +438,30 @@ export class ApplicationsService {
     return patchedValues;
   }
 
-  private async saveFieldValues(
+  private async saveApplicationPatch(
+    app: Application,
+    dto: PatchApplicationDto,
     values: ApplicationFieldValue[],
   ): Promise<void> {
-    if (values.length === 0) {
+    if (!dto.formDefinitionId && !dto.approvalFlowId && values.length === 0) {
       return;
     }
     await this.apps.manager.transaction(async (em: EntityManager) => {
-      await em.getRepository(ApplicationFieldValue).save(values);
+      const appRepo = em.getRepository(Application);
+      const valueRepo = em.getRepository(ApplicationFieldValue);
+      if (dto.formDefinitionId) {
+        app.formDefinitionId = dto.formDefinitionId;
+        await valueRepo.delete({ applicationId: app.id });
+      }
+      if (dto.approvalFlowId) {
+        app.approvalFlowId = dto.approvalFlowId;
+      }
+      if (dto.formDefinitionId || dto.approvalFlowId) {
+        await appRepo.save(app);
+      }
+      if (values.length > 0) {
+        await valueRepo.save(values);
+      }
     });
   }
 
@@ -443,9 +481,23 @@ export class ApplicationsService {
   ): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const context = await this.loadEditablePatchContext(actor.tenantId, app);
-    const fieldValues = await this.applyFieldValuePatch(context, dto.values);
-    await this.saveFieldValues(fieldValues);
+    if (dto.approvalFlowId) {
+      await this.resolveActiveFlow(
+        actor.tenantId,
+        app.groupId,
+        dto.approvalFlowId,
+      );
+    }
+    const context = await this.loadEditablePatchContext(
+      actor.tenantId,
+      app,
+      dto.formDefinitionId,
+    );
+    const fieldValues = await this.applyFieldValuePatch(
+      context,
+      dto.values ?? {},
+    );
+    await this.saveApplicationPatch(app, dto, fieldValues);
     return this.mapApplicationForSource({ source: 'actor', actor, id });
   }
 
@@ -458,10 +510,16 @@ export class ApplicationsService {
     if (app.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
+    if (dto.formDefinitionId || dto.approvalFlowId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
     this.accessPolicy.assertApplicantOwns(actor, app);
     const context = await this.loadEditablePatchContext(actor.tenantId, app);
-    const fieldValues = await this.applyFieldValuePatch(context, dto.values);
-    await this.saveFieldValues(fieldValues);
+    const fieldValues = await this.applyFieldValuePatch(
+      context,
+      dto.values ?? {},
+    );
+    await this.saveApplicationPatch(app, dto, fieldValues);
     return this.mapApplicationForSource({ source: 'applicant', actor, id });
   }
 

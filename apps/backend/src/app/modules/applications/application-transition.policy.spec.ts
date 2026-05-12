@@ -46,6 +46,19 @@ describe('ApplicationTransitionPolicy', () => {
     });
   });
 
+  it('starts review from published', () => {
+    const app = application({ status: ApplicationStatus.PUBLISHED });
+    const submittedAt = new Date('2026-01-01T00:00:00.000Z');
+
+    policy.startReview(app, submittedAt);
+
+    expect(app).toMatchObject({
+      status: ApplicationStatus.IN_REVIEW,
+      currentStepOrder: 1,
+      submittedAt,
+    });
+  });
+
   it('rejects invalid current approval state', () => {
     expect.assertions(1);
 

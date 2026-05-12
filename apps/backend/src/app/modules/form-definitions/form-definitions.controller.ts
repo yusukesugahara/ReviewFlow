@@ -10,7 +10,7 @@ import {
   Query,
   UseGuards,
 } from '@nestjs/common';
-import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import {
   Api,
@@ -190,13 +190,20 @@ export class FormDefinitionsController {
   @Post('groups/:groupId/request-access')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'フォーム案内メール送信（公開）' })
+  @ApiQuery({
+    name: 'formDefinitionId',
+    required: false,
+    description:
+      '公開済みフォーム定義ID。同一スペースに公開フォームが複数ある場合は必須。',
+  })
   @ApiSuccessResponse(RequestFormAccessResponseDto)
   async requestAccess(
     @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Query('formDefinitionId') formDefinitionId: string | undefined,
     @Body() dto: RequestFormAccessDto,
   ): Promise<SuccessResponse<RequestFormAccessResponseDto>> {
     return successResponse(
-      await this.formDefinitions.requestAccess(groupId, dto),
+      await this.formDefinitions.requestAccess(groupId, dto, formDefinitionId),
     );
   }
 

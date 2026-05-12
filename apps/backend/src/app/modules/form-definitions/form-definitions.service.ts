@@ -299,6 +299,23 @@ export class FormDefinitionsService {
   async getPublishedDefinitionForApplicant(
     actor: ApplicantAccessTokenPayload,
   ): Promise<FormDefinition> {
+    if (actor.formDefinitionId) {
+      const definition = await this.definitions.findOne({
+        where: {
+          id: actor.formDefinitionId,
+          tenantId: actor.tenantId,
+          groupId: actor.groupId,
+          status: FormDefinitionStatus.PUBLISHED,
+        },
+        relations: ['fields'],
+        order: { fields: { sortOrder: 'ASC' } },
+      });
+      if (!definition) {
+        throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
+      }
+      return definition;
+    }
+
     const definition = await this.definitions.findOne({
       where: {
         tenantId: actor.tenantId,
@@ -314,10 +331,22 @@ export class FormDefinitionsService {
     return definition;
   }
 
-  async requestAccess(groupId: string, dto: RequestFormAccessDto) {
-    const definition = await this.definitions.findOne({
-      where: { groupId, status: FormDefinitionStatus.PUBLISHED },
+  async requestAccess(
+    groupId: string,
+    dto: RequestFormAccessDto,
+    formDefinitionId?: string,
+  ) {
+    const definitions = await this.definitions.find({
+      where: {
+        ...(formDefinitionId ? { id: formDefinitionId } : {}),
+        groupId,
+        status: FormDefinitionStatus.PUBLISHED,
+      },
     });
+    if (!formDefinitionId && definitions.length > 1) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_AMBIGUOUS);
+    }
+    const definition = definitions[0];
     if (!definition) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -327,6 +356,7 @@ export class FormDefinitionsService {
       tenantId: definition.tenantId,
       email,
       groupId: definition.groupId,
+      formDefinitionId: definition.id,
     });
 
     try {

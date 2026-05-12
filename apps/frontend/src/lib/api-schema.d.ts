@@ -703,7 +703,7 @@ export interface paths {
         head?: never;
         /**
          * 値更新
-         * @description draft は全項目。returned はオープンな correction の対象フィールドのみ。
+         * @description draft / published は全項目。returned はオープンな correction の対象フィールドのみ。
          */
         patch: operations["ApplicationsController_patch"];
         trace?: never;
@@ -1239,6 +1239,11 @@ export interface components {
              */
             approvalFlowId?: string;
             /**
+             * @description 作成直後の申請ステータス。省略時は draft。申請作成画面で公開したフォームは published を指定する。
+             * @enum {string}
+             */
+            status?: "draft" | "published";
+            /**
              * @example {
              *       "expense_title": "出張交通費",
              *       "amount": 12000
@@ -1326,8 +1331,18 @@ export interface components {
             corrections: components["schemas"]["CorrectionRequestResponseDto"][];
         };
         PatchApplicationDto: {
+            /**
+             * Format: uuid
+             * @description 差し替える公開済みフォーム定義。draft / published の申請でのみ指定可能。
+             */
+            formDefinitionId?: string;
+            /**
+             * Format: uuid
+             * @description 差し替える有効な承認フロー。draft / published の申請でのみ指定可能。
+             */
+            approvalFlowId?: string;
             /** @description field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。 */
-            values: {
+            values?: {
                 [key: string]: unknown;
             };
         };
@@ -1346,7 +1361,7 @@ export interface components {
             /** Format: uuid */
             groupId: string;
             /** @enum {string} */
-            status?: "draft" | "submitted" | "in_review" | "returned" | "approved" | "rejected";
+            status?: "draft" | "published" | "submitted" | "in_review" | "returned" | "approved" | "rejected";
         };
         ErrorResponseDto: {
             /**
@@ -1979,7 +1994,10 @@ export interface operations {
     };
     FormDefinitionsController_requestAccess: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description 公開済みフォーム定義ID。同一スペースに公開フォームが複数ある場合は必須。 */
+                formDefinitionId?: unknown;
+            };
             header?: never;
             path: {
                 groupId: string;
