@@ -259,6 +259,12 @@ export class ApplicationSummaryDto {
   formDefinitionId!: string;
 
   @ApiProperty()
+  formDefinitionName!: string;
+
+  @ApiProperty()
+  applicationName!: string;
+
+  @ApiProperty()
   applicantEmail!: string;
 
   @ApiPropertyOptional({ nullable: true })

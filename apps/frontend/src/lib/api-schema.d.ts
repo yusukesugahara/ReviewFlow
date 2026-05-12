@@ -1057,6 +1057,8 @@ export interface components {
             status: string;
             approvalFlowId: string;
             formDefinitionId: string;
+            formDefinitionName: string;
+            applicationName: string;
             applicantEmail: string;
             currentStepOrder?: Record<string, never> | null;
             submittedAt?: Record<string, never> | null;
@@ -1104,6 +1106,8 @@ export interface components {
             status: string;
             approvalFlowId: string;
             formDefinitionId: string;
+            formDefinitionName: string;
+            applicationName: string;
             applicantEmail: string;
             currentStepOrder?: Record<string, never> | null;
             submittedAt?: Record<string, never> | null;

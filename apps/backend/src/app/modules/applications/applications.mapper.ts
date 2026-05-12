@@ -11,12 +11,15 @@ import type {
 export function mapApplicationToSummary(
   row: Application,
 ): ApplicationSummaryDto {
+  const applicationName = row.formDefinition?.name ?? '';
   return {
     id: row.id,
     groupId: row.groupId,
     status: row.status,
     approvalFlowId: row.approvalFlowId,
     formDefinitionId: row.formDefinitionId,
+    formDefinitionName: applicationName,
+    applicationName,
     applicantEmail: row.applicantEmail,
     currentStepOrder: row.currentStepOrder,
     submittedAt: row.submittedAt ? row.submittedAt.toISOString() : null,

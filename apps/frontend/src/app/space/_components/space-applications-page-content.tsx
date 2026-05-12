@@ -25,7 +25,9 @@ import {
 } from "@/app/_components/applications/application-routes";
 
 export type ApplicationRow = {
+  applicationName?: string | null;
   formDefinitionId?: string | null;
+  formDefinitionName?: string | null;
   id: string;
   groupId: string;
   status: string;

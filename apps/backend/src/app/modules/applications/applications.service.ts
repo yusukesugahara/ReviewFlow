@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
@@ -144,21 +144,53 @@ export class ApplicationsService {
   ): Promise<Application[]> {
     await this.spaceAccess.assertCanUseGroup(actor, groupId);
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      return this.apps.find({
+      const rows = await this.apps.find({
         where: { tenantId: actor.tenantId, groupId },
+        relations: ['formDefinition'],
         order: { createdAt: 'DESC' },
       });
+      return this.hydrateListFormDefinitions(actor.tenantId, rows);
     }
     const rows = await this.apps.find({
       where: { tenantId: actor.tenantId, groupId },
-      relations: ['approvalFlow', 'approvalFlow.steps'],
+      relations: ['approvalFlow', 'approvalFlow.steps', 'formDefinition'],
       order: { createdAt: 'DESC' },
     });
-    return rows.filter(
+    const visibleRows = rows.filter(
       (app) =>
         app.applicantUserId === actor.id ||
         this.accessPolicy.actorIsAssignedToCurrentStep(actor, app),
     );
+    return this.hydrateListFormDefinitions(actor.tenantId, visibleRows);
+  }
+
+  private async hydrateListFormDefinitions(
+    tenantId: string,
+    rows: Application[],
+  ): Promise<Application[]> {
+    const missingDefinitionIds = Array.from(
+      new Set(
+        rows
+          .filter((row) => !row.formDefinition)
+          .map((row) => row.formDefinitionId),
+      ),
+    );
+    if (missingDefinitionIds.length === 0) {
+      return rows;
+    }
+    const definitions = await this.templates.find({
+      where: { tenantId, id: In(missingDefinitionIds) },
+    });
+    const definitionById = new Map(
+      definitions.map((definition) => [definition.id, definition]),
+    );
+    for (const row of rows) {
+      const definition = definitionById.get(row.formDefinitionId);
+      if (definition) {
+        row.formDefinition = definition;
+      }
+    }
+    return rows;
   }
 
   async getOneForActor(

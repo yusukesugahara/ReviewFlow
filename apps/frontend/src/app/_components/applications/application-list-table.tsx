@@ -17,13 +17,27 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
 });
 
 export type ApplicationListRow = {
+  applicationName?: string | null;
   formDefinitionId?: string | null;
+  formDefinitionName?: string | null;
   id: string;
   groupId?: string | null;
   status: string;
   createdAt: string;
   applicantEmail?: string;
 };
+
+function getApplicationName(row: ApplicationListRow): string {
+  const applicationName = row.applicationName?.trim();
+  if (applicationName) {
+    return applicationName;
+  }
+  const formDefinitionName = row.formDefinitionName?.trim();
+  if (formDefinitionName) {
+    return formDefinitionName;
+  }
+  return "-";
+}
 
 type ApplicationListTableProps = {
   rows: ApplicationListRow[];
@@ -42,6 +56,7 @@ export function ApplicationListTable({
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead>申請名</TableHead>
           <TableHead>ステータス</TableHead>
           {showApplicantEmail ? <TableHead>申請者</TableHead> : null}
           <TableHead>作成日時</TableHead>
@@ -51,6 +66,9 @@ export function ApplicationListTable({
       <TableBody>
         {rows.map((row) => (
           <TableRow key={row.id}>
+            <TableCell className="font-medium">
+              {getApplicationName(row)}
+            </TableCell>
             <TableCell>
               <ApplicationStatusBadge status={row.status} />
             </TableCell>
