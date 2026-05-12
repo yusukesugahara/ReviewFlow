@@ -4,8 +4,6 @@ export type ApplicationSpaceRouteSource = {
   groupId?: string | null;
 };
 
-// Canonical application workspace routes are /space/[spaceId]/applications...
-// Legacy /app/applications... and /review/applications... routes are compatibility entrypoints.
 export function getApplicationSpaceId(
   application: ApplicationSpaceRouteSource,
 ): string | null {

@@ -5,7 +5,7 @@ import { APPLICANT_ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constan
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const token = url.searchParams.get("token");
-  const redirectUrl = new URL("/app/applications", url);
+  const redirectUrl = new URL("/space", url);
 
   if (!token) {
     redirectUrl.searchParams.set("error", "missing_token");

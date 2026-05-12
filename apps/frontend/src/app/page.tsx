@@ -11,5 +11,5 @@ export default async function HomePage() {
   if (me.roles.includes(TENANT_ROLES.admin)) {
     redirect("/admin/spaces");
   }
-  redirect("/app/applications");
+  redirect("/space");
 }
