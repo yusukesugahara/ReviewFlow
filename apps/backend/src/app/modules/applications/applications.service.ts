@@ -22,6 +22,7 @@ import type {
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
   CreateApplicationDto,
+  CreatePublicApplicationDto,
   PatchApplicationDto,
   RejectApplicationDto,
   ReturnApplicationDto,
@@ -110,6 +111,21 @@ export class ApplicationsService {
     }
     if (list.length > 1) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FLOW_AMBIGUOUS);
+    }
+    return list[0];
+  }
+
+  private async resolveDefaultActiveFlow(
+    tenantId: string,
+    groupId: string,
+  ): Promise<ApprovalFlow> {
+    const list = await this.flows.find({
+      where: { tenantId, groupId, isActive: true },
+      relations: ['steps'],
+      order: { createdAt: 'ASC', id: 'ASC' },
+    });
+    if (list.length === 0) {
+      throw clientError(ClientErrorCodes.APPLICATION_NO_APPROVAL_FLOW);
     }
     return list[0];
   }
@@ -314,11 +330,15 @@ export class ApplicationsService {
 
   async createAndSubmitForApplicant(
     actor: ApplicantSession,
-    dto: CreateApplicationDto,
+    dto: CreatePublicApplicationDto,
   ): Promise<Application> {
     if (dto.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
+    const flow = await this.resolveDefaultActiveFlow(
+      actor.tenantId,
+      actor.groupId,
+    );
     const created = await this.createInternal(
       actor.tenantId,
       actor.email,
@@ -326,6 +346,7 @@ export class ApplicationsService {
       {
         ...dto,
         formDefinitionId: actor.formDefinitionId ?? dto.formDefinitionId,
+        approvalFlowId: flow.id,
         status: ApplicationStatus.DRAFT,
       },
     );

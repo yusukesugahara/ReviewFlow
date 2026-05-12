@@ -14,7 +14,10 @@ import { CurrentApplicantSession } from '../../../decorators/current-applicant-s
 import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
 import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
-import { ApplicationDetailDto, CreateApplicationDto } from './applications.dto';
+import {
+  ApplicationDetailDto,
+  CreatePublicApplicationDto,
+} from './applications.dto';
 import { ApplicationsService } from './applications.service';
 
 @ApiTags('public-applications')
@@ -31,7 +34,7 @@ export class PublicApplicationsController {
   @ApiSuccessResponseCreated(ApplicationDetailDto)
   async create(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
-    @Body() dto: CreateApplicationDto,
+    @Body() dto: CreatePublicApplicationDto,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.createAndSubmitForApplicant(actor, dto);
     return successResponse(this.applications.toDetail(row));

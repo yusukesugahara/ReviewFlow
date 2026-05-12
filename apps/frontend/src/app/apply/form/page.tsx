@@ -27,11 +27,6 @@ type FormDefinition = {
   fields?: DynamicFormField[];
 };
 
-type ApprovalFlowSummary = {
-  id: string;
-  name: string;
-};
-
 type PageProps = {
   searchParams?: Promise<{ error?: string; submitted?: string }>;
 };
@@ -41,7 +36,6 @@ async function submitPublicApplicationAction(formData: FormData): Promise<void> 
 
   const groupId = formData.get("groupId");
   const formDefinitionId = formData.get("formDefinitionId");
-  const approvalFlowId = formData.get("approvalFlowId");
   const fieldsJson = formData.get("fieldsJson");
 
   if (
@@ -68,10 +62,6 @@ async function submitPublicApplicationAction(formData: FormData): Promise<void> 
       body: {
         groupId,
         formDefinitionId,
-        approvalFlowId:
-          typeof approvalFlowId === "string" && approvalFlowId.length > 0
-            ? approvalFlowId
-            : undefined,
         values: readDynamicValuesFromFormData(fields, formData),
       },
     });
@@ -120,15 +110,11 @@ export default async function PublicApplicationFormPage({
   }
 
   try {
-    const [definitionRaw, flowsRaw] = await Promise.all([
-      backendApplicantFetchJson("/form-definitions/public/current"),
-      backendApplicantFetchJson("/form-definitions/public/current/approval-flows"),
-    ]);
+    const definitionRaw = await backendApplicantFetchJson(
+      "/form-definitions/public/current",
+    );
     const definition = unwrapData<FormDefinition>(definitionRaw);
-    const flows =
-      unwrapData<{ flows?: ApprovalFlowSummary[] }>(flowsRaw).flows ?? [];
     const fields = definition.fields ?? [];
-    const selectedFlowId = flows.length === 1 ? flows[0]?.id : "";
 
     return (
       <main className="min-h-screen bg-slate-50 px-4 py-10">
@@ -158,32 +144,6 @@ export default async function PublicApplicationFormPage({
                   name="fieldsJson"
                   value={JSON.stringify(fields)}
                 />
-                {flows.length > 1 ? (
-                  <div className="space-y-2">
-                    <label htmlFor="approvalFlowId" className="text-sm font-medium">
-                      承認フロー
-                    </label>
-                    <select
-                      id="approvalFlowId"
-                      name="approvalFlowId"
-                      required
-                      className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm"
-                    >
-                      <option value="">選択してください</option>
-                      {flows.map((flow) => (
-                        <option key={flow.id} value={flow.id}>
-                          {flow.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <input
-                    type="hidden"
-                    name="approvalFlowId"
-                    value={selectedFlowId ?? ""}
-                  />
-                )}
                 {fields.map((field) => (
                   <DynamicFieldInput key={field.id} field={field} value={null} />
                 ))}

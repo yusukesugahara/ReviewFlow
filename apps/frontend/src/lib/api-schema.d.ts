@@ -1246,6 +1246,24 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        CreatePublicApplicationDto: {
+            /** Format: uuid */
+            groupId: string;
+            /**
+             * Format: uuid
+             * @description 利用する公開済みフォーム定義。申請者アクセストークンにフォーム定義が含まれる場合はそちらを優先する。
+             */
+            formDefinitionId?: string;
+            /**
+             * @example {
+             *       "expense_title": "出張交通費",
+             *       "amount": 12000
+             *     }
+             */
+            values?: {
+                [key: string]: unknown;
+            };
+        };
         ExportJobResponseDto: {
             id: string;
             groupId: string;
@@ -2606,7 +2624,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["CreateApplicationDto"];
+                "application/json": components["schemas"]["CreatePublicApplicationDto"];
             };
         };
         responses: {

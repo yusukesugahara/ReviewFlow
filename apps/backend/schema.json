@@ -2543,7 +2543,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/CreateApplicationDto"
+                "$ref": "#/components/schemas/CreatePublicApplicationDto"
               }
             }
           }
@@ -4179,6 +4179,31 @@
             "description": "field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。"
           }
         }
+      },
+      "CreatePublicApplicationDto": {
+        "type": "object",
+        "properties": {
+          "groupId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "formDefinitionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "利用する公開済みフォーム定義。申請者アクセストークンにフォーム定義が含まれる場合はそちらを優先する。"
+          },
+          "values": {
+            "type": "object",
+            "additionalProperties": true,
+            "example": {
+              "expense_title": "出張交通費",
+              "amount": 12000
+            }
+          }
+        },
+        "required": [
+          "groupId"
+        ]
       },
       "ExportJobResponseDto": {
         "type": "object",

@@ -58,6 +58,30 @@ export class CreateApplicationDto {
   values?: Record<string, unknown>;
 }
 
+export class CreatePublicApplicationDto {
+  @ApiProperty({ format: 'uuid' })
+  @IsUUID()
+  groupId!: string;
+
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      '利用する公開済みフォーム定義。申請者アクセストークンにフォーム定義が含まれる場合はそちらを優先する。',
+  })
+  @IsOptional()
+  @IsUUID()
+  formDefinitionId?: string;
+
+  @ApiPropertyOptional({
+    type: 'object',
+    additionalProperties: true,
+    example: { expense_title: '出張交通費', amount: 12000 },
+  })
+  @IsOptional()
+  @IsObject()
+  values?: Record<string, unknown>;
+}
+
 export class PatchApplicationDto {
   @ApiPropertyOptional({
     format: 'uuid',
