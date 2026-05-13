@@ -32,30 +32,32 @@ type PageProps = {
 
 async function submitAction(spaceId: string, applicationId: string): Promise<void> {
   "use server";
+  let updated: ApplicationDetailViewModel;
   try {
     const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/submit`, {
       method: "POST",
       body: {},
     });
-    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-    redirectToApplicationDetail(updated);
+    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
+  redirectToApplicationDetail(updated);
 }
 
 async function resubmitAction(spaceId: string, applicationId: string): Promise<void> {
   "use server";
+  let updated: ApplicationDetailViewModel;
   try {
     const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/resubmit`, {
       method: "POST",
       body: {},
     });
-    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-    redirectToApplicationDetail(updated);
+    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
+  redirectToApplicationDetail(updated);
 }
 
 async function approveAction(
@@ -65,16 +67,17 @@ async function approveAction(
 ): Promise<void> {
   "use server";
   const comment = formData.get("comment");
+  let updated: ApplicationDetailViewModel;
   try {
     const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/approve`, {
       method: "POST",
       body: { comment: typeof comment === "string" ? comment : undefined },
     });
-    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-    redirectToApplicationDetail(updated);
+    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
+  redirectToApplicationDetail(updated);
 }
 
 async function rejectAction(
@@ -84,16 +87,17 @@ async function rejectAction(
 ): Promise<void> {
   "use server";
   const comment = formData.get("comment");
+  let updated: ApplicationDetailViewModel;
   try {
     const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/reject`, {
       method: "POST",
       body: { comment: typeof comment === "string" ? comment : undefined },
     });
-    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-    redirectToApplicationDetail(updated);
+    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
+  redirectToApplicationDetail(updated);
 }
 
 async function returnAction(
@@ -121,6 +125,7 @@ async function returnAction(
     return;
   }
 
+  let updated: ApplicationDetailViewModel;
   try {
     const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/return`, {
       method: "POST",
@@ -132,11 +137,11 @@ async function returnAction(
         fields,
       },
     });
-    const updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
-    redirectToApplicationDetail(updated);
+    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
+  redirectToApplicationDetail(updated);
 }
 
 function redirectToApplicationDetail(application: ApplicationDetailViewModel): never {

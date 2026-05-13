@@ -9,6 +9,7 @@ import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
+import { MailModule } from '../mail/mail.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationAccessPolicy } from './application-access.policy';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
@@ -21,6 +22,7 @@ import { PublicApplicationsController } from './public-applications.controller';
   imports: [
     AuthModule,
     GroupsModule,
+    MailModule,
     TypeOrmModule.forFeature([
       Application,
       ApplicationApproval,

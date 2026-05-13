@@ -100,4 +100,43 @@ describe('MailService', () => {
     expect(createTransport).not.toHaveBeenCalled();
     expect(sendMail).not.toHaveBeenCalled();
   });
+
+  it('sends an application returned email with correction details', async () => {
+    const config = new ConfigService({
+      NODE_ENV: 'test',
+      MAIL_ENABLED: '1',
+      MAIL_FROM: 'noreply@example.com',
+      MAIL_PROVIDER: 'smtp',
+      MAIL_SMTP_HOST: 'smtp.example.com',
+      MAIL_SMTP_USER: 'smtp-user',
+      MAIL_SMTP_PASSWORD: 'smtp-pass',
+      FRONTEND_BASE_URL: 'https://review.example.com',
+    });
+    const service = new MailService(config);
+
+    await service.sendApplicationReturnedEmail({
+      to: 'applicant@example.com',
+      applicationId: 'app-1',
+      groupId: 'group-1',
+      templateName: '経費申請',
+      overallComment: '内容を確認してください',
+      fields: [{ label: '備考', comment: '詳細を追記してください' }],
+    });
+
+    type SentMail = {
+      to?: string;
+      subject?: string;
+      text?: string;
+      html?: string;
+    };
+    const calls = sendMail.mock.calls as Array<[SentMail]>;
+    const sent = calls[0]?.[0];
+    expect(sent?.to).toBe('applicant@example.com');
+    expect(sent?.subject).toBe('ReviewFlow 経費申請 が差し戻されました');
+    expect(sent?.text).toContain('備考: 詳細を追記してください');
+    expect(sent?.text).toContain(
+      'https://review.example.com/space/group-1/applications/app-1',
+    );
+    expect(sent?.html).toContain('申請詳細を開く');
+  });
 });

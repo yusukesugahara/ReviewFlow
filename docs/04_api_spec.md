@@ -284,7 +284,7 @@ response:
 
 ### POST /applications/:id/return
 権限: tenant_user, tenant_admin  
-現在ステップの **`can_return` が true** のときのみ。`application_approvals`（action=returned）と **`correction_requests` / `correction_request_items`** を作成し、申請は `returned`。オープンな correction が既にある場合は 409。
+現在ステップの **`can_return` が true** のときのみ。`application_approvals`（action=returned）と **`correction_requests` / `correction_request_items`** を作成し、申請は `returned`。差し戻し後、申請者メールアドレス宛に修正対象とコメントを通知する。オープンな correction が既にある場合は 409。
 request:
 ```json
 {

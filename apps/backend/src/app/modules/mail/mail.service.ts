@@ -24,6 +24,18 @@ type ApplicationAccessMailInput = {
   accessToken: string;
 };
 
+type ApplicationReturnedMailInput = {
+  to: string;
+  applicationId: string;
+  groupId: string;
+  templateName: string;
+  overallComment?: string | null;
+  fields: Array<{
+    label: string;
+    comment?: string | null;
+  }>;
+};
+
 type PasswordResetMailInput = {
   to: string;
   resetToken: string;
@@ -82,6 +94,50 @@ export class MailService {
         `<p>${this.escapeHtml(input.templateName)} の申請案内です。</p>`,
         '<p>以下のURLから申請フォームを開いてください。</p>',
         `<p><a href="${this.escapeHtml(accessUrl)}">申請フォームを開く</a></p>`,
+      ].join(''),
+    });
+  }
+
+  async sendApplicationReturnedEmail(
+    input: ApplicationReturnedMailInput,
+  ): Promise<void> {
+    const detailUrl = this.buildFrontendUrl(
+      `/space/${encodeURIComponent(input.groupId)}/applications/${encodeURIComponent(input.applicationId)}`,
+    );
+    const fieldLines = input.fields.map((field) =>
+      field.comment?.trim().length
+        ? `- ${field.label}: ${field.comment.trim()}`
+        : `- ${field.label}`,
+    );
+    const escapedFieldItems = input.fields.map((field) => {
+      const comment = field.comment?.trim();
+      return comment
+        ? `<li>${this.escapeHtml(field.label)}: ${this.escapeHtml(comment)}</li>`
+        : `<li>${this.escapeHtml(field.label)}</li>`;
+    });
+
+    await this.send({
+      to: input.to,
+      subject: `ReviewFlow ${input.templateName} が差し戻されました`,
+      text: [
+        `${input.templateName} の申請が差し戻されました。`,
+        input.overallComment?.trim()
+          ? `全体コメント: ${input.overallComment.trim()}`
+          : null,
+        '修正対象:',
+        ...fieldLines,
+        `申請詳細: ${detailUrl}`,
+      ]
+        .filter((line): line is string => line !== null)
+        .join('\n'),
+      html: [
+        `<p>${this.escapeHtml(input.templateName)} の申請が差し戻されました。</p>`,
+        input.overallComment?.trim()
+          ? `<p>全体コメント: ${this.escapeHtml(input.overallComment.trim())}</p>`
+          : '',
+        '<p>修正対象:</p>',
+        `<ul>${escapedFieldItems.join('')}</ul>`,
+        `<p><a href="${this.escapeHtml(detailUrl)}">申請詳細を開く</a></p>`,
       ].join(''),
     });
   }

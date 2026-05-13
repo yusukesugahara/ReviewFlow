@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
@@ -18,6 +18,7 @@ import { CorrectionRequest } from '../../../models/entities/correction-request.e
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../models/entities/form-field.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
+import { MailService } from '../mail/mail.service';
 import type {
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
@@ -52,6 +53,8 @@ type ResubmittableApplicationContext = SubmittableApplicationContext & {
 
 @Injectable()
 export class ApplicationsService {
+  private readonly logger = new Logger(ApplicationsService.name);
+
   constructor(
     @InjectRepository(Application)
     private readonly apps: Repository<Application>,
@@ -68,6 +71,7 @@ export class ApplicationsService {
     @InjectRepository(ApprovalFlow)
     private readonly flows: Repository<ApprovalFlow>,
     private readonly spaceAccess: SpaceAccessService,
+    private readonly mailService: MailService,
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
@@ -808,7 +812,35 @@ export class ApplicationsService {
       await appRepo.save(app);
     });
 
+    await this.notifyApplicantOfReturn(app, template, dto);
+
     return this.getOneForActor(actor, id);
+  }
+
+  private async notifyApplicantOfReturn(
+    app: Application,
+    template: FormDefinition,
+    dto: ReturnApplicationDto,
+  ): Promise<void> {
+    const fieldsById = new Map((template.fields ?? []).map((f) => [f.id, f]));
+    try {
+      await this.mailService.sendApplicationReturnedEmail({
+        to: app.applicantEmail,
+        applicationId: app.id,
+        groupId: app.groupId,
+        templateName: template.name,
+        overallComment: dto.overallComment ?? null,
+        fields: dto.fields.map((field) => ({
+          label: fieldsById.get(field.fieldId)?.label ?? field.fieldId,
+          comment: field.comment ?? null,
+        })),
+      });
+    } catch (error) {
+      this.logger.error(
+        `failed to send application return email for application ${app.id} to ${app.applicantEmail}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
   }
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
