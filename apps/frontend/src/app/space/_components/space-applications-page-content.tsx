@@ -1,6 +1,3 @@
-"use client";
-
-import type { ReactNode } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -10,18 +7,12 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  APPLICATION_LIST_VIEW_OPTIONS,
-  APPLICATION_LIST_VIEWS,
-  APPLICATION_STATUSES,
-  type ApplicationListView,
-} from "@/lib/constants/applications";
+import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
 import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
-  buildSpaceApplicationsHref,
 } from "@/app/_components/applications/application-routes";
 
 export type ApplicationRow = {
@@ -32,23 +23,33 @@ export type ApplicationRow = {
   groupId: string;
   status: string;
   applicantEmail: string;
+  applicantUserId?: string | null;
   createdAt: string;
 };
 
+export type FormDefinitionRow = {
+  id: string;
+  groupId: string;
+  name: string;
+  description?: string | null;
+  status: string;
+  fields?: unknown[];
+  createdAt: string;
+  updatedAt: string;
+};
+
 type SpaceApplicationsPageContentProps = {
-  actorEmail?: string;
   applications: ApplicationRow[];
+  formDefinitions: FormDefinitionRow[];
   fetchErrorStatus?: number;
   spaceId: string;
-  view?: string;
 };
 
 export function SpaceApplicationsPageContent({
-  actorEmail,
   applications,
+  formDefinitions,
   fetchErrorStatus,
   spaceId,
-  view,
 }: SpaceApplicationsPageContentProps) {
   if (fetchErrorStatus !== undefined) {
     return (
@@ -62,163 +63,152 @@ export function SpaceApplicationsPageContent({
     );
   }
 
-  const activeView = parseApplicationListView(view);
-  const visibleApplications = filterApplicationsByView(
-    applications,
-    activeView,
-    actorEmail,
+  const submittedApplications = applications.filter(
+    (row) => !isFormSetupApplication(row),
   );
+  const displayDefinitions =
+    formDefinitions.length > 0
+      ? formDefinitions
+      : buildFallbackDefinitions(submittedApplications, spaceId);
 
   return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
-            <p className="text-muted-foreground">
-              新規作成した申請とレビュー状況を確認できます
-            </p>
-          </div>
-          <Button asChild>
-            <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-          </Button>
+    <div className="space-y-6">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
+          <p className="text-muted-foreground">
+            作成した申請フォームごとに、利用者から届いた申請を確認できます
+          </p>
         </div>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>申請一覧</CardTitle>
-            <CardDescription>
-              {visibleApplications.length}件の申請を表示しています
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <ApplicationListViewTabs
-              activeView={activeView}
-              counts={{
-                mine: filterApplicationsByView(
-                  applications,
-                  "mine",
-                  actorEmail,
-                ).length,
-                review: filterApplicationsByView(
-                  applications,
-                  "review",
-                  actorEmail,
-                ).length,
-                all: applications.length,
-              }}
-              spaceId={spaceId}
-            />
-            {visibleApplications.length === 0 ? (
-              <ApplicationEmptyState
-                message={getApplicationEmptyMessage(activeView)}
-                action={getApplicationEmptyAction(activeView, spaceId)}
-              />
-            ) : (
-              <ApplicationListTable
-                rows={visibleApplications}
-                getDetailHref={(row) =>
-                  buildSpaceApplicationDetailHref(row) ??
-                  `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
-                }
-                showApplicantEmail
-              />
-            )}
-          </CardContent>
-        </Card>
+        <Button asChild>
+          <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
+        </Button>
       </div>
-  );
-}
 
-function parseApplicationListView(view: string | undefined): ApplicationListView {
-  if (
-    view === APPLICATION_LIST_VIEWS.review ||
-    view === APPLICATION_LIST_VIEWS.all
-  ) {
-    return view;
-  }
-  return APPLICATION_LIST_VIEWS.mine;
-}
+      <Card>
+        <CardHeader>
+          <CardTitle>作成した申請フォーム</CardTitle>
+          <CardDescription>
+            {displayDefinitions.length}件の申請フォームと、
+            {submittedApplications.length}件の申請を表示しています
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {displayDefinitions.length === 0 ? (
+            <ApplicationEmptyState
+              message="作成した申請フォームはまだありません"
+              action={
+                <Button asChild variant="outline">
+                  <Link href={buildSpaceApplicationNewHref(spaceId)}>
+                    新規申請
+                  </Link>
+                </Button>
+              }
+            />
+          ) : (
+            displayDefinitions.map((definition) => {
+              const rows = submittedApplications.filter(
+                (row) => row.formDefinitionId === definition.id,
+              );
+              return (
+                <section
+                  key={definition.id}
+                  className="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
+                >
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div className="min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <h3 className="text-lg font-semibold text-slate-950">
+                          {definition.name}
+                        </h3>
+                        <FormDefinitionStatusBadge status={definition.status} />
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {rows.length}件の申請 /{" "}
+                        {definition.fields?.length ?? 0}項目
+                      </p>
+                    </div>
+                    {definition.status === APPLICATION_STATUSES.published ? (
+                      <Button asChild variant="outline" size="sm">
+                        <Link
+                          href={`/apply/${encodeURIComponent(definition.groupId)}?formDefinitionId=${encodeURIComponent(definition.id)}`}
+                        >
+                          公開URL
+                        </Link>
+                      </Button>
+                    ) : null}
+                  </div>
 
-function filterApplicationsByView(
-  rows: ApplicationRow[],
-  view: ApplicationListView,
-  actorEmail: string | undefined,
-): ApplicationRow[] {
-  if (view === APPLICATION_LIST_VIEWS.all) {
-    return rows;
-  }
-  if (view === APPLICATION_LIST_VIEWS.review) {
-    return rows.filter((row) => row.status === APPLICATION_STATUSES.inReview);
-  }
-  if (!actorEmail) {
-    return [];
-  }
-  const normalizedActorEmail = actorEmail.toLowerCase();
-  return rows.filter(
-    (row) => row.applicantEmail.toLowerCase() === normalizedActorEmail,
-  );
-}
-
-function getApplicationEmptyMessage(view: ApplicationListView): string {
-  if (view === APPLICATION_LIST_VIEWS.review) {
-    return "レビュー対象の申請はありません";
-  }
-  if (view === APPLICATION_LIST_VIEWS.all) {
-    return "スペース内の申請はまだありません";
-  }
-  return "自分の申請はまだありません";
-}
-
-function getApplicationEmptyAction(
-  view: ApplicationListView,
-  spaceId: string,
-): ReactNode {
-  if (view === APPLICATION_LIST_VIEWS.review) {
-    return undefined;
-  }
-  return (
-    <Button asChild variant="outline">
-      <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-    </Button>
-  );
-}
-
-function ApplicationListViewTabs({
-  activeView,
-  counts,
-  spaceId,
-}: {
-  activeView: ApplicationListView;
-  counts: Record<ApplicationListView, number>;
-  spaceId: string;
-}) {
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      {APPLICATION_LIST_VIEW_OPTIONS.map((tab) => {
-        const isActive = activeView === tab.view;
-        return (
-          <Link
-            key={tab.view}
-            href={buildSpaceApplicationsViewHref(spaceId, tab.view)}
-            className={`inline-flex h-9 items-center justify-center rounded-lg border px-3 text-[13px] font-medium transition-colors ${
-              isActive
-                ? "border-primary bg-primary text-primary-foreground"
-                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100 hover:text-slate-900"
-            }`}
-          >
-            {tab.label} ({counts[tab.view]})
-          </Link>
-        );
-      })}
+                  {rows.length === 0 ? (
+                    <p className="rounded-md border border-dashed border-slate-200 px-3 py-6 text-sm text-muted-foreground">
+                      この申請フォームには、まだ利用者からの申請がありません。
+                    </p>
+                  ) : (
+                    <ApplicationListTable
+                      rows={rows}
+                      getDetailHref={(row) =>
+                        buildSpaceApplicationDetailHref(row) ??
+                        `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
+                      }
+                      showApplicantEmail
+                    />
+                  )}
+                </section>
+              );
+            })
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
-function buildSpaceApplicationsViewHref(
+function isFormSetupApplication(row: ApplicationRow): boolean {
+  return (
+    row.status === APPLICATION_STATUSES.draft ||
+    row.status === APPLICATION_STATUSES.published
+  );
+}
+
+function buildFallbackDefinitions(
+  rows: ApplicationRow[],
   spaceId: string,
-  view: ApplicationListView,
-): string {
-  const searchParams = new URLSearchParams();
-  searchParams.set("view", view);
-  return `${buildSpaceApplicationsHref(spaceId)}?${searchParams.toString()}`;
+): FormDefinitionRow[] {
+  const definitions = new Map<string, FormDefinitionRow>();
+  for (const row of rows) {
+    const id = row.formDefinitionId;
+    if (!id || definitions.has(id)) {
+      continue;
+    }
+    definitions.set(id, {
+      id,
+      groupId: row.groupId || spaceId,
+      name: row.formDefinitionName?.trim() || row.applicationName?.trim() || "-",
+      status: APPLICATION_STATUSES.published,
+      fields: [],
+      createdAt: row.createdAt,
+      updatedAt: row.createdAt,
+    });
+  }
+  return Array.from(definitions.values());
+}
+
+function FormDefinitionStatusBadge({ status }: { status: string }) {
+  const isPublished = status === APPLICATION_STATUSES.published;
+  const label = isPublished
+    ? "公開済み"
+    : status === APPLICATION_STATUSES.draft
+      ? "下書き"
+      : status;
+  return (
+    <span
+      className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${
+        isPublished
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+          : "border-slate-200 bg-slate-50 text-slate-700"
+      }`}
+    >
+      {label}
+    </span>
+  );
 }

@@ -1111,6 +1111,7 @@ export interface components {
             formDefinitionName: string;
             applicationName: string;
             applicantEmail: string;
+            applicantUserId?: Record<string, never> | null;
             currentStepOrder?: Record<string, never> | null;
             submittedAt?: Record<string, never> | null;
             createdAt: string;
@@ -1160,6 +1161,7 @@ export interface components {
             formDefinitionName: string;
             applicationName: string;
             applicantEmail: string;
+            applicantUserId?: Record<string, never> | null;
             currentStepOrder?: Record<string, never> | null;
             submittedAt?: Record<string, never> | null;
             createdAt: string;

@@ -3,51 +3,66 @@ import {
   BackendHttpError,
 } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getCurrentSessionUser } from "@/lib/server/session";
 import {
   SpaceApplicationsPageContent,
   type ApplicationRow,
+  type FormDefinitionRow,
 } from "@/app/space/_components/space-applications-page-content";
 
 type PageProps = {
   params: Promise<{ spaceId: string }>;
-  searchParams?: Promise<{ view?: string }>;
 };
 
 export default async function SpaceApplicationsPage({
   params,
-  searchParams,
 }: PageProps) {
-  const [{ spaceId }, query] = await Promise.all([
-    params,
-    searchParams ?? Promise.resolve({} as { view?: string }),
-  ]);
+  const { spaceId } = await params;
 
   try {
-    const [applicationsRaw, actor] = await Promise.all([
+    const [applicationsRaw, formDefinitions] = await Promise.all([
       backendAuthFetchJson(`/applications?groupId=${encodeURIComponent(spaceId)}`),
-      getCurrentSessionUser(),
+      fetchFormDefinitionsForList(spaceId),
     ]);
 
     return (
       <SpaceApplicationsPageContent
-        actorEmail={actor?.email}
         applications={
           unwrapData<{ applications?: ApplicationRow[] }>(applicationsRaw)
             .applications ?? []
         }
+        formDefinitions={
+          formDefinitions
+        }
         spaceId={spaceId}
-        view={query.view}
       />
     );
   } catch (error) {
     return (
       <SpaceApplicationsPageContent
         applications={[]}
+        formDefinitions={[]}
         fetchErrorStatus={error instanceof BackendHttpError ? error.status : 500}
         spaceId={spaceId}
-        view={query.view}
       />
     );
+  }
+}
+
+async function fetchFormDefinitionsForList(
+  spaceId: string,
+): Promise<FormDefinitionRow[]> {
+  try {
+    const definitionsRaw = await backendAuthFetchJson(
+      `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
+    );
+    return (
+      unwrapData<{ definitions?: FormDefinitionRow[] }>(definitionsRaw)
+        .definitions ?? []
+    );
+  } catch (error) {
+    if (error instanceof BackendHttpError && error.status === 403) {
+      return [];
+    }
+    throw error;
   }
 }

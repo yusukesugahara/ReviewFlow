@@ -236,6 +236,7 @@ query: `groupId` 必須。
 - tenant_admin: テナント内の指定 group の申請
 - group admin: 自分が admin の group の申請
 - group user: 所属 group 内で、自分の申請または **in_review** かつ現在ステップの `assignee_user_ids` に自分が含まれるもの
+- 一覧レスポンスは `applicantUserId` を含む。`null` は公開フォーム経由など、登録ユーザーに紐づかない利用者申請を表す。フロントでは `draft` / `published` を作成中申請、`applicantUserId: null` を利用者から届いた申請として区別する。
 
 ### POST /applications
 権限: tenant_user, tenant_admin。`groupId` 必須。`formDefinitionId` は同一 group の **published** フォーム定義のみ。公開済みフォームが1件だけなら後方互換のため省略可だが、複数ある場合は必須。有効な承認フローが複数ある場合は `approvalFlowId`（UUID）を指定。`status` は `draft` または `published` を指定でき、省略時は `draft`。`values` のキーは **field_key**（必須項目は提出前に満たす必要あり）。

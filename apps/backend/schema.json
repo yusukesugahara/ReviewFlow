@@ -3785,6 +3785,10 @@
           "applicantEmail": {
             "type": "string"
           },
+          "applicantUserId": {
+            "type": "object",
+            "nullable": true
+          },
           "currentStepOrder": {
             "type": "object",
             "nullable": true
@@ -3906,6 +3910,10 @@
           },
           "applicantEmail": {
             "type": "string"
+          },
+          "applicantUserId": {
+            "type": "object",
+            "nullable": true
           },
           "currentStepOrder": {
             "type": "object",

@@ -21,21 +21,3 @@ export const APPLICATION_STATUS_LABELS: Partial<Record<ApplicationStatus, string
     [APPLICATION_STATUSES.rejected]: "却下",
     [APPLICATION_STATUSES.published]: "公開済み",
   };
-
-export const APPLICATION_LIST_VIEWS = {
-  mine: "mine",
-  review: "review",
-  all: "all",
-} as const;
-
-export type ApplicationListView =
-  (typeof APPLICATION_LIST_VIEWS)[keyof typeof APPLICATION_LIST_VIEWS];
-
-export const APPLICATION_LIST_VIEW_OPTIONS: {
-  view: ApplicationListView;
-  label: string;
-}[] = [
-  { view: APPLICATION_LIST_VIEWS.mine, label: "自分の申請" },
-  { view: APPLICATION_LIST_VIEWS.review, label: "レビュー対象" },
-  { view: APPLICATION_LIST_VIEWS.all, label: "すべて" },
-];

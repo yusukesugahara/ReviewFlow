@@ -292,6 +292,9 @@ export class ApplicationSummaryDto {
   applicantEmail!: string;
 
   @ApiPropertyOptional({ nullable: true })
+  applicantUserId!: string | null;
+
+  @ApiPropertyOptional({ nullable: true })
   currentStepOrder!: number | null;
 
   @ApiPropertyOptional({ nullable: true })

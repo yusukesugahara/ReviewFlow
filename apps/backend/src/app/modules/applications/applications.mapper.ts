@@ -21,6 +21,7 @@ export function mapApplicationToSummary(
     formDefinitionName: applicationName,
     applicationName,
     applicantEmail: row.applicantEmail,
+    applicantUserId: row.applicantUserId,
     currentStepOrder: row.currentStepOrder,
     submittedAt: row.submittedAt ? row.submittedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
