@@ -7,9 +7,16 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
-import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
@@ -63,13 +70,15 @@ export function SpaceApplicationsPageContent({
     );
   }
 
-  const submittedApplications = applications.filter(
-    (row) => !isFormSetupApplication(row),
-  );
+  const setupApplications = applications.filter(isFormSetupApplication);
+  const submittedApplications = applications.filter((row) => !isFormSetupApplication(row));
   const displayDefinitions =
     formDefinitions.length > 0
       ? formDefinitions
       : buildFallbackDefinitions(submittedApplications, spaceId);
+  const rows = displayDefinitions.map((definition) =>
+    buildApplicationFormListRow(definition, applications, setupApplications, spaceId),
+  );
 
   return (
     <div className="space-y-6">
@@ -89,12 +98,11 @@ export function SpaceApplicationsPageContent({
         <CardHeader>
           <CardTitle>作成した申請フォーム</CardTitle>
           <CardDescription>
-            {displayDefinitions.length}件の申請フォームと、
-            {submittedApplications.length}件の申請を表示しています
+            {displayDefinitions.length}件の申請フォームを表示しています
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          {displayDefinitions.length === 0 ? (
+          {rows.length === 0 ? (
             <ApplicationEmptyState
               message="作成した申請フォームはまだありません"
               action={
@@ -106,56 +114,52 @@ export function SpaceApplicationsPageContent({
               }
             />
           ) : (
-            displayDefinitions.map((definition) => {
-              const rows = submittedApplications.filter(
-                (row) => row.formDefinitionId === definition.id,
-              );
-              return (
-                <section
-                  key={definition.id}
-                  className="space-y-3 rounded-lg border border-slate-200 bg-white p-4"
-                >
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div className="min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-lg font-semibold text-slate-950">
-                          {definition.name}
-                        </h3>
-                        <FormDefinitionStatusBadge status={definition.status} />
-                      </div>
-                      <p className="text-sm text-muted-foreground">
-                        {rows.length}件の申請 /{" "}
-                        {definition.fields?.length ?? 0}項目
-                      </p>
-                    </div>
-                    {definition.status === APPLICATION_STATUSES.published ? (
-                      <Button asChild variant="outline" size="sm">
-                        <Link
-                          href={`/apply/${encodeURIComponent(definition.groupId)}?formDefinitionId=${encodeURIComponent(definition.id)}`}
-                        >
-                          公開URL
-                        </Link>
-                      </Button>
-                    ) : null}
-                  </div>
-
-                  {rows.length === 0 ? (
-                    <p className="rounded-md border border-dashed border-slate-200 px-3 py-6 text-sm text-muted-foreground">
-                      この申請フォームには、まだ利用者からの申請がありません。
-                    </p>
-                  ) : (
-                    <ApplicationListTable
-                      rows={rows}
-                      getDetailHref={(row) =>
-                        buildSpaceApplicationDetailHref(row) ??
-                        `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
-                      }
-                      showApplicantEmail
-                    />
-                  )}
-                </section>
-              );
-            })
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>申請タイトル</TableHead>
+                  <TableHead>公開済み</TableHead>
+                  <TableHead className="text-right">未処理</TableHead>
+                  <TableHead className="text-right">処理済み</TableHead>
+                  <TableHead>詳細画面</TableHead>
+                  <TableHead>公開URL</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row) => (
+                  <TableRow key={row.definitionId}>
+                    <TableCell className="font-medium">{row.title}</TableCell>
+                    <TableCell>
+                      <FormDefinitionStatusBadge status={row.status} />
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.pendingCount}
+                    </TableCell>
+                    <TableCell className="text-right tabular-nums">
+                      {row.processedCount}
+                    </TableCell>
+                    <TableCell>
+                      {row.detailHref ? (
+                        <Button asChild variant="ghost" size="sm">
+                          <Link href={row.detailHref}>詳細</Link>
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      {row.publicHref ? (
+                        <Button asChild variant="outline" size="sm">
+                          <Link href={row.publicHref}>公開URL</Link>
+                        </Button>
+                      ) : (
+                        <span className="text-sm text-muted-foreground">-</span>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
         </CardContent>
       </Card>
@@ -167,6 +171,62 @@ function isFormSetupApplication(row: ApplicationRow): boolean {
   return (
     row.status === APPLICATION_STATUSES.draft ||
     row.status === APPLICATION_STATUSES.published
+  );
+}
+
+type ApplicationFormListRow = {
+  definitionId: string;
+  detailHref: string | null;
+  pendingCount: number;
+  processedCount: number;
+  publicHref: string | null;
+  status: string;
+  title: string;
+};
+
+function buildApplicationFormListRow(
+  definition: FormDefinitionRow,
+  applications: ApplicationRow[],
+  setupApplications: ApplicationRow[],
+  spaceId: string,
+): ApplicationFormListRow {
+  const relatedApplications = applications.filter(
+    (row) => row.formDefinitionId === definition.id && !isFormSetupApplication(row),
+  );
+  const setupApplication = setupApplications.find(
+    (row) => row.formDefinitionId === definition.id,
+  );
+  const detailHref = setupApplication
+    ? buildSpaceApplicationDetailHref(setupApplication) ??
+      `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(setupApplication.id)}`
+    : null;
+  const isPublished = definition.status === APPLICATION_STATUSES.published;
+
+  return {
+    definitionId: definition.id,
+    detailHref,
+    pendingCount: relatedApplications.filter(isPendingApplication).length,
+    processedCount: relatedApplications.filter(isProcessedApplication).length,
+    publicHref: isPublished
+      ? `/apply/${encodeURIComponent(definition.groupId || spaceId)}?formDefinitionId=${encodeURIComponent(definition.id)}`
+      : null,
+    status: definition.status,
+    title: definition.name,
+  };
+}
+
+function isPendingApplication(row: ApplicationRow): boolean {
+  return (
+    row.status === APPLICATION_STATUSES.submitted ||
+    row.status === APPLICATION_STATUSES.inReview ||
+    row.status === APPLICATION_STATUSES.returned
+  );
+}
+
+function isProcessedApplication(row: ApplicationRow): boolean {
+  return (
+    row.status === APPLICATION_STATUSES.approved ||
+    row.status === APPLICATION_STATUSES.rejected
   );
 }
 
