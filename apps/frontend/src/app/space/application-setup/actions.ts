@@ -9,6 +9,7 @@ import {
 } from "@/lib/server/backend-fetch";
 import {
   APPLICATION_SETUP_ERRORS,
+  APPLICATION_SETUP_ERROR_MESSAGES,
 } from "@/lib/constants/application-setup";
 import {
   FIELD_TYPES,
@@ -61,7 +62,8 @@ function unwrapData<T>(raw: unknown): T {
 
 function setupErrorRedirectUrl(base: string, error: unknown): string {
   const params = new URLSearchParams({
-    setupError: APPLICATION_SETUP_ERRORS.saveFailed,
+    toast: "error",
+    message: APPLICATION_SETUP_ERROR_MESSAGES[APPLICATION_SETUP_ERRORS.saveFailed],
   });
   if (error instanceof BackendHttpError) {
     const body = error.body as BackendErrorBody;
@@ -71,7 +73,7 @@ function setupErrorRedirectUrl(base: string, error: unknown): string {
     const detail = errorCode
       ? `${errorCode}: ${message}`
       : `${error.status}: ${message}`;
-    params.set("setupErrorDetail", detail);
+    params.set("message", `申請フォームの保存に失敗しました（${detail}）`);
   }
   return `${base}?${params.toString()}`;
 }
@@ -323,7 +325,14 @@ export async function submitApplicationSetupAction(
   const listPath = `/space/${encodeURIComponent(spaceId)}/applications`;
   const detailPath = `${listPath}/${encodeURIComponent(
     createdApplicationId,
-  )}?definitionId=${encodeURIComponent(createdDefinitionId)}`;
+  )}?${new URLSearchParams({
+    definitionId: createdDefinitionId,
+    toast: "success",
+    message:
+      applicationStatus === "published"
+        ? "申請フォームを公開しました"
+        : "申請フォームを下書き保存しました",
+  }).toString()}`;
   revalidatePath(redirectBase);
   revalidatePath(listPath);
   redirect(detailPath);
@@ -444,7 +453,11 @@ export async function updateApplicationSetupAction(
 
   const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(
     applicationId,
-  )}?definitionId=${encodeURIComponent(createdDefinitionId)}`;
+  )}?${new URLSearchParams({
+    definitionId: createdDefinitionId,
+    toast: "success",
+    message: "申請フォームを更新しました",
+  }).toString()}`;
   revalidatePath(redirectBase);
   revalidatePath(`/space/${encodeURIComponent(spaceId)}/applications`);
   revalidatePath(detailPath);

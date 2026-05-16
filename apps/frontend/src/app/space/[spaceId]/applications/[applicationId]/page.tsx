@@ -42,7 +42,7 @@ async function submitAction(spaceId: string, applicationId: string): Promise<voi
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
-  redirectToApplicationDetail(updated);
+  redirectToApplicationDetail(updated, "申請を提出しました");
 }
 
 async function resubmitAction(spaceId: string, applicationId: string): Promise<void> {
@@ -57,7 +57,7 @@ async function resubmitAction(spaceId: string, applicationId: string): Promise<v
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
-  redirectToApplicationDetail(updated);
+  redirectToApplicationDetail(updated, "申請を再提出しました");
 }
 
 async function approveAction(
@@ -77,7 +77,7 @@ async function approveAction(
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
-  redirectToApplicationDetail(updated);
+  redirectToApplicationDetail(updated, "申請を承認しました");
 }
 
 async function rejectAction(
@@ -97,7 +97,7 @@ async function rejectAction(
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
-  redirectToApplicationDetail(updated);
+  redirectToApplicationDetail(updated, "申請を却下しました");
 }
 
 async function returnAction(
@@ -122,7 +122,11 @@ async function returnAction(
   }
 
   if (fields.length === 0) {
-    return;
+    redirectToApplicationValidationError(
+      spaceId,
+      applicationId,
+      "差し戻し対象の項目を選択してください。",
+    );
   }
 
   let updated: ApplicationDetailViewModel;
@@ -141,18 +145,41 @@ async function returnAction(
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
-  redirectToApplicationDetail(updated);
+  redirectToApplicationDetail(updated, "申請を差し戻しました");
 }
 
-function redirectToApplicationDetail(application: ApplicationDetailViewModel): never {
+function redirectToApplicationDetail(
+  application: ApplicationDetailViewModel,
+  message?: string,
+): never {
   const detailHref = buildSpaceApplicationDetailHref(application);
   if (detailHref) {
     revalidatePath(detailHref);
     revalidatePath(`/space/${encodeURIComponent(application.groupId ?? "")}/applications`);
+    if (message) {
+      const params = new URLSearchParams({
+        toast: "success",
+        message,
+      });
+      redirect(`${detailHref}?${params.toString()}`);
+    }
     redirect(detailHref);
   }
 
   redirect("/space");
+}
+
+function redirectToApplicationValidationError(
+  spaceId: string,
+  applicationId: string,
+  message: string,
+): never {
+  const detailHref = buildSpaceApplicationDetailHref({
+    id: applicationId,
+    groupId: spaceId,
+  });
+  const params = new URLSearchParams({ actionError: message });
+  redirect(`${detailHref ?? "/space"}?${params.toString()}`);
 }
 
 function redirectToApplicationActionError(
@@ -165,7 +192,8 @@ function redirectToApplicationActionError(
     groupId: spaceId,
   });
   const params = new URLSearchParams({
-    actionError: applicationActionErrorMessage(error),
+    toast: "error",
+    message: applicationActionErrorMessage(error),
   });
   redirect(`${detailHref ?? "/space"}?${params.toString()}`);
 }

@@ -22,7 +22,7 @@ async function confirmPasswordResetAction(formData: FormData): Promise<void> {
     token.length === 0 ||
     typeof password !== "string"
   ) {
-    redirect("/password-reset?error=invalid_input");
+    redirect("/password-reset?formError=入力内容を確認してください");
   }
 
   const env = getServerAuthEnv();
@@ -36,13 +36,19 @@ async function confirmPasswordResetAction(formData: FormData): Promise<void> {
   });
 
   if (!res.ok) {
-    redirect(`/password-reset?token=${encodeURIComponent(token)}&error=reset_failed`);
+    const params = new URLSearchParams({
+      token,
+      toast: "error",
+      message:
+        "パスワードの再設定に失敗しました。リンクの有効期限を確認してください。",
+    });
+    redirect(`/password-reset?${params.toString()}`);
   }
-  redirect("/login?passwordReset=1");
+  redirect("/login?toast=success&message=パスワードを再設定しました");
 }
 
 type PageProps = {
-  searchParams?: Promise<{ token?: string; error?: string }>;
+  searchParams?: Promise<{ token?: string; error?: string; formError?: string }>;
 };
 
 export default async function PasswordResetPage({ searchParams }: PageProps) {
@@ -69,6 +75,11 @@ export default async function PasswordResetPage({ searchParams }: PageProps) {
               {params.error ? (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                   パスワードの再設定に失敗しました。リンクの有効期限を確認してください。
+                </div>
+              ) : null}
+              {params.formError ? (
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  {params.formError}
                 </div>
               ) : null}
               <div className="space-y-2">

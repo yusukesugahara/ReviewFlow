@@ -17,7 +17,7 @@ async function requestPasswordResetAction(formData: FormData): Promise<void> {
   "use server";
   const email = formData.get("email");
   if (typeof email !== "string" || email.trim().length === 0) {
-    redirect("/forgot-password?error=invalid_input");
+    redirect("/forgot-password?formError=メールアドレスを入力してください");
   }
 
   const env = getServerAuthEnv();
@@ -31,13 +31,15 @@ async function requestPasswordResetAction(formData: FormData): Promise<void> {
   });
 
   if (!res.ok) {
-    redirect("/forgot-password?error=request_failed");
+    redirect(
+      "/forgot-password?toast=error&message=パスワード再設定メールの送信に失敗しました",
+    );
   }
   redirect("/forgot-password?sent=1");
 }
 
 type PageProps = {
-  searchParams?: Promise<{ sent?: string; error?: string }>;
+  searchParams?: Promise<{ sent?: string; error?: string; formError?: string }>;
 };
 
 export default async function ForgotPasswordPage({ searchParams }: PageProps) {
@@ -63,6 +65,11 @@ export default async function ForgotPasswordPage({ searchParams }: PageProps) {
               {params.error ? (
                 <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
                   パスワード再設定メールの送信に失敗しました
+                </div>
+              ) : null}
+              {params.formError ? (
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  {params.formError}
                 </div>
               ) : null}
               <div className="space-y-2">

@@ -52,6 +52,7 @@ async function fetchAvailableUsers(
 type PageProps = {
   searchParams?: Promise<{
     error?: string;
+    formError?: string;
   }>;
 };
 
@@ -88,6 +89,7 @@ export default async function AdminSpacesPage({ searchParams }: PageProps) {
         canCreateSpace={canCreateSpace}
         currentUserId={me?.id ?? null}
         error={params.error}
+        formError={params.formError}
         isSystemAdmin={isSystemAdmin}
         spaces={groups.map((group) => {
           const members = membersByGroup.get(group.id) ?? [];
@@ -110,6 +112,7 @@ export default async function AdminSpacesPage({ searchParams }: PageProps) {
       <AdminSpacesView
         canCreateSpace={canCreateSpace}
         currentUserId={me?.id ?? null}
+        formError={params.formError}
         fetchErrorStatus={error instanceof BackendHttpError ? error.status : 500}
         isSystemAdmin={isSystemAdmin}
         spaces={[]}

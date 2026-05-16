@@ -44,7 +44,11 @@ type AvailableUserSummary = {
 };
 
 type PageProps = {
-  searchParams?: Promise<{ spaceId?: string; error?: string }>;
+  searchParams?: Promise<{
+    spaceId?: string;
+    error?: string;
+    formError?: string;
+  }>;
 };
 
 async function listSpaces(): Promise<GroupSummary[]> {
@@ -87,7 +91,19 @@ function redirectWithSpaceUsersError(
 ): never {
   const params = new URLSearchParams({
     spaceId: groupId,
-    error: spaceUsersErrorMessage(error, fallback),
+    toast: "error",
+    message: spaceUsersErrorMessage(error, fallback),
+  });
+  redirect(`/space/users?${params.toString()}`);
+}
+
+function redirectWithSpaceUsersValidationError(
+  groupId: string,
+  message: string,
+): never {
+  const params = new URLSearchParams({
+    spaceId: groupId,
+    formError: message,
   });
   redirect(`/space/users?${params.toString()}`);
 }
@@ -101,7 +117,10 @@ async function addSpaceMemberAction(
   const userId = formData.get("userId");
   const role = formData.get("role");
   if (typeof userId !== "string" || typeof role !== "string") {
-    return;
+    redirectWithSpaceUsersValidationError(
+      groupId,
+      "追加するユーザーとロールを選択してください",
+    );
   }
 
   try {
@@ -118,7 +137,12 @@ async function addSpaceMemberAction(
   }
 
   revalidatePath("/space/users");
-  redirect(`/space/users?spaceId=${encodeURIComponent(groupId)}`);
+  const params = new URLSearchParams({
+    spaceId: groupId,
+    toast: "success",
+    message: "スペースメンバーを追加しました",
+  });
+  redirect(`/space/users?${params.toString()}`);
 }
 
 export default async function SpaceUsersPage({ searchParams }: PageProps) {
@@ -155,6 +179,16 @@ export default async function SpaceUsersPage({ searchParams }: PageProps) {
             <CardContent className="pt-6">
               <p className="text-sm font-medium text-rose-700">
                 {params.error}
+              </p>
+            </CardContent>
+          </Card>
+        ) : null}
+
+        {params.formError ? (
+          <Card className="border-rose-200 bg-rose-50">
+            <CardContent className="pt-6">
+              <p className="text-sm font-medium text-rose-700">
+                {params.formError}
               </p>
             </CardContent>
           </Card>

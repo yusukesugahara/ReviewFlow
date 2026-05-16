@@ -18,15 +18,32 @@ async function createExportJobAction(formData: FormData): Promise<void> {
   const groupId = formData.get("groupId");
   const me = await getCurrentSessionUser();
   if (!me || typeof groupId !== "string" || groupId.length === 0) {
-    return;
+    redirect(
+      "/admin/export-jobs?formError=エクスポート対象のスペースを選択してください",
+    );
   }
-  const createdRaw = await backendAuthFetchJson("/export-jobs", {
-    method: "POST",
-    body: { groupId },
-  });
-  const job = unwrapData<ExportJob>(createdRaw);
+  let job: ExportJob;
+  try {
+    const createdRaw = await backendAuthFetchJson("/export-jobs", {
+      method: "POST",
+      body: { groupId },
+    });
+    job = unwrapData<ExportJob>(createdRaw);
+  } catch (error) {
+    const message =
+      error instanceof BackendHttpError
+        ? `CSVジョブの作成に失敗しました（status: ${error.status}）`
+        : "CSVジョブの作成に失敗しました";
+    const params = new URLSearchParams({ toast: "error", message });
+    redirect(`/admin/export-jobs?${params.toString()}`);
+  }
   revalidatePath("/admin/export-jobs");
-  redirect(`/admin/export-jobs?jobId=${encodeURIComponent(job.id)}`);
+  const params = new URLSearchParams({
+    jobId: job.id,
+    toast: "success",
+    message: "CSVジョブを作成しました",
+  });
+  redirect(`/admin/export-jobs?${params.toString()}`);
 }
 
 function unwrapData<T>(raw: unknown): T {
@@ -50,7 +67,7 @@ function getJobStatusVariant(status: string): "default" | "secondary" | "destruc
 }
 
 type ExportJobsPageProps = {
-  searchParams?: Promise<{ jobId?: string }>;
+  searchParams?: Promise<{ jobId?: string; formError?: string }>;
 };
 
 export default async function ExportJobsPage({ searchParams }: ExportJobsPageProps) {
@@ -91,6 +108,11 @@ export default async function ExportJobsPage({ searchParams }: ExportJobsPagePro
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {params.formError ? (
+            <p className="mb-4 text-sm font-medium text-destructive">
+              {params.formError}
+            </p>
+          ) : null}
           <form action={createExportJobAction}>
             <input type="hidden" name="groupId" value={groupId} />
             <Button type="submit">新しいCSVジョブを作成</Button>

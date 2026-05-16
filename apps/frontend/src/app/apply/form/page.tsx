@@ -28,7 +28,11 @@ type FormDefinition = {
 };
 
 type PageProps = {
-  searchParams?: Promise<{ error?: string; submitted?: string }>;
+  searchParams?: Promise<{
+    error?: string;
+    formError?: string;
+    submitted?: string;
+  }>;
 };
 
 async function submitPublicApplicationAction(formData: FormData): Promise<void> {
@@ -43,7 +47,7 @@ async function submitPublicApplicationAction(formData: FormData): Promise<void> 
     typeof formDefinitionId !== "string" ||
     typeof fieldsJson !== "string"
   ) {
-    redirect("/apply/form?error=invalid_input");
+    redirect("/apply/form?formError=入力内容を確認してください");
   }
 
   let fields: DynamicFormField[] = [];
@@ -53,7 +57,7 @@ async function submitPublicApplicationAction(formData: FormData): Promise<void> 
       fields = parsed.filter(isDynamicFormField);
     }
   } catch {
-    redirect("/apply/form?error=invalid_input");
+    redirect("/apply/form?formError=入力内容を確認してください");
   }
 
   try {
@@ -68,9 +72,16 @@ async function submitPublicApplicationAction(formData: FormData): Promise<void> 
   } catch (error) {
     const message =
       error instanceof BackendHttpError
-        ? encodeURIComponent(errorMessageFromBody(error.body))
+        ? errorMessageFromBody(error.body)
         : "submit_failed";
-    redirect(`/apply/form?error=${message}`);
+    const params = new URLSearchParams({
+      toast: "error",
+      message:
+        message === "submit_failed"
+          ? "申請の送信に失敗しました"
+          : `申請の送信に失敗しました。${message}`,
+    });
+    redirect(`/apply/form?${params.toString()}`);
   }
 
   redirect("/apply/form?submitted=1");
@@ -130,6 +141,11 @@ export default async function PublicApplicationFormPage({
               {query.error ? (
                 <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
                   申請の送信に失敗しました。{query.error}
+                </p>
+              ) : null}
+              {query.formError ? (
+                <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                  {query.formError}
                 </p>
               ) : null}
               <form action={submitPublicApplicationAction} className="space-y-6">

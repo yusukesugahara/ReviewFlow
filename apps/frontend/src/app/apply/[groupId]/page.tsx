@@ -12,7 +12,9 @@ async function requestAccessAction(formData: FormData): Promise<void> {
   const email = formData.get("email");
 
   if (typeof groupId !== "string" || typeof email !== "string" || email.trim().length === 0) {
-    redirect(`/apply/${encodeURIComponent(String(groupId ?? ""))}?error=invalid_input`);
+    redirect(
+      `/apply/${encodeURIComponent(String(groupId ?? ""))}?formError=メールアドレスを入力してください`,
+    );
   }
 
   const env = getServerAuthEnv();
@@ -32,7 +34,9 @@ async function requestAccessAction(formData: FormData): Promise<void> {
   });
 
   if (!res.ok) {
-    redirect(`/apply/${encodeURIComponent(groupId)}?error=send_failed`);
+    redirect(
+      `/apply/${encodeURIComponent(groupId)}?toast=error&message=フォーム案内の送信に失敗しました`,
+    );
   }
 
   redirect(`/apply/${encodeURIComponent(groupId)}?sent=1`);
@@ -40,7 +44,12 @@ async function requestAccessAction(formData: FormData): Promise<void> {
 
 type PageProps = {
   params: Promise<{ groupId: string }>;
-  searchParams?: Promise<{ sent?: string; error?: string; formDefinitionId?: string }>;
+  searchParams?: Promise<{
+    sent?: string;
+    error?: string;
+    formError?: string;
+    formDefinitionId?: string;
+  }>;
 };
 
 export default async function PublicApplicationAccessPage({
@@ -72,6 +81,11 @@ export default async function PublicApplicationAccessPage({
           {error ? (
             <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
               送信に失敗しました。時間をおいて再度お試しください。
+            </div>
+          ) : null}
+          {query.formError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              {query.formError}
             </div>
           ) : null}
 

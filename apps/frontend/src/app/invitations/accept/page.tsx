@@ -13,7 +13,7 @@ async function acceptInvitationAction(formData: FormData): Promise<void> {
   const password = formData.get("password");
   const next = formData.get("next");
   if (typeof token !== "string" || typeof password !== "string") {
-    redirect("/invitations/accept?error=invalid_input");
+    redirect("/invitations/accept?formError=入力内容を確認してください");
   }
 
   const env = getServerAuthEnv();
@@ -31,31 +31,39 @@ async function acceptInvitationAction(formData: FormData): Promise<void> {
   });
 
   if (!res.ok) {
-    redirect(
-      `/invitations/accept?error=accept_failed${
-        typeof next === "string" && next.length > 0
-          ? `&next=${encodeURIComponent(next)}`
-          : ""
-      }`,
-    );
+    const params = new URLSearchParams({
+      toast: "error",
+      message: "招待の受諾に失敗しました。入力内容を確認してください。",
+    });
+    if (typeof next === "string" && next.length > 0) {
+      params.set("next", next);
+    }
+    redirect(`/invitations/accept?${params.toString()}`);
   }
-  redirect(
-    `/login${
-      typeof next === "string" && next.length > 0
-        ? `?next=${encodeURIComponent(next)}`
-        : ""
-    }`,
-  );
+  const params = new URLSearchParams({
+    toast: "success",
+    message: "招待を受諾しました。ログインしてください。",
+  });
+  if (typeof next === "string" && next.length > 0) {
+    params.set("next", next);
+  }
+  redirect(`/login?${params.toString()}`);
 }
 
 type PageProps = {
-  searchParams?: Promise<{ token?: string; error?: string; next?: string }>;
+  searchParams?: Promise<{
+    token?: string;
+    error?: string;
+    formError?: string;
+    next?: string;
+  }>;
 };
 
 export default async function InvitationAcceptPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
   const presetToken = params.token ?? "";
   const error = params.error;
+  const formError = params.formError;
   const next = params.next ?? "";
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
@@ -72,6 +80,11 @@ export default async function InvitationAcceptPage({ searchParams }: PageProps) 
               <p className="text-sm text-destructive">
                 招待の受諾に失敗しました。入力内容を確認してください。
               </p>
+            </div>
+          ) : null}
+          {formError ? (
+            <div className="mb-4 rounded-md border border-destructive/20 bg-destructive/10 p-3">
+              <p className="text-sm text-destructive">{formError}</p>
             </div>
           ) : null}
           <form action={acceptInvitationAction} className="space-y-4">

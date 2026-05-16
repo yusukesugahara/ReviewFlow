@@ -33,7 +33,19 @@ function redirectWithSpaceUsersError(
 ): never {
   const params = new URLSearchParams({
     spaceId: groupId,
-    error: spaceUsersErrorMessage(error, fallback),
+    toast: "error",
+    message: spaceUsersErrorMessage(error, fallback),
+  });
+  redirect(`/space/users?${params.toString()}`);
+}
+
+function redirectWithSpaceUsersValidationError(
+  groupId: string,
+  message: string,
+): never {
+  const params = new URLSearchParams({
+    spaceId: groupId,
+    formError: message,
   });
   redirect(`/space/users?${params.toString()}`);
 }
@@ -55,7 +67,12 @@ export async function removeSpaceMemberAction(
   }
 
   revalidatePath("/space/users");
-  redirect(`/space/users?spaceId=${encodeURIComponent(groupId)}`);
+  const params = new URLSearchParams({
+    spaceId: groupId,
+    toast: "success",
+    message: "スペースメンバーを削除しました",
+  });
+  redirect(`/space/users?${params.toString()}`);
 }
 
 export async function updateSpaceMemberRoleAction(
@@ -66,7 +83,10 @@ export async function updateSpaceMemberRoleAction(
   const role = formData.get("role");
 
   if (typeof role !== "string") {
-    return;
+    redirectWithSpaceUsersValidationError(
+      groupId,
+      "更新するスペースロールを選択してください",
+    );
   }
 
   try {
@@ -83,5 +103,10 @@ export async function updateSpaceMemberRoleAction(
   }
 
   revalidatePath("/space/users");
-  redirect(`/space/users?spaceId=${encodeURIComponent(groupId)}`);
+  const params = new URLSearchParams({
+    spaceId: groupId,
+    toast: "success",
+    message: "スペースロールを更新しました",
+  });
+  redirect(`/space/users?${params.toString()}`);
 }

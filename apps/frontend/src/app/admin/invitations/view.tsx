@@ -36,6 +36,7 @@ type AdminInvitationsViewProps = {
   role?: string;
   expiresAt?: string;
   error?: string;
+  formError?: string;
   currentUserId: string | null;
   userListError?: string;
   users: TenantUserSummary[];
@@ -47,6 +48,7 @@ export function AdminInvitationsView({
   role,
   expiresAt,
   error,
+  formError,
   currentUserId,
   userListError,
   users,
@@ -70,6 +72,11 @@ export function AdminInvitationsView({
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {formError ? (
+            <p className="mb-4 text-sm font-medium text-red-700">
+              {formError}
+            </p>
+          ) : null}
           <form action={createInvitationAction} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">メールアドレス</Label>

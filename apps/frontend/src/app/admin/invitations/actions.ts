@@ -107,7 +107,7 @@ export async function createInvitationAction(
   const role = formData.get("role");
 
   if (typeof email !== "string" || typeof role !== "string") {
-    return;
+    redirect("/admin/invitations?formError=入力内容を確認してください");
   }
 
   let createdRaw: unknown;
@@ -118,7 +118,8 @@ export async function createInvitationAction(
     });
   } catch (error) {
     const nextParams = new URLSearchParams({
-      error: invitationErrorMessage(error),
+      toast: "error",
+      message: invitationErrorMessage(error),
     });
     redirect(`/admin/invitations?${nextParams.toString()}`);
   }
@@ -142,13 +143,14 @@ export async function deleteUserAction(userId: string): Promise<void> {
     });
   } catch (error) {
     const nextParams = new URLSearchParams({
-      error: userDeleteErrorMessage(error),
+      toast: "error",
+      message: userDeleteErrorMessage(error),
     });
     redirect(`/admin/invitations?${nextParams.toString()}`);
   }
 
   revalidatePath("/admin/invitations");
-  redirect("/admin/invitations");
+  redirect("/admin/invitations?toast=success&message=ユーザーを削除しました");
 }
 
 export async function restoreUserAction(userId: string): Promise<void> {
@@ -159,11 +161,12 @@ export async function restoreUserAction(userId: string): Promise<void> {
     });
   } catch (error) {
     const nextParams = new URLSearchParams({
-      error: userRestoreErrorMessage(error),
+      toast: "error",
+      message: userRestoreErrorMessage(error),
     });
     redirect(`/admin/invitations?${nextParams.toString()}`);
   }
 
   revalidatePath("/admin/invitations");
-  redirect("/admin/invitations");
+  redirect("/admin/invitations?toast=success&message=ユーザーを復活しました");
 }

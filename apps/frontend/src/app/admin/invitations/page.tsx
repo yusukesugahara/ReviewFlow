@@ -14,6 +14,7 @@ type PageProps = {
     role?: string;
     expiresAt?: string;
     error?: string;
+    formError?: string;
   }>;
 };
 

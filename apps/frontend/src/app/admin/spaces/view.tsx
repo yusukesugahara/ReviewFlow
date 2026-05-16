@@ -18,6 +18,7 @@ type AdminSpacesViewProps = {
   canCreateSpace: boolean;
   currentUserId: string | null;
   error?: string;
+  formError?: string;
   fetchErrorStatus?: number;
   isSystemAdmin: boolean;
   spaces: SpaceListItem[];
@@ -28,6 +29,7 @@ export function AdminSpacesView({
   canCreateSpace,
   currentUserId,
   error,
+  formError,
   fetchErrorStatus,
   isSystemAdmin,
   spaces,
@@ -52,6 +54,14 @@ export function AdminSpacesView({
         users={users}
         createSpaceAction={createSpaceAction}
       />
+
+      {formError ? (
+        <Card className="border-red-200 bg-red-50/40">
+          <CardContent className="pt-6">
+            <p className="text-sm font-medium text-red-700">{formError}</p>
+          </CardContent>
+        </Card>
+      ) : null}
 
       {error ? (
         <Card className="border-red-200 bg-red-50/40">
