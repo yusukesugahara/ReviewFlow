@@ -95,6 +95,26 @@ See also:
 - [Coding rules](docs/11_coding_rules.md)
 - [Agent rules](AGENTS.md)
 
+## Documentation
+
+The `docs/` directory is the engineering reference for the product. GitHub renders Markdown tables and Mermaid diagrams directly, so architecture, ER, and workflow documents can be reviewed as structured tables and diagrams without a separate viewer.
+
+| Document | Purpose |
+| --- | --- |
+| [Overview](docs/00_overview.md) | Product scope, core capabilities, and documentation index. |
+| [Domain model](docs/02_domain_model.md) | Business concepts and relationships. |
+| [ER diagram](docs/03_er_diagram.md) | Table definitions, indexes, and Mermaid ER overview. |
+| [API spec](docs/04_api_spec.md) | API behavior and contract notes. |
+| [Architecture](docs/05_architecture.md) | Frontend/backend/database responsibility boundaries. |
+| [Auth and multitenancy](docs/08_auth_and_multitenant.md) | Tenant, role, and space authorization rules. |
+| [Workflow and approval](docs/09_workflow_and_approval.md) | Application status transitions and approval rules. |
+
+Mermaid is installed at the repository root for documentation tooling and future rendering/validation scripts:
+
+```bash
+npm install
+```
+
 ## Prerequisites
 
 - Node.js LTS

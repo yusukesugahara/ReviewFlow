@@ -1,5 +1,53 @@
 # テーブル定義（テキストER）
 
+## ER概要
+
+```mermaid
+erDiagram
+  tenants ||--o{ users : owns
+  tenants ||--o{ groups : owns
+  tenants ||--o{ invitations : owns
+  tenants ||--o{ audit_logs : records
+
+  users ||--o{ group_members : joins
+  users ||--o{ invitations : invites
+  users ||--o{ applications : submits
+  users ||--o{ application_approvals : acts
+
+  groups ||--o{ group_members : has
+  groups ||--o{ form_definitions : has
+  groups ||--o{ approval_flows : has
+  groups ||--o{ applications : has
+  groups ||--o{ export_jobs : has
+
+  form_definitions ||--o{ form_fields : defines
+  form_definitions ||--o{ approval_flows : uses
+  form_definitions ||--o{ applications : receives
+
+  approval_flows ||--o{ approval_steps : contains
+  approval_flows ||--o{ applications : routes
+  approval_steps ||--o{ application_approvals : produces
+
+  applications ||--o{ application_field_values : stores
+  applications ||--o{ application_approvals : records
+  applications ||--o{ correction_requests : receives
+  correction_requests ||--o{ correction_request_items : contains
+  form_fields ||--o{ application_field_values : captures
+  form_fields ||--o{ correction_request_items : targets
+```
+
+## 主要テーブル分類
+
+| 分類 | テーブル | 役割 |
+| --- | --- | --- |
+| テナント基盤 | `tenants`, `users`, `invitations` | 組織、ユーザー、招待を管理する。 |
+| スペース管理 | `groups`, `group_members` | スペースとスペース単位のロールを管理する。 |
+| フォーム定義 | `form_definitions`, `form_fields` | 申請フォームの構造を管理する。 |
+| 承認定義 | `approval_flows`, `approval_steps` | フォームごとの承認ルートを管理する。 |
+| 申請実行 | `applications`, `application_field_values`, `application_approvals` | 申請データ、入力値、承認操作を保持する。 |
+| 差し戻し | `correction_requests`, `correction_request_items` | 差し戻し理由と修正対象フィールドを保持する。 |
+| 運用 | `export_jobs`, `audit_logs` | CSV出力ジョブと監査ログを管理する。 |
+
 ## tenants
 - id: string (PK)
 - name: string

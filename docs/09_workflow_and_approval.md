@@ -1,10 +1,34 @@
 # 申請ステータス
+
+```mermaid
+stateDiagram-v2
+  [*] --> draft
+  draft --> submitted: submit
+  submitted --> in_review: review starts
+  in_review --> in_review: intermediate approval
+  in_review --> returned: return with correction request
+  returned --> submitted: resubmit
+  in_review --> approved: final approval
+  in_review --> rejected: reject
+  approved --> [*]
+  rejected --> [*]
+```
+
 - draft
 - submitted
 - in_review
 - returned
 - approved
 - rejected
+
+| ステータス | 意味 | 主な遷移元 | 主な遷移先 |
+| --- | --- | --- | --- |
+| `draft` | 申請の下書き | 新規作成 | `submitted` |
+| `submitted` | 申請者が提出済み | `draft`, `returned` | `in_review` |
+| `in_review` | 承認者による確認中 | `submitted`, 中間承認 | `returned`, `approved`, `rejected`, 次ステップの `in_review` |
+| `returned` | 修正依頼付きで差し戻し | `in_review` | `submitted` |
+| `approved` | 最終承認済み | `in_review` | 終了 |
+| `rejected` | 却下済み | `in_review` | 終了 |
 
 ## 基本フロー
 1. テナントユーザーが申請作成
