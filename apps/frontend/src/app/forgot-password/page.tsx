@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getServerAuthEnv } from "@/lib/env";
+import { backendFetchJson } from "@/lib/server/backend-fetch";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -20,17 +20,12 @@ async function requestPasswordResetAction(formData: FormData): Promise<void> {
     redirect("/forgot-password?formError=メールアドレスを入力してください");
   }
 
-  const env = getServerAuthEnv();
-  const res = await fetch(`${env.apiBaseUrl}/auth/password-reset/request`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": env.INTERNAL_API_KEY,
-    },
-    body: JSON.stringify({ email: email.trim() }),
-  });
-
-  if (!res.ok) {
+  try {
+    await backendFetchJson("/auth/password-reset/request", {
+      method: "POST",
+      body: { email: email.trim() },
+    });
+  } catch {
     redirect(
       "/forgot-password?toast=error&message=パスワード再設定メールの送信に失敗しました",
     );

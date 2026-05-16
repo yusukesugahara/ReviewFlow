@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerAuthEnv } from "@/lib/env";
+import { backendFetchJson } from "@/lib/server/backend-fetch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,21 +16,16 @@ async function acceptInvitationAction(formData: FormData): Promise<void> {
     redirect("/invitations/accept?formError=入力内容を確認してください");
   }
 
-  const env = getServerAuthEnv();
-  const res = await fetch(`${env.apiBaseUrl}/invitations/accept`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": env.INTERNAL_API_KEY,
-    },
-    body: JSON.stringify({
+  try {
+    await backendFetchJson("/invitations/accept", {
+      method: "POST",
+      body: {
       token,
       name: typeof name === "string" && name.trim().length > 0 ? name : undefined,
       password,
-    }),
-  });
-
-  if (!res.ok) {
+      },
+    });
+  } catch {
     const params = new URLSearchParams({
       toast: "error",
       message: "招待の受諾に失敗しました。入力内容を確認してください。",

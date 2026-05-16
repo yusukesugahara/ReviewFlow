@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getServerAuthEnv } from "@/lib/env";
+import { backendFetchJson } from "@/lib/server/backend-fetch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,23 +17,19 @@ async function requestAccessAction(formData: FormData): Promise<void> {
     );
   }
 
-  const env = getServerAuthEnv();
-  const accessUrl = new URL(
-    `${env.apiBaseUrl}/form-definitions/groups/${groupId}/request-access`,
-  );
-  if (typeof formDefinitionId === "string" && formDefinitionId.length > 0) {
-    accessUrl.searchParams.set("formDefinitionId", formDefinitionId);
-  }
-  const res = await fetch(accessUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": env.INTERNAL_API_KEY,
-    },
-    body: JSON.stringify({ email: email.trim() }),
-  });
-
-  if (!res.ok) {
+  const query =
+    typeof formDefinitionId === "string" && formDefinitionId.length > 0
+      ? `?formDefinitionId=${encodeURIComponent(formDefinitionId)}`
+      : "";
+  try {
+    await backendFetchJson(
+      `/form-definitions/groups/${encodeURIComponent(groupId)}/request-access${query}`,
+      {
+        method: "POST",
+        body: { email: email.trim() },
+      },
+    );
+  } catch {
     redirect(
       `/apply/${encodeURIComponent(groupId)}?toast=error&message=フォーム案内の送信に失敗しました`,
     );

@@ -1,6 +1,8 @@
 import "server-only";
 
 import { cookies } from "next/headers";
+import createClient from "openapi-fetch";
+import type { paths } from "@/lib/api-schema";
 import { getServerAuthEnv } from "@/lib/env";
 import {
   ACCESS_TOKEN_COOKIE_NAME,
@@ -20,8 +22,26 @@ export class BackendHttpError extends Error {
 type BackendFetchOptions = {
   method?: "GET" | "POST" | "PATCH" | "DELETE";
   body?: unknown;
-  headers?: HeadersInit;
+  headers?: Record<string, string>;
 };
+
+type OpenApiFetchOptions = {
+  body?: unknown;
+  cache?: RequestCache;
+  headers?: Record<string, string>;
+  params?: { query?: Record<string, string> };
+};
+
+type OpenApiFetchResult = {
+  data?: unknown;
+  error?: unknown;
+  response: Response;
+};
+
+type OpenApiMethod = (
+  path: string,
+  options: OpenApiFetchOptions,
+) => Promise<OpenApiFetchResult>;
 
 export function errorMessageFromBody(body: unknown): string {
   if (body && typeof body === "object" && "message" in body) {
@@ -42,26 +62,37 @@ export async function backendFetchJson(
 ): Promise<unknown> {
   const env = getServerAuthEnv();
   const hasBody = options.body !== undefined;
-  const res = await fetch(`${env.apiBaseUrl}${path}`, {
+  const client = createClient<paths>({ baseUrl: env.apiBaseUrl });
+  const method = options.method ?? "GET";
+  const [pathname, rawQuery] = path.split("?", 2);
+  const query = rawQuery
+    ? Object.fromEntries(new URLSearchParams(rawQuery).entries())
+    : undefined;
+  const headers = {
+    ...(hasBody ? { "Content-Type": "application/json" } : {}),
+    "X-API-Key": env.INTERNAL_API_KEY,
+    ...(options.headers ?? {}),
+  };
+  const requestOptions: OpenApiFetchOptions = {
     cache: "no-store",
-    method: options.method ?? "GET",
-    headers: {
-      ...(hasBody ? { "Content-Type": "application/json" } : {}),
-      "X-API-Key": env.INTERNAL_API_KEY,
-      ...(options.headers ?? {}),
-    },
-    ...(hasBody ? { body: JSON.stringify(options.body) } : {}),
-  });
+    headers,
+    ...(query ? { params: { query } } : {}),
+    ...(hasBody ? { body: options.body } : {}),
+  };
+  const request = client[method] as OpenApiMethod;
+  const { data, error, response } = await request(
+    pathname ?? path,
+    requestOptions,
+  );
 
-  const body: unknown = await res.json().catch(() => ({}));
-  if (!res.ok) {
+  if (!response.ok) {
     throw new BackendHttpError(
-      res.status,
-      body,
+      response.status,
+      error ?? {},
       `backend request failed: ${path}`,
     );
   }
-  return body;
+  return data ?? {};
 }
 
 export async function backendAuthFetchJson(

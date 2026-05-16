@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { getServerAuthEnv } from "@/lib/env";
+import { backendFetchJson } from "@/lib/server/backend-fetch";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -25,17 +25,12 @@ async function confirmPasswordResetAction(formData: FormData): Promise<void> {
     redirect("/password-reset?formError=入力内容を確認してください");
   }
 
-  const env = getServerAuthEnv();
-  const res = await fetch(`${env.apiBaseUrl}/auth/password-reset/confirm`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": env.INTERNAL_API_KEY,
-    },
-    body: JSON.stringify({ token, password }),
-  });
-
-  if (!res.ok) {
+  try {
+    await backendFetchJson("/auth/password-reset/confirm", {
+      method: "POST",
+      body: { token, password },
+    });
+  } catch {
     const params = new URLSearchParams({
       token,
       toast: "error",
