@@ -46,6 +46,8 @@ services:
       dockerfile: apps/frontend/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_HOST_PORT:-3002}
+        INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
+        INTERNAL_API_ORIGIN: http://backend:3000
     user: "0:0"
     ports:
       - "${FRONTEND_HOST_PORT:-3001}:3000"

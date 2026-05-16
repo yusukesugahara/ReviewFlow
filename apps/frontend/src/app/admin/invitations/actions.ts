@@ -2,10 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  backendAuthFetchJson,
-  BackendHttpError,
-} from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
 
 type InvitationResponse = {
   id: string;
@@ -21,8 +19,32 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
+type ApiFailure = { status: number; body: unknown };
+type TenantRole = "tenant_admin" | "tenant_user";
+
+async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+function isApiFailure(error: unknown): error is ApiFailure {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    typeof (error as { status?: unknown }).status === "number" &&
+    "body" in error
+  );
+}
+
+function isTenantRole(role: string): role is TenantRole {
+  return role === "tenant_admin" || role === "tenant_user";
+}
+
 function invitationErrorMessage(error: unknown) {
-  if (!(error instanceof BackendHttpError)) {
+  if (!isApiFailure(error)) {
     return "招待の作成に失敗しました";
   }
 
@@ -54,7 +76,7 @@ function invitationErrorMessage(error: unknown) {
 }
 
 function userDeleteErrorMessage(error: unknown) {
-  if (!(error instanceof BackendHttpError)) {
+  if (!isApiFailure(error)) {
     return "ユーザーの削除に失敗しました";
   }
 
@@ -79,7 +101,7 @@ function userDeleteErrorMessage(error: unknown) {
 }
 
 function userRestoreErrorMessage(error: unknown) {
-  if (!(error instanceof BackendHttpError)) {
+  if (!isApiFailure(error)) {
     return "ユーザーの復活に失敗しました";
   }
 
@@ -106,16 +128,20 @@ export async function createInvitationAction(
   const email = formData.get("email");
   const role = formData.get("role");
 
-  if (typeof email !== "string" || typeof role !== "string") {
+  if (typeof email !== "string" || typeof role !== "string" || !isTenantRole(role)) {
     redirect("/admin/invitations?formError=入力内容を確認してください");
   }
 
   let createdRaw: unknown;
   try {
-    createdRaw = await backendAuthFetchJson("/invitations", {
-      method: "POST",
+    const response = await client.POST("/invitations", {
       body: { email: email.trim(), role },
+      headers: await authHeadersOrRedirect(),
     });
+    if (!response.response.ok || !response.data) {
+      throw { status: response.response.status, body: response.error };
+    }
+    createdRaw = response.data;
   } catch (error) {
     const nextParams = new URLSearchParams({
       toast: "error",
@@ -138,9 +164,13 @@ export async function createInvitationAction(
 
 export async function deleteUserAction(userId: string): Promise<void> {
   try {
-    await backendAuthFetchJson(`/users/${userId}`, {
-      method: "DELETE",
+    const response = await client.DELETE("/users/{id}", {
+      params: { path: { id: userId } },
+      headers: await authHeadersOrRedirect(),
     });
+    if (!response.response.ok) {
+      throw { status: response.response.status, body: response.error };
+    }
   } catch (error) {
     const nextParams = new URLSearchParams({
       toast: "error",
@@ -155,10 +185,13 @@ export async function deleteUserAction(userId: string): Promise<void> {
 
 export async function restoreUserAction(userId: string): Promise<void> {
   try {
-    await backendAuthFetchJson(`/users/${userId}/restore`, {
-      method: "PATCH",
-      body: {},
+    const response = await client.PATCH("/users/{id}/restore", {
+      params: { path: { id: userId } },
+      headers: await authHeadersOrRedirect(),
     });
+    if (!response.response.ok) {
+      throw { status: response.response.status, body: response.error };
+    }
   } catch (error) {
     const nextParams = new URLSearchParams({
       toast: "error",

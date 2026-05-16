@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import { AppSidebar, type AppSidebarSpace } from "@/components/app-sidebar";
-import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
-import { getCurrentSessionUser } from "@/lib/server/session";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
 
 export const dynamic = "force-dynamic";
 
@@ -17,9 +17,18 @@ function unwrapData<T>(raw: unknown): T {
 }
 
 async function getMySpaces(): Promise<AppSidebarSpace[]> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    return [];
+  }
   try {
-    const raw = await backendAuthFetchJson("/groups");
-    return unwrapData<{ groups?: AppSidebarSpace[] }>(raw).groups ?? [];
+    const response = await client.GET("/groups", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.response.ok || !response.data) {
+      return [];
+    }
+    return unwrapData<{ groups?: AppSidebarSpace[] }>(response.data).groups ?? [];
   } catch {
     return [];
   }

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { backendFetchJson } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -21,10 +21,12 @@ async function requestPasswordResetAction(formData: FormData): Promise<void> {
   }
 
   try {
-    await backendFetchJson("/auth/password-reset/request", {
-      method: "POST",
+    const response = await client.POST("/auth/password-reset/request", {
       body: { email: email.trim() },
     });
+    if (!response.response.ok) {
+      throw new Error("password reset request failed");
+    }
   } catch {
     redirect(
       "/forgot-password?toast=error&message=パスワード再設定メールの送信に失敗しました",

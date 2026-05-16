@@ -2,13 +2,30 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  backendAuthFetchJson,
-  BackendHttpError,
-} from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
+
+type ApiFailure = { status: number };
+type SpaceRole = "admin" | "user";
+
+async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+function isApiFailure(error: unknown): error is ApiFailure {
+  return !!error && typeof error === "object" && typeof (error as ApiFailure).status === "number";
+}
+
+function isSpaceRole(role: string): role is SpaceRole {
+  return role === "admin" || role === "user";
+}
 
 function spaceUsersErrorMessage(error: unknown, fallback: string) {
-  if (!(error instanceof BackendHttpError)) {
+  if (!isApiFailure(error)) {
     return fallback;
   }
   if (error.status === 403) {
@@ -55,9 +72,13 @@ export async function removeSpaceMemberAction(
   userId: string,
 ): Promise<void> {
   try {
-    await backendAuthFetchJson(`/groups/${groupId}/members/${userId}`, {
-      method: "DELETE",
+    const response = await client.DELETE("/groups/{groupId}/members/{userId}", {
+      params: { path: { groupId, userId } },
+      headers: await authHeadersOrRedirect(),
     });
+    if (!response.response.ok) {
+      throw { status: response.response.status };
+    }
   } catch (error) {
     redirectWithSpaceUsersError(
       groupId,
@@ -82,7 +103,7 @@ export async function updateSpaceMemberRoleAction(
 ): Promise<void> {
   const role = formData.get("role");
 
-  if (typeof role !== "string") {
+  if (typeof role !== "string" || !isSpaceRole(role)) {
     redirectWithSpaceUsersValidationError(
       groupId,
       "更新するスペースロールを選択してください",
@@ -90,10 +111,14 @@ export async function updateSpaceMemberRoleAction(
   }
 
   try {
-    await backendAuthFetchJson(`/groups/${groupId}/members/${userId}/role`, {
-      method: "PATCH",
+    const response = await client.PATCH("/groups/{groupId}/members/{userId}/role", {
+      params: { path: { groupId, userId } },
       body: { role },
+      headers: await authHeadersOrRedirect(),
     });
+    if (!response.response.ok) {
+      throw { status: response.response.status };
+    }
   } catch (error) {
     redirectWithSpaceUsersError(
       groupId,

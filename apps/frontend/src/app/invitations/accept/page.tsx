@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { backendFetchJson } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,14 +17,16 @@ async function acceptInvitationAction(formData: FormData): Promise<void> {
   }
 
   try {
-    await backendFetchJson("/invitations/accept", {
-      method: "POST",
+    const response = await client.POST("/invitations/accept", {
       body: {
-      token,
-      name: typeof name === "string" && name.trim().length > 0 ? name : undefined,
-      password,
+        token,
+        name: typeof name === "string" && name.trim().length > 0 ? name : undefined,
+        password,
       },
     });
+    if (!response.response.ok) {
+      throw new Error("invitation accept failed");
+    }
   } catch {
     const params = new URLSearchParams({
       toast: "error",

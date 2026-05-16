@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
-import { getCurrentSessionUser } from "@/lib/server/session";
+import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
 
 type PageProps = {
   searchParams?: Promise<{ status?: string; spaceId?: string }>;
@@ -38,10 +38,19 @@ async function getFallbackSpaceContext(): Promise<{
   spaceId: string;
   userRoles: string[];
 }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
   const [spacesRaw, me] = await Promise.all([
-    backendAuthFetchJson("/groups"),
+    client.GET("/groups", {
+      headers: { Authorization: `Bearer ${accessToken}` },
+    }),
     getCurrentSessionUser(),
   ]);
-  const spaces = unwrapData<{ groups?: Space[] }>(spacesRaw).groups ?? [];
+  const spaces =
+    spacesRaw.response.ok && spacesRaw.data
+      ? unwrapData<{ groups?: Space[] }>(spacesRaw.data).groups ?? []
+      : [];
   return { spaceId: spaces[0]?.id ?? "", userRoles: me?.roles ?? [] };
 }

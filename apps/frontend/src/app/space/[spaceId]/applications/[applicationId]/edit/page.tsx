@@ -6,7 +6,9 @@ import {
 } from "@/app/space/_components/application-setup-draft-form";
 import type { ApprovalStepItem } from "@/app/space/_components/approval-steps-builder";
 import { updateApplicationSetupAction } from "@/app/space/application-setup/actions";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
+import { redirect } from "next/navigation";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -65,12 +67,25 @@ type PageProps = {
     setupErrorDetail?: string;
   }>;
 };
+type ApiFailure = { status: number };
 
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
     throw new Error("invalid success envelope");
   }
   return (raw as { data: T }).data;
+}
+
+async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+function isApiFailure(error: unknown): error is ApiFailure {
+  return !!error && typeof error === "object" && typeof (error as ApiFailure).status === "number";
 }
 
 function asFieldType(value: string): FieldType {
@@ -156,8 +171,15 @@ export default async function SpaceApplicationEditPage({
       Promise.resolve({} as Awaited<NonNullable<PageProps["searchParams"]>>),
   ]);
   try {
-    const appRaw = await backendAuthFetchJson(`/applications/${applicationId}`);
-    const app = unwrapData<ApplicationDetail>(appRaw);
+    const authHeaders = await authHeadersOrRedirect();
+    const appRaw = await client.GET("/applications/{id}", {
+      params: { path: { id: applicationId } },
+      headers: authHeaders,
+    });
+    if (!appRaw.response.ok || !appRaw.data) {
+      throw { status: appRaw.response.status };
+    }
+    const app = unwrapData<ApplicationDetail>(appRaw.data);
     if (
       !(
         app.status === "draft" ||
@@ -175,28 +197,45 @@ export default async function SpaceApplicationEditPage({
 
     const definitionId = app.formDefinitionId ?? query.definitionId;
     const templateRaw = definitionId
-      ? await backendAuthFetchJson(`/form-definitions/${definitionId}`)
-      : await backendAuthFetchJson(
-          `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
-        );
+      ? await client.GET("/form-definitions/{id}", {
+          params: { path: { id: definitionId } },
+          headers: authHeaders,
+        })
+      : await client.GET("/form-definitions", {
+          params: { query: { groupId: spaceId } },
+          headers: authHeaders,
+        });
+    if (!templateRaw.response.ok || !templateRaw.data) {
+      throw { status: templateRaw.response.status };
+    }
     const definition = definitionId
-      ? unwrapData<FormDefinition>(templateRaw)
-      : (unwrapData<{ definitions?: FormDefinition[] }>(templateRaw)
+      ? unwrapData<FormDefinition>(templateRaw.data)
+      : (unwrapData<{ definitions?: FormDefinition[] }>(templateRaw.data)
           .definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
     const [membersRaw, flowsRaw] = await Promise.all([
-      backendAuthFetchJson(`/groups/${spaceId}/members`),
-      backendAuthFetchJson(
-        `/approval-flows?groupId=${encodeURIComponent(spaceId)}`,
-      ),
+      client.GET("/groups/{groupId}/members", {
+        params: { path: { groupId: spaceId } },
+        headers: authHeaders,
+      }),
+      client.GET("/approval-flows", {
+        params: { query: { groupId: spaceId } },
+        headers: authHeaders,
+      }),
     ]);
+    if (!membersRaw.response.ok || !membersRaw.data) {
+      throw { status: membersRaw.response.status };
+    }
+    if (!flowsRaw.response.ok || !flowsRaw.data) {
+      throw { status: flowsRaw.response.status };
+    }
     const members =
-      unwrapData<{ members?: GroupMemberSummary[] }>(membersRaw).members ?? [];
+      unwrapData<{ members?: GroupMemberSummary[] }>(membersRaw.data).members ?? [];
     const assignees: ApprovalAssigneeOption[] = members.map((member) => ({
       id: member.userId,
       label: member.name ? `${member.name} (${member.email})` : member.email,
     }));
-    const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw).flows ?? [];
+    const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw.data).flows ?? [];
     const currentFlow =
       flows.find((flow) => flow.id === app.approvalFlowId) ?? null;
     const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}`;
@@ -239,7 +278,7 @@ export default async function SpaceApplicationEditPage({
       </div>
     );
   } catch (error) {
-    if (error instanceof BackendHttpError) {
+    if (isApiFailure(error)) {
       return (
         <Card>
           <CardContent className="pt-6">

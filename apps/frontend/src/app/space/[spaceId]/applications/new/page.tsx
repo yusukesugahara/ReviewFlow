@@ -9,7 +9,8 @@ import {
   buildSpaceApplicationNewHref,
   buildSpaceApplicationsHref,
 } from "@/app/_components/applications/application-routes";
-import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
+import { redirect } from "next/navigation";
+import { client } from "@/lib/server/backend-fetch";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   APPLICATION_SETUP_STATUS_MESSAGES,
@@ -17,7 +18,7 @@ import {
   type ApplicationSetupError,
   type ApplicationSetupStatus,
 } from "@/lib/constants/application-setup";
-import { getCurrentSessionUser } from "@/lib/server/session";
+import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
 type GroupSummary = {
@@ -49,6 +50,14 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
+async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
 function setupErrorMessage(error?: string): string | null {
   return error && error in APPLICATION_SETUP_ERROR_MESSAGES
     ? APPLICATION_SETUP_ERROR_MESSAGES[error as ApplicationSetupError]
@@ -77,21 +86,31 @@ export default async function SpaceNewApplicationPage({
       Promise.resolve({} as Awaited<NonNullable<PageProps["searchParams"]>>),
   ]);
   const newApplicationHref = buildSpaceApplicationNewHref(spaceId);
+  const authHeaders = await authHeadersOrRedirect();
 
   const [groupsRaw, me] = await Promise.all([
-    backendAuthFetchJson("/groups"),
+    client.GET("/groups", { headers: authHeaders }),
     getCurrentSessionUser(),
   ]);
-  const groups = unwrapData<{ groups?: GroupSummary[] }>(groupsRaw).groups ?? [];
+  if (!groupsRaw.response.ok || !groupsRaw.data) {
+    redirect("/login");
+  }
+  const groups = unwrapData<{ groups?: GroupSummary[] }>(groupsRaw.data).groups ?? [];
   const currentGroup = groups.find((group) => group.id === spaceId);
   const canManageSpace =
     me?.roles.includes(TENANT_ROLES.admin) ||
     currentGroup?.currentUserRole === "admin";
   let assignees: ApprovalAssigneeOption[] = [];
   if (canManageSpace) {
-    const membersRaw = await backendAuthFetchJson(`/groups/${spaceId}/members`);
+    const membersRaw = await client.GET("/groups/{groupId}/members", {
+      params: { path: { groupId: spaceId } },
+      headers: authHeaders,
+    });
+    if (!membersRaw.response.ok || !membersRaw.data) {
+      redirect("/space");
+    }
     const members =
-      unwrapData<{ members?: GroupMemberSummary[] }>(membersRaw).members ?? [];
+      unwrapData<{ members?: GroupMemberSummary[] }>(membersRaw.data).members ?? [];
     assignees = members.map((member) => ({
       id: member.userId,
       label: member.name ? `${member.name} (${member.email})` : member.email,

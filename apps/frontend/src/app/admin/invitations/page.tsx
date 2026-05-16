@@ -1,9 +1,6 @@
-import {
-  backendAuthFetchJson,
-  BackendHttpError,
-} from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getCurrentSessionUser } from "@/lib/server/session";
+import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
 import type { TenantUserSummary, TenantUsersListResponse } from "@/lib/schema";
 import { AdminInvitationsView } from "./view";
 
@@ -22,13 +19,30 @@ export default async function AdminInvitationsPage({
   searchParams,
 }: PageProps) {
   const params = (await searchParams) ?? {};
+  const accessToken = await getAccessTokenFromCookie();
+
+  if (!accessToken) {
+    return (
+      <AdminInvitationsView
+        {...params}
+        currentUserId={null}
+        userListError="ログインが必要です"
+        users={[] satisfies TenantUserSummary[]}
+      />
+    );
+  }
 
   try {
-    const [raw, me] = await Promise.all([
-      backendAuthFetchJson("/users"),
+    const [response, me] = await Promise.all([
+      client.GET("/users", {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      }),
       getCurrentSessionUser(),
     ]);
-    const users = unwrapData<TenantUsersListResponse>(raw).users;
+    if (!response.response.ok || !response.data) {
+      throw response.response.status;
+    }
+    const users = unwrapData<TenantUsersListResponse>(response.data).users;
     return (
       <AdminInvitationsView
         {...params}
@@ -38,8 +52,8 @@ export default async function AdminInvitationsPage({
     );
   } catch (error) {
     const message =
-      error instanceof BackendHttpError
-        ? `ユーザー一覧の取得に失敗しました（status: ${error.status}）`
+      typeof error === "number"
+        ? `ユーザー一覧の取得に失敗しました（status: ${error}）`
         : "ユーザー一覧の取得に失敗しました";
     return (
       <AdminInvitationsView

@@ -6,7 +6,7 @@ import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
-import { backendFetchJson, BackendHttpError, errorMessageFromBody } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import type { AuthLoginSuccessJson, LoginRequestBody } from "@/lib/schema";
 
 export type LoginSchema = AuthCredentials & { next?: string };
@@ -36,6 +36,19 @@ function authErrorMessage(result: { ok: false; status: number; body: unknown }):
   return errorMessageFromBody(result.body);
 }
 
+function errorMessageFromBody(body: unknown): string {
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+    if (Array.isArray(message)) {
+      return message.filter((item): item is string => typeof item === "string").join(", ");
+    }
+  }
+  return "ログインに失敗しました";
+}
+
 function isAuthIssueTokensSuccessJson(json: unknown): json is AuthLoginSuccessJson {
   if (!json || typeof json !== "object") {
     return false;
@@ -56,21 +69,15 @@ async function postAuthLogin(
   | { ok: true; accessToken: string }
   | { ok: false; status: number; body: unknown }
 > {
-  try {
-    const json = await backendFetchJson("/auth/login", {
-      method: "POST",
-      body,
-    });
-    if (!isAuthIssueTokensSuccessJson(json)) {
-      return { ok: false, status: 200, body: json };
-    }
-    return { ok: true, accessToken: json.data.access_token };
-  } catch (error) {
-    if (error instanceof BackendHttpError) {
-      return { ok: false, status: error.status, body: error.body };
-    }
-    throw error;
+  const response = await client.POST("/auth/login", { body });
+  if (!response.response.ok || !isAuthIssueTokensSuccessJson(response.data)) {
+    return {
+      ok: false,
+      status: response.response.status,
+      body: response.error ?? response.data,
+    };
   }
+  return { ok: true, accessToken: response.data.data.access_token };
 }
 
 const FALLBACK_MAX_AGE_SEC = 60 * 60 * 24 * 7;

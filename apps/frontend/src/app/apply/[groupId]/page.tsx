@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { backendFetchJson } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,18 +17,23 @@ async function requestAccessAction(formData: FormData): Promise<void> {
     );
   }
 
-  const query =
-    typeof formDefinitionId === "string" && formDefinitionId.length > 0
-      ? `?formDefinitionId=${encodeURIComponent(formDefinitionId)}`
-      : "";
   try {
-    await backendFetchJson(
-      `/form-definitions/groups/${encodeURIComponent(groupId)}/request-access${query}`,
+    const response = await client.POST(
+      "/form-definitions/groups/{groupId}/request-access",
       {
-        method: "POST",
+        params: {
+          path: { groupId },
+          query:
+            typeof formDefinitionId === "string" && formDefinitionId.length > 0
+              ? { formDefinitionId }
+              : undefined,
+        },
         body: { email: email.trim() },
       },
     );
+    if (!response.response.ok) {
+      throw new Error("request access failed");
+    }
   } catch {
     redirect(
       `/apply/${encodeURIComponent(groupId)}?toast=error&message=フォーム案内の送信に失敗しました`,

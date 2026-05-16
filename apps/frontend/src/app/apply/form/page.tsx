@@ -1,9 +1,7 @@
 import { redirect } from "next/navigation";
-import {
-  backendApplicantFetchJson,
-  BackendHttpError,
-  errorMessageFromBody,
-} from "@/lib/server/backend-fetch";
+import { cookies } from "next/headers";
+import { APPLICANT_ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
+import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { Button } from "@/components/ui/button";
 import {
@@ -34,6 +32,27 @@ type PageProps = {
     submitted?: string;
   }>;
 };
+type ApiFailure = { status: number; body: unknown };
+
+async function applicantHeaders(): Promise<{ "X-Applicant-Access-Token": string } | undefined> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(APPLICANT_ACCESS_TOKEN_COOKIE_NAME)?.value;
+  return token ? { "X-Applicant-Access-Token": token } : undefined;
+}
+
+function isApiFailure(error: unknown): error is ApiFailure {
+  return !!error && typeof error === "object" && typeof (error as ApiFailure).status === "number";
+}
+
+function errorMessageFromBody(body: unknown): string {
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+  return "submit_failed";
+}
 
 async function submitPublicApplicationAction(formData: FormData): Promise<void> {
   "use server";
@@ -61,17 +80,20 @@ async function submitPublicApplicationAction(formData: FormData): Promise<void> 
   }
 
   try {
-    await backendApplicantFetchJson("/public/applications", {
-      method: "POST",
+    const response = await client.POST("/public/applications", {
       body: {
         groupId,
         formDefinitionId,
         values: readDynamicValuesFromFormData(fields, formData),
       },
+      headers: await applicantHeaders(),
     });
+    if (!response.response.ok) {
+      throw { status: response.response.status, body: response.error };
+    }
   } catch (error) {
     const message =
-      error instanceof BackendHttpError
+      isApiFailure(error)
         ? errorMessageFromBody(error.body)
         : "submit_failed";
     const params = new URLSearchParams({
@@ -121,10 +143,13 @@ export default async function PublicApplicationFormPage({
   }
 
   try {
-    const definitionRaw = await backendApplicantFetchJson(
-      "/form-definitions/public/current",
-    );
-    const definition = unwrapData<FormDefinition>(definitionRaw);
+    const response = await client.GET("/form-definitions/public/current", {
+      headers: await applicantHeaders(),
+    });
+    if (!response.response.ok || !response.data) {
+      throw { status: response.response.status, body: response.error };
+    }
+    const definition = unwrapData<FormDefinition>(response.data);
     const fields = definition.fields ?? [];
 
     return (
@@ -179,7 +204,7 @@ export default async function PublicApplicationFormPage({
           <CardHeader>
             <CardTitle>申請フォームを表示できません</CardTitle>
             <CardDescription>
-              {error instanceof BackendHttpError
+              {isApiFailure(error)
                 ? `申請フォームの取得に失敗しました（status: ${error.status}）`
                 : "申請フォームの取得に失敗しました"}
             </CardDescription>

@@ -1,13 +1,9 @@
 import Link from "next/link";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  backendAuthFetchJson,
-  BackendHttpError,
-  errorMessageFromBody,
-} from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getCurrentSessionUser } from "@/lib/server/session";
+import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { getApplicationCapabilities } from "@/app/_components/applications/application-capabilities";
@@ -29,16 +25,61 @@ type PageProps = {
   params: Promise<{ spaceId: string; applicationId: string }>;
   searchParams?: Promise<{ actionError?: string; definitionId?: string }>;
 };
+type ApiFailure = { status: number; body: unknown };
+
+async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+function isApiFailure(error: unknown): error is ApiFailure {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    typeof (error as ApiFailure).status === "number" &&
+    "body" in error
+  );
+}
+
+function errorMessageFromBody(body: unknown): string {
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+  return "申請の操作に失敗しました";
+}
+
+async function postApplicationAction(
+  path:
+    | "/applications/{id}/submit"
+    | "/applications/{id}/resubmit"
+    | "/applications/{id}/approve"
+    | "/applications/{id}/reject"
+    | "/applications/{id}/return",
+  applicationId: string,
+  body: Record<string, unknown>,
+): Promise<ApplicationDetailViewModel> {
+  const response = await client.POST(path, {
+    params: { path: { id: applicationId } },
+    body,
+    headers: await authHeadersOrRedirect(),
+  });
+  if (!response.response.ok || !response.data) {
+    throw { status: response.response.status, body: response.error };
+  }
+  return unwrapData<ApplicationDetailViewModel>(response.data);
+}
 
 async function submitAction(spaceId: string, applicationId: string): Promise<void> {
   "use server";
   let updated: ApplicationDetailViewModel;
   try {
-    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/submit`, {
-      method: "POST",
-      body: {},
-    });
-    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
+    updated = await postApplicationAction("/applications/{id}/submit", applicationId, {});
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
@@ -49,11 +90,7 @@ async function resubmitAction(spaceId: string, applicationId: string): Promise<v
   "use server";
   let updated: ApplicationDetailViewModel;
   try {
-    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/resubmit`, {
-      method: "POST",
-      body: {},
-    });
-    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
+    updated = await postApplicationAction("/applications/{id}/resubmit", applicationId, {});
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
@@ -69,11 +106,9 @@ async function approveAction(
   const comment = formData.get("comment");
   let updated: ApplicationDetailViewModel;
   try {
-    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/approve`, {
-      method: "POST",
-      body: { comment: typeof comment === "string" ? comment : undefined },
+    updated = await postApplicationAction("/applications/{id}/approve", applicationId, {
+      comment: typeof comment === "string" ? comment : undefined,
     });
-    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
@@ -89,11 +124,9 @@ async function rejectAction(
   const comment = formData.get("comment");
   let updated: ApplicationDetailViewModel;
   try {
-    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/reject`, {
-      method: "POST",
-      body: { comment: typeof comment === "string" ? comment : undefined },
+    updated = await postApplicationAction("/applications/{id}/reject", applicationId, {
+      comment: typeof comment === "string" ? comment : undefined,
     });
-    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
@@ -131,17 +164,13 @@ async function returnAction(
 
   let updated: ApplicationDetailViewModel;
   try {
-    const updatedRaw = await backendAuthFetchJson(`/applications/${applicationId}/return`, {
-      method: "POST",
-      body: {
-        overallComment:
-          typeof overallComment === "string" && overallComment.trim().length > 0
-            ? overallComment
-            : undefined,
-        fields,
-      },
+    updated = await postApplicationAction("/applications/{id}/return", applicationId, {
+      overallComment:
+        typeof overallComment === "string" && overallComment.trim().length > 0
+          ? overallComment
+          : undefined,
+      fields,
     });
-    updated = unwrapData<ApplicationDetailViewModel>(updatedRaw);
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
@@ -199,7 +228,7 @@ function redirectToApplicationActionError(
 }
 
 function applicationActionErrorMessage(error: unknown): string {
-  if (!(error instanceof BackendHttpError)) {
+  if (!isApiFailure(error)) {
     return "申請の操作に失敗しました";
   }
 
@@ -272,31 +301,57 @@ export default async function SpaceApplicationDetailPage({
   ]);
 
   try {
-    const appRaw = await backendAuthFetchJson(`/applications/${applicationId}`);
-    const app = unwrapData<ApplicationDetailViewModel>(appRaw);
+    const authHeaders = await authHeadersOrRedirect();
+    const appRaw = await client.GET("/applications/{id}", {
+      params: { path: { id: applicationId } },
+      headers: authHeaders,
+    });
+    if (!appRaw.response.ok || !appRaw.data) {
+      throw { status: appRaw.response.status, body: appRaw.error };
+    }
+    const app = unwrapData<ApplicationDetailViewModel>(appRaw.data);
     const definitionId = app.formDefinitionId ?? query.definitionId;
     const [templateRaw, correctionsRaw, correctionTargetsRaw] = await Promise.all([
       definitionId
-        ? backendAuthFetchJson(`/form-definitions/${definitionId}`)
-        : backendAuthFetchJson(
-            `/form-definitions?groupId=${encodeURIComponent(spaceId)}`,
-          ),
-      backendAuthFetchJson(`/applications/${applicationId}/corrections`),
-      backendAuthFetchJson(`/applications/${applicationId}/correction-targets`),
+        ? client.GET("/form-definitions/{id}", {
+            params: { path: { id: definitionId } },
+            headers: authHeaders,
+          })
+        : client.GET("/form-definitions", {
+            params: { query: { groupId: spaceId } },
+            headers: authHeaders,
+          }),
+      client.GET("/applications/{id}/corrections", {
+        params: { path: { id: applicationId } },
+        headers: authHeaders,
+      }),
+      client.GET("/applications/{id}/correction-targets", {
+        params: { path: { id: applicationId } },
+        headers: authHeaders,
+      }),
     ]);
+    if (!templateRaw.response.ok || !templateRaw.data) {
+      throw { status: templateRaw.response.status, body: templateRaw.error };
+    }
+    if (!correctionsRaw.response.ok || !correctionsRaw.data) {
+      throw { status: correctionsRaw.response.status, body: correctionsRaw.error };
+    }
+    if (!correctionTargetsRaw.response.ok || !correctionTargetsRaw.data) {
+      throw { status: correctionTargetsRaw.response.status, body: correctionTargetsRaw.error };
+    }
     const definition = definitionId
-      ? unwrapData<{ fields?: ApplicationFormField[] }>(templateRaw)
+      ? unwrapData<{ fields?: ApplicationFormField[] }>(templateRaw.data)
       : (unwrapData<{ definitions?: { fields?: ApplicationFormField[] }[] }>(
-          templateRaw,
+          templateRaw.data,
         ).definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
     const corrections =
-      unwrapData<{ corrections?: ApplicationCorrection[] }>(correctionsRaw)
+      unwrapData<{ corrections?: ApplicationCorrection[] }>(correctionsRaw.data)
         .corrections ?? [];
     const openItems =
       unwrapData<{
         openCorrection?: { items?: ApplicationCorrectionTargetItem[] } | null;
-      }>(correctionTargetsRaw).openCorrection?.items ?? [];
+      }>(correctionTargetsRaw.data).openCorrection?.items ?? [];
     const actor = await getCurrentSessionUser();
     const capabilities = getApplicationCapabilities(app, actor);
     const fieldMap = fields.map((field) => ({ id: field.id, key: field.fieldKey }));
@@ -370,7 +425,7 @@ export default async function SpaceApplicationDetailPage({
       />
     );
   } catch (error) {
-    if (error instanceof BackendHttpError) {
+    if (isApiFailure(error)) {
       return (
         <Card>
           <CardContent className="pt-6">

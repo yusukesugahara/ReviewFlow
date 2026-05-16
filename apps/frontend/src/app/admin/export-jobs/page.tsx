@@ -1,7 +1,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
-import { getCurrentSessionUser } from "@/lib/server/session";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,15 +24,22 @@ async function createExportJobAction(formData: FormData): Promise<void> {
   }
   let job: ExportJob;
   try {
-    const createdRaw = await backendAuthFetchJson("/export-jobs", {
-      method: "POST",
+    const accessToken = await getAccessTokenFromCookie();
+    if (!accessToken) {
+      redirect("/login");
+    }
+    const response = await client.POST("/export-jobs", {
       body: { groupId },
+      headers: { Authorization: `Bearer ${accessToken}` },
     });
-    job = unwrapData<ExportJob>(createdRaw);
+    if (!response.response.ok || !response.data) {
+      throw response.response.status;
+    }
+    job = unwrapData<ExportJob>(response.data);
   } catch (error) {
     const message =
-      error instanceof BackendHttpError
-        ? `CSVジョブの作成に失敗しました（status: ${error.status}）`
+      typeof error === "number"
+        ? `CSVジョブの作成に失敗しました（status: ${error}）`
         : "CSVジョブの作成に失敗しました";
     const params = new URLSearchParams({ toast: "error", message });
     redirect(`/admin/export-jobs?${params.toString()}`);
@@ -72,19 +79,33 @@ type ExportJobsPageProps = {
 
 export default async function ExportJobsPage({ searchParams }: ExportJobsPageProps) {
   const params = (await searchParams) ?? {};
-  const spacesRaw = await backendAuthFetchJson("/groups");
-  const spaces = unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  const authHeaders = { Authorization: `Bearer ${accessToken}` };
+  const spacesResponse = await client.GET("/groups", { headers: authHeaders });
+  const spaces =
+    spacesResponse.response.ok && spacesResponse.data
+      ? unwrapData<{ groups?: { id: string }[] }>(spacesResponse.data).groups ?? []
+      : [];
   const groupId = spaces[0]?.id ?? "";
   const jobId = params.jobId;
   let latestJob: ExportJob | null = null;
   let errorText: string | null = null;
   if (jobId) {
     try {
-      const createdRaw = await backendAuthFetchJson(`/export-jobs/${jobId}`);
-      latestJob = unwrapData<ExportJob>(createdRaw);
+      const response = await client.GET("/export-jobs/{id}", {
+        params: { path: { id: jobId } },
+        headers: authHeaders,
+      });
+      if (!response.response.ok || !response.data) {
+        throw response.response.status;
+      }
+      latestJob = unwrapData<ExportJob>(response.data);
     } catch (error) {
-      if (error instanceof BackendHttpError) {
-        errorText = `CSVジョブ取得に失敗しました（status: ${error.status}）`;
+      if (typeof error === "number") {
+        errorText = `CSVジョブ取得に失敗しました（status: ${error}）`;
       } else {
         errorText = "CSVジョブ取得に失敗しました";
       }

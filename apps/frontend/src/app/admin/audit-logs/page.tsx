@@ -1,4 +1,5 @@
-import { backendAuthFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -21,8 +22,18 @@ function unwrapData<T>(raw: unknown): T {
 
 export default async function AdminAuditLogsPage() {
   try {
-    const raw = await backendAuthFetchJson("/audit-logs?limit=50");
-    const rows = unwrapData<{ logs?: AuditLogItem[] }>(raw).logs ?? [];
+    const accessToken = await getAccessTokenFromCookie();
+    if (!accessToken) {
+      throw 401;
+    }
+    const response = await client.GET("/audit-logs", {
+      params: { query: { limit: 50 } },
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    if (!response.response.ok || !response.data) {
+      throw response.response.status;
+    }
+    const rows = unwrapData<{ logs?: AuditLogItem[] }>(response.data).logs ?? [];
     return (
       <div className="space-y-6">
         <div>
@@ -79,11 +90,11 @@ export default async function AdminAuditLogsPage() {
       </div>
     );
   } catch (error) {
-    if (error instanceof BackendHttpError) {
+    if (typeof error === "number") {
       return (
         <Card>
           <CardContent className="pt-6">
-            <p className="text-destructive">監査ログの取得に失敗しました（status: {error.status}）</p>
+            <p className="text-destructive">監査ログの取得に失敗しました（status: {error}）</p>
           </CardContent>
         </Card>
       );

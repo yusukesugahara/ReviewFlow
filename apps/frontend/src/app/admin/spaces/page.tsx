@@ -1,53 +1,15 @@
-import { getCurrentSessionUser } from "@/lib/server/session";
-import {
-  backendAuthFetchJson,
-  BackendHttpError,
-} from "@/lib/server/backend-fetch";
-import { AdminSpacesView } from "./view";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
+import { client } from "@/lib/server/backend-fetch";
+import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { TENANT_ROLES } from "@/lib/constants/roles";
+import { AdminSpacesView } from "./view";
 import type {
   AvailableUserSummary,
   GroupMemberSummary,
   GroupSummary,
   TenantUserSummary,
 } from "./types";
-
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
-
-async function fetchGroupMembers(
-  groupId: string,
-): Promise<GroupMemberSummary[]> {
-  try {
-    const raw = await backendAuthFetchJson(`/groups/${groupId}/members`);
-    return unwrapData<{ members?: GroupMemberSummary[] }>(raw).members ?? [];
-  } catch (error) {
-    if (error instanceof BackendHttpError && error.status === 403) {
-      return [];
-    }
-    throw error;
-  }
-}
-
-async function fetchAvailableUsers(
-  groupId: string,
-): Promise<AvailableUserSummary[]> {
-  try {
-    const raw = await backendAuthFetchJson(
-      `/groups/${groupId}/available-users`,
-    );
-    return unwrapData<{ users?: AvailableUserSummary[] }>(raw).users ?? [];
-  } catch (error) {
-    if (error instanceof BackendHttpError && error.status === 403) {
-      return [];
-    }
-    throw error;
-  }
-}
 
 type PageProps = {
   searchParams?: Promise<{
@@ -56,38 +18,101 @@ type PageProps = {
   }>;
 };
 
+function statusFromResponse(response?: Response): number {
+  return response?.status ?? 500;
+}
+
 export default async function AdminSpacesPage({ searchParams }: PageProps) {
   const params = (await searchParams) ?? {};
-  const me = await getCurrentSessionUser();
-  const isSystemAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
+  if (!accessToken) {
+    redirect("/login");
+  }
+
+  const authHeaders = { Authorization: `Bearer ${accessToken}` };
+  const meResponse = await client.POST("/auth/me", { headers: authHeaders });
+  if (meResponse.error) {
+    redirect("/login");
+  }
+
+  const me = meResponse.data.data;
+  const isSystemAdmin = me.roles.includes(TENANT_ROLES.admin);
   const canCreateSpace = isSystemAdmin;
 
   try {
-    const [groupsRaw, usersRaw] = await Promise.all([
-      backendAuthFetchJson("/groups"),
-      canCreateSpace ? backendAuthFetchJson("/users") : Promise.resolve(null),
+    const [groupsResponse, usersResponse] = await Promise.all([
+      client.GET("/groups", { headers: authHeaders }),
+      canCreateSpace
+        ? client.GET("/users", { headers: authHeaders })
+        : Promise.resolve(null),
     ]);
-    const groups =
-      unwrapData<{ groups?: GroupSummary[] }>(groupsRaw).groups ?? [];
-    const users = usersRaw
-      ? (unwrapData<{ users?: TenantUserSummary[] }>(usersRaw).users ?? [])
-      : [];
+
+    if (!groupsResponse.response.ok || !groupsResponse.data) {
+      return (
+        <AdminSpacesView
+          canCreateSpace={canCreateSpace}
+          currentUserId={me.id}
+          formError={params.formError}
+          fetchErrorStatus={statusFromResponse(groupsResponse.response)}
+          isSystemAdmin={isSystemAdmin}
+          spaces={[]}
+          users={[]}
+        />
+      );
+    }
+
+    if (usersResponse && (!usersResponse.response.ok || !usersResponse.data)) {
+      return (
+        <AdminSpacesView
+          canCreateSpace={canCreateSpace}
+          currentUserId={me.id}
+          formError={params.formError}
+          fetchErrorStatus={statusFromResponse(usersResponse.response)}
+          isSystemAdmin={isSystemAdmin}
+          spaces={[]}
+          users={[]}
+        />
+      );
+    }
+
+    const groups = groupsResponse.data.data.groups as GroupSummary[];
+    const users =
+      (usersResponse?.data.data.users as TenantUserSummary[] | undefined) ??
+      [];
     const membersByGroup = new Map<string, GroupMemberSummary[]>();
     const availableUsersByGroup = new Map<string, AvailableUserSummary[]>();
 
     for (const group of groups) {
-      const [members, availableUsers] = await Promise.all([
-        fetchGroupMembers(group.id),
-        fetchAvailableUsers(group.id),
+      const [membersResponse, availableUsersResponse] = await Promise.all([
+        client.GET("/groups/{groupId}/members", {
+          params: { path: { groupId: group.id } },
+          headers: authHeaders,
+        }),
+        client.GET("/groups/{groupId}/available-users", {
+          params: { path: { groupId: group.id } },
+          headers: authHeaders,
+        }),
       ]);
-      membersByGroup.set(group.id, members);
-      availableUsersByGroup.set(group.id, availableUsers);
+
+      membersByGroup.set(
+        group.id,
+        membersResponse.error
+          ? []
+          : (membersResponse.data.data.members as GroupMemberSummary[]),
+      );
+      availableUsersByGroup.set(
+        group.id,
+        availableUsersResponse.error
+          ? []
+          : (availableUsersResponse.data.data.users as AvailableUserSummary[]),
+      );
     }
 
     return (
       <AdminSpacesView
         canCreateSpace={canCreateSpace}
-        currentUserId={me?.id ?? null}
+        currentUserId={me.id}
         error={params.error}
         formError={params.formError}
         isSystemAdmin={isSystemAdmin}
@@ -100,20 +125,20 @@ export default async function AdminSpacesPage({ searchParams }: PageProps) {
             canManageSpace:
               isSystemAdmin ||
               members.some(
-                (member) => member.userId === me?.id && member.role === "admin",
+                (member) => member.userId === me.id && member.role === "admin",
               ),
           };
         })}
         users={users}
       />
     );
-  } catch (error) {
+  } catch {
     return (
       <AdminSpacesView
         canCreateSpace={canCreateSpace}
-        currentUserId={me?.id ?? null}
+        currentUserId={me.id}
         formError={params.formError}
-        fetchErrorStatus={error instanceof BackendHttpError ? error.status : 500}
+        fetchErrorStatus={500}
         isSystemAdmin={isSystemAdmin}
         spaces={[]}
         users={[]}

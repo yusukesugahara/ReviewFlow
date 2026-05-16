@@ -3,7 +3,7 @@ import "server-only";
 import { cookies } from "next/headers";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import type { AuthMeSuccessJson } from "@/lib/schema";
-import { backendFetchJson, BackendHttpError } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 
 export type CurrentSessionUser = {
   id: string;
@@ -32,21 +32,13 @@ function isAuthMeSuccessJson(json: unknown): json is AuthMeSuccessJson {
 }
 
 async function getAuthMe(accessToken: string): Promise<CurrentSessionUser | null> {
-  try {
-    const json = await backendFetchJson("/auth/me", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!isAuthMeSuccessJson(json)) {
-      return null;
-    }
-    return json.data;
-  } catch (error) {
-    if (error instanceof BackendHttpError) {
-      return null;
-    }
-    throw error;
+  const response = await client.POST("/auth/me", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
+  if (!response.response.ok || !isAuthMeSuccessJson(response.data)) {
+    return null;
   }
+  return response.data.data;
 }
 
 export async function getAccessTokenFromCookie(): Promise<string | null> {

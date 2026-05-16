@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
-import { backendAuthFetchJson } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -23,9 +24,17 @@ export default async function AdminApplicationSetupPage({
   searchParams,
 }: PageProps) {
   const params = (await searchParams) ?? {};
-  const spacesRaw = await backendAuthFetchJson("/groups");
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  const spacesRaw = await client.GET("/groups", {
+    headers: { Authorization: `Bearer ${accessToken}` },
+  });
   const spaces =
-    unwrapData<{ groups?: { id: string }[] }>(spacesRaw).groups ?? [];
+    spacesRaw.response.ok && spacesRaw.data
+      ? unwrapData<{ groups?: { id: string }[] }>(spacesRaw.data).groups ?? []
+      : [];
   const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
   if (!spaceId) {
     redirect("/space");

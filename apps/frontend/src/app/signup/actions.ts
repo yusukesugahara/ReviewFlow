@@ -3,7 +3,7 @@
 import { redirect } from "next/navigation";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
-import { backendFetchJson, BackendHttpError, errorMessageFromBody } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import type { AuthRegisterSuccessJson, RegisterRequestBody } from "@/lib/schema";
 import { persistAccessTokenCookie } from "../login/actions";
 
@@ -29,6 +29,19 @@ function authErrorMessage(result: { ok: false; status: number; body: unknown }):
   return errorMessageFromBody(result.body);
 }
 
+function errorMessageFromBody(body: unknown): string {
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+    if (Array.isArray(message)) {
+      return message.filter((item): item is string => typeof item === "string").join(", ");
+    }
+  }
+  return "登録に失敗しました";
+}
+
 function isAuthIssueTokensSuccessJson(json: unknown): json is AuthRegisterSuccessJson {
   if (!json || typeof json !== "object") {
     return false;
@@ -49,21 +62,15 @@ async function postAuthRegister(
   | { ok: true; accessToken: string }
   | { ok: false; status: number; body: unknown }
 > {
-  try {
-    const json = await backendFetchJson("/auth/register", {
-      method: "POST",
-      body,
-    });
-    if (!isAuthIssueTokensSuccessJson(json)) {
-      return { ok: false, status: 201, body: json };
-    }
-    return { ok: true, accessToken: json.data.access_token };
-  } catch (error) {
-    if (error instanceof BackendHttpError) {
-      return { ok: false, status: error.status, body: error.body };
-    }
-    throw error;
+  const response = await client.POST("/auth/register", { body });
+  if (!response.response.ok || !isAuthIssueTokensSuccessJson(response.data)) {
+    return {
+      ok: false,
+      status: response.response.status,
+      body: response.error ?? response.data,
+    };
   }
+  return { ok: true, accessToken: response.data.data.access_token };
 }
 
 /**

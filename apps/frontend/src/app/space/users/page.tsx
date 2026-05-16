@@ -1,11 +1,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  backendAuthFetchJson,
-  BackendHttpError,
-} from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getCurrentSessionUser } from "@/lib/server/session";
+import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
 import {
   Card,
   CardContent,
@@ -51,37 +48,72 @@ type PageProps = {
   }>;
 };
 
-async function listSpaces(): Promise<GroupSummary[]> {
-  const raw = await backendAuthFetchJson("/groups");
-  return unwrapData<{ groups?: GroupSummary[] }>(raw).groups ?? [];
+type ApiFailure = { status: number };
+type SpaceRole = "admin" | "user";
+
+async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  return { Authorization: `Bearer ${accessToken}` };
 }
 
-async function listSpaceMembers(groupId: string): Promise<GroupMemberSummary[]> {
-  const raw = await backendAuthFetchJson(`/groups/${groupId}/members`);
-  return unwrapData<{ members?: GroupMemberSummary[] }>(raw).members ?? [];
+function isSpaceRole(role: string): role is SpaceRole {
+  return role === "admin" || role === "user";
+}
+
+async function listSpaces(headers: { Authorization: string }): Promise<GroupSummary[]> {
+  const response = await client.GET("/groups", { headers });
+  if (!response.response.ok || !response.data) {
+    throw { status: response.response.status };
+  }
+  return unwrapData<{ groups?: GroupSummary[] }>(response.data).groups ?? [];
+}
+
+async function listSpaceMembers(
+  groupId: string,
+  headers: { Authorization: string },
+): Promise<GroupMemberSummary[]> {
+  const response = await client.GET("/groups/{groupId}/members", {
+    params: { path: { groupId } },
+    headers,
+  });
+  if (!response.response.ok || !response.data) {
+    throw { status: response.response.status };
+  }
+  return unwrapData<{ members?: GroupMemberSummary[] }>(response.data).members ?? [];
 }
 
 async function listAvailableUsers(
   groupId: string,
+  headers: { Authorization: string },
 ): Promise<AvailableUserSummary[]> {
-  const raw = await backendAuthFetchJson(`/groups/${groupId}/available-users`);
-  return unwrapData<{ users?: AvailableUserSummary[] }>(raw).users ?? [];
+  const response = await client.GET("/groups/{groupId}/available-users", {
+    params: { path: { groupId } },
+    headers,
+  });
+  if (!response.response.ok || !response.data) {
+    throw { status: response.response.status };
+  }
+  return unwrapData<{ users?: AvailableUserSummary[] }>(response.data).users ?? [];
 }
 
 function spaceUsersErrorMessage(error: unknown, fallback: string) {
-  if (!(error instanceof BackendHttpError)) {
+  if (!error || typeof error !== "object" || typeof (error as ApiFailure).status !== "number") {
     return fallback;
   }
-  if (error.status === 403) {
+  const status = (error as ApiFailure).status;
+  if (status === 403) {
     return "この操作を実行する権限がありません";
   }
-  if (error.status === 409) {
+  if (status === 409) {
     return "既にスペースへ追加済みのユーザーです";
   }
-  if (error.status === 400) {
+  if (status === 400) {
     return "入力内容を確認してください";
   }
-  return `${fallback}（status: ${error.status}）`;
+  return `${fallback}（status: ${status}）`;
 }
 
 function redirectWithSpaceUsersError(
@@ -116,7 +148,7 @@ async function addSpaceMemberAction(
 
   const userId = formData.get("userId");
   const role = formData.get("role");
-  if (typeof userId !== "string" || typeof role !== "string") {
+  if (typeof userId !== "string" || typeof role !== "string" || !isSpaceRole(role)) {
     redirectWithSpaceUsersValidationError(
       groupId,
       "追加するユーザーとロールを選択してください",
@@ -124,10 +156,14 @@ async function addSpaceMemberAction(
   }
 
   try {
-    await backendAuthFetchJson(`/groups/${groupId}/members`, {
-      method: "POST",
+    const response = await client.POST("/groups/{groupId}/members", {
+      params: { path: { groupId } },
       body: { userId, role },
+      headers: await authHeadersOrRedirect(),
     });
+    if (!response.response.ok) {
+      throw { status: response.response.status };
+    }
   } catch (error) {
     redirectWithSpaceUsersError(
       groupId,
@@ -148,8 +184,9 @@ async function addSpaceMemberAction(
 export default async function SpaceUsersPage({ searchParams }: PageProps) {
   try {
     const params = (await searchParams) ?? {};
+    const authHeaders = await authHeadersOrRedirect();
     const [spaces, me] = await Promise.all([
-      listSpaces(),
+      listSpaces(authHeaders),
       getCurrentSessionUser(),
     ]);
     const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
@@ -160,8 +197,8 @@ export default async function SpaceUsersPage({ searchParams }: PageProps) {
     const isTenantAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
     const currentSpace = spaces.find((space) => space.id === spaceId);
     const [members, availableUsers] = await Promise.all([
-      listSpaceMembers(spaceId),
-      isTenantAdmin ? listAvailableUsers(spaceId) : Promise.resolve([]),
+      listSpaceMembers(spaceId, authHeaders),
+      isTenantAdmin ? listAvailableUsers(spaceId, authHeaders) : Promise.resolve([]),
     ]);
 
     return (
@@ -277,8 +314,8 @@ export default async function SpaceUsersPage({ searchParams }: PageProps) {
         <CardContent className="pt-6">
           <p className="text-destructive">
             ユーザー一覧の取得に失敗しました
-            {error instanceof BackendHttpError
-              ? `（status: ${error.status}）`
+            {error && typeof error === "object" && typeof (error as ApiFailure).status === "number"
+              ? `（status: ${(error as ApiFailure).status}）`
               : ""}
           </p>
         </CardContent>

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { backendFetchJson } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,10 +26,12 @@ async function confirmPasswordResetAction(formData: FormData): Promise<void> {
   }
 
   try {
-    await backendFetchJson("/auth/password-reset/confirm", {
-      method: "POST",
+    const response = await client.POST("/auth/password-reset/confirm", {
       body: { token, password },
     });
+    if (!response.response.ok) {
+      throw new Error("password reset confirm failed");
+    }
   } catch {
     const params = new URLSearchParams({
       token,

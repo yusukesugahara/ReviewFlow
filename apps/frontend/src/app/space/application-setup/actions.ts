@@ -2,11 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  BackendHttpError,
-  backendAuthFetchJson,
-  errorMessageFromBody,
-} from "@/lib/server/backend-fetch";
+import { client } from "@/lib/server/backend-fetch";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
 import {
   APPLICATION_SETUP_ERRORS,
   APPLICATION_SETUP_ERROR_MESSAGES,
@@ -14,6 +11,7 @@ import {
 import {
   FIELD_TYPES,
   fieldTypeNeedsOptions,
+  type FieldType,
 } from "@/lib/constants/form-fields";
 import type { DraftField } from "@/app/space/_components/application-setup-draft-form";
 
@@ -33,6 +31,7 @@ type BackendErrorBody = {
   errorCode?: unknown;
   message?: unknown;
 };
+type ApiFailure = { status: number; body: unknown };
 
 type ApprovalStepPayload = {
   stepOrder: number;
@@ -45,13 +44,42 @@ type ApprovalStepPayload = {
 type FieldPayload = {
   fieldKey: string;
   label: string;
-  fieldType: string;
+  fieldType: FieldType;
   required: boolean;
   placeholder?: string;
   helpText?: string;
   options: { label: string; value: string }[];
   sortOrder: number;
 };
+
+type FieldRequest = Omit<FieldPayload, "options"> & {
+  options?: ({} & { [key: string]: undefined })[];
+};
+
+function toFieldRequest(field: FieldPayload): FieldRequest {
+  return {
+    ...field,
+    options: field.options as unknown as ({} & { [key: string]: undefined })[],
+  };
+}
+
+type ApprovalStepRequest = {
+  stepOrder: number;
+  stepName: string;
+  assigneeUserId?: string;
+  assigneeUserIds?: unknown[][];
+  canReturn: boolean;
+};
+
+function toApprovalStepRequest(steps: ApprovalStepPayload[]): ApprovalStepRequest[] {
+  return steps.map((step) => ({
+    stepOrder: step.stepOrder,
+    stepName: step.stepName,
+    assigneeUserId: step.assigneeUserId,
+    assigneeUserIds: step.assigneeUserIds as unknown as unknown[][],
+    canReturn: step.canReturn,
+  }));
+}
 
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
@@ -60,12 +88,39 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
+async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
+  const accessToken = await getAccessTokenFromCookie();
+  if (!accessToken) {
+    redirect("/login");
+  }
+  return { Authorization: `Bearer ${accessToken}` };
+}
+
+function isApiFailure(error: unknown): error is ApiFailure {
+  return (
+    !!error &&
+    typeof error === "object" &&
+    typeof (error as ApiFailure).status === "number" &&
+    "body" in error
+  );
+}
+
+function errorMessageFromBody(body: unknown): string {
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+  }
+  return "unknown_error";
+}
+
 function setupErrorRedirectUrl(base: string, error: unknown): string {
   const params = new URLSearchParams({
     toast: "error",
     message: APPLICATION_SETUP_ERROR_MESSAGES[APPLICATION_SETUP_ERRORS.saveFailed],
   });
-  if (error instanceof BackendHttpError) {
+  if (isApiFailure(error)) {
     const body = error.body as BackendErrorBody;
     const message = errorMessageFromBody(error.body);
     const errorCode =
@@ -267,47 +322,54 @@ export async function submitApplicationSetupAction(
   let createdApplicationId = "";
 
   try {
-    const createdRaw = await backendAuthFetchJson("/form-definitions", {
-      method: "POST",
+    const authHeaders = await authHeadersOrRedirect();
+    const createdResponse = await client.POST("/form-definitions", {
       body: {
         groupId: spaceId,
         name: name.trim(),
         description: `${name.trim()} の申請`,
       },
+      headers: authHeaders,
     });
-    const created = unwrapData<CreateDefinitionResponse>(createdRaw);
+    if (!createdResponse.response.ok || !createdResponse.data) {
+      throw { status: createdResponse.response.status, body: createdResponse.error };
+    }
+    const created = unwrapData<CreateDefinitionResponse>(createdResponse.data);
     createdDefinitionId = created.id;
 
     for (const field of fieldPayloads) {
-      await backendAuthFetchJson(
-        `/form-definitions/${createdDefinitionId}/fields`,
-        {
-          method: "POST",
-          body: field,
-        },
-      );
+      const fieldResponse = await client.POST("/form-definitions/{id}/fields", {
+        params: { path: { id: createdDefinitionId } },
+        body: toFieldRequest(field),
+        headers: authHeaders,
+      });
+      if (!fieldResponse.response.ok) {
+        throw { status: fieldResponse.response.status, body: fieldResponse.error };
+      }
     }
 
-    await backendAuthFetchJson(
-      `/form-definitions/${createdDefinitionId}/publish`,
-      {
-        method: "POST",
-        body: {},
-      },
-    );
+    const publishResponse = await client.POST("/form-definitions/{id}/publish", {
+      params: { path: { id: createdDefinitionId } },
+      headers: authHeaders,
+    });
+    if (!publishResponse.response.ok) {
+      throw { status: publishResponse.response.status, body: publishResponse.error };
+    }
 
-    const flowRaw = await backendAuthFetchJson("/approval-flows", {
-      method: "POST",
+    const flowResponse = await client.POST("/approval-flows", {
       body: {
         groupId: spaceId,
         name: `${name.trim()} 承認フロー`,
-        steps,
+        steps: toApprovalStepRequest(steps),
       },
+      headers: authHeaders,
     });
-    const flow = unwrapData<CreateApprovalFlowResponse>(flowRaw);
+    if (!flowResponse.response.ok || !flowResponse.data) {
+      throw { status: flowResponse.response.status, body: flowResponse.error };
+    }
+    const flow = unwrapData<CreateApprovalFlowResponse>(flowResponse.data);
 
-    const applicationRaw = await backendAuthFetchJson("/applications", {
-      method: "POST",
+    const applicationResponse = await client.POST("/applications", {
       body: {
         groupId: spaceId,
         formDefinitionId: createdDefinitionId,
@@ -315,8 +377,12 @@ export async function submitApplicationSetupAction(
         status: applicationStatus,
         values: {},
       },
+      headers: authHeaders,
     });
-    const application = unwrapData<CreateApplicationResponse>(applicationRaw);
+    if (!applicationResponse.response.ok || !applicationResponse.data) {
+      throw { status: applicationResponse.response.status, body: applicationResponse.error };
+    }
+    const application = unwrapData<CreateApplicationResponse>(applicationResponse.data);
     createdApplicationId = application.id;
   } catch (error) {
     redirect(setupErrorRedirectUrl(redirectBase, error));
@@ -400,53 +466,65 @@ export async function updateApplicationSetupAction(
   let createdDefinitionId = "";
 
   try {
-    const createdRaw = await backendAuthFetchJson("/form-definitions", {
-      method: "POST",
+    const authHeaders = await authHeadersOrRedirect();
+    const createdResponse = await client.POST("/form-definitions", {
       body: {
         groupId: spaceId,
         name: name.trim(),
         description: `${name.trim()} の申請`,
       },
+      headers: authHeaders,
     });
-    const created = unwrapData<CreateDefinitionResponse>(createdRaw);
+    if (!createdResponse.response.ok || !createdResponse.data) {
+      throw { status: createdResponse.response.status, body: createdResponse.error };
+    }
+    const created = unwrapData<CreateDefinitionResponse>(createdResponse.data);
     createdDefinitionId = created.id;
 
     for (const field of fieldPayloads) {
-      await backendAuthFetchJson(
-        `/form-definitions/${createdDefinitionId}/fields`,
-        {
-          method: "POST",
-          body: field,
-        },
-      );
+      const fieldResponse = await client.POST("/form-definitions/{id}/fields", {
+        params: { path: { id: createdDefinitionId } },
+        body: toFieldRequest(field),
+        headers: authHeaders,
+      });
+      if (!fieldResponse.response.ok) {
+        throw { status: fieldResponse.response.status, body: fieldResponse.error };
+      }
     }
 
-    await backendAuthFetchJson(
-      `/form-definitions/${createdDefinitionId}/publish`,
-      {
-        method: "POST",
-        body: {},
-      },
-    );
+    const publishResponse = await client.POST("/form-definitions/{id}/publish", {
+      params: { path: { id: createdDefinitionId } },
+      headers: authHeaders,
+    });
+    if (!publishResponse.response.ok) {
+      throw { status: publishResponse.response.status, body: publishResponse.error };
+    }
 
-    const flowRaw = await backendAuthFetchJson("/approval-flows", {
-      method: "POST",
+    const flowResponse = await client.POST("/approval-flows", {
       body: {
         groupId: spaceId,
         name: `${name.trim()} 承認フロー`,
-        steps,
+        steps: toApprovalStepRequest(steps),
       },
+      headers: authHeaders,
     });
-    const flow = unwrapData<CreateApprovalFlowResponse>(flowRaw);
+    if (!flowResponse.response.ok || !flowResponse.data) {
+      throw { status: flowResponse.response.status, body: flowResponse.error };
+    }
+    const flow = unwrapData<CreateApprovalFlowResponse>(flowResponse.data);
 
-    await backendAuthFetchJson(`/applications/${applicationId}`, {
-      method: "PATCH",
+    const applicationResponse = await client.PATCH("/applications/{id}", {
+      params: { path: { id: applicationId } },
       body: {
         formDefinitionId: createdDefinitionId,
         approvalFlowId: flow.id,
         values: {},
       },
+      headers: authHeaders,
     });
+    if (!applicationResponse.response.ok) {
+      throw { status: applicationResponse.response.status, body: applicationResponse.error };
+    }
   } catch (error) {
     redirect(setupErrorRedirectUrl(redirectBase, error));
   }
