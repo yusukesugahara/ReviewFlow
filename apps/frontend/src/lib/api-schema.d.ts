@@ -883,8 +883,6 @@ export interface components {
         };
         CreateInvitationResponseDto: {
             id: string;
-            /** @description 受諾 API に渡すワンタイムトークン */
-            token: string;
             email: string;
             role: string;
             groupId?: string | null;

@@ -47,9 +47,6 @@ export class CreateInvitationResponseDto {
   @ApiProperty()
   id!: string;
 
-  @ApiProperty({ description: '受諾 API に渡すワンタイムトークン' })
-  token!: string;
-
   @ApiProperty()
   email!: string;
 

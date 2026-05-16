@@ -9,7 +9,7 @@ import { AdminInvitationsView } from "./view";
 
 type PageProps = {
   searchParams?: Promise<{
-    token?: string;
+    sent?: string;
     email?: string;
     role?: string;
     expiresAt?: string;

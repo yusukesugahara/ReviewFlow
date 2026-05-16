@@ -3051,10 +3051,6 @@
           "id": {
             "type": "string"
           },
-          "token": {
-            "type": "string",
-            "description": "受諾 API に渡すワンタイムトークン"
-          },
           "email": {
             "type": "string"
           },
@@ -3076,7 +3072,6 @@
         },
         "required": [
           "id",
-          "token",
           "email",
           "role",
           "expiresAt"

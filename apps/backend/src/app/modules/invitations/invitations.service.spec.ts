@@ -104,7 +104,7 @@ describe('InvitationsService', () => {
         }),
       );
       expect(out.email).toBe('new@y.com');
-      expect(out.token.length).toBe(64);
+      expect(out).not.toHaveProperty('token');
       expect(typeof out.expiresAt).toBe('string');
       expect(mailService.sendInvitationEmail).toHaveBeenCalledWith(
         expect.objectContaining({

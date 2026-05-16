@@ -9,7 +9,6 @@ import {
 
 type InvitationResponse = {
   id: string;
-  token: string;
   email: string;
   role: string;
   expiresAt: string;
@@ -28,6 +27,16 @@ function invitationErrorMessage(error: unknown) {
   }
 
   const body = error.body;
+  if (body && typeof body === "object" && "errorCode" in body) {
+    const errorCode = (body as { errorCode?: unknown }).errorCode;
+    if (errorCode === "INVITATION_MEMBER_EXISTS") {
+      return "このメールアドレスのユーザーは既に登録されています";
+    }
+    if (errorCode === "INVITATION_PENDING_EXISTS") {
+      return "このメールアドレスには既に保留中の招待があります";
+    }
+  }
+
   if (body && typeof body === "object" && "message" in body) {
     const message = (body as { message?: unknown }).message;
     if (typeof message === "string" && message.length > 0) {
@@ -118,7 +127,7 @@ export async function createInvitationAction(
   revalidatePath("/admin/invitations");
 
   const nextParams = new URLSearchParams({
-    token: created.token,
+    sent: "1",
     email: created.email,
     role: created.role,
     expiresAt: created.expiresAt,

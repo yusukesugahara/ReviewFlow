@@ -1,12 +1,16 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { getRepositoryToken } from '@nestjs/typeorm';
 import { mkdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
+import { Repository } from 'typeorm';
 import { AppModule } from '../../app/app.module';
 import { AuthService } from '../../app/modules/auth/auth.service';
 import { InvitationsService } from '../../app/modules/invitations/invitations.service';
 import { UsersService } from '../../app/modules/users/users.service';
 import { ClientErrorCodes } from '../../common/errors';
+import { InvitationStatus } from '../../models/constants/invitation-status';
 import { UserRole } from '../../models/constants/user-role';
+import { Invitation } from '../../models/entities/invitation.entity';
 
 describe('Invitations (integration)', () => {
   let moduleRef: TestingModule;
@@ -61,11 +65,22 @@ describe('Invitations (integration)', () => {
       { email: 'Member@Int.test', role: UserRole.TENANT_USER },
       actor,
     );
-    expect(created.token.length).toBeGreaterThanOrEqual(32);
+    expect(created).not.toHaveProperty('token');
     expect(created.email).toBe('member@int.test');
 
+    const invitation = await moduleRef
+      .get<Repository<Invitation>>(getRepositoryToken(Invitation))
+      .findOne({
+        where: {
+          tenantId: reg.user.tenantId,
+          email: 'member@int.test',
+          status: InvitationStatus.PENDING,
+        },
+      });
+    expect(invitation?.token.length).toBeGreaterThanOrEqual(32);
+
     const accepted = await invitations.accept({
-      token: created.token,
+      token: invitation?.token ?? '',
       name: 'Member User',
       password: 'password12',
     });

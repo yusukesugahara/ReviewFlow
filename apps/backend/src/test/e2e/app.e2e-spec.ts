@@ -9,7 +9,9 @@ import { DataSource } from 'typeorm';
 import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
 import { requestContextMiddleware } from '../../common/logging/request-context.middleware';
+import { InvitationStatus } from '../../models/constants/invitation-status';
 import { UserRole } from '../../models/constants/user-role';
+import { Invitation } from '../../models/entities/invitation.entity';
 import { User } from '../../models/entities/user.entity';
 
 jest.setTimeout(15_000);
@@ -24,7 +26,7 @@ type MeJsonBody = {
   data?: { id?: string; email?: string; roles?: string[]; tenantId?: string };
 };
 type InviteCreateJsonBody = {
-  data?: { token?: string; email?: string; role?: string; expiresAt?: string };
+  data?: { email?: string; role?: string; expiresAt?: string };
 };
 type UsersListJsonBody = {
   data?: {
@@ -115,6 +117,19 @@ async function createGroupForAdmin(
     .send({ name, adminUserIds: [adminUserId] })
     .expect(201);
   return (res.body as GroupCreateJsonBody).data?.id ?? '';
+}
+
+async function getPendingInvitationToken(
+  app: INestApplication<App>,
+  email: string,
+): Promise<string> {
+  const invitation = await app
+    .get(DataSource)
+    .getRepository(Invitation)
+    .findOne({
+      where: { email, status: InvitationStatus.PENDING },
+    });
+  return invitation?.token ?? '';
 }
 type ExportJobBody = {
   data?: { id?: string; status?: string; filePath?: string | null };
@@ -375,14 +390,18 @@ describe('App (e2e)', () => {
 
     const inviteBody = created.body as InviteCreateJsonBody;
     expect(inviteBody.data?.email).toBe('inv-member@e2e.test');
-    expect(typeof inviteBody.data?.token).toBe('string');
-    expect(inviteBody.data?.token?.length).toBeGreaterThanOrEqual(32);
+    expect(inviteBody.data).not.toHaveProperty('token');
+    const inviteToken = await getPendingInvitationToken(
+      app,
+      'inv-member@e2e.test',
+    );
+    expect(inviteToken.length).toBeGreaterThanOrEqual(32);
 
     const accepted = await request(http)
       .post('/invitations/accept')
       .set(apiKey)
       .send({
-        token: inviteBody.data?.token,
+        token: inviteToken,
         name: 'Invited Member',
         password: 'password12',
       })
@@ -425,7 +444,10 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${adminTok}`)
       .send({ email: 'inv-applicant@e2e.test', role: 'tenant_user' })
       .expect(201);
-    const tok = (invRes.body as InviteCreateJsonBody).data?.token ?? '';
+    expect((invRes.body as InviteCreateJsonBody).data).not.toHaveProperty(
+      'token',
+    );
+    const tok = await getPendingInvitationToken(app, 'inv-applicant@e2e.test');
 
     const accLogin = await request(http)
       .post('/invitations/accept')
@@ -477,7 +499,8 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${adminTok}`)
       .send({ email: 'list-member@e2e.test', role: 'tenant_user' })
       .expect(201);
-    const invTok = (inv.body as InviteCreateJsonBody).data?.token ?? '';
+    expect((inv.body as InviteCreateJsonBody).data).not.toHaveProperty('token');
+    const invTok = await getPendingInvitationToken(app, 'list-member@e2e.test');
 
     await request(http)
       .post('/invitations/accept')
@@ -740,7 +763,7 @@ describe('App (e2e)', () => {
       'scope-b',
     );
 
-    const adminInvite = await request(http)
+    await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
@@ -751,7 +774,7 @@ describe('App (e2e)', () => {
         groupRole: 'admin',
       })
       .expect(201);
-    const userInvite = await request(http)
+    await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
@@ -762,12 +785,20 @@ describe('App (e2e)', () => {
         groupRole: 'user',
       })
       .expect(201);
+    const adminInviteToken = await getPendingInvitationToken(
+      app,
+      'scope-group-admin@e2e.test',
+    );
+    const userInviteToken = await getPendingInvitationToken(
+      app,
+      'scope-group-user@e2e.test',
+    );
 
     await request(http)
       .post('/invitations/accept')
       .set(apiKey)
       .send({
-        token: (adminInvite.body as InviteCreateJsonBody).data?.token ?? '',
+        token: adminInviteToken,
         name: 'Group Admin',
         password: 'password12',
       })
@@ -776,7 +807,7 @@ describe('App (e2e)', () => {
       .post('/invitations/accept')
       .set(apiKey)
       .send({
-        token: (userInvite.body as InviteCreateJsonBody).data?.token ?? '',
+        token: userInviteToken,
         name: 'Group User',
         password: 'password12',
       })
@@ -992,7 +1023,7 @@ describe('App (e2e)', () => {
       })
       .expect(201);
 
-    const invApp = await request(http)
+    await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
@@ -1003,9 +1034,12 @@ describe('App (e2e)', () => {
         groupRole: 'user',
       })
       .expect(201);
-    const invAppTok = (invApp.body as InviteCreateJsonBody).data?.token ?? '';
+    const invAppTok = await getPendingInvitationToken(
+      app,
+      'app-submitter@e2e.test',
+    );
 
-    const invApr = await request(http)
+    await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
@@ -1016,7 +1050,10 @@ describe('App (e2e)', () => {
         groupRole: 'user',
       })
       .expect(201);
-    const invAprTok = (invApr.body as InviteCreateJsonBody).data?.token ?? '';
+    const invAprTok = await getPendingInvitationToken(
+      app,
+      'app-approver@e2e.test',
+    );
 
     await request(http)
       .post('/invitations/accept')
@@ -1200,7 +1237,7 @@ describe('App (e2e)', () => {
       })
       .expect(201);
 
-    const invA = await request(http)
+    await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
@@ -1211,7 +1248,7 @@ describe('App (e2e)', () => {
         groupRole: 'user',
       })
       .expect(201);
-    const invB = await request(http)
+    await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
@@ -1222,12 +1259,14 @@ describe('App (e2e)', () => {
         groupRole: 'user',
       })
       .expect(201);
+    const invAToken = await getPendingInvitationToken(app, 'ret-app@e2e.test');
+    const invBToken = await getPendingInvitationToken(app, 'ret-apr@e2e.test');
 
     await request(http)
       .post('/invitations/accept')
       .set(apiKey)
       .send({
-        token: (invA.body as InviteCreateJsonBody).data?.token ?? '',
+        token: invAToken,
         password: 'password12',
       })
       .expect(200);
@@ -1235,7 +1274,7 @@ describe('App (e2e)', () => {
       .post('/invitations/accept')
       .set(apiKey)
       .send({
-        token: (invB.body as InviteCreateJsonBody).data?.token ?? '',
+        token: invBToken,
         password: 'password12',
       })
       .expect(200);
@@ -1419,7 +1458,7 @@ describe('App (e2e)', () => {
       })
       .expect(201);
 
-    const inv = await request(http)
+    await request(http)
       .post('/invitations')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
@@ -1430,11 +1469,12 @@ describe('App (e2e)', () => {
         groupRole: 'user',
       })
       .expect(201);
+    const invToken = await getPendingInvitationToken(app, 'csv-app@e2e.test');
     await request(http)
       .post('/invitations/accept')
       .set(apiKey)
       .send({
-        token: (inv.body as InviteCreateJsonBody).data?.token ?? '',
+        token: invToken,
         password: 'password12',
       })
       .expect(200);

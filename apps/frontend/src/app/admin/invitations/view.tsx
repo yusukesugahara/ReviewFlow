@@ -24,7 +24,6 @@ import { userRoleLabel } from "@/lib/constants/role-labels";
 import { TENANT_ROLE_OPTIONS, TENANT_ROLES } from "@/lib/constants/roles";
 import { formatDateJa, formatDateTimeJa } from "@/lib/date-format";
 import type { TenantUserSummary } from "@/lib/schema";
-import { CopyButton } from "@/app/admin/_components/copy-button";
 import {
   createInvitationAction,
   deleteUserAction,
@@ -32,7 +31,7 @@ import {
 } from "./actions";
 
 type AdminInvitationsViewProps = {
-  token?: string;
+  sent?: string;
   email?: string;
   role?: string;
   expiresAt?: string;
@@ -43,7 +42,7 @@ type AdminInvitationsViewProps = {
 };
 
 export function AdminInvitationsView({
-  token,
+  sent,
   email,
   role,
   expiresAt,
@@ -52,9 +51,7 @@ export function AdminInvitationsView({
   userListError,
   users,
 }: AdminInvitationsViewProps) {
-  const invitationUrl = token
-    ? `/invitations/accept?token=${encodeURIComponent(token)}`
-    : "";
+  const isInvitationSent = sent === "1";
 
   return (
     <div className="space-y-6">
@@ -67,9 +64,9 @@ export function AdminInvitationsView({
 
       <Card>
         <CardHeader>
-          <CardTitle>新しい招待を発行</CardTitle>
+          <CardTitle>新しい招待を送信</CardTitle>
           <CardDescription>
-            メールアドレスとロールを指定して招待を作成します
+            メールアドレスとロールを指定して招待メールを送信します
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -99,7 +96,7 @@ export function AdminInvitationsView({
                 ))}
               </select>
             </div>
-            <Button type="submit">招待URLを発行</Button>
+            <Button type="submit">招待メールを送信</Button>
           </form>
         </CardContent>
       </Card>
@@ -112,12 +109,12 @@ export function AdminInvitationsView({
         </Card>
       ) : null}
 
-      {invitationUrl ? (
+      {isInvitationSent ? (
         <Card className="border-violet-200 bg-violet-50/40">
           <CardHeader>
-            <CardTitle>招待を発行しました</CardTitle>
+            <CardTitle>招待メールを送信しました</CardTitle>
             <CardDescription>
-              以下のURLを対象ユーザーへ共有してください
+              対象ユーザーはメール内のリンクから招待を受諾できます
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -125,17 +122,11 @@ export function AdminInvitationsView({
               {role ? <Badge>{userRoleLabel(role)}</Badge> : null}
               {email ? <Badge variant="outline">{email}</Badge> : null}
             </div>
-            <p className="rounded-md border border-slate-200 bg-white px-3 py-2 font-mono text-xs text-slate-700">
-              {invitationUrl}
-            </p>
-            <div className="flex items-center gap-2">
-              <CopyButton value={invitationUrl} />
-              {expiresAt ? (
-                <p className="text-xs text-muted-foreground">
-                  有効期限: {formatDateTimeJa(expiresAt)}
-                </p>
-              ) : null}
-            </div>
+            {expiresAt ? (
+              <p className="text-xs text-muted-foreground">
+                有効期限: {formatDateTimeJa(expiresAt)}
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       ) : null}

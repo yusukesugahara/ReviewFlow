@@ -56,6 +56,7 @@ request:
   "role": "tenant_user"
 }
 ```
+招待作成時に受諾 URL を含む招待メールを送信する。レスポンスには受諾 token を返さない。
 
 ### POST /invitations/accept
 request:

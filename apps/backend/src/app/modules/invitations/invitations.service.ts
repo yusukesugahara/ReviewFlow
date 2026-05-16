@@ -123,7 +123,6 @@ export class InvitationsService {
 
     return {
       id: saved.id,
-      token: saved.token,
       email: saved.email,
       role: saved.role,
       groupId: saved.groupId,
