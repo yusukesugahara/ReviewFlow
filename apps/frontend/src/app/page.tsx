@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/lib/server/session";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
-export default async function HomePage() {
+export default async function RootRedirectPage() {
   const me = await getCurrentSessionUser();
   if (!me) {
     redirect("/login");

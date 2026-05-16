@@ -55,6 +55,7 @@ type ApprovalFlowsListBody = {
     }[];
   };
 };
+type ApprovalFlowCreateBody = { data?: { id?: string } };
 type ApplicationCreateBody = { data?: { id?: string; status?: string } };
 type ApplicationsListJsonBody = {
   data?: {
@@ -829,7 +830,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${groupAdminTok}`)
       .expect(200);
-    await request(http)
+    const flowRes = await request(http)
       .post('/approval-flows')
       .set(apiKey)
       .set('Authorization', `Bearer ${groupAdminTok}`)
@@ -846,6 +847,46 @@ describe('App (e2e)', () => {
         ],
       })
       .expect(201);
+    const flowId = (flowRes.body as ApprovalFlowCreateBody).data?.id ?? '';
+
+    const setupApp = await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .send({
+        groupId: groupA,
+        formDefinitionId: tplA,
+        approvalFlowId: flowId,
+        status: 'published',
+        values: {},
+      })
+      .expect(201);
+    const setupAppId = (setupApp.body as ApplicationCreateBody).data?.id ?? '';
+
+    const groupAdminApps = await request(http)
+      .get('/applications')
+      .query({ groupId: groupA })
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .expect(200);
+    const groupAdminVisibleApps =
+      (groupAdminApps.body as ApplicationsListJsonBody).data?.applications ??
+      [];
+    expect(groupAdminVisibleApps.some((row) => row.id === setupAppId)).toBe(
+      true,
+    );
+
+    await request(http)
+      .get(`/applications/${setupAppId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .expect(200);
+
+    await request(http)
+      .get(`/applications/${setupAppId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupUserTok}`)
+      .expect(403);
 
     const appA = await request(http)
       .post('/applications')

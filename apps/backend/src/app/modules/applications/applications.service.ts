@@ -51,6 +51,13 @@ type ResubmittableApplicationContext = SubmittableApplicationContext & {
   openCorrection: CorrectionRequest;
 };
 
+function isSetupApplication(app: Application): boolean {
+  return (
+    app.status === ApplicationStatus.DRAFT ||
+    app.status === ApplicationStatus.PUBLISHED
+  );
+}
+
 @Injectable()
 export class ApplicationsService {
   private readonly logger = new Logger(ApplicationsService.name);
@@ -178,10 +185,15 @@ export class ApplicationsService {
       relations: ['approvalFlow', 'approvalFlow.steps', 'formDefinition'],
       order: { createdAt: 'DESC' },
     });
+    const canManageGroup = await this.spaceAccess.actorCanManageGroup(
+      actor,
+      groupId,
+    );
     const visibleRows = rows.filter(
       (app) =>
         app.applicantUserId === actor.id ||
-        this.accessPolicy.actorIsAssignedToCurrentStep(actor, app),
+        this.accessPolicy.actorIsAssignedToCurrentStep(actor, app) ||
+        (canManageGroup && isSetupApplication(app)),
     );
     return this.hydrateListFormDefinitions(actor.tenantId, visibleRows);
   }
@@ -223,6 +235,12 @@ export class ApplicationsService {
       detail: true,
     });
     await this.spaceAccess.assertCanUseGroup(actor, row.groupId);
+    if (
+      isSetupApplication(row) &&
+      (await this.spaceAccess.actorCanManageGroup(actor, row.groupId))
+    ) {
+      return row;
+    }
     await this.accessPolicy.assertCanRead(
       actor,
       row,
