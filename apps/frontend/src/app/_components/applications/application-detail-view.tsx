@@ -51,8 +51,11 @@ export type ApplicationCorrection = {
 
 type ApplicationDetailViewProps = {
   title: string;
+  description?: string;
   application: ApplicationDetailViewModel;
   fields: ApplicationFormField[];
+  fieldsTitle?: string;
+  fieldsDescription?: string;
   openCorrectionItems?: ApplicationCorrectionTargetItem[];
   corrections?: ApplicationCorrection[];
   actions?: ReactNode;
@@ -67,8 +70,11 @@ type ApplicationDetailViewProps = {
 
 export function ApplicationDetailView({
   title,
+  description,
   application,
   fields,
+  fieldsTitle = "申請内容",
+  fieldsDescription = "入力された値を確認できます",
   openCorrectionItems = [],
   corrections = [],
   actions,
@@ -86,7 +92,7 @@ export function ApplicationDetailView({
         <div>
           <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
           <p className="text-muted-foreground">
-            ID: {application.id.slice(0, 12)}...
+            {description ?? `ID: ${application.id.slice(0, 12)}...`}
           </p>
         </div>
         <ApplicationStatusBadge
@@ -109,6 +115,8 @@ export function ApplicationDetailView({
       <ApplicationFieldsCard
         application={application}
         fields={fields}
+        title={fieldsTitle}
+        description={fieldsDescription}
         openCorrectionItems={openCorrectionItems}
       />
 
@@ -193,17 +201,21 @@ function InfoRow({
 function ApplicationFieldsCard({
   application,
   fields,
+  title,
+  description,
   openCorrectionItems,
 }: {
   application: ApplicationDetailViewModel;
   fields: ApplicationFormField[];
+  title: string;
+  description: string;
   openCorrectionItems: ApplicationCorrectionTargetItem[];
 }) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>申請内容</CardTitle>
-        <CardDescription>入力された値を確認できます</CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {fields.map((field) => {

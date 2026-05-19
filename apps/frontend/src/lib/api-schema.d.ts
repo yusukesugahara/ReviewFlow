@@ -294,6 +294,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/form-definitions/{id}/description": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** フォーム定義の説明更新 */
+        patch: operations["FormDefinitionsController_updateDescription"];
+        trace?: never;
+    };
     "/form-definitions/{id}/fields": {
         parameters: {
             query?: never;
@@ -962,6 +979,10 @@ export interface components {
         };
         ApprovalFlowsListResponseDto: {
             flows: components["schemas"]["ApprovalFlowResponseDto"][];
+        };
+        UpdateFormDefinitionDescriptionDto: {
+            /** @example 経費精算用 */
+            description?: string;
         };
         CreateFormDefinitionDto: {
             /** Format: uuid */
@@ -1788,6 +1809,38 @@ export interface operations {
             cookie?: never;
         };
         requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormDefinitionResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormDefinitionsController_updateDescription: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateFormDefinitionDescriptionDto"];
+            };
+        };
         responses: {
             200: {
                 headers: {

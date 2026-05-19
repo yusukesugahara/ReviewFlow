@@ -33,6 +33,14 @@ export class CreateFormDefinitionDto {
   description?: string;
 }
 
+export class UpdateFormDefinitionDescriptionDto {
+  @ApiPropertyOptional({ example: '経費精算用' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  description?: string;
+}
+
 export class FormFieldResponseDto {
   @ApiProperty()
   id!: string;

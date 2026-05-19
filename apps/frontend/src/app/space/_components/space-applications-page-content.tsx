@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/table";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
+import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
@@ -79,6 +80,11 @@ export function SpaceApplicationsPageContent({
   const rows = displayDefinitions.map((definition) =>
     buildApplicationFormListRow(definition, applications, setupApplications, spaceId),
   );
+  const pendingApplications = submittedApplications.filter(isPendingApplication);
+  const processedApplications = submittedApplications.filter(isProcessedApplication);
+  const otherApplications = submittedApplications.filter(
+    (row) => !isPendingApplication(row) && !isProcessedApplication(row),
+  );
 
   return (
     <div className="space-y-6">
@@ -94,11 +100,17 @@ export function SpaceApplicationsPageContent({
         </Button>
       </div>
 
+      <div className="grid gap-3 sm:grid-cols-3">
+        <SummaryCard label="対応が必要" value={pendingApplications.length} tone="amber" />
+        <SummaryCard label="対応済み" value={processedApplications.length} tone="emerald" />
+        <SummaryCard label="申請フォーム" value={displayDefinitions.length} tone="slate" />
+      </div>
+
       <Card>
         <CardHeader>
-          <CardTitle>作成した申請フォーム</CardTitle>
+          <CardTitle>申請フォーム</CardTitle>
           <CardDescription>
-            {displayDefinitions.length}件の申請フォームを表示しています
+            公開URLの確認やフォーム詳細を管理します
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -121,8 +133,7 @@ export function SpaceApplicationsPageContent({
                   <TableHead>公開済み</TableHead>
                   <TableHead className="text-right">未処理</TableHead>
                   <TableHead className="text-right">処理済み</TableHead>
-                  <TableHead>詳細画面</TableHead>
-                  <TableHead>公開URL</TableHead>
+                  <TableHead className="text-right">操作</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -138,23 +149,21 @@ export function SpaceApplicationsPageContent({
                     <TableCell className="text-right tabular-nums">
                       {row.processedCount}
                     </TableCell>
-                    <TableCell>
-                      {row.detailHref ? (
-                        <Button asChild variant="ghost" size="sm">
-                          <Link href={row.detailHref}>詳細</Link>
-                        </Button>
-                      ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex flex-wrap justify-end gap-2">
+                        {row.detailHref ? (
+                          <Button asChild variant="ghost" size="sm">
+                            <Link href={row.detailHref}>フォーム詳細</Link>
+                          </Button>
+                        ) : null}
                       {row.publicHref ? (
                         <Button asChild variant="outline" size="sm">
                           <Link href={row.publicHref}>公開URL</Link>
                         </Button>
                       ) : (
-                        <span className="text-sm text-muted-foreground">-</span>
+                        <span className="self-center text-sm text-muted-foreground">未公開</span>
                       )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -163,7 +172,102 @@ export function SpaceApplicationsPageContent({
           )}
         </CardContent>
       </Card>
+
+      <ApplicationSection
+        title="対応が必要な申請"
+        description="承認、却下、差し戻しなどの確認が必要な申請です"
+        emptyMessage="対応が必要な申請はありません"
+        rows={pendingApplications}
+        actionLabel="確認する"
+        spaceId={spaceId}
+      />
+
+      <ApplicationSection
+        title="対応済みの申請"
+        description="承認済み、却下済みの申請です"
+        emptyMessage="対応済みの申請はまだありません"
+        rows={processedApplications}
+        actionLabel="詳細"
+        spaceId={spaceId}
+      />
+
+      {otherApplications.length > 0 ? (
+        <ApplicationSection
+          title="その他の申請"
+          description="現在の状態を確認できます"
+          emptyMessage=""
+          rows={otherApplications}
+          actionLabel="詳細"
+          spaceId={spaceId}
+        />
+      ) : null}
     </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: number;
+  tone: "amber" | "emerald" | "slate";
+}) {
+  const toneClassName =
+    tone === "amber"
+      ? "border-amber-200 bg-amber-50 text-amber-900"
+      : tone === "emerald"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-900"
+        : "border-slate-200 bg-white text-slate-900";
+
+  return (
+    <div className={`rounded-lg border px-4 py-3 ${toneClassName}`}>
+      <p className="text-sm font-medium">{label}</p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
+    </div>
+  );
+}
+
+function ApplicationSection({
+  title,
+  description,
+  emptyMessage,
+  rows,
+  actionLabel,
+  spaceId,
+}: {
+  title: string;
+  description: string;
+  emptyMessage: string;
+  rows: ApplicationRow[];
+  actionLabel: string;
+  spaceId: string;
+}) {
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>
+          {description}（{rows.length}件）
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {rows.length === 0 ? (
+          <ApplicationEmptyState message={emptyMessage} />
+        ) : (
+          <ApplicationListTable
+            rows={rows}
+            actionLabel={actionLabel}
+            showApplicantEmail
+            getDetailHref={(row) =>
+              buildSpaceApplicationDetailHref(row) ??
+              `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
+            }
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
@@ -200,11 +304,12 @@ function buildApplicationFormListRow(
     ? buildSpaceApplicationDetailHref(setupApplication) ??
       `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(setupApplication.id)}`
     : null;
+  const formDetailHref = detailHref ? appendQueryParam(detailHref, "view", "form") : null;
   const isPublished = definition.status === APPLICATION_STATUSES.published;
 
   return {
     definitionId: definition.id,
-    detailHref,
+    detailHref: formDetailHref,
     pendingCount: relatedApplications.filter(isPendingApplication).length,
     processedCount: relatedApplications.filter(isProcessedApplication).length,
     publicHref: isPublished
@@ -213,6 +318,13 @@ function buildApplicationFormListRow(
     status: definition.status,
     title: definition.name,
   };
+}
+
+function appendQueryParam(href: string, key: string, value: string): string {
+  const [pathname, query = ""] = href.split("?");
+  const params = new URLSearchParams(query);
+  params.set(key, value);
+  return `${pathname}?${params.toString()}`;
 }
 
 function isPendingApplication(row: ApplicationRow): boolean {

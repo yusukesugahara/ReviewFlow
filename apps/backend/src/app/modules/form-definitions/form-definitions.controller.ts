@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
   UseGuards,
@@ -38,6 +39,7 @@ import {
   FormDefinitionsListResponseDto,
   RequestFormAccessDto,
   RequestFormAccessResponseDto,
+  UpdateFormDefinitionDescriptionDto,
   UpdateFormFieldSettingsDto,
 } from './form-definitions.dto';
 import { FormDefinitionsService } from './form-definitions.service';
@@ -112,6 +114,22 @@ export class FormDefinitionsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
     const row = await this.formDefinitions.getOneForActor(actor, id);
+    return successResponse(this.formDefinitions.toResponse(row));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @Patch(':id/description')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォーム定義の説明更新' })
+  @ApiSuccessResponse(FormDefinitionResponseDto)
+  async updateDescription(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateFormDefinitionDescriptionDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    const row = await this.formDefinitions.updateDescription(actor, id, dto);
     return successResponse(this.formDefinitions.toResponse(row));
   }
 

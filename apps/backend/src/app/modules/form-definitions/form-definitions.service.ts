@@ -18,6 +18,7 @@ import type {
   CreateFormFieldDto,
   CreateFormDefinitionDto,
   RequestFormAccessDto,
+  UpdateFormDefinitionDescriptionDto,
   UpdateFormFieldSettingsDto,
 } from './form-definitions.dto';
 import {
@@ -292,6 +293,19 @@ export class FormDefinitionsService {
     const definition = await this.getOne(actor.tenantId, definitionId);
     await this.assertCanManageDefinition(actor, definition);
     return definition;
+  }
+
+  async updateDescription(
+    actor: AuthUserPayload,
+    definitionId: string,
+    dto: UpdateFormDefinitionDescriptionDto,
+  ): Promise<FormDefinition> {
+    const definition = await this.getOne(actor.tenantId, definitionId);
+    await this.assertCanManageDefinition(actor, definition);
+    definition.description = dto.description?.trim().length
+      ? dto.description.trim()
+      : null;
+    return this.definitions.save(definition);
   }
 
   async getPublishedDefinitionForApplicant(

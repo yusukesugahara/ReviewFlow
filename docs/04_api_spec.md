@@ -164,6 +164,16 @@ request:
 }
 ```
 
+### PATCH /form-definitions/:id/description
+権限: tenant_admin, tenant_user（group admin）  
+フォーム定義の説明文だけを更新する。公開済みフォームにも適用でき、公開申請フォームの説明欄に反映される。
+request:
+```json
+{
+  "description": "申請前に確認してほしい説明文"
+}
+```
+
 ### POST /form-definitions/:id/publish
 権限: tenant_admin, tenant_user（group admin）
 

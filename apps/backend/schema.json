@@ -929,6 +929,71 @@
         ]
       }
     },
+    "/form-definitions/{id}/description": {
+      "patch": {
+        "operationId": "FormDefinitionsController_updateDescription",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateFormDefinitionDescriptionDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォーム定義の説明更新",
+        "tags": [
+          "form-definitions"
+        ]
+      }
+    },
     "/form-definitions/{id}/fields": {
       "post": {
         "operationId": "FormDefinitionsController_addField",
@@ -3334,6 +3399,15 @@
         "required": [
           "flows"
         ]
+      },
+      "UpdateFormDefinitionDescriptionDto": {
+        "type": "object",
+        "properties": {
+          "description": {
+            "type": "string",
+            "example": "経費精算用"
+          }
+        }
       },
       "CreateFormDefinitionDto": {
         "type": "object",
