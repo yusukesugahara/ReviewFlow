@@ -21,6 +21,8 @@
 - /space/application-setup
 - /space/users
 
+`/space/application-setup` は申請フォーム定義と承認フロー定義を作成する入口として扱う。申請者が提出する個別申請の作成は `/space/[spaceId]/applications/new` に寄せる。
+
 ## UI方針
 - フォームは FormField 定義に従って動的描画する
 - returned 状態の申請編集画面では、修正対象項目のみ活性化する
@@ -36,6 +38,9 @@
 
 ## データ取得方針
 - ページ単位で必要データを取得
+- バックエンド API 呼び出しは server component / server action / server-only helper に寄せる
+- ブラウザへ `INTERNAL_API_KEY`、JWT、HttpOnly cookie の値を渡さない
+- API レスポンスは OpenAPI 生成型または型付き wrapper で扱い、画面ごとの ad hoc な `unknown` パースを増やさない
 - フォーム編集画面では以下を取得:
   - application
   - formDefinition
@@ -52,3 +57,5 @@ const editable =
   application.status === "draft" ||
   (application.status === "returned" && correctionFieldIds.includes(field.id));
 ```
+
+この判定は UX のための表示制御であり、セキュリティ境界ではない。`returned` 時の更新可能フィールド制限、申請者本人判定、承認者判定はバックエンドでも必ず検証する。

@@ -82,7 +82,7 @@ request:
   "role": "tenant_user"
 }
 ```
-- 付与可能な `role` は `tenant_admin` / `tenant_user` / `tenant_user`（`tenant_admin` は不可）。
+- 付与可能な `role` は `tenant_admin` / `tenant_user`。
 - 自分自身のロールは変更不可。
 - **最後の 1 人の tenant_admin** を他ロールへ落とすことは不可。
 
@@ -272,19 +272,24 @@ response:
 }
 ```
 
+補足:
+- `draft` は申請者の下書きで、承認者の確認対象にはしない。
+- `published` は公開申請フォームの作成・案内に利用する状態で、承認処理中の業務ステータスではない。
+- 承認に進む申請は `POST /applications/:id/submit` または公開フォーム送信で `in_review` に遷移する。
+
 ### PATCH /applications/:id
 権限: tenant_user
 - **draft / published** は `values` の field_key 単位更新に加え、`formDefinitionId` / `approvalFlowId` の差し替えが可能。申請編集画面では編集内容から新しい published フォーム定義と有効な承認フローを作成し、既存申請へ紐づけ直す。
-- returned の場合は correction_request_items 対象フィールドのみ更新可能（別フェーズ）
+- returned の場合は correction_request_items 対象フィールドのみ更新可能。
 
 ### POST /applications/:id/submit
 権限: tenant_user
-`draft` または `published` から `in_review` に遷移する。
+`draft` または `published` から `in_review` に遷移する。承認フローの最初のステップを `current_step` として設定し、必須フィールドを再検証する。
 
 ### GET /applications/:id
 権限:
-- tenant_user: 自分の申請のみ
-- tenant_user: 担当対象のみ
+- group user: 自分の申請
+- group user: 現在ステップの担当対象
 - group admin: 自分が admin の group の申請
 - tenant_admin: テナント内全件
 
@@ -320,15 +325,15 @@ request:
 
 ### POST /applications/:id/resubmit
 権限: tenant_user  
-`returned` かつ **open** の `correction_request` があるときのみ。必須項目を再検証後、`returned` → `in_review`（先頭ステップから）。correction は `resolved`。
+`returned` かつ **open** の `correction_request` があるときのみ。修正対象フィールドと必須項目を再検証後、`returned` → `submitted` に戻し、correction は `resolved`。その後の承認処理開始で `in_review` に進む。
 
 ### GET /applications/:id/corrections
-権限: tenant_user, tenant_user, tenant_admin  
+権限: tenant_admin, group admin, 申請者, 現在または過去に担当した承認者  
 当該申請の correction_requests 一覧（items に `form_field_id` / `field_key`）。履歴用。
 
 ### GET /applications/:id/correction-targets
-権限: tenant_user, tenant_user, tenant_admin  
-**修正対象取得**（Phase 7）。`applicationStatus` と、**最新の `open` の correction_request** 1件分（無ければ `openCorrection: null`）。各 item に `field_key` / `label` / `fieldType` / `required` / 項目コメント / **`currentValue`**（申請の現在値）を含める。
+権限: tenant_admin, group admin, 申請者, 現在または過去に担当した承認者  
+**修正対象取得**。`applicationStatus` と、**最新の `open` の correction_request** 1件分（無ければ `openCorrection: null`）。各 item に `field_key` / `label` / `fieldType` / `required` / 項目コメント / **`currentValue`**（申請の現在値）を含める。
 
 ## Export Jobs
 

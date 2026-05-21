@@ -79,7 +79,7 @@ Database:
 - The frontend may hide unavailable UI actions, but backend authorization remains mandatory.
 - Backend APIs use an internal `X-API-Key` for server-to-server access and JWT for user identity.
 - Tenant-owned data must be scoped by the authenticated user's `tenantId`.
-- Workflow business data is scoped by both tenant and space (`groups.group_id` in backend tables). Tenant admins can manage all spaces in their tenant, space admins can manage their own space, and space users can create/view their own applications and act on assigned approvals in their space.
+- Workflow business data is scoped by both tenant and space (`group_id` on backend business tables). Tenant admins can manage all spaces in their tenant, space admins can manage their own space, and space users can create/view their own applications and act on assigned approvals in their space.
 - Current space-scoped APIs keep the existing paths and require `groupId` in query or body. A later API cleanup can move these resources under nested paths such as `/groups/:groupId/applications`.
 - Frontend API types are generated from the backend OpenAPI schema.
 - There is no shared package yet; current type sharing is OpenAPI schema → generated frontend types.

@@ -92,7 +92,7 @@ GitHub 上では Markdown の表と Mermaid 図がそのまま表示される。
 ### Backend
 - NestJS
 - TypeScript
-- TypeOrm
+- TypeORM
 - MySQL
 - Swagger / OpenAPI
 

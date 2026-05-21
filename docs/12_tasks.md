@@ -1,3 +1,13 @@
+# タスクメモ
+
+このファイルは初期実装計画と進捗メモであり、現在の仕様の一次情報ではない。仕様判断では `docs/01_business_requirements.md`、`docs/04_api_spec.md`、`docs/08_auth_and_multitenant.md`、`docs/09_workflow_and_approval.md` を優先する。
+
+## 現状の改善候補
+- [ ] Phase 1-9 のチェック状態を実装済みコードと照合して更新する
+- [ ] API 仕様と OpenAPI schema の差分確認手順を追加する
+- [ ] tenant / group / applicant / approver の認可テスト観点をタスク化する
+- [ ] 公開申請フォームとログインユーザー申請の業務上の違いを追加で整理する
+
 # Phase 1: 基盤
 - [ ] Next.js / NestJS / MySQL / Docker Compose を初期構築する
 - [ ] TypeORM を導入する
