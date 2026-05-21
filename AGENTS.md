@@ -3,11 +3,10 @@
 This file defines how Codex and other coding agents should work in this repository.
 The goal is to keep ReviewFlow maintainable as a portfolio-grade full-stack monorepo.
 
-## Project Overview
+## Core Principles
 
-ReviewFlow is a workflow application for creating application forms, submitting applications, approving or returning them, managing spaces and users, exporting CSV data, and auditing operations.
-
-This repository should demonstrate:
+ReviewFlow should not be optimized only for "it works".
+Every change should preserve:
 
 - Clear frontend/backend responsibility boundaries
 - Type-safe API contracts
@@ -16,9 +15,33 @@ This repository should demonstrate:
 - Practical tests and build checks
 - Documentation that explains design decisions, not only setup steps
 
-Do not optimize only for "it works". Preserve design quality, type safety, and long-term maintainability.
+When in doubt, prefer the existing project pattern over introducing a new abstraction, package, or architecture.
 
-## Monorepo Structure
+## Agent Operating Rules
+
+Follow these rules for every task:
+
+1. Keep the change scoped to the user's request.
+2. Preserve security boundaries, especially tenant and authorization checks.
+3. Do not change public behavior silently.
+4. Update tests and documentation when behavior, API contracts, roles, setup, or workflows change.
+5. Do not delete tests, suppress errors, or weaken validation just to make a build pass.
+6. Report what you changed, which commands you ran, and which commands could not be run.
+
+## Project Overview
+
+ReviewFlow is a workflow application for:
+
+- Creating application forms
+- Submitting applications
+- Approving or returning applications
+- Managing spaces and users
+- Exporting CSV data
+- Auditing business operations
+
+The repository should demonstrate practical full-stack engineering quality: clear domain boundaries, reliable authorization, API contract discipline, and maintainable implementation choices.
+
+## Repository Structure
 
 Current structure:
 
@@ -31,7 +54,7 @@ docker-compose.yml
 README.md
 ```
 
-Expected future structure, if introduced:
+Expected future structure, only if justified:
 
 ```text
 packages/
@@ -39,7 +62,23 @@ packages/
 infra/        Deployment, DB, and infrastructure definitions
 ```
 
-Do not add new top-level packages casually. Add them only when there is a clear ownership boundary and update this file, README, and docs accordingly.
+Do not add new top-level packages casually. Add them only when there is a clear ownership boundary, and update this file, README, and related docs in the same change.
+
+## Source of Truth
+
+Use these ownership rules to avoid duplicated or conflicting logic:
+
+| Area | Source of truth |
+|---|---|
+| Business rules | Backend services/domain logic |
+| Authorization | Backend authorization policies/guards |
+| API contract | Backend OpenAPI schema |
+| Frontend API types | Generated from backend OpenAPI |
+| User experience visibility | Frontend UI state and route behavior |
+| Product/domain explanation | `docs/` |
+| Setup and portfolio overview | `README.md` |
+
+The frontend may hide inaccessible actions for UX, but the backend must remain the security boundary.
 
 ## Directory Responsibilities
 
@@ -51,17 +90,25 @@ Responsibilities:
 
 - Page routing and UI composition
 - Server Components and Server Actions
-- HttpOnly cookie based session handling
+- HttpOnly cookie-based session handling
 - Calling the backend from server-only code with `INTERNAL_API_KEY`
 - Browser-safe UI state, form state, and user interaction
-- Generated API types from backend OpenAPI schema
+- Generated API types from the backend OpenAPI schema
 
 Frontend must not:
 
 - Reimplement backend authorization decisions
-- Trust client-provided tenant IDs
+- Trust client-provided tenant IDs as authority
 - Expose `INTERNAL_API_KEY` or backend secrets to the browser
 - Introduce ad hoc API response shapes when the backend contract already exists
+- Put domain orchestration into route layouts
+
+Frontend conventions:
+
+- Keep server-only backend calls under `src/lib/server` or server-only route/action code.
+- Keep client components focused on interaction and presentation.
+- Prefer typed API wrappers over repeated `unknown` parsing.
+- Use existing UI components from `src/components/ui` when possible.
 
 ### `apps/backend`
 
@@ -70,7 +117,9 @@ Owns business rules, persistence, authentication, authorization, validation, log
 Responsibilities:
 
 - NestJS modules grouped by domain capability
-- DTO validation with `class-validator`
+- Thin controllers that validate input, call services, and map responses
+- Service-layer use cases and business rules
+- DTO validation with `class-validator` / `class-transformer`
 - Tenant-scoped data access
 - Role and space authorization
 - Error normalization through the global exception filter
@@ -81,13 +130,14 @@ Responsibilities:
 Backend must not:
 
 - Rely on frontend role checks for security
-- Accept `tenantId` from client input as authority
+- Accept `tenantId` from client input as authority when authenticated user context is available
 - Put business rules in controllers
 - Return inconsistent success/error envelopes
+- Leak persistence details unless they are part of the public API contract
 
-### `packages/shared` if added
+### `packages/shared`, if added
 
-There is currently no shared package. The current API contract is backend OpenAPI schema plus generated frontend types.
+There is currently no shared package. The current API contract is the backend OpenAPI schema plus generated frontend types.
 
 If `packages/shared` is added, it should contain only stable cross-app contracts:
 
@@ -96,9 +146,9 @@ If `packages/shared` is added, it should contain only stable cross-app contracts
 - Zod schemas only when both apps genuinely need them
 - API contract helpers that do not depend on Next.js or NestJS runtime APIs
 
-Do not move backend entities, Nest DTO classes, React components, or persistence logic into shared.
+Do not move backend entities, Nest DTO classes, React components, or persistence logic into `packages/shared`.
 
-### `infra` if added
+### `infra`, if added
 
 Infrastructure code should own deployment and environment concerns only:
 
@@ -127,8 +177,9 @@ Package management:
 
 - Use npm workspaces from the repository root.
 - Keep the root `package-lock.json` as the only committed lockfile.
-- Do not create or commit app-local lockfiles such as `apps/frontend/package-lock.json`, `apps/backend/package-lock.json`, `yarn.lock`, or `pnpm-lock.yaml`.
-- Run dependency installs from the repository root with npm unless the package manager policy is intentionally changed in README, CI, and this file in the same update.
+- Do not create or commit app-local lockfiles such as `apps/frontend/package-lock.json` or `apps/backend/package-lock.json`.
+- Do not introduce `yarn.lock` or `pnpm-lock.yaml` unless the package manager policy is intentionally changed in README, CI, and this file in the same update.
+- Run dependency installs from the repository root with npm.
 
 Frontend:
 
@@ -144,7 +195,7 @@ Backend:
 - NestJS
 - TypeScript strict mode
 - TypeORM
-- class-validator / class-transformer
+- `class-validator` / `class-transformer`
 - Passport JWT
 - `@nestjs/throttler`
 - `@nestjs/swagger`
@@ -153,57 +204,14 @@ Database:
 
 - MySQL is the target production database.
 - SQLite/better-sqlite3 may be used for local development and tests.
-- Migrations must remain compatible with the intended production DB.
+- Migrations must remain compatible with the intended production database.
+- Do not rely on TypeORM `synchronize` for production schema changes.
 
 Logging:
 
-- pino / nestjs-pino for structured application logs.
-- Audit log persistence for tenant-scoped business/audit events.
-
-## Coding Rules
-
-General:
-
-- Keep changes scoped to the user request.
-- Prefer existing project patterns over introducing new architecture.
-- Use TypeScript strictness; avoid `any`.
-- Prefer explicit types at module boundaries.
-- Avoid broad refactors unless they directly support the requested change.
-- Do not commit generated or local cache files.
-- Do not silently change public behavior without updating docs and tests.
-
-Frontend:
-
-- Keep server-only backend calls under `src/lib/server` or server-only route/action code.
-- Keep client components focused on interaction and presentation.
-- Prefer typed API wrappers over repeated `unknown` parsing.
-- Do not read secrets from client components.
-- Use existing UI components from `src/components/ui` when possible.
-- Keep route layouts responsible for shell/navigation, not domain orchestration.
-
-Backend:
-
-- Controllers should be thin: validate input, call service, map response.
-- Services own use cases and business rules.
-- DTOs must validate all external input.
-- Repositories/queries must always include tenant scope for tenant-owned data.
-- Error paths should throw cataloged errors where practical.
-- Keep OpenAPI decorators aligned with actual behavior.
-
-## Prohibited Actions
-
-Do not:
-
-- Expose `INTERNAL_API_KEY`, JWT secrets, DB credentials, or mail credentials to the browser.
-- Trust `tenantId` from request body, query, or URL when authenticated user context is available.
-- Bypass backend authorization because the frontend hides a button.
-- Add duplicate role names or UI-only role semantics without updating the role model.
-- Add a new package, framework, state library, ORM, or test runner without a clear reason.
-- Modify generated files manually when there is a generation command.
-- Commit `node_modules`, `.next`, `dist`, coverage output, local DB files, or `.env` files.
-- If `apps/backend/dist` becomes container-owned and backend build fails with `EACCES`, restore ownership with `docker compose exec -u root backend chown -R "$(id -u):$(id -g)" /workspace/apps/backend/dist`; `dist` is generated output.
-- Delete tests to make a build pass.
-- Suppress TypeScript or lint errors without explaining why in code or docs.
+- Use pino / nestjs-pino for structured application logs.
+- Persist audit logs for tenant-scoped business events.
+- Keep request logging separate from business audit logging.
 
 ## API Design Policy
 
@@ -214,7 +222,36 @@ Do not:
 - Keep endpoint names resource-oriented and consistent.
 - Use OpenAPI as the contract source for frontend generated types.
 - Regenerate frontend API types after backend schema changes.
-- Avoid leaking persistence implementation details unless they are part of the public contract.
+- Keep OpenAPI decorators aligned with actual runtime behavior.
+
+When changing an API:
+
+1. Update DTOs and validation.
+2. Update service behavior and tests.
+3. Update OpenAPI decorators/schema.
+4. Emit the OpenAPI schema.
+5. Regenerate frontend API types.
+6. Update docs if the behavior or contract changed.
+
+## Authentication and Authorization Policy
+
+- Backend authorization is mandatory and authoritative.
+- Frontend checks are UX-only and must not be treated as security controls.
+- JWT payload data must be verified against current database state when used for authorization-sensitive operations.
+- Role checks should use central constants and documented semantics.
+- Space-level authorization must be distinct from tenant-level authorization.
+- Tenant-owned queries must always be scoped by the authenticated tenant.
+
+Do not trust `tenantId` from request body, query, or URL when authenticated user context is available.
+
+## Database Design Policy
+
+- All tenant-owned business tables should include `tenant_id`.
+- Queries for tenant-owned data must constrain by authenticated tenant.
+- Prefer explicit indexes for common tenant/status/date lookup patterns.
+- Keep migrations deterministic and reviewable.
+- Preserve referential integrity with foreign keys where practical.
+- When adding cross-table relationships, consider tenant consistency, not only row existence.
 
 ## Error Handling Policy
 
@@ -235,31 +272,14 @@ Frontend:
 ## Logging Policy
 
 - Use structured logs.
-- Redact secrets and credentials.
 - Include request IDs where possible.
-- Separate request logging from business audit logging when making logging changes.
-- Audit logs should describe meaningful business events and include tenant context.
+- Redact secrets and credentials.
 - Avoid logging raw passwords, JWTs, cookies, API keys, or full sensitive payloads.
-
-## DB Design Policy
-
-- All tenant-owned business tables should include `tenant_id`.
-- Queries for tenant-owned data must constrain by authenticated tenant.
-- Prefer explicit indexes for common tenant/status/date lookup patterns.
-- Keep migrations deterministic and reviewable.
-- Do not rely on `synchronize` for production schema changes.
-- Preserve referential integrity with foreign keys where practical.
-- When adding cross-table relationships, consider tenant consistency, not only row existence.
-
-## Authentication and Authorization Policy
-
-- Backend authorization is mandatory and authoritative.
-- The frontend may improve UX by hiding inaccessible actions, but it is never the security boundary.
-- JWT payload data must be verified against current database state when used for authorization-sensitive operations.
-- Role checks should use central constants and documented semantics.
-- Space-level authorization must be distinct from tenant/system-level authorization.
+- Audit logs should describe meaningful business events and include tenant context.
 
 ## Test Policy
+
+When fixing a bug, add or update a regression test unless the change is purely cosmetic or documentation-only.
 
 Backend tests should cover:
 
@@ -274,8 +294,6 @@ Frontend tests should cover:
 - Authentication cookie behavior
 - Critical user journeys with Playwright
 - Important form behavior and route flows
-
-When fixing a bug, add or update a regression test unless the change is purely cosmetic or documentation-only.
 
 ## Documentation Policy
 
@@ -298,6 +316,73 @@ Docs should remain engineering-facing:
 - DB/ER design
 - Workflow details
 - Coding rules and operational notes
+
+## Prohibited Actions
+
+Do not:
+
+- Expose `INTERNAL_API_KEY`, JWT secrets, DB credentials, or mail credentials to the browser.
+- Trust client-provided tenant IDs as authority.
+- Bypass backend authorization because the frontend hides a button.
+- Add duplicate role names or UI-only role semantics without updating the role model and docs.
+- Add a new package, framework, state library, ORM, or test runner without a clear reason.
+- Modify generated files manually when there is a generation command.
+- Commit `node_modules`, `.next`, `dist`, coverage output, local DB files, or `.env` files.
+- Delete tests to make a build pass.
+- Suppress TypeScript, lint, validation, or authorization errors without explaining why in code or docs.
+
+If `apps/backend/dist` becomes container-owned and backend build fails with `EACCES`, restore ownership with:
+
+```bash
+docker compose exec -u root backend chown -R "$(id -u):$(id -g)" /workspace/apps/backend/dist
+```
+
+`dist` is generated output and should not be committed.
+
+## Change-Specific Checklist
+
+Use the relevant checklist for the type of change being made.
+
+### Frontend UI or route change
+
+- Uses existing UI/component patterns where possible
+- Keeps secrets and backend-only calls out of client components
+- Preserves typed API usage
+- Handles loading, empty, and error states where relevant
+- Adds or updates Playwright coverage for critical user flows
+
+### Backend behavior change
+
+- Keeps controllers thin
+- Places business rules in services or domain policies
+- Validates external input with DTOs
+- Preserves tenant scoping
+- Checks role and space authorization centrally
+- Adds or updates service/E2E tests
+
+### API contract change
+
+- Updates DTOs, OpenAPI decorators, and response examples as needed
+- Keeps success/error envelopes consistent
+- Emits OpenAPI schema
+- Regenerates frontend API types
+- Updates docs if the contract changed
+
+### DB schema change
+
+- Adds deterministic migrations
+- Preserves production DB compatibility
+- Adds indexes for common lookup patterns where appropriate
+- Verifies tenant consistency for relationships
+- Updates ER/domain docs when needed
+
+### Auth or authorization change
+
+- Treats backend as authoritative
+- Verifies JWT-derived data against current database state when needed
+- Keeps tenant-level and space-level authorization separate
+- Adds regression tests for allowed and denied paths
+- Updates docs for role semantics
 
 ## Required Commands Before PR / Completion
 
