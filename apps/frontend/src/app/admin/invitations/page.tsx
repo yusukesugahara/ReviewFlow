@@ -1,23 +1,14 @@
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
+import { getCurrentSessionUser } from "@/app/session/actions";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { TenantUserSummary, TenantUsersListResponse } from "@/lib/schema";
+import type { AdminInvitationsPageProps } from "./types";
 import { AdminInvitationsView } from "./view";
-
-type PageProps = {
-  searchParams?: Promise<{
-    sent?: string;
-    email?: string;
-    role?: string;
-    expiresAt?: string;
-    error?: string;
-    formError?: string;
-  }>;
-};
 
 export default async function AdminInvitationsPage({
   searchParams,
-}: PageProps) {
+}: AdminInvitationsPageProps) {
   const params = (await searchParams) ?? {};
   const accessToken = await getAccessTokenFromCookie();
 

@@ -4,9 +4,16 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
+import {
+  addGroupMemberSchema,
+  updateGroupMemberRoleSchema,
+} from "@/lib/auth-schema";
+import type {
+  AddGroupMemberBody,
+  UpdateGroupMemberRoleBody,
+} from "@/lib/schema";
 
 type ApiFailure = { status: number };
-type SpaceRole = "admin" | "user";
 
 async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
   const accessToken = await getAccessTokenFromCookie();
@@ -18,10 +25,6 @@ async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
 
 function isApiFailure(error: unknown): error is ApiFailure {
   return !!error && typeof error === "object" && typeof (error as ApiFailure).status === "number";
-}
-
-function isSpaceRole(role: string): role is SpaceRole {
-  return role === "admin" || role === "user";
 }
 
 function spaceUsersErrorMessage(error: unknown, fallback: string) {
@@ -101,19 +104,23 @@ export async function updateSpaceMemberRoleAction(
   userId: string,
   formData: FormData,
 ): Promise<void> {
-  const role = formData.get("role");
+  const parsed = updateGroupMemberRoleSchema.safeParse({
+    role: formData.get("role"),
+  });
 
-  if (typeof role !== "string" || !isSpaceRole(role)) {
+  if (!parsed.success) {
     redirectWithSpaceUsersValidationError(
       groupId,
       "更新するスペースロールを選択してください",
     );
   }
 
+  const body: UpdateGroupMemberRoleBody = parsed.data;
+
   try {
     const response = await client.PATCH("/groups/{groupId}/members/{userId}/role", {
       params: { path: { groupId, userId } },
-      body: { role },
+      body,
       headers: await authHeadersOrRedirect(),
     });
     if (!response.response.ok) {
@@ -132,6 +139,49 @@ export async function updateSpaceMemberRoleAction(
     spaceId: groupId,
     toast: "success",
     message: "スペースロールを更新しました",
+  });
+  redirect(`/space/users?${params.toString()}`);
+}
+
+export async function addSpaceMemberAction(
+  groupId: string,
+  formData: FormData,
+): Promise<void> {
+  const parsed = addGroupMemberSchema.safeParse({
+    userId: formData.get("userId"),
+    role: formData.get("role"),
+  });
+  if (!parsed.success) {
+    redirectWithSpaceUsersValidationError(
+      groupId,
+      "追加するユーザーとロールを選択してください",
+    );
+  }
+
+  const body: AddGroupMemberBody = parsed.data;
+
+  try {
+    const response = await client.POST("/groups/{groupId}/members", {
+      params: { path: { groupId } },
+      body,
+      headers: await authHeadersOrRedirect(),
+    });
+    if (!response.response.ok) {
+      throw { status: response.response.status };
+    }
+  } catch (error) {
+    redirectWithSpaceUsersError(
+      groupId,
+      error,
+      "スペースメンバーの追加に失敗しました",
+    );
+  }
+
+  revalidatePath("/space/users");
+  const params = new URLSearchParams({
+    spaceId: groupId,
+    toast: "success",
+    message: "スペースメンバーを追加しました",
   });
   redirect(`/space/users?${params.toString()}`);
 }

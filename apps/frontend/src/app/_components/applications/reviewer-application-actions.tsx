@@ -4,7 +4,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import type { ApplicationCapabilities } from "./application-capabilities";
-import type { ApplicationFormField } from "./application-detail-view";
+import type { ApplicationFormField } from "./application-detail.types";
 
 type ReviewerApplicationActionsProps = {
   fields: ApplicationFormField[];

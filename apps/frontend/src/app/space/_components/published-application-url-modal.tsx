@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { CopyButton } from "./copy-button";
 
 type PublishedApplicationUrlModalProps = {
@@ -15,17 +15,9 @@ export function PublishedApplicationUrlModal({
   open,
 }: PublishedApplicationUrlModalProps) {
   const [isOpen, setIsOpen] = useState(open);
-  const [origin, setOrigin] = useState("");
-
-  useEffect(() => {
-    setIsOpen(open);
-  }, [open]);
-
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      setOrigin(window.location.origin);
-    }
-  }, []);
+  const [origin] = useState(() =>
+    typeof window === "undefined" ? "" : window.location.origin,
+  );
 
   const applicationPath = useMemo(() => {
     if (!groupId) {
@@ -55,7 +47,9 @@ export function PublishedApplicationUrlModal({
         </div>
         <div className="space-y-4 px-6 py-5">
           <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="break-all font-mono text-sm text-slate-700">{applicationUrl}</p>
+            <p className="break-all font-mono text-sm text-slate-700" suppressHydrationWarning>
+              {applicationUrl}
+            </p>
           </div>
           <div className="flex items-center justify-end gap-2">
             <CopyButton value={applicationUrl} />

@@ -3,24 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
+import { createInvitationSchema } from "@/lib/auth-schema";
+import { unwrapData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-
-type InvitationResponse = {
-  id: string;
-  email: string;
-  role: string;
-  expiresAt: string;
-};
-
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
+import type {
+  CreateInvitationBody,
+  CreateInvitationSuccessJson,
+} from "@/lib/schema";
 
 type ApiFailure = { status: number; body: unknown };
-type TenantRole = "tenant_admin" | "tenant_user";
 
 async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
   const accessToken = await getAccessTokenFromCookie();
@@ -37,10 +28,6 @@ function isApiFailure(error: unknown): error is ApiFailure {
     typeof (error as { status?: unknown }).status === "number" &&
     "body" in error
   );
-}
-
-function isTenantRole(role: string): role is TenantRole {
-  return role === "tenant_admin" || role === "tenant_user";
 }
 
 function invitationErrorMessage(error: unknown) {
@@ -125,17 +112,20 @@ function userRestoreErrorMessage(error: unknown) {
 export async function createInvitationAction(
   formData: FormData,
 ): Promise<void> {
-  const email = formData.get("email");
-  const role = formData.get("role");
+  const parsed = createInvitationSchema.safeParse({
+    email: formData.get("email"),
+    role: formData.get("role"),
+  });
 
-  if (typeof email !== "string" || typeof role !== "string" || !isTenantRole(role)) {
+  if (!parsed.success) {
     redirect("/admin/invitations?formError=入力内容を確認してください");
   }
 
-  let createdRaw: unknown;
+  const body: CreateInvitationBody = parsed.data;
+  let createdRaw: CreateInvitationSuccessJson;
   try {
     const response = await client.POST("/invitations", {
-      body: { email: email.trim(), role },
+      body,
       headers: await authHeadersOrRedirect(),
     });
     if (!response.response.ok || !response.data) {
@@ -150,7 +140,7 @@ export async function createInvitationAction(
     redirect(`/admin/invitations?${nextParams.toString()}`);
   }
 
-  const created = unwrapData<InvitationResponse>(createdRaw);
+  const created = unwrapData<CreateInvitationSuccessJson["data"]>(createdRaw);
   revalidatePath("/admin/invitations");
 
   const nextParams = new URLSearchParams({

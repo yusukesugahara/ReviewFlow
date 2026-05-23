@@ -10,63 +10,13 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { PublicApplicationUrlCard } from "./public-application-url-card";
-
-export type ApplicationDetailViewModel = {
-  formDefinitionId?: string;
-  id: string;
-  groupId?: string | null;
-  status: string;
-  createdAt?: string;
-  updatedAt?: string;
-  applicantEmail?: string;
-  currentStepOrder?: number | null;
-  values: Record<string, unknown>;
-};
-
-export type ApplicationFormField = {
-  id: string;
-  fieldKey: string;
-  label: string;
-  fieldType: string;
-  required?: boolean;
-  options?: unknown[] | null;
-};
-
-export type ApplicationCorrectionTargetItem = {
-  formFieldId: string;
-  fieldKey: string;
-  label: string;
-};
-
-export type ApplicationCorrection = {
-  id: string;
-  status: string;
-  overallComment: string | null;
-  createdAt: string;
-  items: Array<{
-    fieldKey: string;
-    comment: string | null;
-  }>;
-};
-
-type ApplicationDetailViewProps = {
-  title: string;
-  description?: string;
-  application: ApplicationDetailViewModel;
-  fields: ApplicationFormField[];
-  fieldsTitle?: string;
-  fieldsDescription?: string;
-  openCorrectionItems?: ApplicationCorrectionTargetItem[];
-  corrections?: ApplicationCorrection[];
-  actions?: ReactNode;
-  reviewerActions?: ReactNode;
-  showApplicantEmail?: boolean;
-  showCurrentStep?: boolean;
-  showTimestamps?: boolean;
-  showCorrectionHistory?: boolean;
-  showOpenCorrectionSummary?: boolean;
-  publicApplicationUrlPath?: string;
-};
+import type {
+  ApplicationCorrection,
+  ApplicationCorrectionTargetItem,
+  ApplicationDetailViewModel,
+  ApplicationDetailViewProps,
+  ApplicationFormField,
+} from "./application-detail.types";
 
 export function ApplicationDetailView({
   title,

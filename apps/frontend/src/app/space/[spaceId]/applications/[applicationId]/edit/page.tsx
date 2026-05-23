@@ -1,73 +1,28 @@
-import Link from "next/link";
-import {
-  ApplicationSetupDraftForm,
-  type ApprovalAssigneeOption,
-  type DraftField,
-} from "@/app/space/_components/application-setup-draft-form";
+import type { DraftField } from "@/app/space/_components/application-setup-draft-form";
 import type { ApprovalStepItem } from "@/app/space/_components/approval-steps-builder";
 import { updateApplicationSetupAction } from "@/app/space/application-setup/actions";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   type ApplicationSetupError,
 } from "@/lib/constants/application-setup";
 import { FIELD_TYPES, type FieldType } from "@/lib/constants/form-fields";
-
-type ApplicationDetail = {
-  approvalFlowId?: string;
-  formDefinitionId?: string;
-  id: string;
-  groupId?: string | null;
-  status: string;
-  values: Record<string, unknown>;
-};
-
-type FormDefinition = {
-  fields?: FormField[];
-  name?: string;
-};
-
-type FormField = {
-  id: string;
-  fieldKey: string;
-  label: string;
-  fieldType: string;
-  required: boolean;
-  placeholder?: string | null;
-  helpText?: string | null;
-  options?: unknown[] | null;
-};
-
-type ApprovalFlow = {
-  id: string;
-  steps?: {
-    id: string;
-    stepName: string;
-    assigneeUserId?: string;
-    assigneeUserIds?: string[];
-    canReturn: boolean;
-  }[];
-};
-
-type GroupMemberSummary = {
-  email: string;
-  name: string | null;
-  userId: string;
-};
-
-type PageProps = {
-  params: Promise<{ spaceId: string; applicationId: string }>;
-  searchParams?: Promise<{
-    definitionId?: string;
-    setupError?: string;
-    setupErrorDetail?: string;
-  }>;
-};
-type ApiFailure = { status: number };
+import type {
+  EditableApplicationDetail,
+  EditableApprovalFlow,
+  EditableFormDefinition,
+  EditableFormField,
+  EditableGroupMember,
+  SpaceApplicationEditApiFailure,
+  SpaceApplicationEditPageProps,
+} from "./types";
+import {
+  SpaceApplicationEditErrorView,
+  SpaceApplicationEditUnavailableView,
+  SpaceApplicationEditView,
+} from "./view";
 
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
@@ -84,8 +39,8 @@ async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
   return { Authorization: `Bearer ${accessToken}` };
 }
 
-function isApiFailure(error: unknown): error is ApiFailure {
-  return !!error && typeof error === "object" && typeof (error as ApiFailure).status === "number";
+function isApiFailure(error: unknown): error is SpaceApplicationEditApiFailure {
+  return !!error && typeof error === "object" && typeof (error as SpaceApplicationEditApiFailure).status === "number";
 }
 
 function asFieldType(value: string): FieldType {
@@ -123,7 +78,7 @@ function optionsToText(options: unknown[] | null | undefined): string {
     .join("\n");
 }
 
-function toDraftFields(fields: FormField[]): DraftField[] {
+function toDraftFields(fields: EditableFormField[]): DraftField[] {
   return fields.map((field) => ({
     id: field.id,
     label: field.label,
@@ -135,7 +90,7 @@ function toDraftFields(fields: FormField[]): DraftField[] {
   }));
 }
 
-function toInitialSteps(flow: ApprovalFlow | null): ApprovalStepItem[] {
+function toInitialSteps(flow: EditableApprovalFlow | null): ApprovalStepItem[] {
   return (flow?.steps ?? []).map((step) => ({
     id: step.id,
     stepName: step.stepName,
@@ -164,11 +119,11 @@ function setupErrorDetailMessage(detail?: string): string | null {
 export default async function SpaceApplicationEditPage({
   params,
   searchParams,
-}: PageProps) {
+}: SpaceApplicationEditPageProps) {
   const [{ spaceId, applicationId }, query] = await Promise.all([
     params,
     searchParams ??
-      Promise.resolve({} as Awaited<NonNullable<PageProps["searchParams"]>>),
+      Promise.resolve({} as Awaited<NonNullable<SpaceApplicationEditPageProps["searchParams"]>>),
   ]);
   try {
     const authHeaders = await authHeadersOrRedirect();
@@ -179,20 +134,14 @@ export default async function SpaceApplicationEditPage({
     if (!appRaw.response.ok || !appRaw.data) {
       throw { status: appRaw.response.status };
     }
-    const app = unwrapData<ApplicationDetail>(appRaw.data);
+    const app = unwrapData<EditableApplicationDetail>(appRaw.data);
     if (
       !(
         app.status === "draft" ||
         app.status === "published"
       )
     ) {
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-destructive">この申請は編集できません</p>
-          </CardContent>
-        </Card>
-      );
+      return <SpaceApplicationEditUnavailableView />;
     }
 
     const definitionId = app.formDefinitionId ?? query.definitionId;
@@ -209,8 +158,8 @@ export default async function SpaceApplicationEditPage({
       throw { status: templateRaw.response.status };
     }
     const definition = definitionId
-      ? unwrapData<FormDefinition>(templateRaw.data)
-      : (unwrapData<{ definitions?: FormDefinition[] }>(templateRaw.data)
+      ? unwrapData<EditableFormDefinition>(templateRaw.data)
+      : (unwrapData<{ definitions?: EditableFormDefinition[] }>(templateRaw.data)
           .definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
     const [membersRaw, flowsRaw] = await Promise.all([
@@ -230,12 +179,12 @@ export default async function SpaceApplicationEditPage({
       throw { status: flowsRaw.response.status };
     }
     const members =
-      unwrapData<{ members?: GroupMemberSummary[] }>(membersRaw.data).members ?? [];
-    const assignees: ApprovalAssigneeOption[] = members.map((member) => ({
+      unwrapData<{ members?: EditableGroupMember[] }>(membersRaw.data).members ?? [];
+    const assignees = members.map((member) => ({
       id: member.userId,
       label: member.name ? `${member.name} (${member.email})` : member.email,
     }));
-    const flows = unwrapData<{ flows?: ApprovalFlow[] }>(flowsRaw.data).flows ?? [];
+    const flows = unwrapData<{ flows?: EditableApprovalFlow[] }>(flowsRaw.data).flows ?? [];
     const currentFlow =
       flows.find((flow) => flow.id === app.approvalFlowId) ?? null;
     const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}`;
@@ -244,57 +193,29 @@ export default async function SpaceApplicationEditPage({
     }`;
 
     return (
-      <div className="space-y-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">申請編集</h2>
-            <p className="text-muted-foreground">
-              申請内容を編集します
-            </p>
-          </div>
-          <Button asChild variant="outline">
-            <Link href={detailPath}>
-              詳細へ戻る
-            </Link>
-          </Button>
-        </div>
-        <ApplicationSetupDraftForm
-          action={updateApplicationSetupAction.bind(null, applicationId)}
-          assignees={assignees}
-          errorMessage={
-            [
-              setupErrorMessage(query.setupError),
-              setupErrorDetailMessage(query.setupErrorDetail),
-            ]
-              .filter(Boolean)
-              .join(" ")
-          }
-          initialFields={toDraftFields(fields)}
-          initialName={definition?.name}
-          initialSteps={toInitialSteps(currentFlow)}
-          returnPath={editPath}
-          spaceId={spaceId}
-        />
-      </div>
+      <SpaceApplicationEditView
+        action={updateApplicationSetupAction.bind(null, applicationId)}
+        assignees={assignees}
+        detailPath={detailPath}
+        errorMessage={
+          [
+            setupErrorMessage(query.setupError),
+            setupErrorDetailMessage(query.setupErrorDetail),
+          ]
+            .filter(Boolean)
+            .join(" ")
+        }
+        initialFields={toDraftFields(fields)}
+        initialName={definition?.name}
+        initialSteps={toInitialSteps(currentFlow)}
+        returnPath={editPath}
+        spaceId={spaceId}
+      />
     );
   } catch (error) {
     if (isApiFailure(error)) {
-      return (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-destructive">
-              申請編集画面の取得に失敗しました（status: {error.status}）
-            </p>
-          </CardContent>
-        </Card>
-      );
+      return <SpaceApplicationEditErrorView status={error.status} />;
     }
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-destructive">申請編集画面の取得に失敗しました</p>
-        </CardContent>
-      </Card>
-    );
+    return <SpaceApplicationEditErrorView />;
   }
 }

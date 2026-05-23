@@ -2,11 +2,7 @@
 
 import { AuthForm } from "../auth-form";
 import { login } from "./actions";
-
-type LoginViewProps = {
-  apiReachable: boolean;
-  next?: string;
-};
+import type { LoginViewProps } from "./types";
 
 export const LoginView = ({ apiReachable, next }: LoginViewProps) => {
   return (

@@ -1,36 +1,43 @@
-export type GroupSummary = {
-  id: string;
-  name: string;
-  description: string | null;
-  createdByUserId: string;
-  createdAt: string;
-  updatedAt: string;
+import type {
+  AuthMeSuccessJson,
+  GroupAvailableUsersSuccessJson,
+  GroupAvailableUserSummary,
+  GroupMembersListSuccessJson,
+  GroupMemberSummary as ApiGroupMemberSummary,
+  GroupsListSuccessJson,
+  GroupSummary as ApiGroupSummary,
+  TenantUserSummary as ApiTenantUserSummary,
+  TenantUsersListResponse,
+} from "@/lib/schema";
+
+export type AdminSpacesPageProps = {
+  searchParams?: Promise<{
+    error?: string;
+    formError?: string;
+  }>;
+};
+
+export type AdminSpacesMe = AuthMeSuccessJson["data"];
+export type AdminSpacesGroupsData = GroupsListSuccessJson["data"];
+export type AdminSpacesUsersData = TenantUsersListResponse;
+export type AdminSpacesMembersData = GroupMembersListSuccessJson["data"];
+export type AdminSpacesAvailableUsersData = GroupAvailableUsersSuccessJson["data"];
+
+export type GroupSummary = Omit<ApiGroupSummary, "description"> & {
+  description?: string | null;
   currentUserRole?: "admin" | "user" | null;
 };
 
-export type GroupMemberSummary = {
-  id: string;
-  groupId: string;
-  userId: string;
-  email: string;
+export type GroupMemberSummary = Omit<ApiGroupMemberSummary, "name" | "role"> & {
   name: string | null;
-  role: "admin" | "user" | string;
-  createdAt: string;
-  updatedAt: string;
+  role: "admin" | "user";
 };
 
-export type TenantUserSummary = {
-  id: string;
-  email: string;
+export type TenantUserSummary = Omit<ApiTenantUserSummary, "name"> & {
   name: string | null;
-  role: string;
-  isActive: boolean;
-  createdAt: string;
 };
 
-export type AvailableUserSummary = {
-  id: string;
-  email: string;
+export type AvailableUserSummary = Omit<GroupAvailableUserSummary, "name"> & {
   name: string | null;
 };
 

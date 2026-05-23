@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { getServerApiBaseUrl } from "@/lib/env";
+import { LogoutView } from "./view";
 
 async function fetchApiOriginReachable(): Promise<boolean> {
   try {
@@ -20,15 +20,5 @@ async function fetchApiOriginReachable(): Promise<boolean> {
 export default async function LogoutPage() {
   const apiReachable = await fetchApiOriginReachable();
 
-  return (
-    <main style={{ padding: "1rem" }}>
-      <p>ログアウトは画面上部のボタンから実行できます。</p>
-      {!apiReachable ? (
-        <p role="alert">API サーバーに接続できません（`NEXT_PUBLIC_API_URL` を確認してください）。</p>
-      ) : null}
-      <p>
-        <Link href="/">トップへ</Link>
-      </p>
-    </main>
-  );
+  return <LogoutView apiReachable={apiReachable} />;
 }

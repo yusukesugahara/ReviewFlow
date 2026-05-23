@@ -4,10 +4,24 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
+import {
+  addGroupMemberSchema,
+  createSpaceSchema,
+  inviteSpaceMemberSchema,
+  updateGroupMemberRoleSchema,
+} from "@/lib/auth-schema";
+import type {
+  AddGroupMemberBody,
+  AddGroupMemberSuccessJson,
+  CreateGroupBody,
+  CreateGroupSuccessJson,
+  CreateInvitationBody,
+  CreateInvitationSuccessJson,
+  UpdateGroupMemberRoleBody,
+  UpdateGroupMemberRoleSuccessJson,
+} from "@/lib/schema";
 
 type ApiFailure = { status: number; body: unknown };
-type TenantRole = "tenant_admin" | "tenant_user";
-type SpaceRole = "admin" | "user";
 
 async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
   const accessToken = await getAccessTokenFromCookie();
@@ -30,14 +44,6 @@ function throwIfFailed(response: { response: Response; error?: unknown }): void 
   if (!response.response.ok) {
     throw { status: response.response.status, body: response.error };
   }
-}
-
-function isTenantRole(role: string): role is TenantRole {
-  return role === "tenant_admin" || role === "tenant_user";
-}
-
-function isSpaceRole(role: string): role is SpaceRole {
-  return role === "admin" || role === "user";
 }
 
 function spaceErrorMessage(error: unknown, fallback: string) {
@@ -79,27 +85,34 @@ function redirectWithSpaceValidationError(message: string): never {
 }
 
 export async function createSpaceAction(formData: FormData): Promise<void> {
-  const name = formData.get("name");
-  const description = formData.get("description");
-  const adminUserIds = formData
-    .getAll("adminUserIds")
-    .filter((value): value is string => typeof value === "string");
+  const parsed = createSpaceSchema.safeParse({
+    name: formData.get("name"),
+    description: formData.get("description") || undefined,
+    adminUserIds: formData
+      .getAll("adminUserIds")
+      .filter((value): value is string => typeof value === "string"),
+  });
 
-  if (typeof name !== "string" || adminUserIds.length === 0) {
+  if (!parsed.success) {
     redirectWithSpaceValidationError("スペース名と管理者を入力してください");
   }
 
+  const body: CreateGroupBody = {
+    name: parsed.data.name,
+    description: parsed.data.description,
+    adminUserIds: parsed.data.adminUserIds,
+  };
+
   try {
     const response = await client.POST("/groups", {
-      body: {
-        name: name.trim(),
-        description:
-          typeof description === "string" ? description.trim() : undefined,
-        adminUserIds,
-      },
+      body,
       headers: await authHeadersOrRedirect(),
     });
+    const data: CreateGroupSuccessJson | undefined = response.data;
     throwIfFailed(response);
+    if (!data) {
+      throw { status: response.response.status, body: response.error };
+    }
   } catch (error) {
     redirectWithSpaceError(error, "スペースの作成に失敗しました");
   }
@@ -112,20 +125,28 @@ export async function addMemberAction(
   groupId: string,
   formData: FormData,
 ): Promise<void> {
-  const userId = formData.get("userId");
-  const role = formData.get("role");
+  const parsed = addGroupMemberSchema.safeParse({
+    userId: formData.get("userId"),
+    role: formData.get("role"),
+  });
 
-  if (typeof userId !== "string" || typeof role !== "string" || !isSpaceRole(role)) {
+  if (!parsed.success) {
     redirectWithSpaceValidationError("追加するユーザーとロールを選択してください");
   }
+
+  const body: AddGroupMemberBody = parsed.data;
 
   try {
     const response = await client.POST("/groups/{groupId}/members", {
       params: { path: { groupId } },
-      body: { userId, role },
+      body,
       headers: await authHeadersOrRedirect(),
     });
+    const data: AddGroupMemberSuccessJson | undefined = response.data;
     throwIfFailed(response);
+    if (!data) {
+      throw { status: response.response.status, body: response.error };
+    }
   } catch (error) {
     redirectWithSpaceError(error, "スペースメンバーの追加に失敗しました");
   }
@@ -140,31 +161,33 @@ export async function inviteSpaceMemberAction(
   groupId: string,
   formData: FormData,
 ): Promise<void> {
-  const email = formData.get("email");
-  const tenantRole = formData.get("tenantRole");
-  const groupRole = formData.get("groupRole");
+  const parsed = inviteSpaceMemberSchema.safeParse({
+    email: formData.get("email"),
+    tenantRole: formData.get("tenantRole"),
+    groupRole: formData.get("groupRole"),
+  });
 
-  if (
-    typeof email !== "string" ||
-    typeof tenantRole !== "string" ||
-    typeof groupRole !== "string" ||
-    !isTenantRole(tenantRole) ||
-    !isSpaceRole(groupRole)
-  ) {
+  if (!parsed.success) {
     redirectWithSpaceValidationError("招待先メールアドレスとロールを入力してください");
   }
 
+  const body: CreateInvitationBody = {
+    email: parsed.data.email,
+    role: parsed.data.tenantRole,
+    groupId,
+    groupRole: parsed.data.groupRole,
+  };
+
   try {
     const response = await client.POST("/invitations", {
-      body: {
-        email: email.trim(),
-        role: tenantRole,
-        groupId,
-        groupRole,
-      },
+      body,
       headers: await authHeadersOrRedirect(),
     });
+    const data: CreateInvitationSuccessJson | undefined = response.data;
     throwIfFailed(response);
+    if (!data) {
+      throw { status: response.response.status, body: response.error };
+    }
   } catch (error) {
     redirectWithSpaceError(error, "スペース招待の作成に失敗しました");
   }
@@ -178,19 +201,27 @@ export async function updateMemberRoleAction(
   userId: string,
   formData: FormData,
 ): Promise<void> {
-  const role = formData.get("role");
+  const parsed = updateGroupMemberRoleSchema.safeParse({
+    role: formData.get("role"),
+  });
 
-  if (typeof role !== "string" || !isSpaceRole(role)) {
+  if (!parsed.success) {
     redirectWithSpaceValidationError("更新するスペースロールを選択してください");
   }
+
+  const body: UpdateGroupMemberRoleBody = parsed.data;
 
   try {
     const response = await client.PATCH("/groups/{groupId}/members/{userId}/role", {
       params: { path: { groupId, userId } },
-      body: { role },
+      body,
       headers: await authHeadersOrRedirect(),
     });
+    const data: UpdateGroupMemberRoleSuccessJson | undefined = response.data;
     throwIfFailed(response);
+    if (!data) {
+      throw { status: response.response.status, body: response.error };
+    }
   } catch (error) {
     redirectWithSpaceError(error, "スペースロールの更新に失敗しました");
   }

@@ -4,25 +4,57 @@ import { client } from "@/lib/server/backend-fetch";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import { AdminSpacesView } from "./view";
+import { unwrapData } from "@/lib/server/api-envelope";
 import type {
+  AdminSpacesAvailableUsersData,
+  AdminSpacesGroupsData,
+  AdminSpacesMe,
+  AdminSpacesMembersData,
+  AdminSpacesPageProps,
+  AdminSpacesUsersData,
   AvailableUserSummary,
   GroupMemberSummary,
   GroupSummary,
   TenantUserSummary,
 } from "./types";
 
-type PageProps = {
-  searchParams?: Promise<{
-    error?: string;
-    formError?: string;
-  }>;
-};
-
 function statusFromResponse(response?: Response): number {
   return response?.status ?? 500;
 }
 
-export default async function AdminSpacesPage({ searchParams }: PageProps) {
+function normalizeName(value: unknown): string | null {
+  return typeof value === "string" ? value : null;
+}
+
+function normalizeGroups(groups: AdminSpacesGroupsData["groups"]): GroupSummary[] {
+  return groups.map((group) => ({
+    ...group,
+    description: normalizeName(group.description),
+  }));
+}
+
+function normalizeMembers(members: AdminSpacesMembersData["members"]): GroupMemberSummary[] {
+  return members.map((member) => ({
+    ...member,
+    name: normalizeName(member.name),
+  }));
+}
+
+function normalizeAvailableUsers(users: AdminSpacesAvailableUsersData["users"]): AvailableUserSummary[] {
+  return users.map((user) => ({
+    ...user,
+    name: normalizeName(user.name),
+  }));
+}
+
+function normalizeTenantUsers(users: AdminSpacesUsersData["users"]): TenantUserSummary[] {
+  return users.map((user) => ({
+    ...user,
+    name: normalizeName(user.name),
+  }));
+}
+
+export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageProps) {
   const params = (await searchParams) ?? {};
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
@@ -36,7 +68,7 @@ export default async function AdminSpacesPage({ searchParams }: PageProps) {
     redirect("/login");
   }
 
-  const me = meResponse.data.data;
+  const me = unwrapData<AdminSpacesMe>(meResponse.data);
   const isSystemAdmin = me.roles.includes(TENANT_ROLES.admin);
   const canCreateSpace = isSystemAdmin;
 
@@ -76,10 +108,11 @@ export default async function AdminSpacesPage({ searchParams }: PageProps) {
       );
     }
 
-    const groups = groupsResponse.data.data.groups as GroupSummary[];
+    const groups = normalizeGroups(unwrapData<AdminSpacesGroupsData>(groupsResponse.data).groups);
     const users =
-      (usersResponse?.data.data.users as TenantUserSummary[] | undefined) ??
-      [];
+      usersResponse?.data
+        ? normalizeTenantUsers(unwrapData<AdminSpacesUsersData>(usersResponse.data).users)
+        : [];
     const membersByGroup = new Map<string, GroupMemberSummary[]>();
     const availableUsersByGroup = new Map<string, AvailableUserSummary[]>();
 
@@ -99,13 +132,15 @@ export default async function AdminSpacesPage({ searchParams }: PageProps) {
         group.id,
         membersResponse.error
           ? []
-          : (membersResponse.data.data.members as GroupMemberSummary[]),
+          : normalizeMembers(unwrapData<AdminSpacesMembersData>(membersResponse.data).members),
       );
       availableUsersByGroup.set(
         group.id,
         availableUsersResponse.error
           ? []
-          : (availableUsersResponse.data.data.users as AvailableUserSummary[]),
+          : normalizeAvailableUsers(
+              unwrapData<AdminSpacesAvailableUsersData>(availableUsersResponse.data).users,
+            ),
       );
     }
 

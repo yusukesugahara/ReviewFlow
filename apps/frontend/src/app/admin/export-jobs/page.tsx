@@ -1,81 +1,14 @@
-import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-
-type ExportJob = {
-  id: string;
-  status: string;
-  filePath?: string | null;
-  createdAt: string;
-};
-
-async function createExportJobAction(formData: FormData): Promise<void> {
-  "use server";
-  const groupId = formData.get("groupId");
-  const me = await getCurrentSessionUser();
-  if (!me || typeof groupId !== "string" || groupId.length === 0) {
-    redirect(
-      "/admin/export-jobs?formError=エクスポート対象のスペースを選択してください",
-    );
-  }
-  let job: ExportJob;
-  try {
-    const accessToken = await getAccessTokenFromCookie();
-    if (!accessToken) {
-      redirect("/login");
-    }
-    const response = await client.POST("/export-jobs", {
-      body: { groupId },
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    if (!response.response.ok || !response.data) {
-      throw response.response.status;
-    }
-    job = unwrapData<ExportJob>(response.data);
-  } catch (error) {
-    const message =
-      typeof error === "number"
-        ? `CSVジョブの作成に失敗しました（status: ${error}）`
-        : "CSVジョブの作成に失敗しました";
-    const params = new URLSearchParams({ toast: "error", message });
-    redirect(`/admin/export-jobs?${params.toString()}`);
-  }
-  revalidatePath("/admin/export-jobs");
-  const params = new URLSearchParams({
-    jobId: job.id,
-    toast: "success",
-    message: "CSVジョブを作成しました",
-  });
-  redirect(`/admin/export-jobs?${params.toString()}`);
-}
-
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
-
-function getJobStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
-  switch (status) {
-    case "completed":
-      return "default";
-    case "processing":
-      return "secondary";
-    case "failed":
-      return "destructive";
-    default:
-      return "outline";
-  }
-}
-
-type ExportJobsPageProps = {
-  searchParams?: Promise<{ jobId?: string; formError?: string }>;
-};
+import { unwrapData } from "@/lib/server/api-envelope";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
+import type {
+  ExportJobResponse,
+  GetExportJobSuccessJson,
+  GroupsListSuccessJson,
+} from "@/lib/schema";
+import { ExportJobsView } from "./view";
+import type { ExportJobsPageProps } from "./types";
 
 export default async function ExportJobsPage({ searchParams }: ExportJobsPageProps) {
   const params = (await searchParams) ?? {};
@@ -83,96 +16,44 @@ export default async function ExportJobsPage({ searchParams }: ExportJobsPagePro
   if (!accessToken) {
     redirect("/login");
   }
+
   const authHeaders = { Authorization: `Bearer ${accessToken}` };
   const spacesResponse = await client.GET("/groups", { headers: authHeaders });
+  const spacesData: GroupsListSuccessJson | undefined = spacesResponse.data;
   const spaces =
-    spacesResponse.response.ok && spacesResponse.data
-      ? unwrapData<{ groups?: { id: string }[] }>(spacesResponse.data).groups ?? []
+    spacesResponse.response.ok && spacesData
+      ? unwrapData<GroupsListSuccessJson["data"]>(spacesData).groups ?? []
       : [];
   const groupId = spaces[0]?.id ?? "";
   const jobId = params.jobId;
-  let latestJob: ExportJob | null = null;
+  let latestJob: ExportJobResponse | null = null;
   let errorText: string | null = null;
+
   if (jobId) {
     try {
       const response = await client.GET("/export-jobs/{id}", {
         params: { path: { id: jobId } },
         headers: authHeaders,
       });
-      if (!response.response.ok || !response.data) {
+      const data: GetExportJobSuccessJson | undefined = response.data;
+      if (!response.response.ok || !data) {
         throw response.response.status;
       }
-      latestJob = unwrapData<ExportJob>(response.data);
+      latestJob = unwrapData<ExportJobResponse>(data);
     } catch (error) {
-      if (typeof error === "number") {
-        errorText = `CSVジョブ取得に失敗しました（status: ${error}）`;
-      } else {
-        errorText = "CSVジョブ取得に失敗しました";
-      }
+      errorText =
+        typeof error === "number"
+          ? `CSVジョブ取得に失敗しました（status: ${error}）`
+          : "CSVジョブ取得に失敗しました";
     }
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">CSVエクスポート</h2>
-        <p className="text-muted-foreground">
-          申請データをCSV形式でエクスポートできます
-        </p>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>新しいジョブ作成</CardTitle>
-          <CardDescription>
-            申請データの全件エクスポートジョブを作成します
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {params.formError ? (
-            <p className="mb-4 text-sm font-medium text-destructive">
-              {params.formError}
-            </p>
-          ) : null}
-          <form action={createExportJobAction}>
-            <input type="hidden" name="groupId" value={groupId} />
-            <Button type="submit">新しいCSVジョブを作成</Button>
-          </form>
-        </CardContent>
-      </Card>
-
-      {errorText ? (
-        <Card>
-          <CardContent className="pt-6">
-            <p className="text-destructive">{errorText}</p>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {latestJob ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>最新ジョブ</CardTitle>
-            <CardDescription>ジョブID: {latestJob.id}</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium">ステータス:</span>
-              <Badge variant={getJobStatusVariant(latestJob.status)}>
-                {latestJob.status}
-              </Badge>
-            </div>
-            <div className="text-sm text-muted-foreground">
-              作成日時: {new Date(latestJob.createdAt).toLocaleString("ja-JP")}
-            </div>
-            {latestJob.status === "completed" ? (
-              <Button type="button" disabled>
-                CSV生成済み
-              </Button>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-    </div>
+    <ExportJobsView
+      groupId={groupId}
+      latestJob={latestJob}
+      errorText={errorText}
+      formError={params.formError}
+    />
   );
 }

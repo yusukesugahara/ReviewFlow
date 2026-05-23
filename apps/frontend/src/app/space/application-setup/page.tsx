@@ -1,28 +1,14 @@
 import { redirect } from "next/navigation";
 import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
 import { client } from "@/lib/server/backend-fetch";
+import { unwrapData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-
-type PageProps = {
-  searchParams?: Promise<{
-    setupError?: string;
-    setupStatus?: string;
-    publishedGroupId?: string;
-    publishedFormDefinitionId?: string;
-    spaceId?: string;
-  }>;
-};
-
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
+import type { GroupsListSuccessJson } from "@/lib/schema";
+import type { ApplicationSetupRedirectPageProps } from "./types";
 
 export default async function AdminApplicationSetupPage({
   searchParams,
-}: PageProps) {
+}: ApplicationSetupRedirectPageProps) {
   const params = (await searchParams) ?? {};
   const accessToken = await getAccessTokenFromCookie();
   if (!accessToken) {
@@ -33,7 +19,7 @@ export default async function AdminApplicationSetupPage({
   });
   const spaces =
     spacesRaw.response.ok && spacesRaw.data
-      ? unwrapData<{ groups?: { id: string }[] }>(spacesRaw.data).groups ?? []
+      ? unwrapData<GroupsListSuccessJson["data"]>(spacesRaw.data).groups ?? []
       : [];
   const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
   if (!spaceId) {

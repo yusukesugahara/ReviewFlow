@@ -5,14 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MetricCard } from "@/app/space/_components/metric-card";
 import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
-
-type AdminDashboardViewProps = {
-  avgReturns: string;
-  fetchErrorStatus?: number;
-  resubmitCount: number;
-  spaceId: string;
-  totalApplications: number;
-};
+import type { AdminDashboardViewProps } from "./types";
 
 export function AdminDashboardView({
   avgReturns,

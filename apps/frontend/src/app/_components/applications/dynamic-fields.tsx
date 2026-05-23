@@ -1,46 +1,14 @@
-import type { ReactNode } from "react";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
+import {
+  CheckboxFieldInput,
+  RadioFieldInput,
+  ScalarFieldInput,
+  SelectFieldInput,
+  TextareaFieldInput,
+} from "./dynamic-field-inputs";
+import type { DynamicFieldInputProps, DynamicFormField } from "./dynamic-fields.types";
+import { normalizeFieldOptions } from "./field-options";
 
-export type DynamicFormField = {
-  id: string;
-  fieldKey: string;
-  label: string;
-  fieldType: string;
-  required: boolean;
-  placeholder?: string | null;
-  helpText?: string | null;
-  options?: unknown[] | null;
-};
-
-type FieldOption = {
-  value: string;
-  label: string;
-};
-
-function normalizeFieldOptions(options: unknown[] | null | undefined): FieldOption[] {
-  if (!Array.isArray(options)) {
-    return [];
-  }
-  return options
-    .map((opt) => {
-      if (typeof opt === "string") {
-        return { value: opt, label: opt };
-      }
-      if (opt && typeof opt === "object") {
-        const rec = opt as Record<string, unknown>;
-        const value = rec.value;
-        const label = rec.label;
-        if (typeof value === "string" && typeof label === "string") {
-          return { value, label };
-        }
-      }
-      return null;
-    })
-    .filter((v): v is FieldOption => v !== null);
-}
+export type { DynamicFormField } from "./dynamic-fields.types";
 
 export function readDynamicValuesFromFormData(
   fields: DynamicFormField[],
@@ -82,13 +50,6 @@ export function readDynamicValuesFromFormData(
   return values;
 }
 
-type DynamicFieldInputProps = {
-  field: DynamicFormField;
-  value: unknown;
-  disabled?: boolean;
-  afterInput?: ReactNode;
-};
-
 export function DynamicFieldInput({
   field,
   value,
@@ -101,134 +62,31 @@ export function DynamicFieldInput({
   const selectedValues = Array.isArray(value)
     ? value.filter((x): x is string => typeof x === "string")
     : [];
+  const rendererProps = {
+    field,
+    name,
+    stringValue,
+    selectedValues,
+    options,
+    disabled,
+    afterInput,
+  };
 
   if (field.fieldType === "textarea") {
-    return (
-      <div className={cn("space-y-2", disabled && "opacity-50")}>
-        <Label htmlFor={name}>
-          {field.label}
-          {field.required ? <span className="text-destructive ml-1">*</span> : null}
-        </Label>
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
-        <Textarea
-          id={name}
-          name={name}
-          defaultValue={stringValue}
-          placeholder={field.placeholder ?? ""}
-          rows={7}
-          className="min-h-40"
-          disabled={disabled}
-        />
-        {afterInput}
-      </div>
-    );
+    return <TextareaFieldInput {...rendererProps} />;
   }
 
   if (field.fieldType === "select") {
-    return (
-      <div className={cn("space-y-2", disabled && "opacity-50")}>
-        <Label htmlFor={name}>
-          {field.label}
-          {field.required ? <span className="text-destructive ml-1">*</span> : null}
-        </Label>
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
-        <select
-          id={name}
-          name={name}
-          defaultValue={stringValue}
-          disabled={disabled}
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-        >
-          <option value="">選択してください</option>
-          {options.map((opt) => (
-            <option key={`${field.id}-${opt.value}`} value={opt.value}>
-              {opt.label}
-            </option>
-          ))}
-        </select>
-        {afterInput}
-      </div>
-    );
+    return <SelectFieldInput {...rendererProps} />;
   }
 
   if (field.fieldType === "radio") {
-    return (
-      <div className={cn("space-y-2", disabled && "opacity-50")}>
-        <Label>
-          {field.label}
-          {field.required ? <span className="text-destructive ml-1">*</span> : null}
-        </Label>
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
-        <div className="space-y-2">
-          {options.map((opt) => (
-            <div key={`${field.id}-${opt.value}`} className="flex items-center space-x-2">
-              <input
-                type="radio"
-                id={`${name}-${opt.value}`}
-                name={name}
-                value={opt.value}
-                defaultChecked={stringValue === opt.value}
-                disabled={disabled}
-                className="h-4 w-4 border-gray-300"
-              />
-              <Label htmlFor={`${name}-${opt.value}`} className="font-normal">
-                {opt.label}
-              </Label>
-            </div>
-          ))}
-        </div>
-        {afterInput}
-      </div>
-    );
+    return <RadioFieldInput {...rendererProps} />;
   }
 
   if (field.fieldType === "checkbox") {
-    return (
-      <div className={cn("space-y-2", disabled && "opacity-50")}>
-        <Label>
-          {field.label}
-          {field.required ? <span className="text-destructive ml-1">*</span> : null}
-        </Label>
-        {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
-        <div className="space-y-2">
-          {options.map((opt) => (
-            <div key={`${field.id}-${opt.value}`} className="flex items-center space-x-2">
-              <input
-                type="checkbox"
-                id={`${name}-${opt.value}`}
-                name={name}
-                value={opt.value}
-                defaultChecked={selectedValues.includes(opt.value)}
-                disabled={disabled}
-                className="h-4 w-4 rounded border-gray-300"
-              />
-              <Label htmlFor={`${name}-${opt.value}`} className="font-normal">
-                {opt.label}
-              </Label>
-            </div>
-          ))}
-        </div>
-        {afterInput}
-      </div>
-    );
+    return <CheckboxFieldInput {...rendererProps} />;
   }
 
-  return (
-    <div className={cn("space-y-2", disabled && "opacity-50")}>
-      <Label htmlFor={name}>
-        {field.label}
-        {field.required ? <span className="text-destructive ml-1">*</span> : null}
-      </Label>
-      {field.helpText ? <p className="text-sm text-muted-foreground">{field.helpText}</p> : null}
-      <Input
-        id={name}
-        name={name}
-        type={field.fieldType === "number" ? "number" : field.fieldType === "date" ? "date" : "text"}
-        defaultValue={stringValue}
-        placeholder={field.placeholder ?? ""}
-        disabled={disabled}
-      />
-      {afterInput}
-    </div>
-  );
+  return <ScalarFieldInput {...rendererProps} />;
 }

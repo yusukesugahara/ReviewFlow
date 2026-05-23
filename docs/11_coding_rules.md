@@ -17,6 +17,8 @@
 - APIレスポンス型を明示する
 - 画面コンポーネントとフォームロジックを分ける
 - field_type ごとの描画コンポーネントを分離する
+- fetchはpages.tsxまたはactions.tsで行う
+- viewはviewファイルを作り、pages.tsxにインポートして使う
 - fetchはserverコンポーネントで行う
 - typeは基本、schema.tsから、インポートして使う
 - typeはtypes fileに書く

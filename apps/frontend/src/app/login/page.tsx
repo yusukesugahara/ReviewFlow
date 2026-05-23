@@ -1,9 +1,6 @@
 import { LoginView } from "./view";
 import { getServerApiBaseUrl } from "@/lib/env";
-
-type PageProps = {
-  searchParams?: Promise<{ next?: string }>;
-};
+import type { LoginPageProps } from "./types";
 
 async function fetchApiOriginReachable(): Promise<boolean> {
   try {
@@ -21,7 +18,7 @@ async function fetchApiOriginReachable(): Promise<boolean> {
   }
 }
 
-export default async function LoginPage({ searchParams }: PageProps) {
+export default async function LoginPage({ searchParams }: LoginPageProps) {
   const apiReachable = await fetchApiOriginReachable();
   const params = (await searchParams) ?? {};
   return <LoginView apiReachable={apiReachable} next={params.next} />;

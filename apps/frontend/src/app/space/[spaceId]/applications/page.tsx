@@ -2,16 +2,13 @@ import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { unwrapData } from "@/lib/server/api-envelope";
-import {
-  SpaceApplicationsPageContent,
-  type ApplicationRow,
-  type FormDefinitionRow,
-} from "@/app/space/_components/space-applications-page-content";
-
-type PageProps = {
-  params: Promise<{ spaceId: string }>;
-};
-type ApiFailure = { status: number };
+import type { ApplicationRow, FormDefinitionRow } from "@/app/space/_components/space-applications.types";
+import type {
+  ApplicationsListSuccessJson,
+  FormDefinitionsListSuccessJson,
+} from "@/lib/schema";
+import type { SpaceApplicationsApiFailure, SpaceApplicationsPageProps } from "./types";
+import { SpaceApplicationsView } from "./view";
 
 async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
   const accessToken = await getAccessTokenFromCookie();
@@ -21,13 +18,13 @@ async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
   return { Authorization: `Bearer ${accessToken}` };
 }
 
-function isApiFailure(error: unknown): error is ApiFailure {
-  return !!error && typeof error === "object" && typeof (error as ApiFailure).status === "number";
+function isApiFailure(error: unknown): error is SpaceApplicationsApiFailure {
+  return !!error && typeof error === "object" && typeof (error as SpaceApplicationsApiFailure).status === "number";
 }
 
 export default async function SpaceApplicationsPage({
   params,
-}: PageProps) {
+}: SpaceApplicationsPageProps) {
   const { spaceId } = await params;
   const authHeaders = await authHeadersOrRedirect();
 
@@ -39,15 +36,16 @@ export default async function SpaceApplicationsPage({
       }),
       fetchFormDefinitionsForList(spaceId, authHeaders),
     ]);
-    if (!applicationsRaw.response.ok || !applicationsRaw.data) {
+    const applicationsData: ApplicationsListSuccessJson | undefined = applicationsRaw.data;
+    if (!applicationsRaw.response.ok || !applicationsData) {
       throw { status: applicationsRaw.response.status };
     }
 
     return (
-      <SpaceApplicationsPageContent
+      <SpaceApplicationsView
         applications={
-          unwrapData<{ applications?: ApplicationRow[] }>(applicationsRaw.data)
-            .applications ?? []
+          unwrapData<ApplicationsListSuccessJson["data"]>(applicationsData)
+            .applications as ApplicationRow[]
         }
         formDefinitions={
           formDefinitions
@@ -57,7 +55,7 @@ export default async function SpaceApplicationsPage({
     );
   } catch (error) {
     return (
-      <SpaceApplicationsPageContent
+      <SpaceApplicationsView
         applications={[]}
         formDefinitions={[]}
         fetchErrorStatus={isApiFailure(error) ? error.status : 500}
@@ -76,12 +74,13 @@ async function fetchFormDefinitionsForList(
       params: { query: { groupId: spaceId } },
       headers,
     });
-    if (!definitionsRaw.response.ok || !definitionsRaw.data) {
+    const definitionsData: FormDefinitionsListSuccessJson | undefined = definitionsRaw.data;
+    if (!definitionsRaw.response.ok || !definitionsData) {
       throw { status: definitionsRaw.response.status };
     }
     return (
-      unwrapData<{ definitions?: FormDefinitionRow[] }>(definitionsRaw.data)
-        .definitions ?? []
+      unwrapData<FormDefinitionsListSuccessJson["data"]>(definitionsData)
+        .definitions as FormDefinitionRow[]
     );
   } catch (error) {
     if (isApiFailure(error) && error.status === 403) {

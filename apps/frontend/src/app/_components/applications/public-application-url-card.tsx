@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -15,12 +15,10 @@ type PublicApplicationUrlCardProps = {
 };
 
 export function PublicApplicationUrlCard({ path }: PublicApplicationUrlCardProps) {
-  const [origin, setOrigin] = useState("");
+  const [origin] = useState(() =>
+    typeof window === "undefined" ? "" : window.location.origin,
+  );
   const [copied, setCopied] = useState(false);
-
-  useEffect(() => {
-    setOrigin(window.location.origin);
-  }, []);
 
   const publicUrl = useMemo(() => {
     return origin ? `${origin}${path}` : path;
@@ -46,7 +44,10 @@ export function PublicApplicationUrlCard({ path }: PublicApplicationUrlCardProps
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <p className="min-w-0 flex-1 break-all rounded-lg border bg-muted/30 px-3 py-2 font-mono text-sm">
+          <p
+            className="min-w-0 flex-1 break-all rounded-lg border bg-muted/30 px-3 py-2 font-mono text-sm"
+            suppressHydrationWarning
+          >
             {publicUrl}
           </p>
           <Button type="button" variant="outline" size="sm" onClick={onCopy}>

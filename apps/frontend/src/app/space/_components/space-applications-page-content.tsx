@@ -22,36 +22,11 @@ import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
 } from "@/app/_components/applications/application-routes";
-
-export type ApplicationRow = {
-  applicationName?: string | null;
-  formDefinitionId?: string | null;
-  formDefinitionName?: string | null;
-  id: string;
-  groupId: string;
-  status: string;
-  applicantEmail: string;
-  applicantUserId?: string | null;
-  createdAt: string;
-};
-
-export type FormDefinitionRow = {
-  id: string;
-  groupId: string;
-  name: string;
-  description?: string | null;
-  status: string;
-  fields?: unknown[];
-  createdAt: string;
-  updatedAt: string;
-};
-
-type SpaceApplicationsPageContentProps = {
-  applications: ApplicationRow[];
-  formDefinitions: FormDefinitionRow[];
-  fetchErrorStatus?: number;
-  spaceId: string;
-};
+import type {
+  ApplicationRow,
+  FormDefinitionRow,
+  SpaceApplicationsPageContentProps,
+} from "./space-applications.types";
 
 export function SpaceApplicationsPageContent({
   applications,

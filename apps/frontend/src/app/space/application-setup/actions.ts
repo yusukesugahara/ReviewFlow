@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import {
@@ -14,6 +15,15 @@ import {
   type FieldType,
 } from "@/lib/constants/form-fields";
 import type { DraftField } from "@/app/space/_components/application-setup-draft-form";
+
+const applicationSetupFormSchema = z.object({
+  name: z.string().trim().min(1),
+  fieldsJson: z.string(),
+  stepsJson: z.string(),
+  spaceId: z.string().min(1),
+  returnPath: z.string().optional(),
+  intent: z.string().optional(),
+});
 
 type CreateDefinitionResponse = {
   id: string;
@@ -79,6 +89,17 @@ function toApprovalStepRequest(steps: ApprovalStepPayload[]): ApprovalStepReques
     assigneeUserIds: step.assigneeUserIds as unknown as unknown[][],
     canReturn: step.canReturn,
   }));
+}
+
+function readApplicationSetupForm(formData: FormData) {
+  return applicationSetupFormSchema.safeParse({
+    name: formData.get("name"),
+    fieldsJson: formData.get("fieldsJson"),
+    stepsJson: formData.get("stepsJson"),
+    spaceId: formData.get("spaceId"),
+    returnPath: formData.get("returnPath") || undefined,
+    intent: formData.get("intent") || undefined,
+  });
 }
 
 function unwrapData<T>(raw: unknown): T {
@@ -261,33 +282,21 @@ function toFieldPayloads(fields: DraftField[]): FieldPayload[] {
 export async function submitApplicationSetupAction(
   formData: FormData,
 ): Promise<void> {
-  const name = formData.get("name");
-  const fieldsJson = formData.get("fieldsJson");
-  const stepsJson = formData.get("stepsJson");
-  const spaceId = formData.get("spaceId");
+  const parsedForm = readApplicationSetupForm(formData);
   const returnPath = formData.get("returnPath");
-  const intent = formData.get("intent");
-  const applicationStatus = intent === "publish" ? "published" : "draft";
   const redirectBase =
     typeof returnPath === "string" && returnPath.startsWith("/space/")
       ? returnPath
       : "/space/application-setup";
 
-  if (typeof name !== "string" || name.trim().length === 0) {
+  if (!parsedForm.success) {
     redirect(
       `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
     );
   }
-  if (typeof spaceId !== "string" || spaceId.length === 0) {
-    redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
-    );
-  }
-  if (typeof stepsJson !== "string") {
-    redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
-    );
-  }
+
+  const { fieldsJson, intent, name, spaceId, stepsJson } = parsedForm.data;
+  const applicationStatus = intent === "publish" ? "published" : "draft";
 
   let fields: DraftField[];
   try {
@@ -408,31 +417,21 @@ export async function updateApplicationSetupAction(
   applicationId: string,
   formData: FormData,
 ): Promise<void> {
-  const name = formData.get("name");
-  const fieldsJson = formData.get("fieldsJson");
-  const stepsJson = formData.get("stepsJson");
-  const spaceId = formData.get("spaceId");
+  const parsedForm = readApplicationSetupForm(formData);
   const returnPath = formData.get("returnPath");
+  const rawSpaceId = formData.get("spaceId");
   const redirectBase =
     typeof returnPath === "string" && returnPath.startsWith("/space/")
       ? returnPath
-      : `/space/${typeof spaceId === "string" ? encodeURIComponent(spaceId) : ""}/applications/${encodeURIComponent(applicationId)}/edit`;
+      : `/space/${typeof rawSpaceId === "string" ? encodeURIComponent(rawSpaceId) : ""}/applications/${encodeURIComponent(applicationId)}/edit`;
 
-  if (typeof name !== "string" || name.trim().length === 0) {
+  if (!parsedForm.success) {
     redirect(
       `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
     );
   }
-  if (typeof spaceId !== "string" || spaceId.length === 0) {
-    redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
-    );
-  }
-  if (typeof stepsJson !== "string") {
-    redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
-    );
-  }
+
+  const { fieldsJson, name, spaceId, stepsJson } = parsedForm.data;
 
   let fields: DraftField[];
   try {

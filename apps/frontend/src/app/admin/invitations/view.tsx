@@ -23,24 +23,13 @@ import {
 import { userRoleLabel } from "@/lib/constants/role-labels";
 import { TENANT_ROLE_OPTIONS, TENANT_ROLES } from "@/lib/constants/roles";
 import { formatDateJa, formatDateTimeJa } from "@/lib/date-format";
-import type { TenantUserSummary } from "@/lib/schema";
 import {
   createInvitationAction,
   deleteUserAction,
   restoreUserAction,
 } from "./actions";
-
-type AdminInvitationsViewProps = {
-  sent?: string;
-  email?: string;
-  role?: string;
-  expiresAt?: string;
-  error?: string;
-  formError?: string;
-  currentUserId: string | null;
-  userListError?: string;
-  users: TenantUserSummary[];
-};
+import type { AdminInvitationsViewProps } from "./types";
+import type { TenantUserSummary } from "@/lib/schema";
 
 export function AdminInvitationsView({
   sent,

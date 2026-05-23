@@ -1,6 +1,6 @@
-import type { CurrentSessionUser } from "@/lib/server/session";
+import type { CurrentSessionUser } from "@/app/session/actions";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
-import type { ApplicationDetailViewModel } from "./application-detail-view";
+import type { ApplicationDetailViewModel } from "./application-detail.types";
 
 export type ApplicationCapabilities = {
   canEditApplication: boolean;

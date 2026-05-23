@@ -1,25 +1,18 @@
 import { client } from "@/lib/server/backend-fetch";
 import { SpaceEmptyState } from "@/app/space/_components/space-empty-state";
-import { getAccessTokenFromCookie, getCurrentSessionUser } from "@/lib/server/session";
+import { getCurrentSessionUser } from "@/app/session/actions";
+import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { AdminDashboardView } from "./view";
+import { unwrapData } from "@/lib/server/api-envelope";
+import type {
+  ApplicationsListSuccessJson,
+  CorrectionsListSuccessJson,
+  GroupsListSuccessJson,
+} from "@/lib/schema";
+import type { AdminDashboardApiFailure, AdminDashboardPageProps } from "./types";
 
-type AppSummary = { id: string; status: string; applicantEmail: string };
-type CorrectionEntry = { id: string };
-type ApiFailure = { status: number };
-
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
-
-type PageProps = {
-  searchParams?: Promise<{ spaceId?: string }>;
-};
-
-export default async function AdminDashboardPage({ searchParams }: PageProps) {
+export default async function AdminDashboardPage({ searchParams }: AdminDashboardPageProps) {
   try {
     const params = (await searchParams) ?? {};
     const accessToken = await getAccessTokenFromCookie();
@@ -31,11 +24,12 @@ export default async function AdminDashboardPage({ searchParams }: PageProps) {
       client.GET("/groups", { headers: authHeaders }),
       getCurrentSessionUser(),
     ]);
-    if (!spacesRaw.response.ok || !spacesRaw.data) {
+    const spacesData: GroupsListSuccessJson | undefined = spacesRaw.data;
+    if (!spacesRaw.response.ok || !spacesData) {
       throw { status: spacesRaw.response.status };
     }
     const spaces =
-      unwrapData<{ groups?: { id: string }[] }>(spacesRaw.data).groups ?? [];
+      unwrapData<GroupsListSuccessJson["data"]>(spacesData).groups ?? [];
     const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
     if (!spaceId) {
       return <SpaceEmptyState userRoles={me?.roles ?? []} />;
@@ -44,11 +38,12 @@ export default async function AdminDashboardPage({ searchParams }: PageProps) {
       params: { query: { groupId: spaceId } },
       headers: authHeaders,
     });
-    if (!appsRaw.response.ok || !appsRaw.data) {
+    const appsData: ApplicationsListSuccessJson | undefined = appsRaw.data;
+    if (!appsRaw.response.ok || !appsData) {
       throw { status: appsRaw.response.status };
     }
     const apps =
-      unwrapData<{ applications?: AppSummary[] }>(appsRaw.data).applications ?? [];
+      unwrapData<ApplicationsListSuccessJson["data"]>(appsData).applications ?? [];
 
     let correctionCount = 0;
     let resubmitCount = 0;
@@ -57,12 +52,12 @@ export default async function AdminDashboardPage({ searchParams }: PageProps) {
         params: { path: { id: app.id } },
         headers: authHeaders,
       });
-      if (!cRaw.response.ok || !cRaw.data) {
+      const correctionsData: CorrectionsListSuccessJson | undefined = cRaw.data;
+      if (!cRaw.response.ok || !correctionsData) {
         throw { status: cRaw.response.status };
       }
       const corrections =
-        unwrapData<{ corrections?: CorrectionEntry[] }>(cRaw.data).corrections ??
-        [];
+        unwrapData<CorrectionsListSuccessJson["data"]>(correctionsData).corrections ?? [];
       correctionCount += corrections.length;
       if (
         corrections.length > 0 &&
@@ -89,8 +84,8 @@ export default async function AdminDashboardPage({ searchParams }: PageProps) {
       <AdminDashboardView
         avgReturns="0.00"
         fetchErrorStatus={
-          error && typeof error === "object" && typeof (error as ApiFailure).status === "number"
-            ? (error as ApiFailure).status
+          error && typeof error === "object" && typeof (error as AdminDashboardApiFailure).status === "number"
+            ? (error as AdminDashboardApiFailure).status
             : 500
         }
         resubmitCount={0}
