@@ -15,7 +15,7 @@ import {
   Users,
   X,
 } from "lucide-react";
-import { LogoutForm } from "@/app/logout/logout-form";
+import { LogoutForm } from "@/app/(authorized)/logout/logout-form";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 

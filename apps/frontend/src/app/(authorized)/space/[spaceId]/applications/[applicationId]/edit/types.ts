@@ -1,0 +1,55 @@
+import type { ApprovalStepItem } from "@/app/(authorized)/space/_components/approval-steps-builder";
+import type { DraftField } from "@/app/(authorized)/space/_components/application-setup-draft-form";
+import type {
+  ApplicationDetail,
+  ApprovalFlowResponse,
+  FormDefinitionResponse,
+  FormFieldResponse,
+  GroupMemberSummary,
+} from "@/lib/schema";
+
+export type SpaceApplicationEditPageProps = {
+  params: Promise<{ spaceId: string; applicationId: string }>;
+  searchParams?: Promise<{
+    definitionId?: string;
+    setupError?: string;
+    setupErrorDetail?: string;
+  }>;
+};
+
+export type SpaceApplicationEditApiFailure = { status: number };
+
+export type EditableApplicationDetail = ApplicationDetail;
+
+export type EditableFormDefinition = Omit<FormDefinitionResponse, "fields"> & {
+  fields?: EditableFormField[];
+};
+
+export type EditableFormField = Omit<
+  FormFieldResponse,
+  "fieldType" | "helpText" | "options" | "placeholder"
+> & {
+  fieldType: string;
+  placeholder?: string | null;
+  helpText?: string | null;
+  options?: unknown[] | null;
+};
+
+export type EditableApprovalFlow = Omit<ApprovalFlowResponse, "steps"> & {
+  steps?: Array<{
+    id: string;
+    stepName: string;
+    assigneeUserId?: string;
+    assigneeUserIds?: string[];
+    canReturn: boolean;
+  }>;
+};
+
+export type EditableGroupMember = Omit<GroupMemberSummary, "name"> & {
+  name: string | null;
+};
+
+export type EditableApplicationInitialState = {
+  initialFields: DraftField[];
+  initialSteps: ApprovalStepItem[];
+};

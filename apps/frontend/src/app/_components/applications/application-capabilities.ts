@@ -1,4 +1,4 @@
-import type { CurrentSessionUser } from "@/app/session/actions";
+import type { CurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import type { ApplicationDetailViewModel } from "./application-detail.types";
 

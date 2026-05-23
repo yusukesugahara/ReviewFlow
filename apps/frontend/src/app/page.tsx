@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentSessionUser } from "@/app/session/actions";
+import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
 export default async function RootRedirectPage() {
