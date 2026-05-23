@@ -18,6 +18,7 @@
 - 画面コンポーネントとフォームロジックを分ける
 - field_type ごとの描画コンポーネントを分離する
 - fetchはserverコンポーネントで行う
+- typeは基本、schema.tsから、インポートして使う
 - typeはtypes fileに書く
 - useEffectは使わない
 - 保守性を意識して書く

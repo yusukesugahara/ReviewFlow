@@ -1,4 +1,6 @@
-import type { components, operations } from "@/lib/api-schema";
+import type { components, operations, paths } from "@/lib/api-schema";
+
+export type ApiPaths = paths;
 
 export type LoginRequestBody =
   operations["AuthController_login"]["requestBody"]["content"]["application/json"];
