@@ -58,7 +58,7 @@ export function AdminDashboardView({
               <Link
                 href={`/space/applications?spaceId=${encodeURIComponent(spaceId)}`}
               >
-                申請一覧を見る
+                申請フォーム一覧を見る
               </Link>
             </Button>
           </div>

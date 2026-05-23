@@ -45,7 +45,7 @@ type SidebarNavItem = {
 const spaceNavItems: SidebarNavItem[] = [
   {
     href: "/space/applications",
-    label: "申請一覧",
+    label: "申請フォーム一覧",
     icon: ClipboardList,
     spacePath: "applications",
   },
@@ -73,7 +73,7 @@ const tenantAdminNavItems: SidebarNavItem[] = [
 const applicantNavItems: SidebarNavItem[] = [
   {
     href: "/space/applications",
-    label: "申請一覧",
+    label: "申請フォーム一覧",
     icon: ClipboardList,
     spacePath: "applications",
   },
@@ -509,7 +509,7 @@ function buildSpaceBreadcrumbItems(
   }
 
   if (second === "applications") {
-    items.push({ href: "/space/applications", label: "申請一覧" });
+    items.push({ href: "/space/applications", label: "申請フォーム一覧" });
     return items;
   }
 
@@ -529,7 +529,7 @@ function buildSpaceBreadcrumbItems(
     const encodedSpaceId = encodeURIComponent(spaceId);
 
     items.push({ href: `/space/${encodedSpaceId}/applications`, label: spaceName });
-    items.push({ href: `/space/${encodedSpaceId}/applications`, label: "申請一覧" });
+    items.push({ href: `/space/${encodedSpaceId}/applications`, label: "申請フォーム一覧" });
 
     if (fourth === "new") {
       items.push({ href: `/space/${encodedSpaceId}/applications/new`, label: "新規申請" });

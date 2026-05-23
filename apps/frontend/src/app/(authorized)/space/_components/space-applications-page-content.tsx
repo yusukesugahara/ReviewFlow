@@ -39,7 +39,7 @@ export function SpaceApplicationsPageContent({
       <Card>
         <CardContent className="pt-6">
           <p className="text-destructive">
-            申請一覧の取得に失敗しました（status: {fetchErrorStatus}）
+            申請フォーム一覧の取得に失敗しました（status: {fetchErrorStatus}）
           </p>
         </CardContent>
       </Card>
@@ -65,7 +65,7 @@ export function SpaceApplicationsPageContent({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
+          <h2 className="text-3xl font-bold tracking-tight">申請フォーム一覧</h2>
           <p className="text-muted-foreground">
             作成した申請フォームごとに、利用者から届いた申請を確認できます
           </p>

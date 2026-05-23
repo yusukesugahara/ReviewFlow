@@ -51,7 +51,7 @@ export function SpaceNewApplicationView({
           </p>
         </div>
         <Button asChild variant="outline">
-          <Link href={buildSpaceApplicationsHref(spaceId)}>申請一覧へ戻る</Link>
+          <Link href={buildSpaceApplicationsHref(spaceId)}>申請フォーム一覧へ戻る</Link>
         </Button>
       </div>
 
