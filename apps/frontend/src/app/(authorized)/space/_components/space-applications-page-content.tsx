@@ -75,10 +75,9 @@ export function SpaceApplicationsPageContent({
         </Button>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-2">
         <SummaryCard label="対応が必要" value={pendingApplications.length} tone="amber" />
         <SummaryCard label="対応済み" value={processedApplications.length} tone="emerald" />
-        <SummaryCard label="申請フォーム" value={displayDefinitions.length} tone="slate" />
       </div>
 
       <Card>
