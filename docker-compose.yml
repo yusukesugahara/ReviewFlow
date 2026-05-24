@@ -48,7 +48,6 @@ services:
         NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_HOST_PORT:-3002}
         INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
         INTERNAL_API_ORIGIN: http://backend:3000
-    user: "0:0"
     ports:
       - "${FRONTEND_HOST_PORT:-3001}:3000"
     depends_on:
@@ -58,6 +57,9 @@ services:
       NEXT_PUBLIC_API_URL: http://localhost:${BACKEND_HOST_PORT:-3002}
       INTERNAL_API_KEY: ${INTERNAL_API_KEY:-docker-dev-internal-api-key}
       INTERNAL_API_ORIGIN: http://backend:3000
+      NPM_CONFIG_CACHE: /tmp/.npm
+      HOME: /tmp
+    user: "${UID:-1000}:${GID:-1000}"
     volumes:
       - .:/workspace
       - frontend-node-modules:/workspace/node_modules
