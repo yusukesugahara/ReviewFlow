@@ -17,7 +17,6 @@ import {
 } from "@/components/ui/table";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
-import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
@@ -55,11 +54,6 @@ export function SpaceApplicationsPageContent({
   const rows = displayDefinitions.map((definition) =>
     buildApplicationFormListRow(definition, applications, setupApplications, spaceId),
   );
-  const pendingApplications = submittedApplications.filter(isPendingApplication);
-  const processedApplications = submittedApplications.filter(isProcessedApplication);
-  const otherApplications = submittedApplications.filter(
-    (row) => !isPendingApplication(row) && !isProcessedApplication(row),
-  );
 
   return (
     <div className="space-y-6">
@@ -73,11 +67,6 @@ export function SpaceApplicationsPageContent({
         <Button asChild>
           <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
         </Button>
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <SummaryCard label="対応が必要" value={pendingApplications.length} tone="amber" />
-        <SummaryCard label="対応済み" value={processedApplications.length} tone="emerald" />
       </div>
 
       <Card>
@@ -146,102 +135,7 @@ export function SpaceApplicationsPageContent({
           )}
         </CardContent>
       </Card>
-
-      <ApplicationSection
-        title="対応が必要な申請"
-        description="承認、却下、差し戻しなどの確認が必要な申請です"
-        emptyMessage="対応が必要な申請はありません"
-        rows={pendingApplications}
-        actionLabel="確認する"
-        spaceId={spaceId}
-      />
-
-      <ApplicationSection
-        title="対応済みの申請"
-        description="承認済み、却下済みの申請です"
-        emptyMessage="対応済みの申請はまだありません"
-        rows={processedApplications}
-        actionLabel="詳細"
-        spaceId={spaceId}
-      />
-
-      {otherApplications.length > 0 ? (
-        <ApplicationSection
-          title="その他の申請"
-          description="現在の状態を確認できます"
-          emptyMessage=""
-          rows={otherApplications}
-          actionLabel="詳細"
-          spaceId={spaceId}
-        />
-      ) : null}
     </div>
-  );
-}
-
-function SummaryCard({
-  label,
-  value,
-  tone,
-}: {
-  label: string;
-  value: number;
-  tone: "amber" | "emerald" | "slate";
-}) {
-  const toneClassName =
-    tone === "amber"
-      ? "border-amber-200 bg-amber-50 text-amber-900"
-      : tone === "emerald"
-        ? "border-emerald-200 bg-emerald-50 text-emerald-900"
-        : "border-slate-200 bg-white text-slate-900";
-
-  return (
-    <div className={`rounded-lg border px-4 py-3 ${toneClassName}`}>
-      <p className="text-sm font-medium">{label}</p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
-  );
-}
-
-function ApplicationSection({
-  title,
-  description,
-  emptyMessage,
-  rows,
-  actionLabel,
-  spaceId,
-}: {
-  title: string;
-  description: string;
-  emptyMessage: string;
-  rows: ApplicationRow[];
-  actionLabel: string;
-  spaceId: string;
-}) {
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>
-          {description}（{rows.length}件）
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {rows.length === 0 ? (
-          <ApplicationEmptyState message={emptyMessage} />
-        ) : (
-          <ApplicationListTable
-            rows={rows}
-            actionLabel={actionLabel}
-            showApplicantEmail
-            getDetailHref={(row) =>
-              buildSpaceApplicationDetailHref(row) ??
-              `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
-            }
-          />
-        )}
-      </CardContent>
-    </Card>
   );
 }
 
@@ -284,8 +178,8 @@ function buildApplicationFormListRow(
   return {
     definitionId: definition.id,
     detailHref: formDetailHref,
-    pendingCount: relatedApplications.filter(isPendingApplication).length,
-    processedCount: relatedApplications.filter(isProcessedApplication).length,
+    pendingCount: relatedApplications.filter(isPendingApplicationStatus).length,
+    processedCount: relatedApplications.filter(isProcessedApplicationStatus).length,
     publicHref: isPublished
       ? `/apply/${encodeURIComponent(definition.groupId || spaceId)}?formDefinitionId=${encodeURIComponent(definition.id)}`
       : null,
@@ -301,7 +195,7 @@ function appendQueryParam(href: string, key: string, value: string): string {
   return `${pathname}?${params.toString()}`;
 }
 
-function isPendingApplication(row: ApplicationRow): boolean {
+function isPendingApplicationStatus(row: ApplicationRow): boolean {
   return (
     row.status === APPLICATION_STATUSES.submitted ||
     row.status === APPLICATION_STATUSES.inReview ||
@@ -309,7 +203,7 @@ function isPendingApplication(row: ApplicationRow): boolean {
   );
 }
 
-function isProcessedApplication(row: ApplicationRow): boolean {
+function isProcessedApplicationStatus(row: ApplicationRow): boolean {
   return (
     row.status === APPLICATION_STATUSES.approved ||
     row.status === APPLICATION_STATUSES.rejected
