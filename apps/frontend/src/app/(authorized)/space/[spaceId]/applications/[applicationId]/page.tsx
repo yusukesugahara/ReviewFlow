@@ -177,6 +177,7 @@ export default async function SpaceApplicationDetailPage({
           definition={definition as FormDefinitionDetail | null}
           fields={fields}
           relatedApplications={relatedApplications}
+          spaceId={spaceId}
           publicApplicationUrlPath={publicApplicationUrlPath}
           editHref={editHref}
           descriptionAction={updateDescriptionAction.bind(

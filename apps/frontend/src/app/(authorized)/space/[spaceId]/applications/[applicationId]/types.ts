@@ -31,6 +31,7 @@ export type FormDetailViewProps = {
   definition: FormDefinitionDetail | null;
   fields: ApplicationFormField[];
   relatedApplications: ApplicationSummary[];
+  spaceId: string;
   publicApplicationUrlPath: string;
   editHref: string;
   descriptionAction: (formData: FormData) => Promise<void>;
