@@ -29,6 +29,7 @@ export default async function SpaceSubmissionsPage({
     applicant: normalizeSearchValue(query?.applicant),
     createdFrom: normalizeSearchValue(query?.createdFrom),
     createdTo: normalizeSearchValue(query?.createdTo),
+    form: normalizeSearchValue(query?.form),
     page: normalizePage(query?.page),
     status: normalizeSearchValue(query?.status),
   };

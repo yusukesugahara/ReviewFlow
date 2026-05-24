@@ -8,6 +8,7 @@ type SpaceSubmissionsViewProps = {
     applicant: string;
     createdFrom: string;
     createdTo: string;
+    form: string;
     page: number;
     status: string;
   };

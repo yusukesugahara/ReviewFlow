@@ -51,6 +51,7 @@ export function SpaceSubmissionsPageContent({
     filters.applicant.length > 0 ||
     filters.createdFrom.length > 0 ||
     filters.createdTo.length > 0 ||
+    filters.form.length > 0 ||
     filters.status.length > 0;
   const totalPages = Math.max(1, Math.ceil(filteredApplications.length / PAGE_SIZE));
   const currentPage = Math.min(filters.page, totalPages);
@@ -79,78 +80,84 @@ export function SpaceSubmissionsPageContent({
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-xl">
             <Search className="h-5 w-5 text-slate-500" aria-hidden="true" />
-            検索
+            すべての申請
           </CardTitle>
           <CardDescription>
-            申請者、ステータス、作成時期で申請を絞り込めます
+            申請者、ステータス、作成時期で申請を絞り込めます（{filteredApplications.length}件）
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <form className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(180px,0.8fr)_minmax(150px,0.7fr)_minmax(150px,0.7fr)_auto] lg:items-end">
+        <CardContent className="space-y-5">
+          <form className="space-y-4">
             <input type="hidden" name="page" value="1" />
-            <div className="space-y-2">
-              <Label htmlFor="applicant">申請者</Label>
-              <Input
-                id="applicant"
-                name="applicant"
-                defaultValue={filters.applicant}
-                placeholder="メールアドレスで検索"
-              />
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="space-y-2 xl:col-span-2">
+                <Label htmlFor="applicant">申請者</Label>
+                <Input
+                  id="applicant"
+                  name="applicant"
+                  defaultValue={filters.applicant}
+                  placeholder="メールアドレスで検索"
+                />
+              </div>
+              <div className="space-y-2 xl:col-span-2">
+                <Label htmlFor="form">申請フォーム</Label>
+                <Input
+                  id="form"
+                  name="form"
+                  defaultValue={filters.form}
+                  placeholder="フォーム名で検索"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="status">ステータス</Label>
+                <select
+                  id="status"
+                  name="status"
+                  defaultValue={filters.status}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                >
+                  <option value="">すべて</option>
+                  {SUBMISSION_STATUS_OPTIONS.map((status) => (
+                    <option key={status} value={status}>
+                      {getApplicationStatusLabel(status)}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="status">ステータス</Label>
-              <select
-                id="status"
-                name="status"
-                defaultValue={filters.status}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">すべて</option>
-                {SUBMISSION_STATUS_OPTIONS.map((status) => (
-                  <option key={status} value={status}>
-                    {getApplicationStatusLabel(status)}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="createdFrom">作成日 From</Label>
-              <Input
-                id="createdFrom"
-                name="createdFrom"
-                type="date"
-                defaultValue={filters.createdFrom}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="createdTo">作成日 To</Label>
-              <Input
-                id="createdTo"
-                name="createdTo"
-                type="date"
-                defaultValue={filters.createdTo}
-              />
-            </div>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:max-w-md">
+                <div className="space-y-2">
+                  <Label htmlFor="createdFrom">作成日 From</Label>
+                  <Input
+                    id="createdFrom"
+                    name="createdFrom"
+                    type="date"
+                    defaultValue={filters.createdFrom}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="createdTo">作成日 To</Label>
+                  <Input
+                    id="createdTo"
+                    name="createdTo"
+                    type="date"
+                    defaultValue={filters.createdTo}
+                  />
+                </div>
+              </div>
+              <div className="flex gap-2">
               <SubmissionSearchSubmitButton />
               <Button asChild type="button" variant="outline">
                 <Link href={`/space/${encodeURIComponent(spaceId)}/submissions`}>
                   クリア
                 </Link>
               </Button>
+              </div>
             </div>
           </form>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>すべての申請</CardTitle>
-          <CardDescription>
-            申請フォーム作成用の下書きと公開行を除いた申請です（{filteredApplications.length}件）
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+          <div className="border-t border-slate-200 pt-5">
           {filteredApplications.length === 0 ? (
             <ApplicationEmptyState
               message={hasFilters ? "条件に一致する申請はありません" : "申請はまだありません"}
@@ -176,6 +183,7 @@ export function SpaceSubmissionsPageContent({
               />
             </>
           )}
+          </div>
         </CardContent>
       </Card>
     </div>
@@ -186,6 +194,7 @@ type SubmissionFilters = {
   applicant: string;
   createdFrom: string;
   createdTo: string;
+  form: string;
   page: number;
   status: string;
 };
@@ -205,11 +214,15 @@ function filterApplications(
   filters: SubmissionFilters,
 ): ApplicationRow[] {
   const applicant = filters.applicant.toLowerCase();
+  const form = filters.form.toLowerCase();
   const createdFrom = parseDateStart(filters.createdFrom);
   const createdTo = parseDateEnd(filters.createdTo);
 
   return applications.filter((row) => {
     if (applicant && !row.applicantEmail?.toLowerCase().includes(applicant)) {
+      return false;
+    }
+    if (form && !getApplicationFormSearchText(row).includes(form)) {
       return false;
     }
     if (filters.status && row.status !== filters.status) {
@@ -226,6 +239,17 @@ function filterApplications(
 
     return true;
   });
+}
+
+function getApplicationFormSearchText(row: ApplicationRow): string {
+  return [
+    row.formDefinitionName,
+    row.applicationName,
+    row.formDefinitionId,
+  ]
+    .filter((value): value is string => typeof value === "string")
+    .join(" ")
+    .toLowerCase();
 }
 
 function parseDateStart(value: string): number | null {
@@ -307,6 +331,9 @@ function buildSubmissionsPageHref(
   }
   if (filters.status) {
     params.set("status", filters.status);
+  }
+  if (filters.form) {
+    params.set("form", filters.form);
   }
   if (filters.createdFrom) {
     params.set("createdFrom", filters.createdFrom);

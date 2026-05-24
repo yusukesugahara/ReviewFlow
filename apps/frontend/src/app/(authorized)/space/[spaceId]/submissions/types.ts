@@ -4,6 +4,7 @@ export type SpaceSubmissionsPageProps = {
     applicant?: string;
     createdFrom?: string;
     createdTo?: string;
+    form?: string;
     page?: string;
     status?: string;
   }>;
