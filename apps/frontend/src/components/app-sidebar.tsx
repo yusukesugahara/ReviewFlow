@@ -9,6 +9,7 @@ import {
   ClipboardList,
   FileText,
   Home,
+  Inbox,
   type LucideIcon,
   Menu,
   ShieldCheck,
@@ -39,7 +40,7 @@ type SidebarNavItem = {
   icon: LucideIcon;
   adminOnly?: boolean;
   spaceAdminOnly?: boolean;
-  spacePath?: "applications" | "applicationsNew";
+  spacePath?: "applications" | "applicationsNew" | "submissions";
 };
 
 const spaceNavItems: SidebarNavItem[] = [
@@ -48,6 +49,12 @@ const spaceNavItems: SidebarNavItem[] = [
     label: "申請フォーム一覧",
     icon: ClipboardList,
     spacePath: "applications",
+  },
+  {
+    href: "/space/submissions",
+    label: "申請一覧",
+    icon: Inbox,
+    spacePath: "submissions",
   },
   {
     href: "/space/applications/new",
@@ -373,7 +380,7 @@ function SidebarLink({
   onNavigate,
 }: {
   href: string;
-  spacePath?: "applications" | "applicationsNew";
+  spacePath?: "applications" | "applicationsNew" | "submissions";
   fallbackSpaceId?: string;
   icon: LucideIcon;
   children: ReactNode;
@@ -388,6 +395,8 @@ function SidebarLink({
   const scopedHref =
     spacePath === "applicationsNew" && activeSpaceId
       ? `/space/${encodeURIComponent(activeSpaceId)}/applications/new`
+      : spacePath === "submissions" && activeSpaceId
+      ? `/space/${encodeURIComponent(activeSpaceId)}/submissions`
       : spacePath === "applications" && activeSpaceId
       ? `/space/${encodeURIComponent(activeSpaceId)}/applications`
       : href.startsWith("/space") && activeSpaceId
@@ -402,8 +411,10 @@ function SidebarLink({
       (pathname.startsWith(`${scopedHref}/`) &&
         pathname !== `${scopedHref}/new`) ||
       pathname === href);
-  const isActive = spacePath === "applications" || spacePath === "applicationsNew"
-    ? isApplicationsActive || isApplicationNewActive
+  const isSubmissionsActive =
+    spacePath === "submissions" && (pathname === scopedHref || pathname === href);
+  const isActive = spacePath === "applications" || spacePath === "applicationsNew" || spacePath === "submissions"
+    ? isApplicationsActive || isApplicationNewActive || isSubmissionsActive
     : isSectionRoot
       ? pathname === href
       : pathname === href || pathname.startsWith(`${href}/`);
@@ -429,7 +440,7 @@ function getPathSpaceId(pathname: string): string | null {
     return null;
   }
   const [spaceId, section] = segments.slice(1);
-  if (section !== "applications") {
+  if (section !== "applications" && section !== "submissions") {
     return null;
   }
   if (!spaceId) {
@@ -546,6 +557,15 @@ function buildSpaceBreadcrumbItems(
         });
       }
     }
+  }
+
+  if (third === "submissions") {
+    const spaceId = decodeURIComponent(second);
+    const spaceName = spaces.find((space) => space.id === spaceId)?.name ?? "スペース";
+    const encodedSpaceId = encodeURIComponent(spaceId);
+
+    items.push({ href: `/space/${encodedSpaceId}/applications`, label: spaceName });
+    items.push({ href: `/space/${encodedSpaceId}/submissions`, label: "申請一覧" });
   }
 
   return items;
