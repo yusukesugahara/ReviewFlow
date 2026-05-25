@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ApplicationStatusBadge } from "./application-status-badge";
+import { DynamicFieldsTable } from "./dynamic-fields";
 import { PublicApplicationUrlCard } from "./public-application-url-card";
 import type {
   ApplicationCorrection,
@@ -161,6 +162,10 @@ function ApplicationFieldsCard({
   description: string;
   openCorrectionItems: ApplicationCorrectionTargetItem[];
 }) {
+  const correctionTargetKeys = new Set(
+    openCorrectionItems.flatMap((item) => [item.formFieldId, item.fieldKey]),
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -168,33 +173,30 @@ function ApplicationFieldsCard({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-hidden border border-slate-400 bg-white">
-          <div className="border-b border-slate-400 bg-slate-100 px-3 py-2 text-center text-sm font-semibold text-slate-900">
-            申請内容
-          </div>
-          <div className="divide-y divide-slate-300">
-            {fields.map((field, index) => {
-          const isCorrectionTarget = openCorrectionItems.some(
-            (item) =>
-              item.formFieldId === field.id || item.fieldKey === field.fieldKey,
-          );
-          return (
-            <div
-              key={field.id}
-              className={`grid min-h-14 grid-cols-1 divide-y divide-slate-300 md:grid-cols-[180px_minmax(0,1fr)] md:divide-x md:divide-y-0 ${
-                isCorrectionTarget
-                  ? "bg-amber-50"
-                  : "bg-white"
-              }`}
-            >
-              <div className="flex items-start gap-2 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-800">
-                <span className="mt-0.5 min-w-5 text-xs text-slate-500">{index + 1}</span>
-                <span className="break-words">{field.label}</span>
-              </div>
-              <div className="min-w-0 px-3 py-3 text-base">
-                {renderFieldValue(field, application.values[field.fieldKey])}
-                <div className="mt-1 font-mono text-xs text-muted-foreground">
-                  {field.fieldKey}
+        <DynamicFieldsTable
+          fields={fields.map((field) => ({
+            ...field,
+            required: field.required ?? false,
+          }))}
+          values={application.values}
+          title="申請書"
+          getRowClassName={(field) =>
+            correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey)
+              ? "bg-amber-50"
+              : undefined
+          }
+          renderValue={(field, value) => {
+            const isCorrectionTarget =
+              correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey);
+            return (
+              <div>
+                {field.helpText ? (
+                  <p className="mb-1 text-xs leading-5 text-muted-foreground">
+                    {field.helpText}
+                  </p>
+                ) : null}
+                <div className="min-h-9 whitespace-pre-wrap border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900">
+                  {renderFieldValue(field, value)}
                 </div>
                 {isCorrectionTarget ? (
                   <p className="mt-2 text-xs font-medium text-amber-700">
@@ -202,11 +204,9 @@ function ApplicationFieldsCard({
                   </p>
                 ) : null}
               </div>
-            </div>
-          );
-            })}
-          </div>
-        </div>
+            );
+          }}
+        />
       </CardContent>
     </Card>
   );

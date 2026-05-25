@@ -18,6 +18,8 @@ export type ApplicationFormField = {
   label: string;
   fieldType: string;
   required?: boolean;
+  placeholder?: string | null;
+  helpText?: string | null;
   options?: unknown[] | null;
 };
 
