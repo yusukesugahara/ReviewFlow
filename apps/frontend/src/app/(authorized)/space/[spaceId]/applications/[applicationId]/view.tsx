@@ -11,7 +11,7 @@ import {
 import { ApplicantApplicationActions } from "@/app/_components/applications/applicant-application-actions";
 import { ApplicationStatusBadge } from "@/app/_components/applications/application-status-badge";
 import { PublicApplicationUrlCard } from "@/app/_components/applications/public-application-url-card";
-import { DynamicFieldInput } from "@/app/_components/applications/dynamic-fields";
+import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
 import { ApplicationDetailView } from "@/app/_components/applications/application-detail-view";
 import { ReviewerApplicationActions } from "@/app/_components/applications/reviewer-application-actions";
 import { buildSpaceApplicationEditHrefByIds } from "@/app/_components/applications/application-routes";
@@ -172,25 +172,12 @@ export function FormDetailView({
             </p>
           ) : (
             <div className="space-y-4">
-              {fields.map((field, index) => (
-                <div
-                  key={field.id}
-                  className="rounded-xl border border-slate-200 bg-slate-50/60 p-4"
-                >
-                  <div className="mb-4 flex items-center justify-between gap-3">
-                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      項目 {index + 1}
-                    </span>
-                    <span className="rounded-full bg-white px-2.5 py-1 text-xs font-medium text-slate-500 ring-1 ring-slate-200">
-                      {field.fieldType}
-                    </span>
-                  </div>
-                  <DynamicFieldInput
-                    field={{ ...field, required: field.required ?? false }}
-                    value={null}
-                  />
-                </div>
-              ))}
+              <DynamicFieldsTable
+                fields={fields.map((field) => ({
+                  ...field,
+                  required: field.required ?? false,
+                }))}
+              />
               <Button type="button" disabled className="w-full">
                 申請を送信
               </Button>

@@ -21,6 +21,7 @@ export type DynamicFieldInputProps = {
   value: unknown;
   disabled?: boolean;
   afterInput?: ReactNode;
+  variant?: "default" | "table";
 };
 
 export type DynamicFieldRendererProps = Omit<DynamicFieldInputProps, "value"> & {

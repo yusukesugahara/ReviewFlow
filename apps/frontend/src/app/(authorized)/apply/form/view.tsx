@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DynamicFieldInput } from "@/app/_components/applications/dynamic-fields";
+import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
 import { submitPublicApplicationAction } from "./actions";
 import type {
   PublicApplicationFormErrorViewProps,
@@ -54,9 +54,7 @@ export function PublicApplicationFormView({
               <input type="hidden" name="groupId" value={definition.groupId} />
               <input type="hidden" name="formDefinitionId" value={definition.id} />
               <input type="hidden" name="fieldsJson" value={JSON.stringify(fields)} />
-              {fields.map((field) => (
-                <DynamicFieldInput key={field.id} field={field} value={null} />
-              ))}
+              <DynamicFieldsTable fields={fields} />
               <Button type="submit" className="w-full">
                 申請を送信
               </Button>

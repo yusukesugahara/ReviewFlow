@@ -142,20 +142,22 @@ function TypeSpecificInputs({
                 ? "例: 選択してください"
                 : "入力例や補足"
             }
+            className="bg-white"
           />
         </div>
       ) : (
         <input type="hidden" name="placeholder" value="" />
       )}
       <div className="space-y-2">
-        <Label htmlFor={`helpText-${fieldType}`}>ヘルプテキスト</Label>
+        <Label htmlFor={`helpText-${fieldType}`}>説明文</Label>
         <Input
           id={`helpText-${fieldType}`}
           name="helpText"
           value={helpText}
           onChange={(event) => onHelpTextChange(event.target.value)}
           disabled={disabled}
-          placeholder="入力欄の下に表示する説明"
+          placeholder="入力欄の上に表示する説明"
+          className="bg-white"
         />
       </div>
       {fieldTypeNeedsOptions(fieldType) ? (
@@ -170,6 +172,7 @@ function TypeSpecificInputs({
             required
             rows={4}
             placeholder={"承認する\n差し戻す\n却下する"}
+            className="bg-white"
           />
         </div>
       ) : (
@@ -319,6 +322,7 @@ export function FormFieldEditor({
               required
               disabled={disabled}
               placeholder="例: 申請理由"
+              className="bg-white"
             />
           </div>
           <div className="space-y-2">
@@ -388,6 +392,7 @@ export function AddFieldForm({ action, nextSortOrder, disabled }: AddFieldFormPr
             onChange={(event) => setLabel(event.target.value)}
             placeholder={`例: 承認結果（空欄ならフォーム${nextSortOrder + 1}）`}
             disabled={disabled}
+            className="bg-white"
           />
         </div>
         <div className="space-y-2">

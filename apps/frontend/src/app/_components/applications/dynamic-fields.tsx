@@ -55,6 +55,7 @@ export function DynamicFieldInput({
   value,
   disabled = false,
   afterInput,
+  variant = "default",
 }: DynamicFieldInputProps) {
   const name = `field:${field.fieldKey}`;
   const options = normalizeFieldOptions(field.options);
@@ -70,6 +71,7 @@ export function DynamicFieldInput({
     options,
     disabled,
     afterInput,
+    variant,
   };
 
   if (field.fieldType === "textarea") {
@@ -89,4 +91,46 @@ export function DynamicFieldInput({
   }
 
   return <ScalarFieldInput {...rendererProps} />;
+}
+
+export function DynamicFieldsTable({
+  fields,
+  values,
+  disabled = false,
+}: {
+  fields: DynamicFormField[];
+  values?: Record<string, unknown>;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="overflow-hidden border border-slate-400 bg-white">
+      <div className="border-b border-slate-400 bg-slate-100 px-3 py-2 text-center text-sm font-semibold text-slate-900">
+        申請書
+      </div>
+      <div className="divide-y divide-slate-300">
+        {fields.map((field, index) => (
+          <div
+            key={field.id}
+            className="grid min-h-16 grid-cols-1 divide-y divide-slate-300 md:grid-cols-[200px_minmax(0,1fr)] md:divide-x md:divide-y-0"
+          >
+            <div className="flex items-start gap-2 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-800">
+              <span className="mt-0.5 min-w-5 text-xs text-slate-500">{index + 1}</span>
+              <span className="break-words">
+                {field.label}
+                {field.required ? <span className="ml-1 text-destructive">*</span> : null}
+              </span>
+            </div>
+            <div className="min-w-0 bg-white px-3 py-3">
+              <DynamicFieldInput
+                field={field}
+                value={values?.[field.fieldKey]}
+                disabled={disabled}
+                variant="table"
+              />
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }

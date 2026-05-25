@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Pencil, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,7 +21,6 @@ import {
   type ApprovalAssigneeOption,
 } from "./approval-steps-builder";
 import { DynamicFieldInput } from "@/app/_components/applications/dynamic-fields";
-import { OrderMoveButtons } from "./order-move-buttons";
 import { PublishedApplicationUrlModal } from "./published-application-url-modal";
 
 export type { ApprovalAssigneeOption };
@@ -117,6 +117,270 @@ function toDynamicField(
   };
 }
 
+function InlineFormBuilder({
+  fieldsWithKeys,
+  setSelectedFieldId,
+  updateField,
+  insertFieldAt,
+  removeField,
+  initialValues,
+}: {
+  fieldsWithKeys: { field: DraftField; fieldKey: string }[];
+  setSelectedFieldId: (id: string) => void;
+  updateField: (id: string, patch: Partial<DraftField>) => void;
+  insertFieldAt: (index: number) => void;
+  removeField: (id: string) => void;
+  initialValues?: Record<string, unknown>;
+}) {
+  const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const editingField =
+    fieldsWithKeys.find(({ field }) => field.id === editingFieldId)?.field ?? null;
+
+  return (
+    <div className="bg-white">
+      <div className="overflow-hidden border border-slate-400">
+        <div className="border-b border-slate-400 bg-slate-100 px-3 py-2 text-center text-sm font-semibold text-slate-900">
+          申請書
+        </div>
+        <InsertFieldButton index={0} onInsert={insertFieldAt} />
+        <div>
+          {fieldsWithKeys.map(({ field, fieldKey }, index) => {
+            const dynamicField = toDynamicField(field, index, fieldKey);
+            return (
+              <div key={field.id}>
+                <div
+                  className="group relative grid min-h-16 grid-cols-1 divide-y divide-slate-300 border-t border-slate-300 md:grid-cols-[200px_minmax(0,1fr)] md:divide-x md:divide-y-0"
+                  onFocus={() => setSelectedFieldId(field.id)}
+                  onMouseEnter={() => setSelectedFieldId(field.id)}
+                >
+                  <div className="flex items-start gap-2 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-800">
+                    <span className="mt-0.5 min-w-5 text-xs text-slate-500">{index + 1}</span>
+                    <span className="break-words">
+                      {dynamicField.label}
+                      {dynamicField.required ? <span className="ml-1 text-destructive">*</span> : null}
+                    </span>
+                  </div>
+                  <div className="min-w-0 bg-white px-3 py-3">
+                    <DynamicFieldInput
+                      field={dynamicField}
+                      value={initialValues?.[fieldKey]}
+                      variant="table"
+                    />
+                  </div>
+                  <div className="absolute right-2 top-2 flex gap-1 opacity-100 md:opacity-0 md:transition group-hover:opacity-100 group-focus-within:opacity-100">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 bg-white p-0"
+                      aria-label={`${dynamicField.label}を編集`}
+                      onClick={() => {
+                        setSelectedFieldId(field.id);
+                        setEditingFieldId(field.id);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="h-8 w-8 bg-white p-0 text-red-600 hover:text-red-700"
+                      aria-label={`${dynamicField.label}を削除`}
+                      onClick={() => removeField(field.id)}
+                    >
+                      <X className="h-4 w-4" aria-hidden="true" />
+                    </Button>
+                  </div>
+                </div>
+                <InsertFieldButton index={index + 1} onInsert={insertFieldAt} />
+              </div>
+            );
+          })}
+        </div>
+        {fieldsWithKeys.length === 0 ? (
+          <div className="border-t border-slate-300 px-4 py-10 text-center">
+            <Button type="button" variant="outline" onClick={() => insertFieldAt(0)}>
+              <Plus className="h-4 w-4" aria-hidden="true" />
+              フォームを追加
+            </Button>
+          </div>
+        ) : null}
+      </div>
+      {editingField ? (
+        <FieldContentModal
+          field={editingField}
+          open={Boolean(editingField)}
+          onOpenChange={(open) => {
+            if (!open) {
+              setEditingFieldId(null);
+            }
+          }}
+          updateField={updateField}
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function InsertFieldButton({
+  index,
+  onInsert,
+}: {
+  index: number;
+  onInsert: (index: number) => void;
+}) {
+  return (
+    <div className="group relative h-4 bg-white">
+      <div className="absolute inset-x-0 top-1/2 border-t border-transparent group-hover:border-slate-300" />
+      <div className="absolute inset-0 flex items-center justify-center opacity-0 transition group-hover:opacity-100 group-focus-within:opacity-100">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="h-7 w-7 rounded-full bg-white p-0 shadow-sm"
+          aria-label="フォームを追加"
+          onClick={() => onInsert(index)}
+        >
+          <Plus className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+function FieldContentModal({
+  field,
+  open,
+  onOpenChange,
+  updateField,
+}: {
+  field: DraftField;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  updateField: (id: string, patch: Partial<DraftField>) => void;
+}) {
+  if (!open) {
+    return null;
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
+      <button
+        type="button"
+        aria-label="フォーム項目編集モーダルを閉じる"
+        className="absolute inset-0 bg-slate-950/40"
+        onClick={() => onOpenChange(false)}
+      />
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="field-content-modal-title"
+        className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 id="field-content-modal-title" className="text-lg font-semibold text-slate-950">
+              フォーム項目を編集
+            </h3>
+            <p className="mt-1 text-sm text-slate-500">
+              選択中の項目に表示する内容をまとめて入力します。
+            </p>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
+            閉じる
+          </Button>
+        </div>
+
+        <div className="mt-5 space-y-5">
+          <div className="grid gap-4 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor={`modal-label-${field.id}`}>項目名</Label>
+              <Input
+                id={`modal-label-${field.id}`}
+                value={field.label}
+                onChange={(event) => updateField(field.id, { label: event.target.value })}
+                placeholder="例: 申請理由"
+                className="bg-white"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor={`modal-type-${field.id}`}>入力形式</Label>
+              <select
+                id={`modal-type-${field.id}`}
+                value={field.fieldType}
+                onChange={(event) => updateField(field.id, { fieldType: event.target.value as FieldType })}
+                className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm"
+              >
+                {FIELD_TYPE_OPTIONS.map((item) => (
+                  <option key={item.value} value={item.value}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+            <input
+              type="checkbox"
+              checked={field.required}
+              onChange={(event) => updateField(field.id, { required: event.target.checked })}
+              className="h-4 w-4 rounded border-gray-300"
+            />
+            必須項目
+          </label>
+
+          <div className="space-y-2">
+            <Label htmlFor={`modal-help-${field.id}`}>説明文</Label>
+            <Textarea
+              id={`modal-help-${field.id}`}
+              value={field.helpText}
+              onChange={(event) => updateField(field.id, { helpText: event.target.value })}
+              rows={3}
+              placeholder="例: 申請理由を具体的に記入してください"
+              className="bg-white"
+            />
+          </div>
+
+          {fieldTypeSupportsPlaceholder(field.fieldType) ? (
+            <div className="space-y-2">
+              <Label htmlFor={`modal-placeholder-${field.id}`}>入力例</Label>
+              <Input
+                id={`modal-placeholder-${field.id}`}
+                value={field.placeholder}
+                onChange={(event) => updateField(field.id, { placeholder: event.target.value })}
+                placeholder="例: 交通費精算"
+                className="bg-white"
+              />
+            </div>
+          ) : null}
+
+          {fieldTypeNeedsOptions(field.fieldType) ? (
+            <div className="space-y-2">
+              <Label htmlFor={`modal-options-${field.id}`}>選択肢</Label>
+              <Textarea
+                id={`modal-options-${field.id}`}
+                value={field.optionsText}
+                onChange={(event) => updateField(field.id, { optionsText: event.target.value })}
+                rows={6}
+                placeholder={"選択肢を1行ずつ入力\n例: 承認する\n差し戻す\n却下する"}
+                className="bg-white"
+              />
+            </div>
+          ) : null}
+
+          <div className="flex justify-end">
+            <Button type="button" onClick={() => onOpenChange(false)}>
+              反映して閉じる
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function ApplicationSetupDraftForm({
   action,
   errorMessage,
@@ -149,49 +413,27 @@ export function ApplicationSetupDraftForm({
     }));
   }, [fields]);
   const hasFields = fields.length > 0;
-  const selectedField = fields.find((field) => field.id === selectedFieldId) ?? fields[0];
-  const selectedFieldIndex = selectedField
-    ? fields.findIndex((field) => field.id === selectedField.id)
-    : -1;
-
   const updateField = (id: string, patch: Partial<DraftField>) => {
     setFields((prev) => prev.map((field) => (field.id === id ? { ...field, ...patch } : field)));
   };
 
-  const addField = () => {
+  const insertFieldAt = (index: number) => {
     setFields((prev) => {
+      const next = [...prev];
       const nextField = createDefaultField(prev.length);
       setSelectedFieldId(nextField.id);
-      return [...prev, nextField];
+      next.splice(index, 0, nextField);
+      return next;
     });
   };
 
   const removeField = (id: string) => {
     setFields((prev) => {
-      if (prev.length <= 1) {
-        return prev;
-      }
-
       const removedIndex = prev.findIndex((field) => field.id === id);
       const next = prev.filter((field) => field.id !== id);
       if (selectedFieldId === id) {
         setSelectedFieldId(next[Math.max(removedIndex - 1, 0)]?.id ?? next[0]?.id ?? "");
       }
-      return next;
-    });
-  };
-
-  const moveField = (fromIndex: number, toIndex: number) => {
-    if (fromIndex === toIndex || toIndex < 0 || toIndex >= fields.length) {
-      return;
-    }
-    setFields((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(fromIndex, 1);
-      if (!moved) {
-        return prev;
-      }
-      next.splice(toIndex, 0, moved);
       return next;
     });
   };
@@ -231,7 +473,14 @@ export function ApplicationSetupDraftForm({
               </Badge>
             </div>
             <Label htmlFor="templateName">申請フォーム名</Label>
-            <Input id="templateName" name="name" placeholder="例: 経費申請" required defaultValue={initialName ?? ""} />
+            <Input
+              id="templateName"
+              name="name"
+              placeholder="例: 経費申請"
+              required
+              defaultValue={initialName ?? ""}
+              className="bg-white"
+            />
           </div>
           <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
             <div className="flex flex-wrap justify-end gap-2">
@@ -250,184 +499,22 @@ export function ApplicationSetupDraftForm({
         </div>
       </div>
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.15fr)_minmax(360px,0.85fr)]">
-        <Card className="border-slate-200 bg-white shadow-sm">
-          <CardHeader className="space-y-2">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <CardTitle className="text-xl">フォーム項目</CardTitle>
-                <CardDescription>項目を選択して詳細を編集します。</CardDescription>
-              </div>
-              <Button type="button" variant="outline" onClick={addField}>
-                項目を追加
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-3">
-              {fields.map((field, index) => {
-                const isSelected = selectedField?.id === field.id;
-                return (
-                  <div
-                    key={field.id}
-                    className={`rounded-lg border p-3 transition ${
-                      isSelected
-                        ? "border-slate-900 bg-slate-50"
-                        : "border-slate-200 bg-white hover:border-slate-300"
-                    }`}
-                  >
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between gap-3 text-left"
-                      onClick={() => setSelectedFieldId(field.id)}
-                    >
-                      <span className="min-w-0">
-                        <span className="block text-xs font-medium text-slate-500">#{index + 1}</span>
-                        <span className="block truncate font-medium text-slate-950">
-                          {field.label.trim() || `フォーム${index + 1}`}
-                        </span>
-                      </span>
-                      <span className="flex shrink-0 items-center gap-2">
-                        <Badge variant={field.required ? "default" : "outline"}>
-                          {field.required ? "必須" : "任意"}
-                        </Badge>
-                        <span className="text-xs text-slate-500">
-                          {FIELD_TYPE_OPTIONS.find((item) => item.value === field.fieldType)?.label}
-                        </span>
-                      </span>
-                    </button>
-                    <div className="mt-3 flex flex-wrap items-center justify-end gap-2">
-                      <OrderMoveButtons
-                        canMoveUp={index !== 0}
-                        canMoveDown={index !== fields.length - 1}
-                        onMoveUp={() => moveField(index, index - 1)}
-                        onMoveDown={() => moveField(index, index + 1)}
-                      />
-                      <Button
-                        type="button"
-                        variant="destructive"
-                        size="sm"
-                        onClick={() => removeField(field.id)}
-                        disabled={fields.length <= 1}
-                      >
-                        削除
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {selectedField ? (
-              <div className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-                <div>
-                  <h3 className="font-semibold text-slate-950">
-                    #{selectedFieldIndex + 1} の詳細
-                  </h3>
-                  <p className="text-sm text-slate-500">申請者に表示する文言と入力形式を設定します。</p>
-                </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor={`label-${selectedField.id}`}>ラベル</Label>
-                    <Input
-                      id={`label-${selectedField.id}`}
-                      value={selectedField.label}
-                      onChange={(event) => updateField(selectedField.id, { label: event.target.value })}
-                      placeholder={`例: 申請理由（空欄ならフォーム${selectedFieldIndex + 1}）`}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor={`fieldType-${selectedField.id}`}>タイプ</Label>
-                    <select
-                      id={`fieldType-${selectedField.id}`}
-                      value={selectedField.fieldType}
-                      onChange={(event) => updateField(selectedField.id, { fieldType: event.target.value as FieldType })}
-                      className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm"
-                    >
-                      {FIELD_TYPE_OPTIONS.map((item) => (
-                        <option key={item.value} value={item.value}>
-                          {item.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                <label className="inline-flex items-center gap-2 text-sm text-slate-600">
-                  <input
-                    type="checkbox"
-                    checked={selectedField.required}
-                    onChange={(event) => updateField(selectedField.id, { required: event.target.checked })}
-                    className="h-4 w-4 rounded border-gray-300"
-                  />
-                  必須
-                </label>
-
-                <div className="grid gap-3 border-t pt-3 md:grid-cols-2">
-                  {fieldTypeSupportsPlaceholder(selectedField.fieldType) ? (
-                    <div className="space-y-2">
-                      <Label htmlFor={`placeholder-${selectedField.id}`}>プレースホルダー</Label>
-                      <Input
-                        id={`placeholder-${selectedField.id}`}
-                        value={selectedField.placeholder}
-                        onChange={(event) => updateField(selectedField.id, { placeholder: event.target.value })}
-                        placeholder={
-                          selectedField.fieldType === FIELD_TYPES.select
-                            ? "例: 選択してください"
-                            : "入力例や補足"
-                        }
-                      />
-                    </div>
-                  ) : null}
-                  <div className="space-y-2">
-                    <Label htmlFor={`helpText-${selectedField.id}`}>ヘルプテキスト</Label>
-                    <Input
-                      id={`helpText-${selectedField.id}`}
-                      value={selectedField.helpText}
-                      onChange={(event) => updateField(selectedField.id, { helpText: event.target.value })}
-                      placeholder="入力欄の下に表示する説明"
-                    />
-                  </div>
-                  {fieldTypeNeedsOptions(selectedField.fieldType) ? (
-                    <div className="space-y-2 md:col-span-2">
-                      <Label htmlFor={`options-${selectedField.id}`}>選択肢</Label>
-                      <Textarea
-                        id={`options-${selectedField.id}`}
-                        value={selectedField.optionsText}
-                        onChange={(event) => updateField(selectedField.id, { optionsText: event.target.value })}
-                        required
-                        rows={4}
-                        placeholder={"承認する\n差し戻す\n却下する"}
-                      />
-                    </div>
-                  ) : null}
-                </div>
-              </div>
-            ) : null}
-          </CardContent>
-        </Card>
-
-        <div className="space-y-6">
-          <Card className="sticky top-6 border-slate-200 bg-white shadow-sm">
-            <CardHeader>
-              <CardTitle className="text-xl">プレビュー</CardTitle>
-              <CardDescription>申請者に表示される入力画面です。</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-5">
-              {fieldsWithKeys.map(({ field, fieldKey }, index) => {
-                const dynamicField = toDynamicField(field, index, fieldKey);
-                return (
-                  <DynamicFieldInput
-                    key={`${field.id}-${fieldKey}`}
-                    field={dynamicField}
-                    value={initialValues?.[fieldKey]}
-                  />
-                );
-              })}
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+      <Card className="border-slate-200 bg-white shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-xl">フォームプレビュー</CardTitle>
+          <CardDescription>公開されるフォームと同じ表示です。鉛筆で編集、×で削除、行間の＋で追加できます。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <InlineFormBuilder
+            fieldsWithKeys={fieldsWithKeys}
+            setSelectedFieldId={setSelectedFieldId}
+            updateField={updateField}
+            insertFieldAt={insertFieldAt}
+            removeField={removeField}
+            initialValues={initialValues}
+          />
+        </CardContent>
+      </Card>
 
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
