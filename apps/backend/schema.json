@@ -690,6 +690,15 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "includeArchived",
+            "required": false,
+            "in": "query",
+            "description": "true の場合は archived のフォーム定義のみ返す。省略時は archived 以外を返す。",
+            "schema": {
+              "type": "boolean"
+            }
           }
         ],
         "responses": {
@@ -1318,6 +1327,116 @@
           }
         ],
         "summary": "フォーム定義公開（draft → published）",
+        "tags": [
+          "form-definitions"
+        ]
+      }
+    },
+    "/form-definitions/{id}/archive": {
+      "post": {
+        "operationId": "FormDefinitionsController_archive",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォーム定義アーカイブ（削除済みに移動）",
+        "tags": [
+          "form-definitions"
+        ]
+      }
+    },
+    "/form-definitions/{id}/restore": {
+      "post": {
+        "operationId": "FormDefinitionsController_restore",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/FormDefinitionResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "フォーム定義復元（削除済みから戻す）",
         "tags": [
           "form-definitions"
         ]

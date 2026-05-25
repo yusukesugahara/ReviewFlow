@@ -27,5 +27,6 @@ export type SpaceApplicationsPageContentProps = {
   applications: ApplicationRow[];
   formDefinitions: FormDefinitionRow[];
   fetchErrorStatus?: number;
+  showArchived: boolean;
   spaceId: string;
 };

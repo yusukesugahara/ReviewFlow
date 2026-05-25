@@ -668,6 +668,52 @@ describe('App (e2e)', () => {
     expect(second?.status).toBe('published');
     expect(second?.name).toBe('稟議申請');
 
+    await request(http)
+      .post(`/form-definitions/${secondTid}/archive`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200)
+      .expect((res) => {
+        expect((res.body as FormDefinitionGetBody).data?.status).toBe(
+          'archived',
+        );
+      });
+
+    const activeList = await request(http)
+      .get('/form-definitions')
+      .query({ groupId })
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+    expect(
+      (activeList.body as FormDefinitionsListBody).data?.definitions?.some(
+        (t) => t.id === secondTid,
+      ),
+    ).toBe(false);
+
+    const archivedList = await request(http)
+      .get('/form-definitions')
+      .query({ groupId, includeArchived: 'true' })
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200);
+    expect(
+      (archivedList.body as FormDefinitionsListBody).data?.definitions?.some(
+        (t) => t.id === secondTid && t.status === 'archived',
+      ),
+    ).toBe(true);
+
+    await request(http)
+      .post(`/form-definitions/${secondTid}/restore`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${tok}`)
+      .expect(200)
+      .expect((res) => {
+        expect((res.body as FormDefinitionGetBody).data?.status).toBe(
+          'published',
+        );
+      });
+
     const got = await request(http)
       .get(`/form-definitions/${tid}`)
       .set(apiKey)

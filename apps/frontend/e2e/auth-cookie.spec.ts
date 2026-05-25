@@ -21,10 +21,12 @@ test.describe("ログイン後の access_token クッキー", () => {
     }
 
     await page.goto("/login");
-    await page.getByLabel("Email").fill(email);
-    await page.getByLabel("Password").fill(password);
-    await page.getByRole("button", { name: "Sign in" }).click();
-    await expect(page).toHaveURL("/", { timeout: 15_000 });
+    await page.getByLabel("メールアドレス").fill(email);
+    await page.getByLabel("パスワード", { exact: true }).fill(password);
+    await page.getByRole("button", { name: "ログインする" }).click();
+    await expect(page).toHaveURL(/\/(?:admin\/spaces|space)?$/, {
+      timeout: 15_000,
+    });
 
     const cookies = await page.context().cookies();
     const tokenCookie = cookies.find((c) => c.name === COOKIE_NAME);

@@ -130,7 +130,7 @@ request:
 
 ### GET /form-definitions
 権限: tenant_admin, tenant_user（group admin）  
-query: `groupId` 必須。tenant_admin はテナント内 group、group admin は自分が admin の group のみ。
+query: `groupId` 必須、`includeArchived=true` 任意。tenant_admin はテナント内 group、group admin は自分が admin の group のみ。通常は `archived` 以外を返し、`includeArchived=true` の場合は削除済み（`archived`）フォーム定義を返す。
 
 ### GET /form-definitions/:id
 権限: tenant_admin, tenant_user（group admin）  
@@ -176,6 +176,14 @@ request:
 
 ### POST /form-definitions/:id/publish
 権限: tenant_admin, tenant_user（group admin）
+
+### POST /form-definitions/:id/archive
+権限: tenant_admin, tenant_user（group admin）  
+フォーム定義を `archived` に変更し、申請フォーム一覧の通常表示から削除済み一覧へ移動する。既存申請レコードは削除しない。
+
+### POST /form-definitions/:id/restore
+権限: tenant_admin, tenant_user（group admin）  
+`archived` のフォーム定義を削除前の `draft` / `published` に戻し、通常の申請フォーム一覧へ復元する。削除前状態が不明な既存データは `published` として復元する。
 
 ### POST /form-definitions/groups/:groupId/request-access
 公開申請フォームの案内メールを送信する。query の `formDefinitionId` は任意だが、同一 group に公開済みフォーム定義が複数ある場合は必須。

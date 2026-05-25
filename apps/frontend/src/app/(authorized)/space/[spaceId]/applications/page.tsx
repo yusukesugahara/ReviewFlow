@@ -24,8 +24,13 @@ function isApiFailure(error: unknown): error is SpaceApplicationsApiFailure {
 
 export default async function SpaceApplicationsPage({
   params,
+  searchParams,
 }: SpaceApplicationsPageProps) {
-  const { spaceId } = await params;
+  const [{ spaceId }, query] = await Promise.all([
+    params,
+    searchParams ?? Promise.resolve({} as Awaited<NonNullable<SpaceApplicationsPageProps["searchParams"]>>),
+  ]);
+  const showArchived = query.archived === "true";
   const authHeaders = await authHeadersOrRedirect();
 
   try {
@@ -34,7 +39,7 @@ export default async function SpaceApplicationsPage({
         params: { query: { groupId: spaceId } },
         headers: authHeaders,
       }),
-      fetchFormDefinitionsForList(spaceId, authHeaders),
+      fetchFormDefinitionsForList(spaceId, authHeaders, showArchived),
     ]);
     const applicationsData: ApplicationsListSuccessJson | undefined = applicationsRaw.data;
     if (!applicationsRaw.response.ok || !applicationsData) {
@@ -50,6 +55,7 @@ export default async function SpaceApplicationsPage({
         formDefinitions={
           formDefinitions
         }
+        showArchived={showArchived}
         spaceId={spaceId}
       />
     );
@@ -59,6 +65,7 @@ export default async function SpaceApplicationsPage({
         applications={[]}
         formDefinitions={[]}
         fetchErrorStatus={isApiFailure(error) ? error.status : 500}
+        showArchived={showArchived}
         spaceId={spaceId}
       />
     );
@@ -68,10 +75,11 @@ export default async function SpaceApplicationsPage({
 async function fetchFormDefinitionsForList(
   spaceId: string,
   headers: { Authorization: string },
+  includeArchived: boolean,
 ): Promise<FormDefinitionRow[]> {
   try {
     const definitionsRaw = await client.GET("/form-definitions", {
-      params: { query: { groupId: spaceId } },
+      params: { query: { groupId: spaceId, includeArchived } },
       headers,
     });
     const definitionsData: FormDefinitionsListSuccessJson | undefined = definitionsRaw.data;

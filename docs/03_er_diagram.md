@@ -78,6 +78,7 @@ erDiagram
     varchar name "form name"
     varchar description "nullable description"
     varchar status "draft, published, archived"
+    varchar archived_from_status "nullable previous status before archive"
     uuid created_by_user_id FK "creator"
     datetime created_at "created timestamp"
     datetime updated_at "updated timestamp"
@@ -336,6 +337,7 @@ erDiagram
 - name: string
 - description: string nullable
 - status: enum(draft, published, archived)
+- archived_from_status: enum(draft, published) nullable
 - created_by_user_id: string (FK -> users.id)
 - created_at: datetime
 - updated_at: datetime

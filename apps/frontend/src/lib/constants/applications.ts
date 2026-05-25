@@ -6,6 +6,7 @@ export const APPLICATION_STATUSES = {
   approved: "approved",
   rejected: "rejected",
   published: "published",
+  archived: "archived",
 } as const;
 
 export type ApplicationStatus =
@@ -20,4 +21,5 @@ export const APPLICATION_STATUS_LABELS: Partial<Record<ApplicationStatus, string
     [APPLICATION_STATUSES.approved]: "承認",
     [APPLICATION_STATUSES.rejected]: "却下",
     [APPLICATION_STATUSES.published]: "公開済み",
+    [APPLICATION_STATUSES.archived]: "削除済み",
   };

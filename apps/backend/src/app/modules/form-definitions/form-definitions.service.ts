@@ -4,7 +4,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Not, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import { FormDefinitionStatus } from '../../../models/constants/form-definition-status';
@@ -43,10 +43,17 @@ export class FormDefinitionsService {
   async listByGroup(
     actor: AuthUserPayload,
     groupId: string,
+    includeArchived = false,
   ): Promise<FormDefinition[]> {
     await this.spaceAccess.assertCanManageGroup(actor, groupId);
     return this.definitions.find({
-      where: { tenantId: actor.tenantId, groupId },
+      where: {
+        tenantId: actor.tenantId,
+        groupId,
+        ...(includeArchived
+          ? { status: FormDefinitionStatus.ARCHIVED }
+          : { status: Not(FormDefinitionStatus.ARCHIVED) }),
+      },
       relations: ['fields'],
       order: { updatedAt: 'DESC', fields: { sortOrder: 'ASC' } },
     });
@@ -270,6 +277,35 @@ export class FormDefinitionsService {
     await this.assertCanManageDefinition(actor, t);
     t.status = FormDefinitionStatus.PUBLISHED;
     return this.definitions.save(t);
+  }
+
+  async archive(
+    actor: AuthUserPayload,
+    definitionId: string,
+  ): Promise<FormDefinition> {
+    const definition = await this.getOne(actor.tenantId, definitionId);
+    await this.assertCanManageDefinition(actor, definition);
+    if (definition.status === FormDefinitionStatus.ARCHIVED) {
+      return definition;
+    }
+    definition.archivedFromStatus = definition.status;
+    definition.status = FormDefinitionStatus.ARCHIVED;
+    return this.definitions.save(definition);
+  }
+
+  async restore(
+    actor: AuthUserPayload,
+    definitionId: string,
+  ): Promise<FormDefinition> {
+    const definition = await this.getOne(actor.tenantId, definitionId);
+    await this.assertCanManageDefinition(actor, definition);
+    if (definition.status !== FormDefinitionStatus.ARCHIVED) {
+      return definition;
+    }
+    definition.status =
+      definition.archivedFromStatus ?? FormDefinitionStatus.PUBLISHED;
+    definition.archivedFromStatus = null;
+    return this.definitions.save(definition);
   }
 
   async getOne(

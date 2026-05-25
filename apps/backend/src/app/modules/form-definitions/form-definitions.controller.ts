@@ -60,12 +60,24 @@ export class FormDefinitionsController {
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'フォーム定義一覧（tenant_admin）' })
+  @ApiQuery({
+    name: 'includeArchived',
+    required: false,
+    type: Boolean,
+    description:
+      'true の場合は archived のフォーム定義のみ返す。省略時は archived 以外を返す。',
+  })
   @ApiSuccessResponse(FormDefinitionsListResponseDto)
   async list(
     @Query('groupId', ParseUUIDPipe) groupId: string,
+    @Query('includeArchived') includeArchived: string | undefined,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<FormDefinitionsListResponseDto>> {
-    const rows = await this.formDefinitions.listByGroup(actor, groupId);
+    const rows = await this.formDefinitions.listByGroup(
+      actor,
+      groupId,
+      includeArchived === 'true',
+    );
     return successResponse({
       definitions: rows.map((t) => this.formDefinitions.toResponse(t)),
     });
@@ -232,6 +244,36 @@ export class FormDefinitionsController {
     await this.formDefinitions.publish(actor, id);
     const full = await this.formDefinitions.getOneForActor(actor, id);
     return successResponse(this.formDefinitions.toResponse(full));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/archive')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォーム定義アーカイブ（削除済みに移動）' })
+  @ApiSuccessResponse(FormDefinitionResponseDto)
+  async archive(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    const row = await this.formDefinitions.archive(actor, id);
+    return successResponse(this.formDefinitions.toResponse(row));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Post(':id/restore')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'フォーム定義復元（削除済みから戻す）' })
+  @ApiSuccessResponse(FormDefinitionResponseDto)
+  async restore(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<FormDefinitionResponseDto>> {
+    const row = await this.formDefinitions.restore(actor, id);
+    return successResponse(this.formDefinitions.toResponse(row));
   }
 
   @Api()

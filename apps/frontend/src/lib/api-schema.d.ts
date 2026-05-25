@@ -396,6 +396,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/form-definitions/{id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォーム定義アーカイブ（削除済みに移動） */
+        post: operations["FormDefinitionsController_archive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/form-definitions/{id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** フォーム定義復元（削除済みから戻す） */
+        post: operations["FormDefinitionsController_restore"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/form-definitions/groups/{groupId}/request-access": {
         parameters: {
             query?: never;
@@ -1693,6 +1727,8 @@ export interface operations {
         parameters: {
             query: {
                 groupId: string;
+                /** @description true の場合は archived のフォーム定義のみ返す。省略時は archived 以外を返す。 */
+                includeArchived?: boolean;
             };
             header?: never;
             path?: never;
@@ -1987,6 +2023,62 @@ export interface operations {
         };
     };
     FormDefinitionsController_publish: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormDefinitionResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormDefinitionsController_archive: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["FormDefinitionResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    FormDefinitionsController_restore: {
         parameters: {
             query?: never;
             header?: never;

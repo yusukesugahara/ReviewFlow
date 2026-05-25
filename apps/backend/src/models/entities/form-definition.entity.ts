@@ -46,6 +46,14 @@ export class FormDefinition {
   @Column({ type: 'varchar', length: 32, default: FormDefinitionStatus.DRAFT })
   status!: FormDefinitionStatusValue;
 
+  @Column({
+    name: 'archived_from_status',
+    type: 'varchar',
+    length: 32,
+    nullable: true,
+  })
+  archivedFromStatus!: FormDefinitionStatusValue | null;
+
   @Column({ name: 'created_by_user_id', type: 'varchar', length: 36 })
   createdByUserId!: string;
 

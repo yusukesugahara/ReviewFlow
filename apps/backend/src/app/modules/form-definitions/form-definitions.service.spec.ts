@@ -126,4 +126,41 @@ describe('FormDefinitionsService', () => {
       errorCode: ClientErrorCodes.FORM_DEFINITION_NOT_PUBLISHABLE,
     });
   });
+
+  it('archive marks definition as archived after management check', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.PUBLISHED,
+    } as FormDefinition;
+    templates.findOne.mockResolvedValue(definition);
+    templates.save.mockResolvedValue(definition);
+
+    const out = await service.archive(actor, 't1');
+
+    expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
+    expect(out.status).toBe(FormDefinitionStatus.ARCHIVED);
+    expect(out.archivedFromStatus).toBe(FormDefinitionStatus.PUBLISHED);
+    expect(templates.save).toHaveBeenCalledWith(definition);
+  });
+
+  it('restore moves archived definition back to its previous status', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.ARCHIVED,
+      archivedFromStatus: FormDefinitionStatus.DRAFT,
+    } as FormDefinition;
+    templates.findOne.mockResolvedValue(definition);
+    templates.save.mockResolvedValue(definition);
+
+    const out = await service.restore(actor, 't1');
+
+    expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
+    expect(out.status).toBe(FormDefinitionStatus.DRAFT);
+    expect(out.archivedFromStatus).toBeNull();
+    expect(templates.save).toHaveBeenCalledWith(definition);
+  });
 });
