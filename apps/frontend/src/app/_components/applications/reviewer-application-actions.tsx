@@ -5,9 +5,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import type { ApplicationCapabilities } from "./application-capabilities";
 import type { ApplicationFormField } from "./application-detail.types";
+import { DynamicFieldsTable } from "./dynamic-fields";
+import { renderFieldValue } from "@/lib/form-field-value";
 
 type ReviewerApplicationActionsProps = {
   fields: ApplicationFormField[];
+  values: Record<string, unknown>;
   capabilities: Pick<
     ApplicationCapabilities,
     "canApproveApplication" | "canRejectApplication" | "canReturnApplication"
@@ -19,6 +22,7 @@ type ReviewerApplicationActionsProps = {
 
 export function ReviewerApplicationActions({
   fields,
+  values,
   capabilities,
   approveAction,
   rejectAction,
@@ -92,34 +96,40 @@ export function ReviewerApplicationActions({
                 />
               </div>
 
-              <div className="space-y-2">
-                <Label>差し戻し対象フィールド</Label>
-                <div className="space-y-3">
-                  {fields.map((field) => (
-                    <div key={field.id} className="space-y-2 rounded-lg border p-3">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`return:${field.id}`}
-                          name={`return:${field.id}`}
-                          className="h-4 w-4 rounded border-gray-300"
-                        />
-                        <Label htmlFor={`return:${field.id}`} className="cursor-pointer font-medium">
-                          {field.label}
-                          <span className="ml-2 font-mono text-xs text-muted-foreground">
-                            ({field.fieldKey})
-                          </span>
-                        </Label>
-                      </div>
-                      <Input
-                        name={`comment:${field.id}`}
-                        placeholder="この項目への個別コメント（任意）"
-                        className="text-sm"
-                      />
+              <DynamicFieldsTable
+                fields={fields.map((field) => ({
+                  ...field,
+                  required: field.required ?? false,
+                }))}
+                values={values}
+                title="差し戻し対象"
+                renderValue={(field, value) => (
+                  <div className="space-y-3">
+                    {field.helpText ? (
+                      <p className="text-xs leading-5 text-muted-foreground">
+                        {field.helpText}
+                      </p>
+                    ) : null}
+                    <div className="min-h-9 whitespace-pre-wrap border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900">
+                      {renderFieldValue(field, value)}
                     </div>
-                  ))}
-                </div>
-              </div>
+                    <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+                      <input
+                        type="checkbox"
+                        id={`return:${field.id}`}
+                        name={`return:${field.id}`}
+                        className="h-4 w-4 rounded border-gray-300"
+                      />
+                      このフォームを差し戻し対象にする
+                    </label>
+                    <Input
+                      name={`comment:${field.id}`}
+                      placeholder="このフォームへの差し戻しコメント（任意）"
+                      className="bg-white text-sm"
+                    />
+                  </div>
+                )}
+              />
 
               <Button type="submit" variant="outline" className="w-full">
                 差し戻す

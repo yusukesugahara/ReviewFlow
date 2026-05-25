@@ -274,6 +274,7 @@ export function ApplicationDetailScreen({
       reviewerActions={
         <ReviewerApplicationActions
           fields={fields}
+          values={app.values}
           capabilities={capabilities}
           approveAction={approveAction}
           rejectAction={rejectAction}
