@@ -152,7 +152,7 @@ export function AppSidebar({
           </div>
         ) : null}
       </div>
-      <div className="mx-auto flex w-full max-w-[1440px] lg:min-h-screen">
+      <div className="flex w-full lg:min-h-screen">
         <aside className="sticky top-0 hidden h-screen w-60 shrink-0 border-r border-slate-200 bg-white lg:block xl:w-64">
           <div className="flex h-full flex-col">
             <div className="border-b border-slate-200 px-5 py-4">
