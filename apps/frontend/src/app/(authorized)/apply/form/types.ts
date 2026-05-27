@@ -4,7 +4,9 @@ import type { FormDefinitionResponse } from "@/lib/schema";
 export type PublicApplicationFormPageProps = {
   searchParams?: Promise<{
     formError?: string;
+    message?: string;
     submitted?: string;
+    toast?: string;
   }>;
 };
 
@@ -20,4 +22,10 @@ export type PublicApplicationFormViewProps = {
 
 export type PublicApplicationFormErrorViewProps = {
   status?: number;
+};
+
+export type PublicApplicationSubmitState = {
+  formError?: string;
+  fieldErrors?: Record<string, string>;
+  missingFieldLabels?: string[];
 };

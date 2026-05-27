@@ -12,8 +12,46 @@ import type {
 } from "@/lib/schema";
 import { errorMessageFromBody, isApiFailure, isDynamicFormField } from "./helpers";
 import { applicantHeaders } from "./server";
+import type { PublicApplicationSubmitState } from "./types";
 
-export async function submitPublicApplicationAction(formData: FormData): Promise<void> {
+function valuePresent(value: unknown): boolean {
+  if (value === null || value === undefined) {
+    return false;
+  }
+  if (typeof value === "string") {
+    return value.trim().length > 0;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value);
+  }
+  if (typeof value === "boolean") {
+    return true;
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+  return true;
+}
+
+function validateRequiredFields(
+  fields: DynamicFormField[],
+  values: Record<string, unknown>,
+): { fieldErrors: Record<string, string>; missingFieldLabels: string[] } {
+  const errors: Record<string, string> = {};
+  const missingFieldLabels: string[] = [];
+  for (const field of fields) {
+    if (field.required && !valuePresent(values[field.fieldKey])) {
+      errors[field.fieldKey] = "必須項目です";
+      missingFieldLabels.push(field.label);
+    }
+  }
+  return { fieldErrors: errors, missingFieldLabels };
+}
+
+export async function submitPublicApplicationAction(
+  _previousState: PublicApplicationSubmitState,
+  formData: FormData,
+): Promise<PublicApplicationSubmitState> {
   const groupId = formData.get("groupId");
   const formDefinitionId = formData.get("formDefinitionId");
   const fieldsJson = formData.get("fieldsJson");
@@ -41,6 +79,17 @@ export async function submitPublicApplicationAction(formData: FormData): Promise
     formDefinitionId,
     values: readDynamicValuesFromFormData(fields, formData),
   };
+  const { fieldErrors, missingFieldLabels } = validateRequiredFields(
+    fields,
+    body.values ?? {},
+  );
+  if (Object.keys(fieldErrors).length > 0) {
+    return {
+      formError: "未入力の必須項目があります",
+      fieldErrors,
+      missingFieldLabels,
+    };
+  }
 
   try {
     const response = await client.POST("/public/applications", {
@@ -55,14 +104,12 @@ export async function submitPublicApplicationAction(formData: FormData): Promise
     const message = isApiFailure(error)
       ? errorMessageFromBody(error.body)
       : "submit_failed";
-    const params = new URLSearchParams({
-      toast: "error",
-      message:
+    return {
+      formError:
         message === "submit_failed"
           ? "申請の送信に失敗しました"
           : `申請の送信に失敗しました。${message}`,
-    });
-    redirect(`/apply/form?${params.toString()}`);
+    };
   }
 
   redirect("/apply/form?submitted=1");

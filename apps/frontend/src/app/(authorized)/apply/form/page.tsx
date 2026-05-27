@@ -32,7 +32,9 @@ export default async function PublicApplicationFormPage({
     return (
       <PublicApplicationFormView
         definition={definition}
-        formError={query.formError}
+        formError={
+          query.formError ?? (query.toast === "error" ? query.message : undefined)
+        }
       />
     );
   } catch (error) {

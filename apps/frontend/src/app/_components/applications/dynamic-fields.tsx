@@ -101,6 +101,7 @@ export function DynamicFieldsTable({
   title = "申請書",
   renderValue,
   getRowClassName,
+  getFieldError,
 }: {
   fields: DynamicFormField[];
   values?: Record<string, unknown>;
@@ -108,6 +109,7 @@ export function DynamicFieldsTable({
   title?: string;
   renderValue?: (field: DynamicFormField, value: unknown) => ReactNode;
   getRowClassName?: (field: DynamicFormField) => string | undefined;
+  getFieldError?: (field: DynamicFormField) => string | undefined;
 }) {
   return (
     <div className="overflow-hidden border border-slate-400 bg-white">
@@ -117,6 +119,7 @@ export function DynamicFieldsTable({
       <div className="divide-y divide-slate-300">
         {fields.map((field, index) => {
           const value = values?.[field.fieldKey];
+          const fieldError = getFieldError?.(field);
           return (
             <div
               key={field.id}
@@ -139,6 +142,11 @@ export function DynamicFieldsTable({
                     field={field}
                     value={value}
                     disabled={disabled}
+                    afterInput={
+                      fieldError ? (
+                        <p className="text-sm font-medium text-red-700">{fieldError}</p>
+                      ) : null
+                    }
                     variant="table"
                   />
                 )}

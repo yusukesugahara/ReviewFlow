@@ -1,4 +1,3 @@
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -6,8 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
-import { submitPublicApplicationAction } from "./actions";
+import { PublicApplicationForm } from "./public-application-form";
 import type {
   PublicApplicationFormErrorViewProps,
   PublicApplicationFormViewProps,
@@ -32,8 +30,6 @@ export function PublicApplicationFormView({
   definition,
   formError,
 }: PublicApplicationFormViewProps) {
-  const fields = definition.fields ?? [];
-
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
       <div className="mx-auto w-full max-w-3xl">
@@ -45,20 +41,7 @@ export function PublicApplicationFormView({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {formError ? (
-              <p className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-                {formError}
-              </p>
-            ) : null}
-            <form action={submitPublicApplicationAction} className="space-y-6">
-              <input type="hidden" name="groupId" value={definition.groupId} />
-              <input type="hidden" name="formDefinitionId" value={definition.id} />
-              <input type="hidden" name="fieldsJson" value={JSON.stringify(fields)} />
-              <DynamicFieldsTable fields={fields} />
-              <Button type="submit" className="w-full">
-                申請を送信
-              </Button>
-            </form>
+            <PublicApplicationForm definition={definition} initialFormError={formError} />
           </CardContent>
         </Card>
       </div>
