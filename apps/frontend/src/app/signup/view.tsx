@@ -2,10 +2,7 @@
 
 import { AuthForm } from "../auth-form";
 import { signup } from "./actions";
-
-type SignupViewProps = {
-  apiReachable: boolean;
-};
+import type { SignupViewProps } from "./types";
 
 export const SignupView = ({ apiReachable }: SignupViewProps) => {
   return (

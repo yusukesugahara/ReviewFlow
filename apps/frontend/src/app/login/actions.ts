@@ -6,12 +6,78 @@ import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
-import { errorMessageFromBody, postAuthLogin } from "@/lib/server/auth-api";
+import { client } from "@/lib/server/backend-fetch";
+import type { AuthLoginSuccessJson, LoginRequestBody } from "@/lib/schema";
 
-export type LoginSchema = AuthCredentials;
+export type LoginSchema = AuthCredentials & { next?: string };
+
+function authCredentialsFromFormData(formData: FormData): LoginSchema {
+  const email = formData.get("email");
+  const password = formData.get("password");
+  const next = formData.get("next");
+  return {
+    email: typeof email === "string" ? email : "",
+    password: typeof password === "string" ? password : "",
+    ...(typeof next === "string" ? { next } : {}),
+  };
+}
+
+function resolveSafeNextPath(next?: string): string {
+  if (!next || !next.startsWith("/")) {
+    return "/";
+  }
+  if (next.startsWith("//")) {
+    return "/";
+  }
+  return next;
+}
 
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
   return errorMessageFromBody(result.body);
+}
+
+function errorMessageFromBody(body: unknown): string {
+  if (body && typeof body === "object" && "message" in body) {
+    const message = (body as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) {
+      return message;
+    }
+    if (Array.isArray(message)) {
+      return message.filter((item): item is string => typeof item === "string").join(", ");
+    }
+  }
+  return "ログインに失敗しました";
+}
+
+function isAuthIssueTokensSuccessJson(json: unknown): json is AuthLoginSuccessJson {
+  if (!json || typeof json !== "object") {
+    return false;
+  }
+  const root = json as Record<string, unknown>;
+  const data = root.data;
+  return (
+    (root.status === 200 || root.status === 201) &&
+    !!data &&
+    typeof data === "object" &&
+    typeof (data as { access_token?: unknown }).access_token === "string"
+  );
+}
+
+async function postAuthLogin(
+  body: LoginRequestBody,
+): Promise<
+  | { ok: true; accessToken: string }
+  | { ok: false; status: number; body: unknown }
+> {
+  const response = await client.POST("/auth/login", { body });
+  if (!response.response.ok || !isAuthIssueTokensSuccessJson(response.data)) {
+    return {
+      ok: false,
+      status: response.response.status,
+      body: response.error ?? response.data,
+    };
+  }
+  return { ok: true, accessToken: response.data.data.access_token };
 }
 
 const FALLBACK_MAX_AGE_SEC = 60 * 60 * 24 * 7;
@@ -64,7 +130,8 @@ export async function persistAccessTokenCookie(accessToken: string): Promise<voi
  * @param params - ログインするパラメータ
  * @returns ログイン API のレスポンス
  */
-export async function login(params: LoginSchema): Promise<FormActionResponse<void>> {
+export async function login(formData: FormData): Promise<FormActionResponse<void>> {
+  const params = authCredentialsFromFormData(formData);
   const parsed = authCredentialsSchema.safeParse(params);
   if (!parsed.success) {
     return { fieldErrors: parsed.error.flatten().fieldErrors };
@@ -76,5 +143,5 @@ export async function login(params: LoginSchema): Promise<FormActionResponse<voi
   }
 
   await persistAccessTokenCookie(auth.accessToken);
-  redirect("/");
+  redirect(resolveSafeNextPath(params.next));
 }

@@ -1,5 +1,13 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, MaxLength, MinLength } from 'class-validator';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  IsEmail,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  MinLength,
+} from 'class-validator';
+import { UserRole } from '../../../models/constants/user-role';
 
 /**
  * Request DTO
@@ -14,6 +22,15 @@ export class RegisterDto {
   @MinLength(8)
   @MaxLength(72)
   password!: string;
+
+  @ApiPropertyOptional({
+    example: 'Acme Inc',
+    description: '新規テナント名（省略時は既定のワークスペース名）',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  organizationName?: string;
 }
 
 export class LoginDto {
@@ -23,6 +40,31 @@ export class LoginDto {
 
   @ApiProperty({ example: 'password12', minLength: 8 })
   @MinLength(8)
+  password!: string;
+
+  @ApiPropertyOptional({
+    description:
+      '同一メールで複数テナントに所属する場合に指定（`docs/08_auth_and_multitenant.md`）',
+  })
+  @IsOptional()
+  @IsUUID()
+  tenantId?: string;
+}
+
+export class RequestPasswordResetDto {
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email!: string;
+}
+
+export class ConfirmPasswordResetDto {
+  @ApiProperty({ example: 'reset-token' })
+  @IsString()
+  token!: string;
+
+  @ApiProperty({ example: 'password12', minLength: 8, maxLength: 72 })
+  @MinLength(8)
+  @MaxLength(72)
   password!: string;
 }
 
@@ -37,8 +79,14 @@ export class AuthUserSummaryDto {
   @ApiProperty({ example: 'user@example.com' })
   email!: string;
 
-  @ApiProperty({ example: 'user', enum: ['admin', 'user'] })
+  @ApiProperty({
+    example: UserRole.TENANT_ADMIN,
+    enum: Object.values(UserRole),
+  })
   role!: string;
+
+  @ApiProperty({ example: 'uuid', description: '所属テナント ID' })
+  tenantId!: string;
 }
 
 export class AuthIssueTokensResponseDto {
@@ -56,11 +104,19 @@ export class AuthMeResponseDto {
   @ApiProperty()
   email!: string;
 
-  @ApiProperty({ type: [String], example: ['user'] })
+  @ApiProperty({ type: [String], example: ['tenant_admin'] })
   roles!: string[];
+
+  @ApiProperty({ description: '所属テナント ID' })
+  tenantId!: string;
 }
 
 export class AdminPingResponseDto {
+  @ApiProperty({ example: true })
+  ok!: boolean;
+}
+
+export class PasswordResetAcceptedResponseDto {
   @ApiProperty({ example: true })
   ok!: boolean;
 }

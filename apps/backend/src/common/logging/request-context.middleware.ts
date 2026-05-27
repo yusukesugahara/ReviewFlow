@@ -4,7 +4,7 @@ import type { NextFunction, Request, Response } from 'express';
 export type RequestWithContext = Request & {
   requestId?: string;
   id?: string | number;
-  user?: { id?: string; roles?: string[] };
+  user?: { id?: string; roles?: string[]; tenantId?: string };
 };
 
 export function requestContextMiddleware(

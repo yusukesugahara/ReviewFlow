@@ -7,13 +7,14 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm ci
+COPY apps/backend/package.json ./apps/backend/package.json
+RUN npm ci -w backend
 
-COPY nest-cli.json tsconfig.json tsconfig.build.json ./
-COPY scripts ./scripts
-COPY src ./src
+COPY apps/backend/nest-cli.json apps/backend/tsconfig.json apps/backend/tsconfig.build.json ./apps/backend/
+COPY apps/backend/scripts ./apps/backend/scripts
+COPY apps/backend/src ./apps/backend/src
 
-RUN npm run build
+RUN npm run build -w backend
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
@@ -25,12 +26,13 @@ RUN apt-get update \
 ENV NODE_ENV=production
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=dev && npm cache clean --force
+COPY apps/backend/package.json ./apps/backend/package.json
+RUN npm ci --omit=dev -w backend && npm cache clean --force
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
 
 ENV PORT=3000
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "require('http').get('http://127.0.0.1:'+process.env.PORT+'/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
-CMD ["node", "dist/main.js"]
+CMD ["node", "apps/backend/dist/main.js"]

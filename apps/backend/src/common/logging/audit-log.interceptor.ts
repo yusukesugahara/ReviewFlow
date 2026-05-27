@@ -9,11 +9,15 @@ import { PinoLogger } from 'nestjs-pino';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { BaseError } from '../../utils/errors/base.error';
 import { ServerErrorCodes } from '../errors/server-error-catalog';
+import { AuditLogsService } from '../../app/modules/audit-logs/audit-logs.service';
 import type { RequestWithContext } from './request-context.middleware';
 
 @Injectable()
 export class AuditLogInterceptor implements NestInterceptor {
-  constructor(private readonly logger: PinoLogger) {
+  constructor(
+    private readonly logger: PinoLogger,
+    private readonly auditLogs: AuditLogsService,
+  ) {
     this.logger.setContext(AuditLogInterceptor.name);
   }
 
@@ -76,6 +80,25 @@ export class AuditLogInterceptor implements NestInterceptor {
     );
   }
 
+  private readGroupId(req: RequestWithContext): string | null {
+    const queryGroupId = req.query?.groupId;
+    if (typeof queryGroupId === 'string' && queryGroupId.length > 0) {
+      return queryGroupId;
+    }
+    const body = req.body as { groupId?: unknown } | undefined;
+    if (body && typeof body.groupId === 'string' && body.groupId.length > 0) {
+      return body.groupId;
+    }
+    const segments = (req.path ?? req.url ?? '/')
+      .split('?')[0]
+      .split('/')
+      .filter((s) => s.length > 0);
+    if (segments[0] === 'groups' && segments[1]) {
+      return segments[1];
+    }
+    return null;
+  }
+
   private writeLog(params: {
     req: RequestWithContext;
     res: { statusCode: number };
@@ -106,9 +129,44 @@ export class AuditLogInterceptor implements NestInterceptor {
     };
     if (success) {
       this.logger.info(log, 'audit');
+    } else {
+      this.logger.warn(log, 'audit');
+    }
+
+    const tenantId = req.user?.tenantId;
+    if (!tenantId || typeof tenantId !== 'string') {
       return;
     }
 
-    this.logger.warn(log, 'audit');
+    const segments = (req.path ?? req.url ?? '/')
+      .split('?')[0]
+      .split('/')
+      .filter((s) => s.length > 0);
+    const targetType = segments[0] ?? 'unknown';
+    const targetId = segments[1] ?? null;
+    const actionType = `${req.method.toUpperCase()}:${targetType}`;
+    const groupId = this.readGroupId(req);
+
+    void this.auditLogs.create({
+      tenantId,
+      groupId,
+      actorUserId: userId,
+      actionType,
+      targetType,
+      targetId,
+      metadataJson: {
+        method: req.method,
+        path: req.originalUrl ?? req.url,
+        statusCode: res.statusCode,
+        durationMs: Date.now() - startedAt,
+        requestId: log.requestId,
+        role,
+        ip,
+        userAgent,
+        groupId,
+        success,
+        ...(success ? {} : { errorCode }),
+      },
+    });
   }
 }
