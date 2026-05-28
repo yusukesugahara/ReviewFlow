@@ -169,8 +169,8 @@ export function AppSidebar({
             />
           </div>
         </aside>
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mx-auto w-full max-w-6xl">
+        <main className="flex min-h-[calc(100vh-3.5rem)] min-w-0 flex-1 flex-col px-4 py-6 sm:px-6 lg:min-h-screen lg:px-8 lg:py-8">
+          <div className="mx-auto w-full max-w-6xl flex-1">
             <AppBreadcrumb spaces={spaces} />
             {children}
           </div>
