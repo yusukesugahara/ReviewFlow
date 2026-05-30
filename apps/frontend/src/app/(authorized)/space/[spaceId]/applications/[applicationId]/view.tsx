@@ -41,7 +41,6 @@ type ApplicationDetailScreenProps = {
   isFormDetail: boolean;
   missingRequiredFields: ApplicationFormField[];
   openItems: ApplicationCorrectionTargetItem[];
-  publicApplicationUrlPath: string;
   rejectAction: (formData: FormData) => Promise<void>;
   resubmitAction: () => Promise<void>;
   returnAction: (formData: FormData) => Promise<void>;
@@ -210,7 +209,6 @@ export function ApplicationDetailScreen({
   isFormDetail,
   missingRequiredFields,
   openItems,
-  publicApplicationUrlPath,
   rejectAction,
   resubmitAction,
   returnAction,
@@ -253,7 +251,6 @@ export function ApplicationDetailScreen({
       showTimestamps
       showCorrectionHistory
       showOpenCorrectionSummary
-      publicApplicationUrlPath={publicApplicationUrlPath}
       actions={
         <div className="space-y-3">
           {actionError ? (

@@ -231,7 +231,6 @@ export default async function SpaceApplicationDetailPage({
         isFormDetail={isFormDetail}
         missingRequiredFields={missingRequiredFields}
         openItems={openItems}
-        publicApplicationUrlPath={publicApplicationUrlPath}
         rejectAction={rejectAction.bind(null, spaceId, app.id)}
         resubmitAction={resubmitAction.bind(null, spaceId, app.id)}
         returnAction={returnAction.bind(null, spaceId, app.id, fieldMap)}
