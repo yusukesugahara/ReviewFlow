@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { Archive, ArrowRight, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, ArrowRight, Copy, RotateCcw, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import {
   Card,
   CardContent,
@@ -44,6 +45,7 @@ export function SpaceApplicationsPageContent({
 }: SpaceApplicationsPageContentProps) {
   const [archiveTarget, setArchiveTarget] = useState<ApplicationFormListRow | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<ApplicationFormListRow | null>(null);
+  const [copiedPublicHref, setCopiedPublicHref] = useState<string | null>(null);
   const archiveTitleId = useId();
   const archiveDescriptionId = useId();
   const restoreTitleId = useId();
@@ -173,8 +175,30 @@ export function SpaceApplicationsPageContent({
                           </Button>
                         ) : null}
                         {!showArchived && row.publicHref ? (
-                          <Button asChild variant="outline" size="sm">
-                            <Link href={row.publicHref}>公開URL</Link>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const publicUrl = `${window.location.origin}${row.publicHref}`;
+                              void navigator.clipboard
+                                .writeText(publicUrl)
+                                .then(() => {
+                                  setCopiedPublicHref(row.publicHref);
+                                  toast.success("公開URLをコピーしました");
+                                  window.setTimeout(() => setCopiedPublicHref(null), 1200);
+                                })
+                                .catch(() => {
+                                  toast.error("公開URLのコピーに失敗しました");
+                                });
+                            }}
+                            title="公開URLをコピー"
+                          >
+                            公開URL
+                            <Copy aria-hidden="true" />
+                            <span className="sr-only">
+                              {copiedPublicHref === row.publicHref ? "コピー済み" : ""}
+                            </span>
                           </Button>
                         ) : !showArchived ? (
                           <span className="self-center text-sm text-muted-foreground">未公開</span>
