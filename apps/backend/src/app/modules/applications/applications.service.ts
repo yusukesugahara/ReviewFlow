@@ -17,6 +17,7 @@ import { CorrectionRequestItem } from '../../../models/entities/correction-reque
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../models/entities/form-field.entity';
+import { User } from '../../../models/entities/user.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
 import { MailService } from '../mail/mail.service';
 import type {
@@ -27,8 +28,10 @@ import type {
   PatchApplicationDto,
   RejectApplicationDto,
   ReturnApplicationDto,
+  ApplicationProgressStepDto,
 } from './applications.dto';
 import {
+  type ApplicationWithProgress,
   mapApplicationToDetail,
   mapApplicationToSummary,
   mapCorrectionsList,
@@ -77,6 +80,8 @@ export class ApplicationsService {
     private readonly templates: Repository<FormDefinition>,
     @InjectRepository(ApprovalFlow)
     private readonly flows: Repository<ApprovalFlow>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
     private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
     private readonly accessPolicy: ApplicationAccessPolicy,
@@ -239,7 +244,7 @@ export class ApplicationsService {
       isSetupApplication(row) &&
       (await this.spaceAccess.actorCanManageGroup(actor, row.groupId))
     ) {
-      return row;
+      return this.hydrateApprovalProgress(row);
     }
     await this.accessPolicy.assertCanRead(
       actor,
@@ -247,7 +252,98 @@ export class ApplicationsService {
       (applicationId, actorId) =>
         this.countApprovalsByActor(applicationId, actorId),
     );
-    return row;
+    return this.hydrateApprovalProgress(row);
+  }
+
+  private async hydrateApprovalProgress(
+    row: Application,
+  ): Promise<ApplicationWithProgress> {
+    const steps = [...(row.approvalFlow?.steps ?? [])].sort(
+      (a, b) => a.stepOrder - b.stepOrder,
+    );
+    if (steps.length === 0) {
+      return Object.assign(row, { approvalProgress: [] });
+    }
+
+    const approvals = await this.approvals.find({
+      where: { tenantId: row.tenantId, applicationId: row.id },
+      relations: ['actedBy'],
+      order: { actedAt: 'ASC' },
+    });
+    const userIds = new Set<string>();
+    for (const step of steps) {
+      const assigneeIds =
+        step.assigneeUserIds && step.assigneeUserIds.length > 0
+          ? step.assigneeUserIds
+          : [step.assigneeUserId];
+      for (const id of assigneeIds) {
+        userIds.add(id);
+      }
+    }
+    for (const approval of approvals) {
+      userIds.add(approval.actedByUserId);
+    }
+    const users = await this.users.find({
+      where: { tenantId: row.tenantId, id: In([...userIds]) },
+    });
+    const userById = new Map(users.map((user) => [user.id, user]));
+    const approvalsByStepId = new Map<string, ApplicationApproval[]>();
+    for (const approval of approvals) {
+      const list = approvalsByStepId.get(approval.approvalStepId) ?? [];
+      list.push(approval);
+      approvalsByStepId.set(approval.approvalStepId, list);
+    }
+
+    const approvalProgress: ApplicationProgressStepDto[] = steps.map((step) => {
+      const stepApprovals = approvalsByStepId.get(step.id) ?? [];
+      const latestAction = stepApprovals.at(-1)?.action;
+      const assigneeIds =
+        step.assigneeUserIds && step.assigneeUserIds.length > 0
+          ? step.assigneeUserIds
+          : [step.assigneeUserId];
+      const status: ApplicationProgressStepDto['status'] =
+        latestAction === ApplicationApprovalAction.RETURNED
+          ? 'returned'
+          : latestAction === ApplicationApprovalAction.REJECTED
+            ? 'rejected'
+            : latestAction === ApplicationApprovalAction.APPROVED
+              ? 'approved'
+              : row.currentStepOrder === step.stepOrder
+                ? 'current'
+                : 'pending';
+
+      return {
+        id: step.id,
+        stepOrder: step.stepOrder,
+        stepName: step.stepName,
+        canReturn: step.canReturn,
+        status,
+        assignees: assigneeIds.map((id) => {
+          const user = userById.get(id);
+          return {
+            id,
+            email: user?.email ?? id,
+            name: user?.name ?? null,
+          };
+        }),
+        actions: stepApprovals.map((approval) => {
+          const user = approval.actedBy ?? userById.get(approval.actedByUserId);
+          return {
+            id: approval.id,
+            action: approval.action,
+            comment: approval.comment,
+            actedAt: approval.actedAt.toISOString(),
+            actedBy: {
+              id: approval.actedByUserId,
+              email: user?.email ?? approval.actedByUserId,
+              name: user?.name ?? null,
+            },
+          };
+        }),
+      };
+    });
+
+    return Object.assign(row, { approvalProgress });
   }
 
   private async createInternal(
@@ -378,9 +474,14 @@ export class ApplicationsService {
     );
     this.validateApplicationReadyToSubmit(context);
     await this.applySubmitTransition(context);
-    return this.loadApplicationOrThrow(actor.tenantId, created.id, {
-      detail: true,
-    });
+    const submitted = await this.loadApplicationOrThrow(
+      actor.tenantId,
+      created.id,
+      {
+        detail: true,
+      },
+    );
+    return this.hydrateApprovalProgress(submitted);
   }
 
   private async loadApplicantEditableApplication(

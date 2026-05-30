@@ -7,6 +7,7 @@ import { CorrectionRequestItem } from '../../../models/entities/correction-reque
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
+import { User } from '../../../models/entities/user.entity';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
@@ -31,6 +32,7 @@ import { PublicApplicationsController } from './public-applications.controller';
       CorrectionRequestItem,
       FormDefinition,
       ApprovalFlow,
+      User,
     ]),
   ],
   controllers: [ApplicationsController, PublicApplicationsController],

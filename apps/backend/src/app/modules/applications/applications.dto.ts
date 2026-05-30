@@ -266,6 +266,59 @@ export class ApplicationCreateResponseDto {
   status!: ApplicationStatusValue;
 }
 
+export class ApplicationProgressUserDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  email!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  name!: string | null;
+}
+
+export class ApplicationProgressActionDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  action!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  comment!: string | null;
+
+  @ApiProperty()
+  actedAt!: string;
+
+  @ApiProperty({ type: ApplicationProgressUserDto })
+  actedBy!: ApplicationProgressUserDto;
+}
+
+export class ApplicationProgressStepDto {
+  @ApiProperty()
+  id!: string;
+
+  @ApiProperty()
+  stepOrder!: number;
+
+  @ApiProperty()
+  stepName!: string;
+
+  @ApiProperty()
+  canReturn!: boolean;
+
+  @ApiProperty({
+    enum: ['pending', 'current', 'approved', 'returned', 'rejected'],
+  })
+  status!: 'pending' | 'current' | 'approved' | 'returned' | 'rejected';
+
+  @ApiProperty({ type: [ApplicationProgressUserDto] })
+  assignees!: ApplicationProgressUserDto[];
+
+  @ApiProperty({ type: [ApplicationProgressActionDto] })
+  actions!: ApplicationProgressActionDto[];
+}
+
 export class ApplicationSummaryDto {
   @ApiProperty()
   id!: string;
@@ -314,6 +367,9 @@ export class ApplicationDetailDto extends ApplicationSummaryDto {
     nullable: true,
   })
   currentStepCanReturn!: boolean | null;
+
+  @ApiProperty({ type: [ApplicationProgressStepDto] })
+  approvalProgress!: ApplicationProgressStepDto[];
 
   @ApiProperty({
     type: 'object',

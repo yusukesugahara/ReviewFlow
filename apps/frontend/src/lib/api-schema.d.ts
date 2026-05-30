@@ -1216,6 +1216,28 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        ApplicationProgressUserDto: {
+            id: string;
+            email: string;
+            name?: string | null;
+        };
+        ApplicationProgressActionDto: {
+            id: string;
+            action: string;
+            comment?: string | null;
+            actedAt: string;
+            actedBy: components["schemas"]["ApplicationProgressUserDto"];
+        };
+        ApplicationProgressStepDto: {
+            id: string;
+            stepOrder: number;
+            stepName: string;
+            canReturn: boolean;
+            /** @enum {string} */
+            status: "pending" | "current" | "approved" | "returned" | "rejected";
+            assignees: components["schemas"]["ApplicationProgressUserDto"][];
+            actions: components["schemas"]["ApplicationProgressActionDto"][];
+        };
         ApplicationDetailDto: {
             id: string;
             groupId: string;
@@ -1232,6 +1254,7 @@ export interface components {
             updatedAt: string;
             /** @description 現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。 */
             currentStepCanReturn?: Record<string, never> | null;
+            approvalProgress: components["schemas"]["ApplicationProgressStepDto"][];
             /** @description field_key → 値 */
             values: {
                 [key: string]: unknown;

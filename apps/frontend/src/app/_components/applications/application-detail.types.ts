@@ -10,7 +10,32 @@ export type ApplicationDetailViewModel = {
   applicantEmail?: string;
   currentStepOrder?: number | null;
   currentStepCanReturn?: boolean | null;
+  approvalProgress?: ApplicationProgressStep[];
   values: Record<string, unknown>;
+};
+
+export type ApplicationProgressUser = {
+  id: string;
+  email: string;
+  name: string | null;
+};
+
+export type ApplicationProgressAction = {
+  id: string;
+  action: string;
+  comment: string | null;
+  actedAt: string;
+  actedBy: ApplicationProgressUser;
+};
+
+export type ApplicationProgressStep = {
+  id: string;
+  stepOrder: number;
+  stepName: string;
+  canReturn: boolean;
+  status: "pending" | "current" | "approved" | "returned" | "rejected";
+  assignees: ApplicationProgressUser[];
+  actions: ApplicationProgressAction[];
 };
 
 export type ApplicationFormField = {

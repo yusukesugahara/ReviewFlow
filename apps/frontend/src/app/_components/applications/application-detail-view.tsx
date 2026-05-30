@@ -17,6 +17,9 @@ import type {
   ApplicationDetailViewModel,
   ApplicationDetailViewProps,
   ApplicationFormField,
+  ApplicationProgressAction,
+  ApplicationProgressStep,
+  ApplicationProgressUser,
 } from "./application-detail.types";
 
 export function ApplicationDetailView({
@@ -59,6 +62,8 @@ export function ApplicationDetailView({
         showTimestamps={showTimestamps}
       />
 
+      <ApprovalProgressDiagram steps={application.approvalProgress ?? []} />
+
       {publicApplicationUrlPath ? (
         <PublicApplicationUrlCard path={publicApplicationUrlPath} />
       ) : null}
@@ -83,6 +88,171 @@ export function ApplicationDetailView({
       ) : null}
     </div>
   );
+}
+
+function ApprovalProgressDiagram({ steps }: { steps: ApplicationProgressStep[] }) {
+  if (steps.length === 0) {
+    return null;
+  }
+  const visualSteps = [...steps].sort((a, b) => b.stepOrder - a.stepOrder);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>承認ステップ</CardTitle>
+        <CardDescription>
+          右から左に向かって承認が進みます
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="overflow-x-auto pb-2">
+          <div className="flex min-w-max flex-row items-stretch">
+            {visualSteps.map((step, index) => (
+              <div key={step.id} className="flex items-stretch">
+                <ProgressStepCard step={step} />
+                {index < visualSteps.length - 1 ? (
+                  <div className="flex w-12 items-center justify-center">
+                    <div className="h-px w-full bg-slate-300" />
+                    <span className="-ml-2 text-lg text-slate-400">←</span>
+                  </div>
+                ) : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ProgressStepCard({ step }: { step: ApplicationProgressStep }) {
+  const statusMeta = progressStatusMeta(step.status);
+  const latestAction = step.actions.at(-1);
+
+  return (
+    <div className={`w-72 rounded-lg border p-4 ${statusMeta.className}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-slate-500">STEP {step.stepOrder}</p>
+          <h3 className="mt-1 break-words text-base font-semibold text-slate-950">
+            {step.stepName}
+          </h3>
+        </div>
+        <Badge variant={statusMeta.badgeVariant}>{statusMeta.label}</Badge>
+      </div>
+
+      <div className="mt-4 space-y-3 text-sm">
+        <div>
+          <p className="text-xs font-medium text-slate-500">承認・確認できる人</p>
+          <UserList users={step.assignees} />
+        </div>
+        <div className="border-t border-slate-200 pt-3">
+          <p className="text-xs font-medium text-slate-500">実施履歴</p>
+          {step.actions.length > 0 ? (
+            <div className="mt-2 space-y-2">
+              {step.actions.map((action) => (
+                <ActionHistory key={action.id} action={action} />
+              ))}
+            </div>
+          ) : step.status === "current" ? (
+            <p className="mt-2 text-sm font-medium text-blue-700">現在このステップで確認中</p>
+          ) : (
+            <p className="mt-2 text-sm text-slate-500">未実施</p>
+          )}
+        </div>
+        {latestAction?.comment ? (
+          <p className="rounded-md bg-white/70 px-3 py-2 text-xs leading-5 text-slate-700">
+            {latestAction.comment}
+          </p>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function UserList({ users }: { users: ApplicationProgressUser[] }) {
+  if (users.length === 0) {
+    return <p className="mt-2 text-sm text-slate-500">未設定</p>;
+  }
+  return (
+    <div className="mt-2 flex flex-wrap gap-2">
+      {users.map((user) => (
+        <span
+          key={user.id}
+          className="inline-flex max-w-full items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs text-slate-700"
+          title={user.email}
+        >
+          <span className="truncate">{displayUser(user)}</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ActionHistory({ action }: { action: ApplicationProgressAction }) {
+  return (
+    <div className="rounded-md bg-white/70 px-3 py-2">
+      <p className="text-sm font-medium text-slate-800">
+        {displayUser(action.actedBy)} が {actionLabel(action.action)}
+      </p>
+      <p className="mt-1 text-xs text-slate-500">
+        {new Date(action.actedAt).toLocaleString("ja-JP")}
+      </p>
+    </div>
+  );
+}
+
+function progressStatusMeta(status: ApplicationProgressStep["status"]) {
+  if (status === "current") {
+    return {
+      label: "現在",
+      badgeVariant: "default" as const,
+      className: "border-blue-300 bg-blue-50 shadow-sm",
+    };
+  }
+  if (status === "approved") {
+    return {
+      label: "承認済み",
+      badgeVariant: "secondary" as const,
+      className: "border-emerald-200 bg-emerald-50",
+    };
+  }
+  if (status === "returned") {
+    return {
+      label: "差し戻し",
+      badgeVariant: "outline" as const,
+      className: "border-amber-300 bg-amber-50",
+    };
+  }
+  if (status === "rejected") {
+    return {
+      label: "却下",
+      badgeVariant: "destructive" as const,
+      className: "border-red-300 bg-red-50",
+    };
+  }
+  return {
+    label: "未到達",
+    badgeVariant: "outline" as const,
+    className: "border-slate-200 bg-slate-50",
+  };
+}
+
+function displayUser(user: ApplicationProgressUser): string {
+  return user.name?.trim() || user.email;
+}
+
+function actionLabel(action: string): string {
+  if (action === "approved") {
+    return "承認";
+  }
+  if (action === "returned") {
+    return "差し戻し";
+  }
+  if (action === "rejected") {
+    return "却下";
+  }
+  return action;
 }
 
 function ApplicationBasicInfo({

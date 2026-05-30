@@ -4080,6 +4080,100 @@
           "groupId"
         ]
       },
+      "ApplicationProgressUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ]
+      },
+      "ApplicationProgressActionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "actedAt": {
+            "type": "string"
+          },
+          "actedBy": {
+            "$ref": "#/components/schemas/ApplicationProgressUserDto"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "actedAt",
+          "actedBy"
+        ]
+      },
+      "ApplicationProgressStepDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stepOrder": {
+            "type": "number"
+          },
+          "stepName": {
+            "type": "string"
+          },
+          "canReturn": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "current",
+              "approved",
+              "returned",
+              "rejected"
+            ]
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationProgressUserDto"
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationProgressActionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "stepOrder",
+          "stepName",
+          "canReturn",
+          "status",
+          "assignees",
+          "actions"
+        ]
+      },
       "ApplicationDetailDto": {
         "type": "object",
         "properties": {
@@ -4130,6 +4224,12 @@
             "description": "現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。",
             "nullable": true
           },
+          "approvalProgress": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationProgressStepDto"
+            }
+          },
           "values": {
             "type": "object",
             "additionalProperties": true,
@@ -4147,6 +4247,7 @@
           "applicantEmail",
           "createdAt",
           "updatedAt",
+          "approvalProgress",
           "values"
         ]
       },
