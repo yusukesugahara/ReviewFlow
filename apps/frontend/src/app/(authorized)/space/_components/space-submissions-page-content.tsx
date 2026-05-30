@@ -167,6 +167,7 @@ export function SpaceSubmissionsPageContent({
               <ApplicationListTable
                 rows={paginatedApplications}
                 actionLabel="詳細"
+                openDetailInNewTab
                 showApplicantEmail
                 getDetailHref={(row) =>
                   buildSpaceSubmissionDetailHref(row) ??

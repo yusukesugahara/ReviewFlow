@@ -71,6 +71,7 @@ type ApplicationListTableProps = {
   rows: ApplicationListRow[];
   getDetailHref: (row: ApplicationListRow) => string;
   actionLabel?: string;
+  openDetailInNewTab?: boolean;
   showApplicantEmail?: boolean;
 };
 
@@ -78,6 +79,7 @@ export function ApplicationListTable({
   rows,
   getDetailHref,
   actionLabel = "詳細",
+  openDetailInNewTab = false,
   showApplicantEmail = false,
 }: ApplicationListTableProps) {
   return (
@@ -118,7 +120,13 @@ export function ApplicationListTable({
             </TableCell>
             <TableCell className="text-right">
               <Button asChild variant="ghost" size="sm">
-                <Link href={getDetailHref(row)}>{actionLabel}</Link>
+                <Link
+                  href={getDetailHref(row)}
+                  target={openDetailInNewTab ? "_blank" : undefined}
+                  rel={openDetailInNewTab ? "noopener noreferrer" : undefined}
+                >
+                  {actionLabel}
+                </Link>
               </Button>
             </TableCell>
           </TableRow>
