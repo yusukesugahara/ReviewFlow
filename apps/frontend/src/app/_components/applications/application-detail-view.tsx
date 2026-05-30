@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
 import { renderFieldValue } from "@/lib/form-field-value";
 import {
   Card,
@@ -33,6 +34,7 @@ export function ApplicationDetailView({
   corrections = [],
   actions,
   reviewerActions,
+  formDetailHref,
   showApplicantEmail = false,
   showCurrentStep = false,
   showTimestamps = false,
@@ -57,6 +59,7 @@ export function ApplicationDetailView({
 
       <ApplicationBasicInfo
         application={application}
+        formDetailHref={formDetailHref}
         showApplicantEmail={showApplicantEmail}
         showCurrentStep={showCurrentStep}
         showTimestamps={showTimestamps}
@@ -318,66 +321,102 @@ function actionLabel(action: string): string {
   return action;
 }
 
+function formatDateTime(value?: string | null): string {
+  return value ? new Date(value).toLocaleString("ja-JP") : "-";
+}
+
 function ApplicationBasicInfo({
   application,
-  showApplicantEmail,
-  showCurrentStep,
-  showTimestamps,
+  formDetailHref,
 }: {
   application: ApplicationDetailViewModel;
+  formDetailHref?: string | null;
   showApplicantEmail: boolean;
   showCurrentStep: boolean;
   showTimestamps: boolean;
 }) {
+  const currentStep = application.approvalProgress?.find(
+    (step) => step.status === "current",
+  );
+  const applicationStatus = currentStep
+    ? `${application.status} / STEP ${currentStep.stepOrder}: ${currentStep.stepName}`
+    : application.status;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>基本情報</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-2 text-sm">
-        {showApplicantEmail ? (
-          <InfoRow
-            label="申請者メール"
-            value={application.applicantEmail ?? "-"}
-            mono
-          />
-        ) : null}
-        {showCurrentStep ? (
-          <InfoRow
-            label="現在のステップ"
-            value={application.currentStepOrder ?? "-"}
-          />
-        ) : null}
-        {showTimestamps && application.createdAt ? (
-          <InfoRow
-            label="作成日時"
-            value={new Date(application.createdAt).toLocaleString("ja-JP")}
-          />
-        ) : null}
-        {showTimestamps && application.updatedAt ? (
-          <InfoRow
-            label="更新日時"
-            value={new Date(application.updatedAt).toLocaleString("ja-JP")}
-          />
-        ) : null}
+      <CardContent>
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+          <InfoTile
+          label="申請フォーム"
+          value={application.formDefinitionName ?? application.applicationName ?? "-"}
+          href={formDetailHref}
+          className="md:col-span-2 xl:col-span-1"
+        />
+          <InfoTile
+          label="申請者メール"
+          value={application.applicantEmail ?? "-"}
+          mono
+          className="md:col-span-2 xl:col-span-1"
+        />
+          <InfoTile label="ステータス" value={applicationStatus} />
+          <InfoTile
+          label="作成日時"
+          value={formatDateTime(application.createdAt)}
+        />
+          <InfoTile
+          label="更新日時"
+          value={formatDateTime(application.updatedAt)}
+        />
+        </div>
       </CardContent>
     </Card>
   );
 }
 
-function InfoRow({
+function InfoTile({
   label,
   value,
   mono = false,
+  className,
+  href,
 }: {
   label: string;
   value: ReactNode;
   mono?: boolean;
+  className?: string;
+  href?: string | null;
 }) {
+  const content = (
+    <>
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p
+        className={`mt-1 truncate text-sm font-semibold text-slate-900 ${
+          mono ? "font-mono" : ""
+        } ${href ? "text-blue-700 underline-offset-2 group-hover:underline" : ""}`}
+        title={typeof value === "string" ? value : undefined}
+      >
+        {value}
+      </p>
+    </>
+  );
+
   return (
-    <div className="flex justify-between gap-4">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={mono ? "font-mono" : undefined}>{value}</span>
+    <div className={`min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 ${className ?? ""}`}>
+      {href ? (
+        <Link
+          href={href}
+          className="group block min-w-0"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          {content}
+        </Link>
+      ) : (
+        content
+      )}
     </div>
   );
 }

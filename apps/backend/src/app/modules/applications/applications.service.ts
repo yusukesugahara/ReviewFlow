@@ -155,10 +155,11 @@ export class ApplicationsService {
       ? [
           'fieldValues',
           'fieldValues.formField',
+          'formDefinition',
           'approvalFlow',
           'approvalFlow.steps',
         ]
-      : ['approvalFlow', 'approvalFlow.steps'];
+      : ['formDefinition', 'approvalFlow', 'approvalFlow.steps'];
     const row = await this.apps.findOne({
       where: { id, tenantId },
       relations,

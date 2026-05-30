@@ -34,6 +34,7 @@ type ApplicationDetailScreenProps = {
   corrections: ApplicationCorrection[];
   definitionId?: string;
   fields: ApplicationFormField[];
+  formDetailHref?: string | null;
   isFormDetail: boolean;
   missingRequiredFields: ApplicationFormField[];
   openItems: ApplicationCorrectionTargetItem[];
@@ -197,6 +198,7 @@ export function ApplicationDetailScreen({
   corrections,
   definitionId,
   fields,
+  formDetailHref,
   isFormDetail,
   missingRequiredFields,
   openItems,
@@ -237,6 +239,7 @@ export function ApplicationDetailScreen({
       }
       openCorrectionItems={openItems}
       corrections={corrections}
+      formDetailHref={formDetailHref}
       showApplicantEmail
       showCurrentStep
       showTimestamps

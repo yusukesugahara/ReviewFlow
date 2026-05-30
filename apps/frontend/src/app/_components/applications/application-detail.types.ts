@@ -2,6 +2,8 @@ import type { ReactNode } from "react";
 
 export type ApplicationDetailViewModel = {
   formDefinitionId?: string;
+  formDefinitionName?: string;
+  applicationName?: string;
   id: string;
   groupId?: string | null;
   status: string;
@@ -78,6 +80,7 @@ export type ApplicationDetailViewProps = {
   corrections?: ApplicationCorrection[];
   actions?: ReactNode;
   reviewerActions?: ReactNode;
+  formDetailHref?: string | null;
   showApplicantEmail?: boolean;
   showCurrentStep?: boolean;
   showTimestamps?: boolean;
