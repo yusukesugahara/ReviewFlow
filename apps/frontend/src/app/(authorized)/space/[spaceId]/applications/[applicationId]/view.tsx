@@ -12,7 +12,10 @@ import { ApplicantApplicationActions } from "@/app/_components/applications/appl
 import { ApplicationStatusBadge } from "@/app/_components/applications/application-status-badge";
 import { PublicApplicationUrlCard } from "@/app/_components/applications/public-application-url-card";
 import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
-import { ApplicationDetailView } from "@/app/_components/applications/application-detail-view";
+import {
+  ApplicationDetailView,
+  ApprovalProgressDiagram,
+} from "@/app/_components/applications/application-detail-view";
 import { ReviewerApplicationActions } from "@/app/_components/applications/reviewer-application-actions";
 import { buildSpaceApplicationEditHrefByIds } from "@/app/_components/applications/application-routes";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
@@ -186,6 +189,11 @@ export function FormDetailView({
           )}
         </CardContent>
       </Card>
+
+      <ApprovalProgressDiagram
+        application={application}
+        steps={application.approvalProgress ?? []}
+      />
     </div>
   );
 }

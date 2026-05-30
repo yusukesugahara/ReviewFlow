@@ -96,7 +96,7 @@ export function ApplicationDetailView({
   );
 }
 
-function ApprovalProgressDiagram({
+export function ApprovalProgressDiagram({
   application,
   steps,
 }: {
