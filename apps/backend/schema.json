@@ -1663,7 +1663,7 @@
         ],
         "summary": "スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       },
       "post": {
@@ -1717,7 +1717,7 @@
         ],
         "summary": "スペース作成（tenant_admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1749,7 +1749,7 @@
         ],
         "summary": "スペース削除（tenant_admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1804,7 +1804,7 @@
         ],
         "summary": "スペースメンバー一覧（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       },
       "post": {
@@ -1867,7 +1867,7 @@
         ],
         "summary": "スペースへユーザー追加（tenant_admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1922,7 +1922,7 @@
         ],
         "summary": "スペース追加候補ユーザー一覧（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1995,7 +1995,7 @@
         ],
         "summary": "スペース管理者/ユーザ設定（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -2027,7 +2027,7 @@
         ],
         "summary": "スペースから退出（参加中ユーザー）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -2067,7 +2067,7 @@
         ],
         "summary": "スペースメンバー削除（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -2916,8 +2916,8 @@
     }
   },
   "info": {
-    "title": "Cats example",
-    "description": "The cats API description.\n\nエラー: コントローラーで個別のエラーレスポンスは宣言しない。`throw new Error()` や `BaseError` / `HttpException` は `GlobalExceptionFilter` が JSON（`components.schemas.ErrorResponseDto` の最小形: statusCode, message）に正規化する。",
+    "title": "ReviewFlow API",
+    "description": "ReviewFlow のバックエンド API。申請フォーム、申請、承認、スペース、ユーザー、CSV 出力、監査ログを扱う。\n\nUI 上の「スペース」は、後方互換のため API path と request/response property では `groups` / `groupId` として公開する。\n\nエラー: コントローラーで個別のエラーレスポンスは宣言しない。`throw new Error()` や `BaseError` / `HttpException` は `GlobalExceptionFilter` が JSON（`components.schemas.ErrorResponseDto` の最小形: statusCode, message）に正規化する。",
     "version": "1.0",
     "contact": {}
   },
@@ -3745,13 +3745,17 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "スペースID。API では groupId として参照する。"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "スペース名"
           },
           "description": {
-            "type": "object"
+            "type": "string",
+            "description": "スペース説明",
+            "nullable": true
           },
           "createdByUserId": {
             "type": "string"
@@ -3785,6 +3789,7 @@
         "type": "object",
         "properties": {
           "groups": {
+            "description": "スペース一覧。後方互換のためレスポンスキーは groups。",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GroupSummaryDto"
@@ -3800,7 +3805,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "example": "経理部"
+            "example": "経理部",
+            "description": "スペース名"
           },
           "description": {
             "type": "string",
@@ -3826,7 +3832,8 @@
             "type": "string"
           },
           "groupId": {
-            "type": "string"
+            "type": "string",
+            "description": "所属スペースID。後方互換のためプロパティ名は groupId。"
           },
           "userId": {
             "type": "string"
@@ -3839,6 +3846,7 @@
           },
           "role": {
             "type": "string",
+            "description": "スペース内ロール",
             "enum": [
               "admin",
               "user"
@@ -3914,7 +3922,7 @@
         "properties": {
           "userId": {
             "type": "string",
-            "description": "追加するテナント内ユーザーID"
+            "description": "スペースに追加するテナント内ユーザーID"
           },
           "role": {
             "type": "string",

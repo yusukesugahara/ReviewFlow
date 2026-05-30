@@ -1094,9 +1094,12 @@ export interface components {
             steps: components["schemas"]["CreateApprovalFlowStepDto"][];
         };
         GroupSummaryDto: {
+            /** @description スペースID。API では groupId として参照する。 */
             id: string;
+            /** @description スペース名 */
             name: string;
-            description: Record<string, never>;
+            /** @description スペース説明 */
+            description: string | null;
             createdByUserId: string;
             createdAt: string;
             updatedAt: string;
@@ -1107,10 +1110,14 @@ export interface components {
             currentUserRole?: "admin" | "user" | null;
         };
         GroupsListResponseDto: {
+            /** @description スペース一覧。後方互換のためレスポンスキーは groups。 */
             groups: components["schemas"]["GroupSummaryDto"][];
         };
         CreateGroupDto: {
-            /** @example 経理部 */
+            /**
+             * @description スペース名
+             * @example 経理部
+             */
             name: string;
             /** @example 経理部向けの承認・レビュースペース */
             description?: string;
@@ -1119,11 +1126,15 @@ export interface components {
         };
         GroupMemberSummaryDto: {
             id: string;
+            /** @description 所属スペースID。後方互換のためプロパティ名は groupId。 */
             groupId: string;
             userId: string;
             email: string;
             name: Record<string, never>;
-            /** @enum {string} */
+            /**
+             * @description スペース内ロール
+             * @enum {string}
+             */
             role: "admin" | "user";
             createdAt: string;
             updatedAt: string;
@@ -1140,7 +1151,7 @@ export interface components {
             users: components["schemas"]["GroupAvailableUserSummaryDto"][];
         };
         AddGroupMemberDto: {
-            /** @description 追加するテナント内ユーザーID */
+            /** @description スペースに追加するテナント内ユーザーID */
             userId: string;
             /**
              * @example user

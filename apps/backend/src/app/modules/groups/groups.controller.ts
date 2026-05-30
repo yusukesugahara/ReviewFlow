@@ -78,7 +78,7 @@ function toAvailableUserSummary(user: {
   };
 }
 
-@ApiTags('groups')
+@ApiTags('spaces')
 @Controller('groups')
 export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
