@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { Archive, RotateCcw, Trash2 } from "lucide-react";
+import { Archive, ArrowRight, RotateCcw, Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -162,8 +162,14 @@ export function SpaceApplicationsPageContent({
                     <TableCell className="text-right">
                       <div className="flex flex-wrap justify-end gap-2">
                         {!showArchived && row.detailHref ? (
-                          <Button asChild variant="ghost" size="sm">
-                            <Link href={row.detailHref}>フォーム詳細</Link>
+                          <Button asChild variant="outline" size="sm">
+                            <Link
+                              href={row.detailHref}
+                              title="フォーム詳細"
+                            >
+                              詳細
+                              <ArrowRight aria-hidden="true" />
+                            </Link>
                           </Button>
                         ) : null}
                         {!showArchived && row.publicHref ? (

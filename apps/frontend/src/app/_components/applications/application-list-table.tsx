@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -119,13 +120,15 @@ export function ApplicationListTable({
               {dateTimeFormatter.format(new Date(row.createdAt))}
             </TableCell>
             <TableCell className="text-right">
-              <Button asChild variant="ghost" size="sm">
+              <Button asChild variant="outline" size="sm">
                 <Link
                   href={getDetailHref(row)}
                   target={openDetailInNewTab ? "_blank" : undefined}
                   rel={openDetailInNewTab ? "noopener noreferrer" : undefined}
+                  title={actionLabel}
                 >
                   {actionLabel}
+                  <ArrowRight aria-hidden="true" />
                 </Link>
               </Button>
             </TableCell>
