@@ -10,6 +10,7 @@ export type ApplicationDetailViewModel = {
   applicantEmail?: string;
   currentStepOrder?: number | null;
   currentStepCanReturn?: boolean | null;
+  submittedAt?: string | null;
   approvalProgress?: ApplicationProgressStep[];
   values: Record<string, unknown>;
 };

@@ -62,7 +62,10 @@ export function ApplicationDetailView({
         showTimestamps={showTimestamps}
       />
 
-      <ApprovalProgressDiagram steps={application.approvalProgress ?? []} />
+      <ApprovalProgressDiagram
+        application={application}
+        steps={application.approvalProgress ?? []}
+      />
 
       {publicApplicationUrlPath ? (
         <PublicApplicationUrlCard path={publicApplicationUrlPath} />
@@ -90,51 +93,106 @@ export function ApplicationDetailView({
   );
 }
 
-function ApprovalProgressDiagram({ steps }: { steps: ApplicationProgressStep[] }) {
+function ApprovalProgressDiagram({
+  application,
+  steps,
+}: {
+  application: ApplicationDetailViewModel;
+  steps: ApplicationProgressStep[];
+}) {
   if (steps.length === 0) {
     return null;
   }
-  const visualSteps = [...steps].sort((a, b) => b.stepOrder - a.stepOrder);
+  const visualSteps = [...steps].sort((a, b) => a.stepOrder - b.stepOrder);
+  const gridColumns = `repeat(${visualSteps.length + 1}, minmax(0, 1fr))`;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle>承認ステップ</CardTitle>
         <CardDescription>
-          右から左に向かって承認が進みます
+          左から右に向かって承認が進みます
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="overflow-x-auto pb-2">
-          <div className="flex min-w-max flex-row items-stretch">
-            {visualSteps.map((step, index) => (
-              <div key={step.id} className="flex items-stretch">
-                <ProgressStepCard step={step} />
-                {index < visualSteps.length - 1 ? (
-                  <div className="flex w-12 items-center justify-center">
-                    <div className="h-px w-full bg-slate-300" />
-                    <span className="-ml-2 text-lg text-slate-400">←</span>
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
+        <div
+          className="grid w-full gap-3"
+          style={{ gridTemplateColumns: gridColumns }}
+        >
+          <ApplicationStartCard
+            application={application}
+            showArrow={visualSteps.length > 0}
+          />
+          {visualSteps.map((step, index) => (
+            <ProgressStepCard
+              key={step.id}
+              step={step}
+              showArrow={index < visualSteps.length - 1}
+            />
+          ))}
         </div>
       </CardContent>
     </Card>
   );
 }
 
-function ProgressStepCard({ step }: { step: ApplicationProgressStep }) {
+function ApplicationStartCard({
+  application,
+  showArrow,
+}: {
+  application: ApplicationDetailViewModel;
+  showArrow: boolean;
+}) {
+  const submittedAt = application.submittedAt ?? application.createdAt ?? null;
+
+  return (
+    <div className="relative min-w-0 rounded-lg border border-slate-200 bg-white p-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-medium text-slate-500">START</p>
+          <h3 className="mt-1 text-sm font-semibold text-slate-950">申請</h3>
+        </div>
+        <Badge variant="secondary">受付</Badge>
+      </div>
+      <div className="mt-4 space-y-3 text-sm">
+        <div>
+          <p className="text-xs font-medium text-slate-500">申請者</p>
+          <p className="mt-2 break-all font-medium text-slate-800">
+            {application.applicantEmail ?? "-"}
+          </p>
+        </div>
+        <div className="border-t border-slate-200 pt-3">
+          <p className="text-xs font-medium text-slate-500">申請日時</p>
+          <p className="mt-2 font-medium text-slate-800">
+            {submittedAt ? new Date(submittedAt).toLocaleString("ja-JP") : "-"}
+          </p>
+        </div>
+      </div>
+      {showArrow ? (
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg text-slate-400">
+          →
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function ProgressStepCard({
+  step,
+  showArrow,
+}: {
+  step: ApplicationProgressStep;
+  showArrow: boolean;
+}) {
   const statusMeta = progressStatusMeta(step.status);
   const latestAction = step.actions.at(-1);
 
   return (
-    <div className={`w-72 rounded-lg border p-4 ${statusMeta.className}`}>
+    <div className={`relative min-w-0 rounded-lg border p-3 ${statusMeta.className}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-slate-500">STEP {step.stepOrder}</p>
-          <h3 className="mt-1 break-words text-base font-semibold text-slate-950">
+          <h3 className="mt-1 break-words text-sm font-semibold text-slate-950">
             {step.stepName}
           </h3>
         </div>
@@ -166,6 +224,11 @@ function ProgressStepCard({ step }: { step: ApplicationProgressStep }) {
           </p>
         ) : null}
       </div>
+      {showArrow ? (
+        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-lg text-slate-400">
+          →
+        </span>
+      ) : null}
     </div>
   );
 }
