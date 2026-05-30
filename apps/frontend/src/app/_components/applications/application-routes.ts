@@ -32,6 +32,20 @@ export function buildSpaceApplicationDetailHref(
     : href;
 }
 
+export function buildSpaceSubmissionDetailHref(
+  application: ApplicationSpaceRouteSource,
+): string | null {
+  const spaceId = getApplicationSpaceId(application);
+  if (!spaceId) {
+    return null;
+  }
+
+  const href = `/space/${encodeURIComponent(spaceId)}/submissions/${encodeURIComponent(application.id)}`;
+  return application.formDefinitionId
+    ? `${href}?definitionId=${encodeURIComponent(application.formDefinitionId)}`
+    : href;
+}
+
 export function buildSpaceApplicationEditHref(
   application: ApplicationSpaceRouteSource,
 ): string | null {

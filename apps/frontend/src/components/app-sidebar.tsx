@@ -412,7 +412,10 @@ function SidebarLink({
         pathname !== `${scopedHref}/new`) ||
       pathname === href);
   const isSubmissionsActive =
-    spacePath === "submissions" && (pathname === scopedHref || pathname === href);
+    spacePath === "submissions" &&
+    (pathname === scopedHref ||
+      pathname.startsWith(`${scopedHref}/`) ||
+      pathname === href);
   const isActive = spacePath === "applications" || spacePath === "applicationsNew" || spacePath === "submissions"
     ? isApplicationsActive || isApplicationNewActive || isSubmissionsActive
     : isSectionRoot
@@ -566,6 +569,13 @@ function buildSpaceBreadcrumbItems(
 
     items.push({ href: `/space/${encodedSpaceId}/applications`, label: spaceName });
     items.push({ href: `/space/${encodedSpaceId}/submissions`, label: "申請一覧" });
+
+    if (fourth) {
+      items.push({
+        href: `/space/${encodedSpaceId}/submissions/${encodeURIComponent(fourth)}`,
+        label: "申請詳細",
+      });
+    }
   }
 
   return items;

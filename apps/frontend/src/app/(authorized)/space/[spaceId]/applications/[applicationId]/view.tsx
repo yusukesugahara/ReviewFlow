@@ -263,7 +263,7 @@ export function ApplicationDetailScreen({
           ) : null}
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
-              <Link href={`/space/${encodeURIComponent(spaceId)}/applications`}>
+              <Link href={`/space/${encodeURIComponent(spaceId)}/submissions`}>
                 一覧へ戻る
               </Link>
             </Button>

@@ -14,7 +14,7 @@ import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { getApplicationStatusLabel } from "@/app/_components/applications/application-status";
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
 import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
-import { buildSpaceApplicationDetailHref } from "@/app/_components/applications/application-routes";
+import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
 import { SubmissionSearchSubmitButton } from "./submission-search-submit-button";
 import type { ApplicationRow } from "./space-applications.types";
 
@@ -169,8 +169,8 @@ export function SpaceSubmissionsPageContent({
                 actionLabel="詳細"
                 showApplicantEmail
                 getDetailHref={(row) =>
-                  buildSpaceApplicationDetailHref(row) ??
-                  `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(row.id)}`
+                  buildSpaceSubmissionDetailHref(row) ??
+                  `/space/${encodeURIComponent(spaceId)}/submissions/${encodeURIComponent(row.id)}`
                 }
               />
               <PaginationControls
