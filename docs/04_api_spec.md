@@ -374,6 +374,9 @@ request (任意フィルタ):
 query:
 - `limit`（任意, 1..200, 既定 50）
 - `actionType`（任意, 前方一致）
+- `q`（任意, `actionType` / `targetType` / `targetId` / `actorUserId` / `actorEmail` / `groupId` の部分一致）
+- `createdFrom`（任意, ISO 8601, `createdAt` の開始日時）
+- `createdTo`（任意, ISO 8601, `createdAt` の終了日時）
 
 レスポンスは `tenant_id` スコープで `created_at` 降順。  
-各要素は `actionType` / `targetType` / `targetId` / `metadataJson` / `createdAt` を返す。
+各要素は `actorUserId` / `actorEmail` / `actionType` / `targetType` / `targetId` / `metadataJson` / `createdAt` を返す。

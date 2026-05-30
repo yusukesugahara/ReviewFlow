@@ -526,6 +526,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "action_type / target_type / target_id / actor_user_id / group_id の部分一致検索",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索開始日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索終了日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -3188,7 +3215,11 @@
             "nullable": true
           },
           "actorUserId": {
-            "type": "object",
+            "type": "string",
+            "nullable": true
+          },
+          "actorEmail": {
+            "type": "string",
             "nullable": true
           },
           "actionType": {
@@ -3198,7 +3229,7 @@
             "type": "string"
           },
           "targetId": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "metadataJson": {
