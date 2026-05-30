@@ -11,6 +11,15 @@ export class CreateExportJobDto {
   @IsUUID()
   groupId!: string;
 
+  @ApiPropertyOptional({
+    format: 'uuid',
+    description:
+      'CSV 出力対象の申請フォーム定義。指定時はこのフォームへの申請のみ出力する。',
+  })
+  @IsOptional()
+  @IsUUID()
+  formDefinitionId?: string;
+
   @ApiPropertyOptional({ enum: Object.values(ApplicationStatus) })
   @IsOptional()
   @IsIn(Object.values(ApplicationStatus))

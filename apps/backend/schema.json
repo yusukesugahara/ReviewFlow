@@ -4559,6 +4559,11 @@
             "type": "string",
             "format": "uuid"
           },
+          "formDefinitionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "CSV 出力対象の申請フォーム定義。指定時はこのフォームへの申請のみ出力する。"
+          },
           "status": {
             "type": "string",
             "enum": [

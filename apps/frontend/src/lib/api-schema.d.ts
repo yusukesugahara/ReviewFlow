@@ -1368,6 +1368,11 @@ export interface components {
         CreateExportJobDto: {
             /** Format: uuid */
             groupId: string;
+            /**
+             * Format: uuid
+             * @description CSV 出力対象の申請フォーム定義。指定時はこのフォームへの申請のみ出力する。
+             */
+            formDefinitionId?: string;
             /** @enum {string} */
             status?: "draft" | "published" | "submitted" | "in_review" | "returned" | "approved" | "rejected";
         };

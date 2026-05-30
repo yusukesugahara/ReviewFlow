@@ -3,7 +3,11 @@ import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { unwrapData } from "@/lib/server/api-envelope";
 import type { ApplicationRow } from "@/app/(authorized)/space/_components/space-applications.types";
-import type { ApplicationsListSuccessJson } from "@/lib/schema";
+import type {
+  ApplicationsListSuccessJson,
+  ExportJobResponse,
+  GetExportJobSuccessJson,
+} from "@/lib/schema";
 import type { SpaceSubmissionsApiFailure, SpaceSubmissionsPageProps } from "./types";
 import { SpaceSubmissionsView } from "./view";
 
@@ -33,17 +37,32 @@ export default async function SpaceSubmissionsPage({
     page: normalizePage(query?.page),
     status: normalizeSearchValue(query?.status),
   };
+  const jobId = normalizeSearchValue(query?.jobId);
   const authHeaders = await authHeadersOrRedirect();
 
   try {
-    const applicationsRaw = await client.GET("/applications", {
-      params: { query: { groupId: spaceId } },
-      headers: authHeaders,
-    });
+    const [applicationsRaw, jobRaw] = await Promise.all([
+      client.GET("/applications", {
+        params: { query: { groupId: spaceId } },
+        headers: authHeaders,
+      }),
+      jobId
+        ? client.GET("/export-jobs/{id}", {
+            params: { path: { id: jobId } },
+            headers: authHeaders,
+          })
+        : Promise.resolve(null),
+    ]);
     const applicationsData: ApplicationsListSuccessJson | undefined = applicationsRaw.data;
     if (!applicationsRaw.response.ok || !applicationsData) {
       throw { status: applicationsRaw.response.status };
     }
+    const latestExportJob =
+      jobRaw?.response.ok && jobRaw.data
+        ? unwrapData<ExportJobResponse>(
+            jobRaw.data as GetExportJobSuccessJson,
+          )
+        : null;
 
     return (
       <SpaceSubmissionsView
@@ -52,6 +71,7 @@ export default async function SpaceSubmissionsPage({
             .applications as ApplicationRow[]
         }
         filters={filters}
+        latestExportJob={latestExportJob}
         spaceId={spaceId}
       />
     );
@@ -61,6 +81,7 @@ export default async function SpaceSubmissionsPage({
         applications={[]}
         fetchErrorStatus={isApiFailure(error) ? error.status : 500}
         filters={filters}
+        latestExportJob={null}
         spaceId={spaceId}
       />
     );

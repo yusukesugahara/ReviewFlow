@@ -357,6 +357,8 @@ request (任意フィルタ):
 ```
 - CSV は **列展開方式**（申請共通固定列 + `form_fields.field_key` ごとの列）。
 - 値は `application_field_values.value_json` を列に展開（object/array は JSON 文字列）。
+- `formDefinitionId` 指定時は、対象フォームへ提出された申請のみを出力する。
+- フォーム作成用の `draft` / `published` 行は申請データCSVに含めない。
 
 ### GET /export-jobs/:id
 権限: tenant_admin, tenant_user（group admin）

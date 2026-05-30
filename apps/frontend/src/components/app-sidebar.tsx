@@ -69,12 +69,6 @@ const tenantAdminNavItems: SidebarNavItem[] = [
   { href: "/admin/spaces", label: "スペース", icon: ShieldCheck },
   { href: "/admin/invitations", label: "ユーザー", icon: Users },
   { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
-  {
-    href: "/admin/export-jobs",
-    label: "CSV出力ジョブ",
-    icon: FileText,
-    adminOnly: true,
-  },
 ];
 
 const applicantNavItems: SidebarNavItem[] = [
@@ -503,8 +497,6 @@ function buildAdminBreadcrumbItems(segments: string[]): BreadcrumbItem[] {
     items.push({ href: "/admin/invitations", label: "ユーザー" });
   } else if (section === "audit-logs") {
     items.push({ href: "/admin/audit-logs", label: "監査ログ" });
-  } else if (section === "export-jobs") {
-    items.push({ href: "/admin/export-jobs", label: "CSV出力ジョブ" });
   }
 
   return items;

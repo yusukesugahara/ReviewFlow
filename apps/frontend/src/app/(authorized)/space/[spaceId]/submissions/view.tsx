@@ -1,5 +1,6 @@
 import { SpaceSubmissionsPageContent } from "@/app/(authorized)/space/_components/space-submissions-page-content";
 import type { ApplicationRow } from "@/app/(authorized)/space/_components/space-applications.types";
+import type { ExportJobResponse } from "@/lib/schema";
 
 type SpaceSubmissionsViewProps = {
   applications: ApplicationRow[];
@@ -12,6 +13,7 @@ type SpaceSubmissionsViewProps = {
     page: number;
     status: string;
   };
+  latestExportJob: ExportJobResponse | null;
   spaceId: string;
 };
 

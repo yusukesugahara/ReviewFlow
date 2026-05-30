@@ -1486,6 +1486,34 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${adminTok}`)
       .expect(200);
 
+    const otherTpl = await request(http)
+      .post('/form-definitions')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({ groupId, name: 'CSV対象外フォーム' })
+      .expect(201);
+    const otherTplId =
+      (otherTpl.body as FormDefinitionCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post(`/form-definitions/${otherTplId}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        fieldKey: 'other_title',
+        label: '対象外件名',
+        fieldType: 'text',
+        required: true,
+        sortOrder: 1,
+        options: [],
+      })
+      .expect(201);
+    await request(http)
+      .post(`/form-definitions/${otherTplId}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+
     await request(http)
       .post('/approval-flows')
       .set(apiKey)
@@ -1538,6 +1566,7 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${appTok}`)
       .send({
         groupId,
+        formDefinitionId: tplId,
         values: { expense_title: '旅費精算', amount: 12000 },
       })
       .expect(201);
@@ -1549,11 +1578,30 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${appTok}`)
       .expect(200);
 
+    const otherCreated = await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok}`)
+      .send({
+        groupId,
+        formDefinitionId: otherTplId,
+        values: { other_title: '対象外申請' },
+      })
+      .expect(201);
+    const otherAppId =
+      (otherCreated.body as ApplicationCreateBody).data?.id ?? '';
+
+    await request(http)
+      .post(`/applications/${otherAppId}/submit`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${appTok}`)
+      .expect(200);
+
     const jobCreated = await request(http)
       .post('/export-jobs')
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({ groupId, status: 'in_review' })
+      .send({ groupId, formDefinitionId: tplId, status: 'in_review' })
       .expect(201);
     const jobId = (jobCreated.body as ExportJobBody).data?.id ?? '';
     expect((jobCreated.body as ExportJobBody).data?.status).toBe('completed');
@@ -1575,6 +1623,8 @@ describe('App (e2e)', () => {
     expect(csv).toContain('amount');
     expect(csv).toContain('旅費精算');
     expect(csv).toContain('12000');
+    expect(csv).not.toContain('対象外申請');
+    expect(csv).not.toContain('other_title');
   });
 
   it('audit-logs: tenant_admin can read persisted audit entries', async () => {

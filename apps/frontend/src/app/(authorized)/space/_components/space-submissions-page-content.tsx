@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -15,6 +15,9 @@ import { getApplicationStatusLabel } from "@/app/_components/applications/applic
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
 import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
 import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
+import { createSubmissionCsvExportAction } from "@/app/(authorized)/space/[spaceId]/submissions/actions";
+import type { ExportJobResponse } from "@/lib/schema";
+import { SubmissionCsvExportControls } from "./submission-csv-export-controls";
 import { SubmissionSearchSubmitButton } from "./submission-search-submit-button";
 import type { ApplicationRow } from "./space-applications.types";
 
@@ -22,6 +25,7 @@ type SpaceSubmissionsPageContentProps = {
   applications: ApplicationRow[];
   fetchErrorStatus?: number;
   filters: SubmissionFilters;
+  latestExportJob: ExportJobResponse | null;
   spaceId: string;
 };
 
@@ -29,6 +33,7 @@ export function SpaceSubmissionsPageContent({
   applications,
   fetchErrorStatus,
   filters,
+  latestExportJob,
   spaceId,
 }: SpaceSubmissionsPageContentProps) {
   if (fetchErrorStatus !== undefined) {
@@ -44,6 +49,7 @@ export function SpaceSubmissionsPageContent({
   }
 
   const submittedApplications = applications.filter((row) => !isFormSetupApplication(row));
+  const exportFormOptions = buildExportFormOptions(submittedApplications);
   const filteredApplications = filterApplications(submittedApplications, filters);
   const pendingApplications = filteredApplications.filter(isPendingApplication);
   const processedApplications = filteredApplications.filter(isProcessedApplication);
@@ -75,6 +81,51 @@ export function SpaceSubmissionsPageContent({
         <SummaryCard label="対応が必要" value={pendingApplications.length} tone="amber" />
         <SummaryCard label="対応済み" value={processedApplications.length} tone="emerald" />
       </div>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-xl">
+            <Download className="h-5 w-5 text-slate-500" aria-hidden="true" />
+            CSV出力
+          </CardTitle>
+          <CardDescription>
+            申請フォームごとに、申請された内容をCSV出力できます。
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <form
+            action={createSubmissionCsvExportAction.bind(null, spaceId)}
+            className="flex flex-col gap-3 sm:flex-row sm:items-end"
+          >
+            <div className="w-full space-y-2 sm:max-w-md">
+              <Label htmlFor="csvFormDefinitionId">申請フォーム</Label>
+              <select
+                id="csvFormDefinitionId"
+                name="formDefinitionId"
+                required
+                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              >
+                <option value="">選択してください</option>
+                {exportFormOptions.map((option) => (
+                  <option key={option.id} value={option.id}>
+                    {option.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <SubmissionCsvExportControls
+              exportFormCount={exportFormOptions.length}
+              latestExportJob={latestExportJob}
+              spaceId={spaceId}
+            />
+          </form>
+          {exportFormOptions.length === 0 ? (
+            <p className="text-sm text-muted-foreground">
+              CSV出力できる申請フォームへの申請はまだありません。
+            </p>
+          ) : null}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -209,6 +260,24 @@ const SUBMISSION_STATUS_OPTIONS = [
   APPLICATION_STATUSES.approved,
   APPLICATION_STATUSES.rejected,
 ];
+
+function buildExportFormOptions(
+  applications: ApplicationRow[],
+): Array<{ id: string; name: string }> {
+  const options = new Map<string, string>();
+  for (const row of applications) {
+    if (!row.formDefinitionId) {
+      continue;
+    }
+    options.set(
+      row.formDefinitionId,
+      row.formDefinitionName?.trim() || row.applicationName?.trim() || row.formDefinitionId,
+    );
+  }
+  return [...options.entries()]
+    .map(([id, name]) => ({ id, name }))
+    .sort((a, b) => a.name.localeCompare(b.name, "ja"));
+}
 
 function filterApplications(
   applications: ApplicationRow[],

@@ -2,10 +2,11 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { Application } from '../../../models/entities/application.entity';
+import { ApplicationStatus } from '../../../models/constants/application-status';
 import { ExportJobStatus } from '../../../models/constants/export-job-status';
 import { ExportJob } from '../../../models/entities/export-job.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
@@ -105,6 +106,9 @@ export class ExportJobsService {
     if (dto.status) {
       filterJson.status = dto.status;
     }
+    if (dto.formDefinitionId) {
+      filterJson.formDefinitionId = dto.formDefinitionId;
+    }
 
     const job = await this.jobs.save(
       this.jobs.create({
@@ -127,8 +131,10 @@ export class ExportJobsService {
       const where: Record<string, unknown> = {
         tenantId: actor.tenantId,
         groupId: dto.groupId,
+        status: Not(In([ApplicationStatus.DRAFT, ApplicationStatus.PUBLISHED])),
       };
       if (dto.status) where.status = dto.status;
+      if (dto.formDefinitionId) where.formDefinitionId = dto.formDefinitionId;
 
       const rows = await this.applications.find({
         where,
