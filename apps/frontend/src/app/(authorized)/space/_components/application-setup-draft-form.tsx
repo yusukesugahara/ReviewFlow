@@ -463,48 +463,54 @@ export function ApplicationSetupDraftForm({
         </p>
       ) : null}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="w-full max-w-2xl space-y-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-950">申請フォーム作成</h2>
-              <Badge variant={publishedFormDefinitionId ? "default" : "outline"}>
-                {publishedFormDefinitionId ? "公開済み" : initialName ? "下書き" : "未保存"}
-              </Badge>
-            </div>
-            <Label htmlFor="templateName">申請フォーム名</Label>
-            <Input
-              id="templateName"
-              name="name"
-              placeholder="例: 経費申請"
-              required
-              defaultValue={initialName ?? ""}
-              className="bg-white"
-            />
-          </div>
-          <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
-            <div className="flex flex-wrap justify-end gap-2">
-              <Badge variant={hasFields ? "default" : "outline"}>申請項目 {hasFields ? "OK" : "未完了"}</Badge>
-              <Badge variant="default">承認フロー OK</Badge>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <Button type="submit" name="intent" value="draft" variant="secondary">
-                下書き保存
-              </Button>
-              <Button type="submit" name="intent" value="publish">
-                公開
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader>
-          <CardTitle className="text-xl">フォームプレビュー</CardTitle>
-          <CardDescription>公開されるフォームと同じ表示です。鉛筆で編集、×で削除、行間の＋で追加できます。</CardDescription>
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="w-full max-w-2xl space-y-2">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-xl">申請フォーム</CardTitle>
+                <Badge variant={publishedFormDefinitionId ? "default" : "outline"}>
+                  {publishedFormDefinitionId ? "公開済み" : initialName ? "下書き" : "未保存"}
+                </Badge>
+              </div>
+              <CardDescription>
+                フォーム名と、利用者が入力する申請項目を設定します。
+              </CardDescription>
+              <Label htmlFor="templateName">申請フォーム名</Label>
+              <Input
+                id="templateName"
+                name="name"
+                placeholder="例: 経費申請"
+                required
+                defaultValue={initialName ?? ""}
+                className="bg-white"
+              />
+            </div>
+            <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
+              <div className="flex flex-wrap justify-end gap-2">
+                <Badge variant={hasFields ? "default" : "outline"}>申請項目 {hasFields ? "OK" : "未完了"}</Badge>
+                <Badge variant="default">承認フロー OK</Badge>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button type="submit" name="intent" value="draft" variant="secondary">
+                  下書き保存
+                </Button>
+                <Button type="submit" name="intent" value="publish">
+                  公開
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardHeader>
         <CardContent className="space-y-5">
+          <div className="border-t border-slate-200 pt-5">
+            <div className="mb-4">
+              <h3 className="text-base font-semibold text-slate-950">フォーム入力画面</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                公開されるフォームと同じ表示です。鉛筆で編集、×で削除、行間の＋で追加できます。
+              </p>
+            </div>
+          </div>
           <InlineFormBuilder
             fieldsWithKeys={fieldsWithKeys}
             setSelectedFieldId={setSelectedFieldId}

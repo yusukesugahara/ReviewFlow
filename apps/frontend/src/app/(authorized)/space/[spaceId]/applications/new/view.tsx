@@ -45,7 +45,7 @@ export function SpaceNewApplicationView({
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-bold tracking-tight">申請作成</h2>
+          <h2 className="text-3xl font-bold tracking-tight">申請フォーム作成</h2>
           <p className="text-muted-foreground">
             申請項目と承認ステップを設定し、新しい申請を作成します
           </p>
