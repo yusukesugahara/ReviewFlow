@@ -9,6 +9,7 @@ export type ApplicationDetailViewModel = {
   updatedAt?: string;
   applicantEmail?: string;
   currentStepOrder?: number | null;
+  currentStepCanReturn?: boolean | null;
   values: Record<string, unknown>;
 };
 

@@ -37,8 +37,15 @@ export function mapApplicationToDetail(row: Application): ApplicationDetailDto {
       values[key] = v.valueJson;
     }
   }
+  const currentStep =
+    row.currentStepOrder == null
+      ? null
+      : (row.approvalFlow?.steps ?? []).find(
+          (step) => step.stepOrder === row.currentStepOrder,
+        );
   return {
     ...mapApplicationToSummary(row),
+    currentStepCanReturn: currentStep?.canReturn ?? null,
     values,
   };
 }

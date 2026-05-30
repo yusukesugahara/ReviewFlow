@@ -1230,6 +1230,8 @@ export interface components {
             submittedAt?: Record<string, never> | null;
             createdAt: string;
             updatedAt: string;
+            /** @description 現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。 */
+            currentStepCanReturn?: Record<string, never> | null;
             /** @description field_key → 値 */
             values: {
                 [key: string]: unknown;

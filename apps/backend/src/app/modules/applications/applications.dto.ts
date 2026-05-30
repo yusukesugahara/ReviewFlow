@@ -308,6 +308,13 @@ export class ApplicationSummaryDto {
 }
 
 export class ApplicationDetailDto extends ApplicationSummaryDto {
+  @ApiPropertyOptional({
+    description:
+      '現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。',
+    nullable: true,
+  })
+  currentStepCanReturn!: boolean | null;
+
   @ApiProperty({
     type: 'object',
     additionalProperties: true,
