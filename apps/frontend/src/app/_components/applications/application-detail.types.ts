@@ -87,4 +87,6 @@ export type ApplicationDetailViewProps = {
   showCorrectionHistory?: boolean;
   showOpenCorrectionSummary?: boolean;
   publicApplicationUrlPath?: string;
+  canReturnApplication?: boolean;
+  returnAction?: (formData: FormData) => Promise<void>;
 };

@@ -9,9 +9,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { DynamicFieldsTable } from "./dynamic-fields";
 import { PublicApplicationUrlCard } from "./public-application-url-card";
+import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
 import type {
   ApplicationCorrection,
   ApplicationCorrectionTargetItem,
@@ -41,6 +46,8 @@ export function ApplicationDetailView({
   showCorrectionHistory = false,
   showOpenCorrectionSummary = false,
   publicApplicationUrlPath,
+  canReturnApplication = false,
+  returnAction,
 }: ApplicationDetailViewProps) {
   return (
     <div className="space-y-6">
@@ -80,10 +87,12 @@ export function ApplicationDetailView({
         title={fieldsTitle}
         description={fieldsDescription}
         openCorrectionItems={openCorrectionItems}
+        canReturnApplication={canReturnApplication}
+        returnAction={returnAction}
+        decisionActions={reviewerActions}
       />
 
       {actions}
-      {reviewerActions}
 
       {showOpenCorrectionSummary && openCorrectionItems.length > 0 ? (
         <OpenCorrectionSummary items={openCorrectionItems} />
@@ -427,15 +436,77 @@ function ApplicationFieldsCard({
   title,
   description,
   openCorrectionItems,
+  canReturnApplication,
+  returnAction,
+  decisionActions,
 }: {
   application: ApplicationDetailViewModel;
   fields: ApplicationFormField[];
   title: string;
   description: string;
   openCorrectionItems: ApplicationCorrectionTargetItem[];
+  canReturnApplication: boolean;
+  returnAction?: (formData: FormData) => Promise<void>;
+  decisionActions?: ReactNode;
 }) {
   const correctionTargetKeys = new Set(
     openCorrectionItems.flatMap((item) => [item.formFieldId, item.fieldKey]),
+  );
+  const canReturn = canReturnApplication && !!returnAction;
+  const returnFormId = `return-application-${application.id}`;
+  const table = (
+    <DynamicFieldsTable
+      fields={fields.map((field) => ({
+        ...field,
+        required: field.required ?? false,
+      }))}
+      values={application.values}
+      title="申請書"
+      getRowClassName={(field) =>
+        correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey)
+          ? "bg-amber-50"
+          : undefined
+      }
+      renderValue={(field, value) => {
+        const isCorrectionTarget =
+          correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey);
+        return (
+          <div className="space-y-3">
+            {field.helpText ? (
+              <p className="text-xs leading-5 text-muted-foreground">
+                {field.helpText}
+              </p>
+            ) : null}
+            <div className="min-h-9 whitespace-pre-wrap border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900">
+              {renderFieldValue(field, value)}
+            </div>
+            {isCorrectionTarget ? (
+              <p className="text-xs font-medium text-amber-700">
+                差し戻し対象項目です
+              </p>
+            ) : null}
+            {canReturn ? (
+              <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50/60 p-3">
+                <label className="inline-flex items-center gap-2 text-sm font-medium text-slate-800">
+                  <input
+                    type="checkbox"
+                    id={`return:${field.id}`}
+                    name={`return:${field.id}`}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  この項目を差し戻し対象にする
+                </label>
+                <Input
+                  name={`comment:${field.id}`}
+                  placeholder="この項目への差し戻しコメント（任意）"
+                  className="bg-white text-sm"
+                />
+              </div>
+            ) : null}
+          </div>
+        );
+      }}
+    />
   );
 
   return (
@@ -445,40 +516,36 @@ function ApplicationFieldsCard({
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <DynamicFieldsTable
-          fields={fields.map((field) => ({
-            ...field,
-            required: field.required ?? false,
-          }))}
-          values={application.values}
-          title="申請書"
-          getRowClassName={(field) =>
-            correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey)
-              ? "bg-amber-50"
-              : undefined
-          }
-          renderValue={(field, value) => {
-            const isCorrectionTarget =
-              correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey);
-            return (
-              <div>
-                {field.helpText ? (
-                  <p className="mb-1 text-xs leading-5 text-muted-foreground">
-                    {field.helpText}
-                  </p>
-                ) : null}
-                <div className="min-h-9 whitespace-pre-wrap border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900">
-                  {renderFieldValue(field, value)}
-                </div>
-                {isCorrectionTarget ? (
-                  <p className="mt-2 text-xs font-medium text-amber-700">
-                    差し戻し対象項目です
-                  </p>
-                ) : null}
+        {canReturn && returnAction ? (
+          <div className="space-y-4">
+            <form id={returnFormId} action={returnAction} className="space-y-4">
+              <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+                <Label htmlFor="overallComment">差し戻し全体コメント（任意）</Label>
+                <Textarea
+                  id="overallComment"
+                  name="overallComment"
+                  placeholder="差し戻しの全体的な理由や説明"
+                  rows={3}
+                  className="bg-white"
+                />
               </div>
-            );
-          }}
-        />
+              {table}
+            </form>
+            <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-4">
+              <ReturnApplicationConfirmButton formId={returnFormId} />
+              {decisionActions}
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {table}
+            {decisionActions ? (
+              <div className="flex flex-wrap items-center justify-end gap-2 border-t border-slate-200 pt-4">
+                {decisionActions}
+              </div>
+            ) : null}
+          </div>
+        )}
       </CardContent>
     </Card>
   );

@@ -251,6 +251,8 @@ export function ApplicationDetailScreen({
       showTimestamps
       showCorrectionHistory
       showOpenCorrectionSummary
+      canReturnApplication={capabilities.canReturnApplication}
+      returnAction={returnAction}
       actions={
         <div className="space-y-3">
           {actionError ? (
@@ -259,11 +261,6 @@ export function ApplicationDetailScreen({
             </p>
           ) : null}
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline">
-              <Link href={`/space/${encodeURIComponent(spaceId)}/submissions`}>
-                一覧へ戻る
-              </Link>
-            </Button>
             <ApplicantApplicationActions
               capabilities={actionCapabilities}
               editHref={editHref}
@@ -281,12 +278,9 @@ export function ApplicationDetailScreen({
       }
       reviewerActions={
         <ReviewerApplicationActions
-          fields={fields}
-          values={app.values}
           capabilities={capabilities}
           approveAction={approveAction}
           rejectAction={rejectAction}
-          returnAction={returnAction}
         />
       }
     />

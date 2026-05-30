@@ -1,143 +1,136 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+"use client";
+
+import { useState } from "react";
+import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import type { ApplicationCapabilities } from "./application-capabilities";
-import type { ApplicationFormField } from "./application-detail.types";
-import { DynamicFieldsTable } from "./dynamic-fields";
-import { renderFieldValue } from "@/lib/form-field-value";
 
 type ReviewerApplicationActionsProps = {
-  fields: ApplicationFormField[];
-  values: Record<string, unknown>;
   capabilities: Pick<
     ApplicationCapabilities,
-    "canApproveApplication" | "canRejectApplication" | "canReturnApplication"
+    "canApproveApplication" | "canRejectApplication"
   >;
   approveAction: (formData: FormData) => Promise<void>;
   rejectAction: (formData: FormData) => Promise<void>;
-  returnAction: (formData: FormData) => Promise<void>;
 };
 
 export function ReviewerApplicationActions({
-  fields,
-  values,
   capabilities,
   approveAction,
   rejectAction,
-  returnAction,
 }: ReviewerApplicationActionsProps) {
+  const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
+
   if (
     !capabilities.canApproveApplication &&
-    !capabilities.canRejectApplication &&
-    !capabilities.canReturnApplication
+    !capabilities.canRejectApplication
   ) {
     return null;
   }
 
   return (
     <>
-      {capabilities.canApproveApplication || capabilities.canRejectApplication ? (
-        <div className="grid gap-6 md:grid-cols-2">
-          {capabilities.canApproveApplication ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-green-700">✓ 承認</CardTitle>
-                <CardDescription>この申請を承認します</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form action={approveAction} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="approve-comment">コメント（任意）</Label>
-                    <Textarea id="approve-comment" name="comment" placeholder="承認コメント" rows={3} />
-                  </div>
-                  <Button type="submit" className="w-full">承認する</Button>
-                </form>
-              </CardContent>
-            </Card>
-          ) : null}
+      <div className="flex flex-wrap gap-2">
+        {capabilities.canApproveApplication ? (
+          <Button type="button" onClick={() => setConfirmAction("approve")}>
+            承認する
+          </Button>
+        ) : null}
+        {capabilities.canRejectApplication ? (
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => setConfirmAction("reject")}
+          >
+            却下する
+          </Button>
+        ) : null}
+      </div>
 
-          {capabilities.canRejectApplication ? (
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-red-700">✕ 却下</CardTitle>
-                <CardDescription>この申請を却下します</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <form action={rejectAction} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="reject-comment">コメント（任意）</Label>
-                    <Textarea id="reject-comment" name="comment" placeholder="却下理由" rows={3} />
-                  </div>
-                  <Button type="submit" variant="destructive" className="w-full">却下する</Button>
-                </form>
-              </CardContent>
-            </Card>
-          ) : null}
-        </div>
-      ) : null}
-
-      {capabilities.canReturnApplication ? (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-amber-700">↩ 差し戻し</CardTitle>
-            <CardDescription>特定のフィールドに対して修正を依頼します</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form action={returnAction} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="overallComment">全体コメント（任意）</Label>
-                <Textarea
-                  id="overallComment"
-                  name="overallComment"
-                  placeholder="差し戻しの全体的な理由や説明"
-                  rows={3}
-                />
-              </div>
-
-              <DynamicFieldsTable
-                fields={fields.map((field) => ({
-                  ...field,
-                  required: field.required ?? false,
-                }))}
-                values={values}
-                title="差し戻し対象"
-                renderValue={(field, value) => (
-                  <div className="space-y-3">
-                    {field.helpText ? (
-                      <p className="text-xs leading-5 text-muted-foreground">
-                        {field.helpText}
-                      </p>
-                    ) : null}
-                    <div className="min-h-9 whitespace-pre-wrap border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900">
-                      {renderFieldValue(field, value)}
-                    </div>
-                    <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-                      <input
-                        type="checkbox"
-                        id={`return:${field.id}`}
-                        name={`return:${field.id}`}
-                        className="h-4 w-4 rounded border-gray-300"
-                      />
-                      このフォームを差し戻し対象にする
-                    </label>
-                    <Input
-                      name={`comment:${field.id}`}
-                      placeholder="このフォームへの差し戻しコメント（任意）"
-                      className="bg-white text-sm"
-                    />
-                  </div>
-                )}
-              />
-
-              <Button type="submit" variant="outline" className="w-full">
-                差し戻す
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
+      <ApplicationDecisionDialog
+        action={confirmAction}
+        approveAction={approveAction}
+        rejectAction={rejectAction}
+        onClose={() => setConfirmAction(null)}
+      />
     </>
+  );
+}
+
+function ApplicationDecisionDialog({
+  action,
+  approveAction,
+  rejectAction,
+  onClose,
+}: {
+  action: "approve" | "reject" | null;
+  approveAction: (formData: FormData) => Promise<void>;
+  rejectAction: (formData: FormData) => Promise<void>;
+  onClose: () => void;
+}) {
+  if (!action) {
+    return null;
+  }
+
+  const isApprove = action === "approve";
+  const title = isApprove ? "申請を承認しますか" : "申請を却下しますか";
+  const description = isApprove
+    ? "承認コメントがあれば入力してから承認してください。"
+    : "却下理由があれば入力してから却下してください。";
+  const textareaId = isApprove ? "approve-comment" : "reject-comment";
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="application-decision-title"
+    >
+      <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
+        <div className="border-b border-slate-200 px-6 py-4">
+          <h2 id="application-decision-title" className="text-lg font-semibold text-slate-950">
+            {title}
+          </h2>
+          <p className="mt-1 text-sm text-slate-600">{description}</p>
+        </div>
+        <form action={isApprove ? approveAction : rejectAction} className="space-y-4 px-6 py-5">
+          <div className="space-y-2">
+            <Label htmlFor={textareaId}>コメント（任意）</Label>
+            <Textarea
+              id={textareaId}
+              name="comment"
+              placeholder={isApprove ? "承認コメント" : "却下理由"}
+              rows={4}
+            />
+          </div>
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="outline" onClick={onClose}>
+              キャンセル
+            </Button>
+            <DecisionSubmitButton variant={isApprove ? "default" : "destructive"}>
+              {isApprove ? "承認する" : "却下する"}
+            </DecisionSubmitButton>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function DecisionSubmitButton({
+  children,
+  variant,
+}: {
+  children: string;
+  variant: "default" | "destructive";
+}) {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" variant={variant} disabled={pending}>
+      {pending ? "処理中..." : children}
+    </Button>
   );
 }
