@@ -20,7 +20,7 @@ describe('FormDefinitionsService', () => {
     Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
   >;
   let spaceAccess: jest.Mocked<
-    Pick<SpaceAccessService, 'assertCanManageGroup'>
+    Pick<SpaceAccessService, 'assertCanManageGroup' | 'assertCanUseGroup'>
   >;
   const actor = {
     id: 'u1',
@@ -47,6 +47,7 @@ describe('FormDefinitionsService', () => {
     >;
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
+      assertCanUseGroup: jest.fn().mockResolvedValue(undefined),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -162,5 +163,21 @@ describe('FormDefinitionsService', () => {
     expect(out.status).toBe(FormDefinitionStatus.DRAFT);
     expect(out.archivedFromStatus).toBeNull();
     expect(templates.save).toHaveBeenCalledWith(definition);
+  });
+
+  it('getOneForActor requires space usage access only', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.PUBLISHED,
+    } as FormDefinition;
+    templates.findOne.mockResolvedValue(definition);
+
+    const out = await service.getOneForActor(actor, 't1');
+
+    expect(out).toBe(definition);
+    expect(spaceAccess.assertCanUseGroup).toHaveBeenCalledWith(actor, 'g1');
+    expect(spaceAccess.assertCanManageGroup).not.toHaveBeenCalled();
   });
 });

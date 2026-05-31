@@ -959,7 +959,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "フォーム定義取得（tenant_admin）",
+        "summary": "フォーム定義取得（スペースメンバー）",
         "tags": [
           "form-definitions"
         ]

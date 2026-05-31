@@ -327,7 +327,7 @@ export class FormDefinitionsService {
     definitionId: string,
   ): Promise<FormDefinition> {
     const definition = await this.getOne(actor.tenantId, definitionId);
-    await this.assertCanManageDefinition(actor, definition);
+    await this.spaceAccess.assertCanUseGroup(actor, definition.groupId);
     return definition;
   }
 

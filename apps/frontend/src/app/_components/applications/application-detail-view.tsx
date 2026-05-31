@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { renderFieldValue } from "@/lib/form-field-value";
 import {
   Card,
   CardContent,
@@ -14,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ApplicationStatusBadge } from "./application-status-badge";
-import { DynamicFieldsTable } from "./dynamic-fields";
+import { DynamicFieldInput, DynamicFieldsTable } from "./dynamic-fields";
 import { PublicApplicationUrlCard } from "./public-application-url-card";
 import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
 import type {
@@ -472,14 +471,13 @@ function ApplicationFieldsCard({
           correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey);
         return (
           <div className="space-y-3">
-            {field.helpText ? (
-              <p className="text-xs leading-5 text-muted-foreground">
-                {field.helpText}
-              </p>
-            ) : null}
-            <div className="min-h-9 whitespace-pre-wrap border border-slate-300 bg-white px-3 py-2 text-sm leading-6 text-slate-900">
-              {renderFieldValue(field, value)}
-            </div>
+            <DynamicFieldInput
+              field={field}
+              value={value}
+              disabled
+              readOnly
+              variant="table"
+            />
             {isCorrectionTarget ? (
               <p className="text-xs font-medium text-amber-700">
                 差し戻し対象項目です

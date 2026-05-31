@@ -133,8 +133,8 @@ request:
 query: `groupId` 必須、`includeArchived=true` 任意。tenant_admin はテナント内 group、group admin は自分が admin の group のみ。通常は `archived` 以外を返し、`includeArchived=true` の場合は削除済み（`archived`）フォーム定義を返す。
 
 ### GET /form-definitions/:id
-権限: tenant_admin, tenant_user（group admin）  
-単一フォーム定義（`fields` 含む）を返す。
+権限: tenant_admin, tenant_user（対象 group の member）  
+単一フォーム定義（`fields` 含む）を返す。申請詳細表示では、申請レコードに紐づくフォーム項目を表示するため、スペース利用権限があれば参照できる。フォーム定義の作成・編集・公開・アーカイブは引き続き group admin 権限を要求する。
 
 ### POST /form-definitions
 権限: tenant_admin, tenant_user（group admin）

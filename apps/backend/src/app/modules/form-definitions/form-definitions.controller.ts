@@ -119,7 +119,7 @@ export class FormDefinitionsController {
   @Get(':id')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'フォーム定義取得（tenant_admin）' })
+  @ApiOperation({ summary: 'フォーム定義取得（スペースメンバー）' })
   @ApiSuccessResponse(FormDefinitionResponseDto)
   async getOne(
     @Param('id', ParseUUIDPipe) id: string,

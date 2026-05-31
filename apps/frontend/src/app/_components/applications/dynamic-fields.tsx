@@ -55,6 +55,7 @@ export function DynamicFieldInput({
   field,
   value,
   disabled = false,
+  readOnly = false,
   afterInput,
   variant = "default",
 }: DynamicFieldInputProps) {
@@ -71,6 +72,7 @@ export function DynamicFieldInput({
     selectedValues,
     options,
     disabled,
+    readOnly,
     afterInput,
     variant,
   };

@@ -284,7 +284,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** フォーム定義取得（tenant_admin） */
+        /** フォーム定義取得（スペースメンバー） */
         get: operations["FormDefinitionsController_getOne"];
         put?: never;
         post?: never;

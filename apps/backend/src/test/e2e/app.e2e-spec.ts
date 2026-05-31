@@ -965,6 +965,12 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${groupUserTok}`)
       .expect(403);
 
+    await request(http)
+      .get(`/form-definitions/${tplA}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupUserTok}`)
+      .expect(200);
+
     const appA = await request(http)
       .post('/applications')
       .set(apiKey)
