@@ -42,6 +42,7 @@ type ApplicationDetailScreenProps = {
   missingRequiredFields: ApplicationFormField[];
   openItems: ApplicationCorrectionTargetItem[];
   rejectAction: (formData: FormData) => Promise<void>;
+  resendReturnEmailAction: () => Promise<void>;
   resubmitAction: () => Promise<void>;
   returnAction: (formData: FormData) => Promise<void>;
   spaceId: string;
@@ -210,6 +211,7 @@ export function ApplicationDetailScreen({
   missingRequiredFields,
   openItems,
   rejectAction,
+  resendReturnEmailAction,
   resubmitAction,
   returnAction,
   spaceId,
@@ -226,6 +228,8 @@ export function ApplicationDetailScreen({
         app.id,
       )}?definitionId=${encodeURIComponent(definitionId)}`
     : buildSpaceApplicationEditHrefByIds(spaceId, app.id);
+  const canResendReturnEmail =
+    app.status === APPLICATION_STATUSES.returned && openItems.length > 0;
 
   return (
     <ApplicationDetailView
@@ -264,6 +268,8 @@ export function ApplicationDetailScreen({
             <ApplicantApplicationActions
               capabilities={actionCapabilities}
               editHref={editHref}
+              canResendReturnEmail={canResendReturnEmail}
+              resendReturnEmailAction={resendReturnEmailAction}
               submitAction={submitAction}
               resubmitAction={resubmitAction}
             />

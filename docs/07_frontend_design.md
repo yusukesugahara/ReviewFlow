@@ -4,6 +4,9 @@
 - /login
 - /signup
 - /invitations/accept
+- /apply/access
+- /apply/form
+- /apply/correction
 
 ## tenant_admin
 - /admin … /admin/spaces へリダイレクトする管理エントリポイント
@@ -29,6 +32,8 @@ CSV出力はテナント管理ではなく、スペース配下の申請一覧 `
 ## UI方針
 - フォームは FormField 定義に従って動的描画する
 - returned 状態の申請編集画面では、修正対象項目のみ活性化する
+- 差し戻しメールから開く `/apply/correction` は、申請時と同じ動的フォームUIで修正対象項目のみ表示する
+- 申請詳細画面では、returned かつ open correction がある場合に差し戻しメールを再送できる
 - 修正コメントは該当フィールド直下に表示する
 
 ## フォルダ責務

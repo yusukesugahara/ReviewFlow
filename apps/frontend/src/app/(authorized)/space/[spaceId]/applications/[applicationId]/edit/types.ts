@@ -11,6 +11,7 @@ import type {
 export type SpaceApplicationEditPageProps = {
   params: Promise<{ spaceId: string; applicationId: string }>;
   searchParams?: Promise<{
+    correctionError?: string;
     definitionId?: string;
     setupError?: string;
     setupErrorDetail?: string;
@@ -33,6 +34,17 @@ export type EditableFormField = Omit<
   placeholder?: string | null;
   helpText?: string | null;
   options?: unknown[] | null;
+};
+
+export type CorrectionTargetItem = {
+  itemId: string;
+  formFieldId: string;
+  fieldKey: string;
+  label: string;
+  fieldType: string;
+  required: boolean;
+  comment: string | null;
+  currentValue: unknown;
 };
 
 export type EditableApprovalFlow = Omit<ApprovalFlowResponse, "steps"> & {

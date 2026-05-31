@@ -2394,6 +2394,62 @@
         ]
       }
     },
+    "/applications/{id}/return-email/resend": {
+      "post": {
+        "description": "returned かつ open correction がある申請の申請者向け修正URLを再送する。",
+        "operationId": "ApplicationsController_resendReturnEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "差し戻しメール再送",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
     "/applications/{id}/reject": {
       "post": {
         "operationId": "ApplicationsController_reject",
@@ -2793,6 +2849,98 @@
           }
         ],
         "summary": "公開申請フォーム送信",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/returned/current": {
+      "get": {
+        "description": "差し戻しメールの applicant access token に紐づく申請の open correction を返す。",
+        "operationId": "PublicApplicationsController_getReturnedCurrent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "申請者向け差し戻し修正対象取得",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}": {
+      "patch": {
+        "description": "returned かつ open correction の対象項目だけ更新できる。",
+        "operationId": "PublicApplicationsController_patchReturned",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "申請者向け差し戻し項目更新",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}/resubmit": {
+      "post": {
+        "operationId": "PublicApplicationsController_resubmitReturned",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "申請者向け再提出",
         "tags": [
           "public-applications"
         ]

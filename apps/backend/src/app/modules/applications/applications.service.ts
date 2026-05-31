@@ -2,7 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, In, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
-import type { ApplicantAccessTokenPayload } from '../auth/auth.service';
+import {
+  AuthService,
+  type ApplicantAccessTokenPayload,
+} from '../auth/auth.service';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
@@ -82,6 +85,7 @@ export class ApplicationsService {
     private readonly flows: Repository<ApprovalFlow>,
     @InjectRepository(User)
     private readonly users: Repository<User>,
+    private readonly authService: AuthService,
     private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
     private readonly accessPolicy: ApplicationAccessPolicy,
@@ -639,6 +643,12 @@ export class ApplicationsService {
   ): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+    if (
+      app.status === ApplicationStatus.RETURNED &&
+      (dto.formDefinitionId || dto.approvalFlowId)
+    ) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+    }
     if (dto.approvalFlowId) {
       await this.resolveActiveFlow(
         actor.tenantId,
@@ -943,10 +953,18 @@ export class ApplicationsService {
     dto: ReturnApplicationDto,
   ): Promise<void> {
     const fieldsById = new Map((template.fields ?? []).map((f) => [f.id, f]));
+    const accessToken = this.authService.issueApplicantAccessToken({
+      tenantId: app.tenantId,
+      email: app.applicantEmail,
+      groupId: app.groupId,
+      formDefinitionId: app.formDefinitionId,
+      applicationId: app.id,
+    });
     try {
       await this.mailService.sendApplicationReturnedEmail({
         to: app.applicantEmail,
         applicationId: app.id,
+        accessToken,
         groupId: app.groupId,
         templateName: template.name,
         overallComment: dto.overallComment ?? null,
@@ -963,6 +981,50 @@ export class ApplicationsService {
     }
   }
 
+  async resendReturnEmail(
+    actor: AuthUserPayload,
+    id: string,
+  ): Promise<Application> {
+    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
+      detail: true,
+    });
+    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+    await this.accessPolicy.assertCanRead(
+      actor,
+      app,
+      (applicationId, actorId) =>
+        this.countApprovalsByActor(applicationId, actorId),
+    );
+    this.transitionPolicy.assertReturned(app);
+
+    const openCorrection = await this.findOpenCorrection(app.id);
+    if (!openCorrection) {
+      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
+    }
+
+    const template = await this.templates.findOne({
+      where: {
+        id: app.formDefinitionId,
+        tenantId: actor.tenantId,
+        groupId: app.groupId,
+      },
+      relations: ['fields'],
+    });
+    if (!template) {
+      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
+    }
+
+    await this.notifyApplicantOfReturn(app, template, {
+      overallComment: openCorrection.overallComment ?? undefined,
+      fields: (openCorrection.items ?? []).map((item) => ({
+        fieldId: item.formFieldId,
+        comment: item.comment ?? undefined,
+      })),
+    });
+
+    return this.getOneForActor(actor, id);
+  }
+
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
@@ -973,6 +1035,77 @@ export class ApplicationsService {
     this.validateApplicationReadyToSubmit(context);
     await this.applyResubmitTransition(context);
     return this.getOneForActor(actor, id);
+  }
+
+  private assertApplicantCanAccessApplication(
+    actor: ApplicantSession,
+    id: string,
+  ): void {
+    if (actor.applicationId && actor.applicationId !== id) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+  }
+
+  async getReturnedCorrectionForApplicant(
+    actor: ApplicantSession,
+  ): Promise<CorrectionTargetsResponseDto> {
+    if (!actor.applicationId) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
+    }
+    const app = await this.loadApplicantEditableApplication(
+      actor,
+      actor.applicationId,
+    );
+    if (app.groupId !== actor.groupId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    return this.buildCorrectionTargetsResponse(app);
+  }
+
+  async patchReturnedForApplicant(
+    actor: ApplicantSession,
+    id: string,
+    dto: PatchApplicationDto,
+  ): Promise<Application> {
+    this.assertApplicantCanAccessApplication(actor, id);
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    if (app.groupId !== actor.groupId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    if (dto.formDefinitionId || dto.approvalFlowId) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+    }
+    const context = await this.loadEditablePatchContext(
+      actor.tenantId,
+      app,
+      undefined,
+    );
+    const fieldValues = await this.applyFieldValuePatch(
+      context,
+      dto.values ?? {},
+    );
+    await this.saveApplicationPatch(app, dto, fieldValues);
+    const updated = await this.loadApplicantEditableApplication(actor, id);
+    return this.hydrateApprovalProgress(updated);
+  }
+
+  async resubmitForApplicant(
+    actor: ApplicantSession,
+    id: string,
+  ): Promise<Application> {
+    this.assertApplicantCanAccessApplication(actor, id);
+    const app = await this.loadApplicantEditableApplication(actor, id);
+    if (app.groupId !== actor.groupId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+    const context = await this.loadResubmittableApplicationContext(
+      actor.tenantId,
+      app,
+    );
+    this.validateApplicationReadyToSubmit(context);
+    await this.applyResubmitTransition(context);
+    const updated = await this.loadApplicantEditableApplication(actor, id);
+    return this.hydrateApprovalProgress(updated);
   }
 
   async getCorrectionsForActor(actor: AuthUserPayload, id: string) {

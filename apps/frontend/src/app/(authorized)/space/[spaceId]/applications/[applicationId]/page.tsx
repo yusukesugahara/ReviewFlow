@@ -8,6 +8,7 @@ import { getApplicationCapabilities } from "@/app/_components/applications/appli
 import {
   approveAction,
   rejectAction,
+  resendReturnEmailAction,
   resubmitAction,
   returnAction,
   submitAction,
@@ -232,6 +233,7 @@ export default async function SpaceApplicationDetailPage({
         missingRequiredFields={missingRequiredFields}
         openItems={openItems}
         rejectAction={rejectAction.bind(null, spaceId, app.id)}
+        resendReturnEmailAction={resendReturnEmailAction.bind(null, spaceId, app.id)}
         resubmitAction={resubmitAction.bind(null, spaceId, app.id)}
         returnAction={returnAction.bind(null, spaceId, app.id, fieldMap)}
         spaceId={spaceId}

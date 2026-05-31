@@ -309,7 +309,7 @@ response:
 
 ### POST /applications/:id/return
 権限: tenant_user, tenant_admin  
-現在ステップの **`can_return` が true** のときのみ。`application_approvals`（action=returned）と **`correction_requests` / `correction_request_items`** を作成し、申請は `returned`。差し戻し後、申請者メールアドレス宛に修正対象とコメントを通知する。オープンな correction が既にある場合は 409。
+現在ステップの **`can_return` が true** のときのみ。`application_approvals`（action=returned）と **`correction_requests` / `correction_request_items`** を作成し、申請は `returned`。差し戻し後、申請者メールアドレス宛に修正対象とコメント、申請者向け修正URL（`/apply/access?next=/apply/correction`）を通知する。オープンな correction が既にある場合は 409。
 request:
 ```json
 {
@@ -327,6 +327,10 @@ request:
 }
 ```
 
+### POST /applications/:id/return-email/resend
+権限: tenant_user, tenant_admin  
+`returned` かつ **open** の `correction_request` がある申請のみ。申請者メールアドレス宛に、同じ修正対象・コメント・申請者向け修正URLを再送する。申請状態や correction の内容は変更しない。
+
 ### POST /applications/:id/reject
 権限: tenant_user, tenant_admin  
 `in_review` のみ。承認と同様の担当判定。申請は `rejected`。任意 `comment`。
@@ -342,6 +346,18 @@ request:
 ### GET /applications/:id/correction-targets
 権限: tenant_admin, group admin, 申請者, 現在または過去に担当した承認者  
 **修正対象取得**。`applicationStatus` と、**最新の `open` の correction_request** 1件分（無ければ `openCorrection: null`）。各 item に `field_key` / `label` / `fieldType` / `required` / 項目コメント / **`currentValue`**（申請の現在値）を含める。
+
+### GET /public/applications/returned/current
+権限: applicant access token  
+差し戻しメールで発行された applicant access token に紐づく申請の open correction を返す。レスポンス形状は `GET /applications/:id/correction-targets` と同じ。
+
+### PATCH /public/applications/:id
+権限: applicant access token  
+`returned` かつ token の `applicationId` に一致する申請のみ。open correction の対象フィールドだけ更新できる。
+
+### POST /public/applications/:id/resubmit
+権限: applicant access token  
+修正保存後の再提出。token の `applicationId` に一致する `returned` 申請のみ、open correction を `resolved` にして再審査へ戻す。
 
 ## Export Jobs
 

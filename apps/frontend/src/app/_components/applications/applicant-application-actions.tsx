@@ -6,21 +6,26 @@ type ApplicantApplicationActionsProps = {
     ApplicationCapabilities,
     "canEditApplication" | "canSubmitApplication" | "canResubmitApplication"
   >;
+  canResendReturnEmail?: boolean;
   editHref: string;
+  resendReturnEmailAction?: () => Promise<void>;
   submitAction: () => Promise<void>;
   resubmitAction: () => Promise<void>;
 };
 
 export function ApplicantApplicationActions({
   capabilities,
+  canResendReturnEmail = false,
   editHref,
+  resendReturnEmailAction,
   submitAction,
   resubmitAction,
 }: ApplicantApplicationActionsProps) {
   if (
     !capabilities.canEditApplication &&
     !capabilities.canSubmitApplication &&
-    !capabilities.canResubmitApplication
+    !capabilities.canResubmitApplication &&
+    !canResendReturnEmail
   ) {
     return null;
   }
@@ -40,6 +45,13 @@ export function ApplicantApplicationActions({
       {capabilities.canResubmitApplication ? (
         <form action={resubmitAction}>
           <Button type="submit">再提出する</Button>
+        </form>
+      ) : null}
+      {canResendReturnEmail && resendReturnEmailAction ? (
+        <form action={resendReturnEmailAction}>
+          <Button type="submit" variant="outline">
+            差し戻しメールを再送
+          </Button>
         </form>
       ) : null}
     </div>

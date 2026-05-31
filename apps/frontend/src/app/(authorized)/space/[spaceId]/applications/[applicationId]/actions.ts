@@ -43,7 +43,8 @@ async function postApplicationAction(
     | "/applications/{id}/resubmit"
     | "/applications/{id}/approve"
     | "/applications/{id}/reject"
-    | "/applications/{id}/return",
+    | "/applications/{id}/return"
+    | "/applications/{id}/return-email/resend",
   applicationId: string,
   body: Record<string, unknown>,
 ): Promise<ApplicationDetailViewModel> {
@@ -153,6 +154,23 @@ export async function returnAction(
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
   redirectToApplicationDetail(updated, "申請を差し戻しました");
+}
+
+export async function resendReturnEmailAction(
+  spaceId: string,
+  applicationId: string,
+): Promise<void> {
+  let updated: ApplicationDetailViewModel;
+  try {
+    updated = await postApplicationAction(
+      "/applications/{id}/return-email/resend",
+      applicationId,
+      {},
+    );
+  } catch (error) {
+    redirectToApplicationActionError(spaceId, applicationId, error);
+  }
+  redirectToApplicationDetail(updated, "差し戻しメールを再送しました");
 }
 
 export async function updateDescriptionAction(
@@ -292,6 +310,9 @@ function applicationActionErrorMessage(error: unknown): string {
   }
   if (errorCode === "APPLICATION_CORRECTION_ALREADY_OPEN") {
     return "この申請には未解決の差し戻し依頼が既にあります。";
+  }
+  if (errorCode === "APPLICATION_NO_OPEN_CORRECTION") {
+    return "未解決の差し戻し依頼がないため、メールを再送できません。";
   }
 
   return `${errorMessageFromBody(error.body)}（status: ${error.status}）`;

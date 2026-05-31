@@ -27,6 +27,7 @@ type ApplicationAccessMailInput = {
 type ApplicationReturnedMailInput = {
   to: string;
   applicationId: string;
+  accessToken: string;
   groupId: string;
   templateName: string;
   overallComment?: string | null;
@@ -101,9 +102,10 @@ export class MailService {
   async sendApplicationReturnedEmail(
     input: ApplicationReturnedMailInput,
   ): Promise<void> {
-    const detailUrl = this.buildFrontendUrl(
-      `/space/${encodeURIComponent(input.groupId)}/applications/${encodeURIComponent(input.applicationId)}`,
-    );
+    const correctionUrl = this.buildFrontendUrl('/apply/access', {
+      token: input.accessToken,
+      next: '/apply/correction',
+    });
     const fieldLines = input.fields.map((field) =>
       field.comment?.trim().length
         ? `- ${field.label}: ${field.comment.trim()}`
@@ -126,7 +128,7 @@ export class MailService {
           : null,
         '修正対象:',
         ...fieldLines,
-        `申請詳細: ${detailUrl}`,
+        `修正URL: ${correctionUrl}`,
       ]
         .filter((line): line is string => line !== null)
         .join('\n'),
@@ -137,7 +139,7 @@ export class MailService {
           : '',
         '<p>修正対象:</p>',
         `<ul>${escapedFieldItems.join('')}</ul>`,
-        `<p><a href="${this.escapeHtml(detailUrl)}">申請詳細を開く</a></p>`,
+        `<p><a href="${this.escapeHtml(correctionUrl)}">修正画面を開く</a></p>`,
       ].join(''),
     });
   }

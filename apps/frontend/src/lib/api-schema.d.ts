@@ -664,6 +664,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications/{id}/return-email/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 差し戻しメール再送
+         * @description returned かつ open correction がある申請の申請者向け修正URLを再送する。
+         */
+        post: operations["ApplicationsController_resendReturnEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/applications/{id}/reject": {
         parameters: {
             query?: never;
@@ -770,6 +790,63 @@ export interface paths {
         put?: never;
         /** 公開申請フォーム送信 */
         post: operations["PublicApplicationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/returned/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 申請者向け差し戻し修正対象取得
+         * @description 差し戻しメールの applicant access token に紐づく申請の open correction を返す。
+         */
+        get: operations["PublicApplicationsController_getReturnedCurrent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 申請者向け差し戻し項目更新
+         * @description returned かつ open correction の対象項目だけ更新できる。
+         */
+        patch: operations["PublicApplicationsController_patchReturned"];
+        trace?: never;
+    };
+    "/public/applications/{id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 申請者向け再提出 */
+        post: operations["PublicApplicationsController_resubmitReturned"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2632,6 +2709,34 @@ export interface operations {
             };
         };
     };
+    ApplicationsController_resendReturnEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
     ApplicationsController_reject: {
         parameters: {
             query?: never;
@@ -2835,6 +2940,65 @@ export interface operations {
                         data: components["schemas"]["ApplicationDetailDto"];
                     };
                 };
+            };
+        };
+    };
+    PublicApplicationsController_getReturnedCurrent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicApplicationsController_patchReturned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchApplicationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicApplicationsController_resubmitReturned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };
