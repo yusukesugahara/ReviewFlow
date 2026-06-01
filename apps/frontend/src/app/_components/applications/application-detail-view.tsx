@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+"use client";
+
+import { useMemo, useState, type ReactNode } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -12,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { formatDateTimeJa } from "@/lib/date-format";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { DynamicFieldInput, DynamicFieldsTable } from "./dynamic-fields";
 import { PublicApplicationUrlCard } from "./public-application-url-card";
@@ -73,6 +76,8 @@ export function ApplicationDetailView({
 
       <ApprovalProgressDiagram
         application={application}
+        corrections={corrections}
+        fields={fields}
         steps={application.approvalProgress ?? []}
       />
 
@@ -106,15 +111,28 @@ export function ApplicationDetailView({
 
 export function ApprovalProgressDiagram({
   application,
+  corrections,
+  fields,
   steps,
 }: {
   application: ApplicationDetailViewModel;
+  corrections: ApplicationCorrection[];
+  fields: ApplicationFormField[];
   steps: ApplicationProgressStep[];
 }) {
   if (steps.length === 0) {
     return null;
   }
-  const visualSteps = [...steps].sort((a, b) => a.stepOrder - b.stepOrder);
+  const visualSteps = useMemo(
+    () => [...steps].sort((a, b) => a.stepOrder - b.stepOrder),
+    [steps],
+  );
+  const selectableSteps = visualSteps.filter(isSelectableProgressStep);
+  const [selectedStepId, setSelectedStepId] = useState(
+    selectableSteps.find((step) => step.status === "current")?.id ??
+      selectableSteps[0]?.id ??
+      "",
+  );
   const gridColumns = `repeat(${visualSteps.length + 1}, minmax(0, 1fr))`;
 
   return (
@@ -126,24 +144,183 @@ export function ApprovalProgressDiagram({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <div
-          className="grid w-full gap-3"
-          style={{ gridTemplateColumns: gridColumns }}
-        >
-          <ApplicationStartCard
-            application={application}
-            showArrow={visualSteps.length > 0}
-          />
-          {visualSteps.map((step, index) => (
-            <ProgressStepCard
-              key={step.id}
-              step={step}
-              showArrow={index < visualSteps.length - 1}
+        <div className="space-y-6">
+          <div
+            className="grid w-full gap-3"
+            style={{ gridTemplateColumns: gridColumns }}
+          >
+            <ApplicationStartCard
+              application={application}
+              showArrow={visualSteps.length > 0}
             />
-          ))}
+            {visualSteps.map((step, index) => (
+              <ProgressStepCard
+                key={step.id}
+                isSelected={step.id === selectedStepId}
+                onSelect={
+                  isSelectableProgressStep(step)
+                    ? () => setSelectedStepId(step.id)
+                    : undefined
+                }
+                step={step}
+                showArrow={index < visualSteps.length - 1}
+              />
+            ))}
+          </div>
+          <ApprovalStepApplicationList
+            application={application}
+            corrections={corrections}
+            fields={fields}
+            selectedStepId={selectedStepId}
+            steps={visualSteps}
+          />
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function ApprovalStepApplicationList({
+  application,
+  corrections,
+  fields,
+  selectedStepId,
+  steps,
+}: {
+  application: ApplicationDetailViewModel;
+  corrections: ApplicationCorrection[];
+  fields: ApplicationFormField[];
+  selectedStepId: string;
+  steps: ApplicationProgressStep[];
+}) {
+  if (steps.length === 0) {
+    return null;
+  }
+  const correctionsByReturnedActionId = mapCorrectionsToReturnedActions(
+    steps,
+    corrections,
+  );
+  const selectedStep = steps.find((step) => step.id === selectedStepId) ?? steps[0];
+  if (!selectedStep) {
+    return null;
+  }
+  const returnedActions = selectedStep.actions.filter(
+    (action) => action.action === "returned",
+  );
+  const stepCorrections = returnedActions
+    .map((action) => correctionsByReturnedActionId.get(action.id))
+    .filter((correction): correction is ApplicationCorrection => !!correction);
+
+  return (
+    <div className="space-y-4 border-t border-slate-200 pt-5">
+      <div
+        key={`application-document-${selectedStep.id}`}
+        className="space-y-4 rounded-lg border border-slate-200 bg-slate-50/60 p-4"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <p className="text-xs font-medium text-slate-500">
+              STEP {selectedStep.stepOrder}
+            </p>
+            <h3 className="mt-1 text-base font-semibold text-slate-950">
+              {selectedStep.stepName} の申請
+            </h3>
+          </div>
+          <Badge variant={progressStatusMeta(selectedStep.status).badgeVariant}>
+            {progressStatusMeta(selectedStep.status).label}
+          </Badge>
+        </div>
+
+        {stepCorrections.length > 0 ? (
+          <div className="space-y-3">
+            {stepCorrections.map((correction) => (
+              <StepOverallCorrectionComment
+                key={correction.id}
+                correction={correction}
+              />
+            ))}
+          </div>
+        ) : null}
+
+        <DynamicFieldsTable
+          fields={fields.map((field) => ({
+            ...field,
+            required: field.required ?? false,
+          }))}
+          values={application.values}
+          disabled
+          title="申請内容"
+          getRowClassName={(field) =>
+            getFieldCorrectionItems(stepCorrections, field).length > 0
+              ? "bg-amber-50"
+              : undefined
+          }
+          renderValue={(field, value) => {
+            const fieldCorrectionItems = getFieldCorrectionItems(
+              stepCorrections,
+              field,
+            );
+            return (
+              <div className="space-y-3">
+                <DynamicFieldInput
+                  field={field}
+                  value={value}
+                  disabled
+                  readOnly
+                  variant="table"
+                />
+                {fieldCorrectionItems.length > 0 ? (
+                  <div className="space-y-2">
+                    {fieldCorrectionItems.map(({ correction, item }) => (
+                      <div
+                        key={`${correction.id}-${item.formFieldId ?? item.fieldKey}`}
+                        className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <p className="text-xs font-semibold text-amber-800">
+                            差し戻し内容
+                          </p>
+                          <span className="text-xs text-amber-700">
+                            {formatDateTime(correction.createdAt)}
+                          </span>
+                        </div>
+                        <p className="mt-1 text-sm leading-6 text-slate-800">
+                          {item.comment || "（コメントなし）"}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+              </div>
+            );
+          }}
+        />
+      </div>
+    </div>
+  );
+}
+
+function StepOverallCorrectionComment({
+  correction,
+}: {
+  correction: ApplicationCorrection;
+}) {
+  if (!correction.overallComment) {
+    return null;
+  }
+
+  return (
+    <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <p className="font-semibold text-amber-950">差し戻し全体コメント</p>
+        <span className="text-sm text-amber-800">
+          {formatDateTime(correction.createdAt)}
+        </span>
+      </div>
+      <p className="text-sm leading-6 text-slate-800">
+        {correction.overallComment}
+      </p>
+    </div>
   );
 }
 
@@ -175,7 +352,7 @@ function ApplicationStartCard({
         <div className="border-t border-slate-200 pt-3">
           <p className="text-xs font-medium text-slate-500">申請日時</p>
           <p className="mt-2 font-medium text-slate-800">
-            {submittedAt ? new Date(submittedAt).toLocaleString("ja-JP") : "-"}
+            {formatDateTime(submittedAt)}
           </p>
         </div>
       </div>
@@ -189,17 +366,33 @@ function ApplicationStartCard({
 }
 
 function ProgressStepCard({
+  isSelected,
+  onSelect,
   step,
   showArrow,
 }: {
+  isSelected: boolean;
+  onSelect?: () => void;
   step: ApplicationProgressStep;
   showArrow: boolean;
 }) {
   const statusMeta = progressStatusMeta(step.status);
   const latestAction = step.actions.at(-1);
+  const isSelectable = !!onSelect;
+  const selectedClassName = isSelected
+    ? "ring-2 ring-slate-500 ring-offset-2"
+    : isSelectable
+      ? "hover:border-slate-400"
+      : "cursor-not-allowed opacity-70";
 
   return (
-    <div className={`relative min-w-0 rounded-lg border p-3 ${statusMeta.className}`}>
+    <button
+      type="button"
+      className={`relative min-w-0 rounded-lg border p-3 text-left transition ${statusMeta.className} ${selectedClassName}`}
+      onClick={onSelect}
+      aria-pressed={isSelected}
+      disabled={!isSelectable}
+    >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-slate-500">STEP {step.stepOrder}</p>
@@ -240,7 +433,7 @@ function ProgressStepCard({
           →
         </span>
       ) : null}
-    </div>
+    </button>
   );
 }
 
@@ -270,7 +463,7 @@ function ActionHistory({ action }: { action: ApplicationProgressAction }) {
         {displayUser(action.actedBy)} が {actionLabel(action.action)}
       </p>
       <p className="mt-1 text-xs text-slate-500">
-        {new Date(action.actedAt).toLocaleString("ja-JP")}
+        {formatDateTime(action.actedAt)}
       </p>
     </div>
   );
@@ -312,6 +505,10 @@ function progressStatusMeta(status: ApplicationProgressStep["status"]) {
   };
 }
 
+function isSelectableProgressStep(step: ApplicationProgressStep): boolean {
+  return step.status !== "pending";
+}
+
 function displayUser(user: ApplicationProgressUser): string {
   return user.name?.trim() || user.email;
 }
@@ -329,8 +526,53 @@ function actionLabel(action: string): string {
   return action;
 }
 
+function mapCorrectionsToReturnedActions(
+  steps: ApplicationProgressStep[],
+  corrections: ApplicationCorrection[],
+): Map<string, ApplicationCorrection> {
+  const returnedActions = steps
+    .flatMap((step) =>
+      step.actions
+        .filter((action) => action.action === "returned")
+        .map((action) => ({ stepOrder: step.stepOrder, action })),
+    )
+    .sort((a, b) => {
+      const actedAtDiff =
+        new Date(a.action.actedAt).getTime() - new Date(b.action.actedAt).getTime();
+      return actedAtDiff !== 0 ? actedAtDiff : a.stepOrder - b.stepOrder;
+    });
+  const sortedCorrections = [...corrections].sort(
+    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+  );
+
+  const mapped = new Map<string, ApplicationCorrection>();
+  returnedActions.forEach(({ action }, index) => {
+    const correction = sortedCorrections[index];
+    if (correction) {
+      mapped.set(action.id, correction);
+    }
+  });
+  return mapped;
+}
+
+function getFieldCorrectionItems(
+  corrections: ApplicationCorrection[],
+  field: Pick<ApplicationFormField, "id" | "fieldKey">,
+): Array<{
+  correction: ApplicationCorrection;
+  item: ApplicationCorrection["items"][number];
+}> {
+  return corrections.flatMap((correction) =>
+    correction.items
+      .filter(
+        (item) => item.formFieldId === field.id || item.fieldKey === field.fieldKey,
+      )
+      .map((item) => ({ correction, item })),
+  );
+}
+
 function formatDateTime(value?: string | null): string {
-  return value ? new Date(value).toLocaleString("ja-JP") : "-";
+  return value ? formatDateTimeJa(value) : "-";
 }
 
 function ApplicationBasicInfo({
@@ -611,7 +853,7 @@ function CorrectionHistory({
                 <div className="flex items-center justify-between">
                   <Badge variant="outline">{correction.status}</Badge>
                   <span className="text-sm text-muted-foreground">
-                    {new Date(correction.createdAt).toLocaleString("ja-JP")}
+                    {formatDateTime(correction.createdAt)}
                   </span>
                 </div>
                 {correction.overallComment ? (

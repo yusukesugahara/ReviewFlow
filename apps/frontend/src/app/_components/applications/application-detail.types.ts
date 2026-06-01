@@ -64,6 +64,7 @@ export type ApplicationCorrection = {
   overallComment: string | null;
   createdAt: string;
   items: Array<{
+    formFieldId?: string;
     fieldKey: string;
     comment: string | null;
   }>;

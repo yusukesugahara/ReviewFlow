@@ -19,6 +19,7 @@ import {
 import { ReviewerApplicationActions } from "@/app/_components/applications/reviewer-application-actions";
 import { buildSpaceApplicationEditHrefByIds } from "@/app/_components/applications/application-routes";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
+import { formatDateTimeJa } from "@/lib/date-format";
 import { DescriptionEditModal } from "./description-edit-modal";
 import type {
   ApplicationCorrection,
@@ -192,6 +193,8 @@ export function FormDetailView({
 
       <ApprovalProgressDiagram
         application={application}
+        corrections={[]}
+        fields={fields}
         steps={application.approvalProgress ?? []}
       />
     </div>
@@ -347,5 +350,5 @@ function TimestampPanel({ label, value }: { label: string; value: string }) {
 }
 
 function formatDateTime(value?: string): string {
-  return value ? new Date(value).toLocaleString("ja-JP") : "-";
+  return value ? formatDateTimeJa(value) : "-";
 }
