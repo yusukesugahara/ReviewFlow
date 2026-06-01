@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ChevronLeft, ChevronRight, Download, Search } from "lucide-react";
+import { ChevronLeft, ChevronRight, Search } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -15,7 +15,6 @@ import { getApplicationStatusLabel } from "@/app/_components/applications/applic
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
 import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
 import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
-import { createSubmissionCsvExportAction } from "@/app/(authorized)/space/[spaceId]/submissions/actions";
 import type { ExportJobResponse } from "@/lib/schema";
 import { SubmissionCsvExportControls } from "./submission-csv-export-controls";
 import { SubmissionSearchSubmitButton } from "./submission-search-submit-button";
@@ -83,59 +82,21 @@ export function SpaceSubmissionsPageContent({
       </div>
 
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Download className="h-5 w-5 text-slate-500" aria-hidden="true" />
-            CSV出力
-          </CardTitle>
-          <CardDescription>
-            申請フォームごとに、申請された内容をCSV出力できます。
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <form
-            action={createSubmissionCsvExportAction.bind(null, spaceId)}
-            className="flex flex-col gap-3 sm:flex-row sm:items-end"
-          >
-            <div className="w-full space-y-2 sm:max-w-md">
-              <Label htmlFor="csvFormDefinitionId">申請フォーム</Label>
-              <select
-                id="csvFormDefinitionId"
-                name="formDefinitionId"
-                required
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                <option value="">選択してください</option>
-                {exportFormOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <SubmissionCsvExportControls
-              exportFormCount={exportFormOptions.length}
-              latestExportJob={latestExportJob}
-              spaceId={spaceId}
-            />
-          </form>
-          {exportFormOptions.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
-              CSV出力できる申請フォームへの申請はまだありません。
-            </p>
-          ) : null}
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-xl">
-            <Search className="h-5 w-5 text-slate-500" aria-hidden="true" />
-            すべての申請
-          </CardTitle>
-          <CardDescription>
-            申請者、ステータス、作成時期で申請を絞り込めます（{filteredApplications.length}件）
-          </CardDescription>
+        <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <Search className="h-5 w-5 text-slate-500" aria-hidden="true" />
+              すべての申請
+            </CardTitle>
+            <CardDescription>
+              申請者、ステータス、作成時期で申請を絞り込めます（{filteredApplications.length}件）
+            </CardDescription>
+          </div>
+          <SubmissionCsvExportControls
+            exportFormOptions={exportFormOptions}
+            latestExportJob={latestExportJob}
+            spaceId={spaceId}
+          />
         </CardHeader>
         <CardContent className="space-y-5">
           <form className="space-y-4">

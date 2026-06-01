@@ -25,7 +25,7 @@
 - /space/application-setup
 - /space/users
 
-CSV出力はテナント管理ではなく、スペース配下の申請一覧 `/space/[spaceId]/submissions` で申請フォームを選択して実行する。
+CSV出力はテナント管理ではなく、スペース配下の申請一覧 `/space/[spaceId]/submissions` の「すべての申請」右上にあるCSV出力ボタンから実行する。ボタン押下後のモーダルで申請フォームを選択し、CSV作成を開始する。
 
 `/space/application-setup` は申請フォーム定義と承認フロー定義を作成する入口として扱う。申請者が提出する個別申請の作成は `/space/[spaceId]/applications/new` に寄せる。
 
