@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { formatDateTimeJa } from "@/lib/date-format";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
 
 function shortId(value: unknown): string {
@@ -187,7 +188,7 @@ export function AdminAuditLogsView({
                 {filteredRows.map(({ metadata, reasons, risk, row }) => (
                   <TableRow key={row.id}>
                     <TableCell className="text-muted-foreground">
-                      {new Date(row.createdAt).toLocaleString("ja-JP")}
+                      {formatDateTimeJa(row.createdAt)}
                     </TableCell>
                     <TableCell>
                       <RiskBadge risk={risk} />
