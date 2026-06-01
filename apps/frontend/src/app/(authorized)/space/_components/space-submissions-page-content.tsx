@@ -49,15 +49,18 @@ export function SpaceSubmissionsPageContent({
 
   const submittedApplications = applications.filter((row) => !isFormSetupApplication(row));
   const exportFormOptions = buildExportFormOptions(submittedApplications);
+  const needsActionApplications = submittedApplications.filter(isPendingApplication);
+  const recentProcessedApplications = submittedApplications.filter(
+    isRecentlyProcessedApplication,
+  );
   const filteredApplications = filterApplications(submittedApplications, filters);
-  const pendingApplications = filteredApplications.filter(isPendingApplication);
-  const processedApplications = filteredApplications.filter(isProcessedApplication);
   const hasFilters =
     filters.applicant.length > 0 ||
     filters.createdFrom.length > 0 ||
     filters.createdTo.length > 0 ||
     filters.form.length > 0 ||
-    filters.status.length > 0;
+    filters.status.length > 0 ||
+    filters.summary.length > 0;
   const totalPages = Math.max(1, Math.ceil(filteredApplications.length / PAGE_SIZE));
   const currentPage = Math.min(filters.page, totalPages);
   const paginatedApplications = filteredApplications.slice(
@@ -77,8 +80,20 @@ export function SpaceSubmissionsPageContent({
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <SummaryCard label="対応が必要" value={pendingApplications.length} tone="amber" />
-        <SummaryCard label="対応済み" value={processedApplications.length} tone="emerald" />
+        <SummaryCard
+          href={buildSummaryFilterHref(spaceId, "needsAction")}
+          isActive={filters.summary === "needsAction"}
+          label="対応が必要"
+          value={needsActionApplications.length}
+          tone="amber"
+        />
+        <SummaryCard
+          href={buildSummaryFilterHref(spaceId, "recentProcessed")}
+          isActive={filters.summary === "recentProcessed"}
+          label="直近7日間に対応"
+          value={recentProcessedApplications.length}
+          tone="emerald"
+        />
       </div>
 
       <Card>
@@ -101,6 +116,9 @@ export function SpaceSubmissionsPageContent({
         <CardContent className="space-y-5">
           <form className="space-y-4">
             <input type="hidden" name="page" value="1" />
+            {filters.summary ? (
+              <input type="hidden" name="summary" value={filters.summary} />
+            ) : null}
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <div className="space-y-2 xl:col-span-2">
                 <Label htmlFor="applicant">申請者</Label>
@@ -210,7 +228,10 @@ type SubmissionFilters = {
   form: string;
   page: number;
   status: string;
+  summary: SummaryFilter;
 };
+
+type SummaryFilter = "" | "needsAction" | "recentProcessed";
 
 const PAGE_SIZE = 10;
 
@@ -250,6 +271,15 @@ function filterApplications(
   const createdTo = parseDateEnd(filters.createdTo);
 
   return applications.filter((row) => {
+    if (filters.summary === "needsAction" && !isPendingApplication(row)) {
+      return false;
+    }
+    if (
+      filters.summary === "recentProcessed" &&
+      !isRecentlyProcessedApplication(row)
+    ) {
+      return false;
+    }
     if (applicant && !row.applicantEmail?.toLowerCase().includes(applicant)) {
       return false;
     }
@@ -372,6 +402,9 @@ function buildSubmissionsPageHref(
   if (filters.createdTo) {
     params.set("createdTo", filters.createdTo);
   }
+  if (filters.summary) {
+    params.set("summary", filters.summary);
+  }
   if (page > 1) {
     params.set("page", String(page));
   }
@@ -380,11 +413,20 @@ function buildSubmissionsPageHref(
   return params.size > 0 ? `${pathname}?${params.toString()}` : pathname;
 }
 
+function buildSummaryFilterHref(spaceId: string, summary: SummaryFilter): string {
+  const params = new URLSearchParams({ summary });
+  return `/space/${encodeURIComponent(spaceId)}/submissions?${params.toString()}`;
+}
+
 function SummaryCard({
+  href,
+  isActive,
   label,
   value,
   tone,
 }: {
+  href: string;
+  isActive: boolean;
   label: string;
   value: number;
   tone: "amber" | "emerald";
@@ -393,12 +435,18 @@ function SummaryCard({
     tone === "amber"
       ? "border-amber-200 bg-amber-50 text-amber-900"
       : "border-emerald-200 bg-emerald-50 text-emerald-900";
+  const activeClassName = isActive
+    ? "ring-2 ring-offset-2 ring-slate-400"
+    : "hover:border-slate-300 hover:bg-white";
 
   return (
-    <div className={`rounded-lg border px-4 py-3 ${toneClassName}`}>
+    <Link
+      href={href}
+      className={`block rounded-lg border px-4 py-3 transition ${toneClassName} ${activeClassName}`}
+    >
       <p className="text-sm font-medium">{label}</p>
       <p className="mt-1 text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
+    </Link>
   );
 }
 
@@ -423,3 +471,13 @@ function isProcessedApplication(row: ApplicationRow): boolean {
     row.status === APPLICATION_STATUSES.rejected
   );
 }
+
+function isRecentlyProcessedApplication(row: ApplicationRow): boolean {
+  if (!isProcessedApplication(row)) {
+    return false;
+  }
+  const updatedAt = new Date(row.updatedAt).getTime();
+  return Number.isFinite(updatedAt) && updatedAt >= Date.now() - RECENT_DAYS_MS;
+}
+
+const RECENT_DAYS_MS = 7 * 24 * 60 * 60 * 1000;

@@ -12,6 +12,7 @@ type SpaceSubmissionsViewProps = {
     form: string;
     page: number;
     status: string;
+    summary: "" | "needsAction" | "recentProcessed";
   };
   latestExportJob: ExportJobResponse | null;
   spaceId: string;

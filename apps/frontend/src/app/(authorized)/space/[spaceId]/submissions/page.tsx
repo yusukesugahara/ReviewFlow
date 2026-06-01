@@ -36,6 +36,7 @@ export default async function SpaceSubmissionsPage({
     form: normalizeSearchValue(query?.form),
     page: normalizePage(query?.page),
     status: normalizeSearchValue(query?.status),
+    summary: normalizeSummaryFilter(query?.summary),
   };
   const jobId = normalizeSearchValue(query?.jobId);
   const authHeaders = await authHeadersOrRedirect();
@@ -95,4 +96,11 @@ function normalizeSearchValue(value?: string): string {
 function normalizePage(value?: string): number {
   const page = Number(value);
   return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+function normalizeSummaryFilter(value?: string): "" | "needsAction" | "recentProcessed" {
+  if (value === "needsAction" || value === "recentProcessed") {
+    return value;
+  }
+  return "";
 }

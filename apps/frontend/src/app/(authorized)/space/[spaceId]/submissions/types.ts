@@ -8,6 +8,7 @@ export type SpaceSubmissionsPageProps = {
     jobId?: string;
     page?: string;
     status?: string;
+    summary?: string;
   }>;
 };
 
