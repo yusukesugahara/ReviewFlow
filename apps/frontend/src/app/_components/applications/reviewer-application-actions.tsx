@@ -3,6 +3,13 @@
 import { useState } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import type { ApplicationCapabilities } from "./application-capabilities";
@@ -82,20 +89,16 @@ function ApplicationDecisionDialog({
   const textareaId = isApprove ? "approve-comment" : "reject-comment";
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="application-decision-title"
+    <DialogContent
+      titleId="application-decision-title"
+      onClose={onClose}
+      className="max-w-lg"
     >
-      <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h2 id="application-decision-title" className="text-lg font-semibold text-slate-950">
-            {title}
-          </h2>
-          <p className="mt-1 text-sm text-slate-600">{description}</p>
-        </div>
-        <form action={isApprove ? approveAction : rejectAction} className="space-y-4 px-6 py-5">
+      <DialogHeader>
+        <DialogTitle id="application-decision-title">{title}</DialogTitle>
+        <DialogDescription>{description}</DialogDescription>
+      </DialogHeader>
+        <form action={isApprove ? approveAction : rejectAction} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor={textareaId}>コメント（任意）</Label>
             <Textarea
@@ -103,19 +106,19 @@ function ApplicationDecisionDialog({
               name="comment"
               placeholder={isApprove ? "承認コメント" : "却下理由"}
               rows={4}
+              className="bg-white"
             />
           </div>
-          <div className="flex justify-end gap-2">
+          <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
               キャンセル
             </Button>
             <DecisionSubmitButton variant={isApprove ? "default" : "destructive"}>
               {isApprove ? "承認する" : "却下する"}
             </DecisionSubmitButton>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+    </DialogContent>
   );
 }
 

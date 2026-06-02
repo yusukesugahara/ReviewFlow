@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarClock, ClipboardList, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -263,9 +264,9 @@ export function ApplicationDetailScreen({
       actions={
         <div className="space-y-3">
           {actionError ? (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-              {actionError}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
           ) : null}
           <div className="flex flex-wrap gap-2">
             <ApplicantApplicationActions
@@ -279,9 +280,11 @@ export function ApplicationDetailScreen({
           </div>
           {capabilities.canSubmitApplication &&
           missingRequiredFields.length > 0 ? (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <Alert variant="warning">
+              <AlertDescription>
               必須項目が未入力のため提出できません。必要な入力値を登録してから提出してください。
-            </p>
+              </AlertDescription>
+            </Alert>
           ) : null}
         </div>
       }

@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
+import { CalendarClock, ClipboardList, Mail, Route } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -49,6 +50,9 @@ export function ApplicationDetailView({
   canReturnApplication = false,
   returnAction,
 }: ApplicationDetailViewProps) {
+  const currentStep = getCurrentStep(application);
+  const submittedAt = application.submittedAt ?? application.createdAt ?? null;
+
   return (
     <div className="space-y-6">
       <PageHeader
@@ -63,47 +67,66 @@ export function ApplicationDetailView({
         }
       />
 
-      <ApplicationBasicInfo
-        application={application}
-        formDetailHref={formDetailHref}
-        showApplicantEmail={showApplicantEmail}
-        showCurrentStep={showCurrentStep}
-        showTimestamps={showTimestamps}
-      />
+      <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="min-w-0 space-y-6">
+          <ApplicationBasicInfo
+            application={application}
+            formDetailHref={formDetailHref}
+            showApplicantEmail={showApplicantEmail}
+            showCurrentStep={showCurrentStep}
+            showTimestamps={showTimestamps}
+          />
 
-      <ApprovalProgressDiagram
-        application={application}
-        corrections={corrections}
-        fields={fields}
-        steps={application.approvalProgress ?? []}
-      />
+          <ApplicationFieldsCard
+            application={application}
+            fields={fields}
+            title={fieldsTitle}
+            description={descriptionForFields(fieldsDescription, fields.length)}
+            openCorrectionItems={openCorrectionItems}
+            canReturnApplication={canReturnApplication}
+            returnAction={returnAction}
+            decisionActions={reviewerActions}
+          />
 
-      {publicApplicationUrlPath ? (
-        <PublicApplicationUrlCard path={publicApplicationUrlPath} />
-      ) : null}
+          <ApprovalProgressDiagram
+            application={application}
+            corrections={corrections}
+            fields={fields}
+            steps={application.approvalProgress ?? []}
+          />
 
-      <ApplicationFieldsCard
-        application={application}
-        fields={fields}
-        title={fieldsTitle}
-        description={fieldsDescription}
-        openCorrectionItems={openCorrectionItems}
-        canReturnApplication={canReturnApplication}
-        returnAction={returnAction}
-        decisionActions={reviewerActions}
-      />
+          {showOpenCorrectionSummary && openCorrectionItems.length > 0 ? (
+            <OpenCorrectionSummary items={openCorrectionItems} />
+          ) : null}
 
-      {actions}
+          {showCorrectionHistory ? (
+            <CorrectionHistory corrections={corrections} />
+          ) : null}
+        </div>
 
-      {showOpenCorrectionSummary && openCorrectionItems.length > 0 ? (
-        <OpenCorrectionSummary items={openCorrectionItems} />
-      ) : null}
-
-      {showCorrectionHistory ? (
-        <CorrectionHistory corrections={corrections} />
-      ) : null}
+        <aside className="space-y-4 xl:sticky xl:top-8 xl:self-start">
+          <ApplicationSideSummary
+            application={application}
+            currentStepName={currentStep?.stepName}
+            formDetailHref={formDetailHref}
+            submittedAt={submittedAt}
+          />
+          {actions ? <ActionPanel>{actions}</ActionPanel> : null}
+          {publicApplicationUrlPath ? (
+            <PublicApplicationUrlCard path={publicApplicationUrlPath} />
+          ) : null}
+        </aside>
+      </div>
     </div>
   );
+}
+
+function descriptionForFields(description: string, fieldsCount: number): string {
+  return `${description}。${fieldsCount}項目の入力内容を確認できます。`;
+}
+
+function getCurrentStep(application: ApplicationDetailViewModel) {
+  return application.approvalProgress?.find((step) => step.status === "current");
 }
 
 function formatDateTime(value?: string | null): string {
@@ -120,9 +143,7 @@ function ApplicationBasicInfo({
   showCurrentStep: boolean;
   showTimestamps: boolean;
 }) {
-  const currentStep = application.approvalProgress?.find(
-    (step) => step.status === "current",
-  );
+  const currentStep = getCurrentStep(application);
   const applicationStatus = currentStep
     ? `${application.status} / STEP ${currentStep.stepOrder}: ${currentStep.stepName}`
     : application.status;
@@ -130,7 +151,13 @@ function ApplicationBasicInfo({
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
-        <CardTitle>基本情報</CardTitle>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>基本情報</CardTitle>
+            <CardDescription>申請の対象フォーム、申請者、現在の状態です</CardDescription>
+          </div>
+          <ApplicationStatusBadge status={application.status} />
+        </div>
       </CardHeader>
       <CardContent className="pt-6">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
@@ -157,6 +184,110 @@ function ApplicationBasicInfo({
         />
         </div>
       </CardContent>
+    </Card>
+  );
+}
+
+function ApplicationSideSummary({
+  application,
+  currentStepName,
+  formDetailHref,
+  submittedAt,
+}: {
+  application: ApplicationDetailViewModel;
+  currentStepName?: string;
+  formDetailHref?: string | null;
+  submittedAt?: string | null;
+}) {
+  return (
+    <Card>
+      <CardHeader className="border-b border-slate-200">
+        <CardTitle className="text-base">申請サマリー</CardTitle>
+        <CardDescription>ID: {application.id.slice(0, 12)}...</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4 pt-5">
+        <SummaryRow
+          icon={<ClipboardList className="size-4" aria-hidden="true" />}
+          label="フォーム"
+          value={application.formDefinitionName ?? application.applicationName ?? "-"}
+          href={formDetailHref}
+        />
+        <SummaryRow
+          icon={<Mail className="size-4" aria-hidden="true" />}
+          label="申請者"
+          value={application.applicantEmail ?? "-"}
+          mono
+        />
+        <SummaryRow
+          icon={<Route className="size-4" aria-hidden="true" />}
+          label="現在のステップ"
+          value={currentStepName ?? "完了または未開始"}
+        />
+        <SummaryRow
+          icon={<CalendarClock className="size-4" aria-hidden="true" />}
+          label="申請日時"
+          value={formatDateTime(submittedAt)}
+        />
+      </CardContent>
+    </Card>
+  );
+}
+
+function SummaryRow({
+  icon,
+  label,
+  value,
+  href,
+  mono = false,
+}: {
+  icon: ReactNode;
+  label: string;
+  value: string;
+  href?: string | null;
+  mono?: boolean;
+}) {
+  const text = (
+    <span
+      className={`break-words text-sm font-medium text-slate-900 ${
+        mono ? "font-mono text-xs" : ""
+      }`}
+    >
+      {value}
+    </span>
+  );
+
+  return (
+    <div className="flex gap-3">
+      <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
+        {icon}
+      </span>
+      <div className="min-w-0 space-y-1">
+        <p className="text-xs font-medium text-slate-500">{label}</p>
+        {href ? (
+          <Link
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block text-blue-700 underline-offset-2 hover:underline"
+          >
+            {text}
+          </Link>
+        ) : (
+          text
+        )}
+      </div>
+    </div>
+  );
+}
+
+function ActionPanel({ children }: { children: ReactNode }) {
+  return (
+    <Card>
+      <CardHeader className="border-b border-slate-200">
+        <CardTitle className="text-base">操作</CardTitle>
+        <CardDescription>この申請に対して実行できる操作です</CardDescription>
+      </CardHeader>
+      <CardContent className="pt-5">{children}</CardContent>
     </Card>
   );
 }
@@ -287,8 +418,13 @@ function ApplicationFieldsCard({
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <CardTitle>{title}</CardTitle>
+            <CardDescription>{description}</CardDescription>
+          </div>
+          <Badge variant="secondary">{fields.length}項目</Badge>
+        </div>
       </CardHeader>
       <CardContent className="pt-6">
         {canReturn && returnAction ? (
