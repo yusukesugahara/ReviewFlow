@@ -22,7 +22,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./src/test/e2e/jest-e2e.json",
-    "openapi:emit": "nest build && node dist/tools/emit-openapi.js"
+    "openapi:emit": "nest build && node dist/tools/emit-openapi.js",
+    "seed:demo": "ts-node -r tsconfig-paths/register src/scripts/seed-demo.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
