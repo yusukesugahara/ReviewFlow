@@ -19,14 +19,18 @@ import {
   AdminPingResponseDto,
   AuthIssueTokensResponseDto,
   AuthMeResponseDto,
+  ConfirmPasswordResetDto,
   LoginDto,
+  PasswordResetAcceptedResponseDto,
   RegisterDto,
+  RequestPasswordResetDto,
 } from './auth.dto';
 import {
   CurrentUser,
   type AuthUserPayload,
 } from '../../../decorators/current-user.decorator';
 import { Roles } from '../../../decorators/roles.decorator';
+import { UserRole } from '../../../models/constants/user-role';
 import type { SuccessResponse } from '../../type';
 import { successResponse } from '../../utils';
 
@@ -59,6 +63,30 @@ export class AuthController {
     return successResponse(await this.authService.login(dto));
   }
 
+  @Api()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'パスワード再設定メール送信' })
+  @ApiSuccessResponse(PasswordResetAcceptedResponseDto)
+  async requestPasswordReset(
+    @Body() dto: RequestPasswordResetDto,
+  ): Promise<SuccessResponse<PasswordResetAcceptedResponseDto>> {
+    return successResponse(await this.authService.requestPasswordReset(dto));
+  }
+
+  @Api()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('password-reset/confirm')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'パスワード再設定の確定' })
+  @ApiSuccessResponse(PasswordResetAcceptedResponseDto)
+  async confirmPasswordReset(
+    @Body() dto: ConfirmPasswordResetDto,
+  ): Promise<SuccessResponse<PasswordResetAcceptedResponseDto>> {
+    return successResponse(await this.authService.confirmPasswordReset(dto));
+  }
+
   @AuthApi()
   @Post('me')
   @ApiOperation({ summary: '現在のユーザー（X-API-Key + Nest JWT）' })
@@ -68,12 +96,13 @@ export class AuthController {
       id: user.id,
       email: user.email,
       roles: user.roles,
+      tenantId: user.tenantId,
     });
   }
 
   @AuthApi()
   @Get('admin/ping')
-  @Roles('admin')
+  @Roles(UserRole.TENANT_ADMIN)
   @ApiOperation({ summary: '管理者のみ（403 = ロール不足）' })
   @ApiSuccessResponse(AdminPingResponseDto)
   adminPing(): SuccessResponse<AdminPingResponseDto> {

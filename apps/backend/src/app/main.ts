@@ -55,7 +55,8 @@ async function bootstrap() {
 
   app.useGlobalFilters(new GlobalExceptionFilter());
 
-  if (!isProd) {
+  const enableSwagger = process.env.ENABLE_SWAGGER === '1' || !isProd;
+  if (enableSwagger) {
     const config = buildOpenApiBaseConfig();
     const document = SwaggerModule.createDocument(app, config, {
       extraModels: [ErrorResponseDto],

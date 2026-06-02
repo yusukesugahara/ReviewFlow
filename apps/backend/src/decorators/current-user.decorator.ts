@@ -3,6 +3,7 @@ import { createParamDecorator, ExecutionContext } from '@nestjs/common';
 export type AuthUserPayload = {
   id: string;
   email: string;
+  tenantId: string;
   roles: string[];
 };
 

@@ -4,10 +4,12 @@ import { SWAGGER_JWT_AUTH_KEY } from '../common/constants';
 /** Swagger `DocumentBuilder` の共通設定（`main` とスキーマ emit で共有） */
 export function buildOpenApiBaseConfig() {
   return new DocumentBuilder()
-    .setTitle('Cats example')
+    .setTitle('ReviewFlow API')
     .setDescription(
       [
-        'The cats API description.',
+        'ReviewFlow のバックエンド API。申請フォーム、申請、承認、スペース、ユーザー、CSV 出力、監査ログを扱う。',
+        '',
+        'UI 上の「スペース」は、後方互換のため API path と request/response property では `groups` / `groupId` として公開する。',
         '',
         'エラー: コントローラーで個別のエラーレスポンスは宣言しない。`throw new Error()` や `BaseError` / `HttpException` は `GlobalExceptionFilter` が JSON（`components.schemas.ErrorResponseDto` の最小形: statusCode, message）に正規化する。',
       ].join('\n'),

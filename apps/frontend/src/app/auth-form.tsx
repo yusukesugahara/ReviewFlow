@@ -4,6 +4,12 @@ import Link from "next/link";
 import { unstable_rethrow } from "next/navigation";
 import { useId, useState } from "react";
 import type { FormActionResponse } from "@/lib/baseTypes";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { PasswordInput } from "@/components/ui/password-input";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 type AuthFormState = {
   email: string;
@@ -24,12 +30,11 @@ type AuthFormProps = {
   switchText: string;
   switchHref: "/login" | "/signup";
   switchLabel: string;
-  submit: (params: { email: string; password: string }) => Promise<FormActionResponse<void>>;
+  forgotPasswordHref?: string;
+  submit: (formData: FormData) => Promise<FormActionResponse<void>>;
+  next?: string;
   fallbackErrorMessage: string;
 };
-
-const inputBaseClass =
-  "w-full rounded-lg border bg-white px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200 disabled:cursor-not-allowed disabled:bg-slate-100";
 
 export function AuthForm({
   apiReachable,
@@ -42,7 +47,9 @@ export function AuthForm({
   switchText,
   switchHref,
   switchLabel,
+  forgotPasswordHref,
   submit,
+  next,
   fallbackErrorMessage,
 }: AuthFormProps) {
   const formId = useId();
@@ -60,13 +67,13 @@ export function AuthForm({
 
   const disabled = state.loading || !apiReachable;
 
-  const onSubmit = async () => {
+  const onSubmit = async (formData: FormData) => {
     if (disabled) {
       return;
     }
     setState((s) => ({ ...s, loading: true }));
     try {
-      const result = await submit({ email: state.email, password: state.password });
+      const result = await submit(formData);
       if ("fieldErrors" in result && result.fieldErrors) {
         setState((s) => ({
           ...s,
@@ -99,123 +106,159 @@ export function AuthForm({
   };
 
   return (
-    <main className="grid min-h-[calc(100dvh-57px)] place-items-center bg-slate-50 px-4">
-      <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-900">{title}</h1>
-        <p className="mt-2 text-sm leading-6 text-slate-600">{description}</p>
-
-        {!apiReachable ? (
-          <p
-            className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900"
-            role="alert"
-          >
-            API サーバーに接続できません。バックエンドの起動と、フロントの
-            <code className="mx-1 rounded bg-amber-100 px-1 py-0.5">NEXT_PUBLIC_API_URL</code>
-            /<code className="mx-1 rounded bg-amber-100 px-1 py-0.5">INTERNAL_API_KEY</code>
-            （Docker の場合は
-            <code className="mx-1 rounded bg-amber-100 px-1 py-0.5">INTERNAL_API_ORIGIN</code>
-            ）を確認してください。
-          </p>
-        ) : null}
-
-        <form
-          className="mt-5 space-y-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            void onSubmit();
-          }}
-          noValidate
-        >
-          {state.formError ? (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
-              {state.formError}
+    <main className="min-h-[calc(100dvh-60px)] bg-slate-50 px-4 py-8 md:py-12">
+      <div className="mx-auto grid w-full max-w-6xl items-stretch gap-6 lg:grid-cols-[1.1fr_1fr]">
+        <section className="hidden rounded-3xl border border-slate-200 bg-white p-8 shadow-sm lg:flex lg:flex-col lg:justify-between">
+          <div className="space-y-4">
+            <p className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-medium text-violet-700">
+              ReviewFlow
             </p>
-          ) : null}
-
-          <div className="space-y-1.5">
-            <label htmlFor="email" className="text-sm font-medium text-slate-800">
-              メールアドレス
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={state.email}
-              onChange={(e) =>
-                setState((s) => ({
-                  ...s,
-                  email: e.target.value,
-                  fieldErrors: { ...s.fieldErrors, email: undefined },
-                  formError: "",
-                }))
-              }
-              required
-              autoComplete="email"
-              autoCapitalize="none"
-              spellCheck={false}
-              disabled={disabled}
-              aria-invalid={!!state.fieldErrors.email}
-              aria-describedby={state.fieldErrors.email ? emailErrorId : undefined}
-              className={`${inputBaseClass} ${state.fieldErrors.email ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-slate-300"}`}
-            />
-            <p id={emailErrorId} className="min-h-4 text-xs text-red-600" role="alert">
-              {state.fieldErrors.email?.join("、") ?? ""}
+            <h2 className="text-3xl font-semibold leading-tight text-slate-900">
+              申請業務を
+              <br />
+              シンプルに管理する
+            </h2>
+            <p className="max-w-md text-sm leading-6 text-slate-600">
+              申請作成、承認、監査ログまでを一つのフローに統合。必要な情報をすぐに見つけられる実務向けUIです。
             </p>
           </div>
+          <ul className="space-y-3 text-sm text-slate-600">
+            <li>・役割ごとの画面で迷わない導線</li>
+            <li>・入力エラーをリアルタイムに明示</li>
+            <li>・承認ステータスを即座に可視化</li>
+          </ul>
+        </section>
 
-          <div className="space-y-1.5">
-            <label htmlFor="password" className="text-sm font-medium text-slate-800">
-              パスワード
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={state.password}
-              onChange={(e) =>
-                setState((s) => ({
-                  ...s,
-                  password: e.target.value,
-                  fieldErrors: { ...s.fieldErrors, password: undefined },
-                  formError: "",
-                }))
-              }
-              required
-              minLength={8}
-              autoComplete={passwordAutoComplete}
-              disabled={disabled}
-              aria-invalid={!!state.fieldErrors.password}
-              aria-describedby={[passwordHint ? passwordHintId : "", state.fieldErrors.password ? passwordErrorId : ""]
-                .filter(Boolean)
-                .join(" ")}
-              className={`${inputBaseClass} ${state.fieldErrors.password ? "border-red-300 focus:border-red-500 focus:ring-red-200" : "border-slate-300"}`}
-            />
-            {passwordHint ? (
-              <p id={passwordHintId} className="text-xs text-slate-500">
-                {passwordHint}
-              </p>
+        <Card className="w-full border-slate-200 bg-white shadow-sm">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-slate-900">{title}</CardTitle>
+            <CardDescription className="text-slate-600">{description}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {!apiReachable ? (
+              <div className="mb-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+                API サーバーに接続できません。バックエンドの起動と環境変数を確認してください。
+              </div>
             ) : null}
-            <p id={passwordErrorId} className="min-h-4 text-xs text-red-600" role="alert">
-              {state.fieldErrors.password?.join("、") ?? ""}
-            </p>
-          </div>
 
-          <button
-            type="submit"
-            disabled={disabled}
-            aria-busy={state.loading}
-            className="w-full rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-300"
-          >
-            {state.loading ? submittingLabel : submitLabel}
-          </button>
-        </form>
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                const formData = new FormData(e.currentTarget);
+                if (next) {
+                  formData.set("next", next);
+                }
+                void onSubmit(formData);
+              }}
+              noValidate
+            >
+              {state.formError ? (
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
+                  {state.formError}
+                </div>
+              ) : null}
 
-        <p className="mt-6 border-t border-slate-200 pt-5 text-center text-sm text-slate-600">
-          {switchText}
-          <Link href={switchHref} className="ml-1 font-medium text-blue-600 hover:text-blue-700">
-            {switchLabel}
-          </Link>
-        </p>
+              <div className="space-y-2">
+                <Label htmlFor="email">メールアドレス</Label>
+                <Input
+                  type="email"
+                  id="email"
+                  name="email"
+                  value={state.email}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      email: e.target.value,
+                      fieldErrors: { ...s.fieldErrors, email: undefined },
+                      formError: "",
+                    }))
+                  }
+                  required
+                  autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  disabled={disabled}
+                  aria-invalid={!!state.fieldErrors.email}
+                  aria-describedby={state.fieldErrors.email ? emailErrorId : undefined}
+                  className={cn(
+                    "h-11 border-slate-300 focus-visible:ring-violet-500",
+                    state.fieldErrors.email && "border-destructive focus-visible:ring-destructive"
+                  )}
+                />
+                {state.fieldErrors.email ? (
+                  <p id={emailErrorId} className="text-sm text-destructive" role="alert">
+                    {state.fieldErrors.email.join("、")}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">パスワード</Label>
+                <PasswordInput
+                  id="password"
+                  name="password"
+                  value={state.password}
+                  onChange={(e) =>
+                    setState((s) => ({
+                      ...s,
+                      password: e.target.value,
+                      fieldErrors: { ...s.fieldErrors, password: undefined },
+                      formError: "",
+                    }))
+                  }
+                  required
+                  minLength={8}
+                  autoComplete={passwordAutoComplete}
+                  disabled={disabled}
+                  aria-invalid={!!state.fieldErrors.password}
+                  aria-describedby={[
+                    passwordHint ? passwordHintId : "",
+                    state.fieldErrors.password ? passwordErrorId : "",
+                  ]
+                    .filter(Boolean)
+                    .join(" ")}
+                  className={cn(
+                    "h-11 border-slate-300 focus-visible:ring-violet-500",
+                    state.fieldErrors.password && "border-destructive focus-visible:ring-destructive"
+                  )}
+                />
+                {passwordHint ? (
+                  <p id={passwordHintId} className="text-xs text-muted-foreground">
+                    {passwordHint}
+                  </p>
+                ) : null}
+                {forgotPasswordHref ? (
+                  <div className="text-right">
+                    <Link
+                      href={forgotPasswordHref}
+                      className="text-sm font-medium text-primary hover:underline"
+                    >
+                      パスワードを忘れた方
+                    </Link>
+                  </div>
+                ) : null}
+                {state.fieldErrors.password ? (
+                  <p id={passwordErrorId} className="text-sm text-destructive" role="alert">
+                    {state.fieldErrors.password.join("、")}
+                  </p>
+                ) : null}
+              </div>
+
+              <Button type="submit" className="h-11 w-full" disabled={disabled} aria-busy={state.loading}>
+                {state.loading ? submittingLabel : submitLabel}
+              </Button>
+            </form>
+          </CardContent>
+          <CardFooter className="flex flex-col space-y-2">
+            <div className="text-center text-sm text-muted-foreground">
+              {switchText}
+              <Link href={switchHref} className="ml-1 font-medium text-primary hover:underline">
+                {switchLabel}
+              </Link>
+            </div>
+          </CardFooter>
+        </Card>
       </div>
     </main>
   );
