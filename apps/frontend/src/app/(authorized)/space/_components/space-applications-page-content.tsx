@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useId, useState } from "react";
 import { Archive, ArrowRight, Copy, RotateCcw, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -12,6 +13,15 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PageHeader } from "@/app/_components/enterprise/page-header";
 import {
   Table,
   TableBody,
@@ -53,13 +63,10 @@ export function SpaceApplicationsPageContent({
 
   if (fetchErrorStatus !== undefined) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-destructive">
-            申請フォーム一覧の取得に失敗しました（status: {fetchErrorStatus}）
-          </p>
-        </CardContent>
-      </Card>
+      <Alert variant="destructive">
+        <AlertTitle>申請フォーム一覧の取得に失敗しました</AlertTitle>
+        <AlertDescription>status: {fetchErrorStatus}</AlertDescription>
+      </Alert>
     );
   }
 
@@ -82,32 +89,31 @@ export function SpaceApplicationsPageContent({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">申請フォーム一覧</h2>
-          <p className="text-muted-foreground">
-            作成した申請フォームごとに、利用者から届いた申請を確認できます
-          </p>
-        </div>
-        <Button asChild>
+      <PageHeader
+        eyebrow="Applications"
+        title="申請フォーム一覧"
+        description="作成した申請フォームごとに、公開状態、未処理件数、利用者から届いた申請を確認できます。"
+        actions={
+          <Button asChild>
           <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-        </Button>
-      </div>
+          </Button>
+        }
+      />
 
-      <div className="flex flex-wrap gap-2">
-        <Button asChild variant={showArchived ? "outline" : "default"} size="sm">
-          <Link href={activeHref}>申請フォーム</Link>
-        </Button>
-        <Button asChild variant={showArchived ? "default" : "outline"} size="sm">
-          <Link href={archivedHref}>
+      <Tabs>
+        <TabsList aria-label="申請フォームの表示切り替え">
+          <TabsTrigger href={activeHref} active={!showArchived}>
+            申請フォーム
+          </TabsTrigger>
+          <TabsTrigger href={archivedHref} active={showArchived}>
             <Archive aria-hidden="true" />
             削除済み
-          </Link>
-        </Button>
-      </div>
+          </TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="border-b border-slate-200">
           <CardTitle>{showArchived ? "削除済み申請フォーム" : "申請フォーム"}</CardTitle>
           <CardDescription>
             {showArchived
@@ -115,7 +121,7 @@ export function SpaceApplicationsPageContent({
               : "公開URLの確認やフォーム詳細を管理します"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-6">
           {visibleRows.length === 0 ? (
             <ApplicationEmptyState
               message={
@@ -271,33 +277,31 @@ function FormDefinitionArchiveDialog({
   titleId: string;
 }) {
   return (
-    <div
-      aria-describedby={descriptionId}
-      aria-labelledby={titleId}
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-      role="dialog"
+    <DialogContent
+      descriptionId={descriptionId}
+      titleId={titleId}
+      onClose={onCancel}
     >
       <form
         action={archiveFormDefinitionAction.bind(null, target.definitionId, spaceId)}
-        className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+        className="space-y-5"
       >
-        <h3 id={titleId} className="text-lg font-semibold text-slate-900">
-          申請フォームを削除しますか
-        </h3>
-        <p id={descriptionId} className="mt-2 text-sm text-slate-600">
-          {target.title} を削除済みに移動します。削除済み一覧から復元できます。
-        </p>
-        <div className="mt-5 flex justify-end gap-2">
+        <DialogHeader>
+          <DialogTitle id={titleId}>申請フォームを削除しますか</DialogTitle>
+          <DialogDescription id={descriptionId}>
+            {target.title} を削除済みに移動します。削除済み一覧から復元できます。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>
             キャンセル
           </Button>
           <Button type="submit" variant="destructive">
             削除
           </Button>
-        </div>
+        </DialogFooter>
       </form>
-    </div>
+    </DialogContent>
   );
 }
 
@@ -315,31 +319,29 @@ function FormDefinitionRestoreDialog({
   titleId: string;
 }) {
   return (
-    <div
-      aria-describedby={descriptionId}
-      aria-labelledby={titleId}
-      aria-modal="true"
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-      role="dialog"
+    <DialogContent
+      descriptionId={descriptionId}
+      titleId={titleId}
+      onClose={onCancel}
     >
       <form
         action={restoreFormDefinitionAction.bind(null, target.definitionId, spaceId)}
-        className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+        className="space-y-5"
       >
-        <h3 id={titleId} className="text-lg font-semibold text-slate-900">
-          申請フォームを復元しますか
-        </h3>
-        <p id={descriptionId} className="mt-2 text-sm text-slate-600">
-          {target.title} を申請フォーム一覧へ戻します。
-        </p>
-        <div className="mt-5 flex justify-end gap-2">
+        <DialogHeader>
+          <DialogTitle id={titleId}>申請フォームを復元しますか</DialogTitle>
+          <DialogDescription id={descriptionId}>
+            {target.title} を申請フォーム一覧へ戻します。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
           <Button type="button" variant="outline" onClick={onCancel}>
             キャンセル
           </Button>
           <Button type="submit">復元</Button>
-        </div>
+        </DialogFooter>
       </form>
-    </div>
+    </DialogContent>
   );
 }
 

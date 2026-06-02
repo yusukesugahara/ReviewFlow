@@ -5,6 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { OrderMoveButtons } from "./order-move-buttons";
 
 export type ApprovalStepItem = {
@@ -346,18 +353,24 @@ export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsB
                   <div className="space-y-2">
                     <Label>承認者</Label>
                     {approvalGroups.length > 0 ? (
-                      <select
-                        value={selectedGroupIdByStep[step.id] ?? ""}
-                        onChange={(event) => applyApprovalGroupToStep(step.id, event.target.value)}
-                        className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm"
+                      <Select
+                        value={selectedGroupIdByStep[step.id] ?? "none"}
+                        onValueChange={(value) =>
+                          applyApprovalGroupToStep(step.id, value === "none" ? "" : value)
+                        }
                       >
-                        <option value="">承認グループを選択</option>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="承認グループを選択" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        <SelectItem value="none">承認グループを選択</SelectItem>
                         {approvalGroups.map((group) => (
-                          <option key={group.id} value={group.id}>
+                          <SelectItem key={group.id} value={group.id}>
                             {group.name || "名称未設定のグループ"}
-                          </option>
+                          </SelectItem>
                         ))}
-                      </select>
+                        </SelectContent>
+                      </Select>
                     ) : null}
                     <AssigneeSearchPicker
                       assignees={assignees}

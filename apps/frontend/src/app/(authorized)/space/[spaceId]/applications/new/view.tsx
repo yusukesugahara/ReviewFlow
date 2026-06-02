@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/app/_components/enterprise/page-header";
 import { buildSpaceApplicationsHref } from "@/app/_components/applications/application-routes";
 import { ApplicationSetupDraftForm } from "@/app/(authorized)/space/_components/application-setup-draft-form";
 import { submitApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
@@ -43,17 +44,16 @@ export function SpaceNewApplicationView({
 }: SpaceNewApplicationViewProps) {
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">申請フォーム作成</h2>
-          <p className="text-muted-foreground">
-            申請項目と承認ステップを設定し、新しい申請を作成します
-          </p>
-        </div>
-        <Button asChild variant="outline">
-          <Link href={buildSpaceApplicationsHref(spaceId)}>申請フォーム一覧へ戻る</Link>
-        </Button>
-      </div>
+      <PageHeader
+        eyebrow="Form builder"
+        title="申請フォーム作成"
+        description="申請項目と承認ステップを設定し、新しい申請フォームを作成します。"
+        actions={
+          <Button asChild variant="outline">
+            <Link href={buildSpaceApplicationsHref(spaceId)}>申請フォーム一覧へ戻る</Link>
+          </Button>
+        }
+      />
 
       {canManageSpace ? (
         <div className="space-y-4">

@@ -8,8 +8,10 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { PageHeader } from "@/app/_components/enterprise/page-header";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { getApplicationStatusLabel } from "@/app/_components/applications/application-status";
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
@@ -17,7 +19,9 @@ import { ApplicationListTable } from "@/app/_components/applications/application
 import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
 import type { ExportJobResponse } from "@/lib/schema";
 import { SubmissionCsvExportControls } from "./submission-csv-export-controls";
+import { SubmissionDateFilterPicker } from "./submission-date-filter-picker";
 import { SubmissionSearchSubmitButton } from "./submission-search-submit-button";
+import { SubmissionStatusFilterSelect } from "./submission-status-filter-select";
 import type { ApplicationRow } from "./space-applications.types";
 
 type SpaceSubmissionsPageContentProps = {
@@ -37,13 +41,10 @@ export function SpaceSubmissionsPageContent({
 }: SpaceSubmissionsPageContentProps) {
   if (fetchErrorStatus !== undefined) {
     return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-destructive">
-            申請一覧の取得に失敗しました（status: {fetchErrorStatus}）
-          </p>
-        </CardContent>
-      </Card>
+      <Alert variant="destructive">
+        <AlertTitle>申請一覧の取得に失敗しました</AlertTitle>
+        <AlertDescription>status: {fetchErrorStatus}</AlertDescription>
+      </Alert>
     );
   }
 
@@ -70,14 +71,11 @@ export function SpaceSubmissionsPageContent({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">申請一覧</h2>
-          <p className="text-muted-foreground">
-            利用者から届いた申請をステータスと申請者ごとに確認できます
-          </p>
-        </div>
-      </div>
+      <PageHeader
+        eyebrow="Submissions"
+        title="申請一覧"
+        description="利用者から届いた申請を、対応状況、ステータス、申請者、作成時期で確認できます。"
+      />
 
       <div className="grid gap-3 sm:grid-cols-2">
         <SummaryCard
@@ -97,7 +95,7 @@ export function SpaceSubmissionsPageContent({
       </div>
 
       <Card>
-        <CardHeader className="gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <CardHeader className="gap-3 border-b border-slate-200 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <CardTitle className="flex items-center gap-2 text-xl">
               <Search className="h-5 w-5 text-slate-500" aria-hidden="true" />
@@ -113,8 +111,8 @@ export function SpaceSubmissionsPageContent({
             spaceId={spaceId}
           />
         </CardHeader>
-        <CardContent className="space-y-5">
-          <form className="space-y-4">
+        <CardContent className="space-y-5 pt-6">
+          <form className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
             <input type="hidden" name="page" value="1" />
             {filters.summary ? (
               <input type="hidden" name="summary" value={filters.summary} />
@@ -127,6 +125,7 @@ export function SpaceSubmissionsPageContent({
                   name="applicant"
                   defaultValue={filters.applicant}
                   placeholder="メールアドレスで検索"
+                  className="bg-white"
                 />
               </div>
               <div className="space-y-2 xl:col-span-2">
@@ -136,84 +135,77 @@ export function SpaceSubmissionsPageContent({
                   name="form"
                   defaultValue={filters.form}
                   placeholder="フォーム名で検索"
+                  className="bg-white"
                 />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="status">ステータス</Label>
-                <select
-                  id="status"
-                  name="status"
+                <SubmissionStatusFilterSelect
                   defaultValue={filters.status}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">すべて</option>
-                  {SUBMISSION_STATUS_OPTIONS.map((status) => (
-                    <option key={status} value={status}>
-                      {getApplicationStatusLabel(status)}
-                    </option>
-                  ))}
-                </select>
+                  options={SUBMISSION_STATUS_OPTIONS.map((status) => ({
+                    label: getApplicationStatusLabel(status),
+                    value: status,
+                  }))}
+                />
               </div>
             </div>
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:max-w-md">
                 <div className="space-y-2">
                   <Label htmlFor="createdFrom">作成日 From</Label>
-                  <Input
-                    id="createdFrom"
-                    name="createdFrom"
-                    type="date"
-                    defaultValue={filters.createdFrom}
-                  />
+                <SubmissionDateFilterPicker
+                  id="createdFrom"
+                  name="createdFrom"
+                  defaultValue={filters.createdFrom}
+                />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="createdTo">作成日 To</Label>
-                  <Input
-                    id="createdTo"
-                    name="createdTo"
-                    type="date"
-                    defaultValue={filters.createdTo}
-                  />
+                <SubmissionDateFilterPicker
+                  id="createdTo"
+                  name="createdTo"
+                  defaultValue={filters.createdTo}
+                />
                 </div>
               </div>
               <div className="flex gap-2">
-              <SubmissionSearchSubmitButton />
-              <Button asChild type="button" variant="outline">
-                <Link href={`/space/${encodeURIComponent(spaceId)}/submissions`}>
-                  クリア
-                </Link>
-              </Button>
+                <SubmissionSearchSubmitButton />
+                <Button asChild type="button" variant="outline">
+                  <Link href={`/space/${encodeURIComponent(spaceId)}/submissions`}>
+                    クリア
+                  </Link>
+                </Button>
               </div>
             </div>
           </form>
 
           <div className="border-t border-slate-200 pt-5">
-          {filteredApplications.length === 0 ? (
-            <ApplicationEmptyState
-              message={hasFilters ? "条件に一致する申請はありません" : "申請はまだありません"}
-            />
-          ) : (
-            <>
-              <ApplicationListTable
-                rows={paginatedApplications}
-                actionLabel="詳細"
-                openDetailInNewTab
-                showApplicantEmail
-                getDetailHref={(row) =>
-                  buildSpaceSubmissionDetailHref(row) ??
-                  `/space/${encodeURIComponent(spaceId)}/submissions/${encodeURIComponent(row.id)}`
-                }
+            {filteredApplications.length === 0 ? (
+              <ApplicationEmptyState
+                message={hasFilters ? "条件に一致する申請はありません" : "申請はまだありません"}
               />
-              <PaginationControls
-                currentPage={currentPage}
-                filters={filters}
-                pageSize={PAGE_SIZE}
-                spaceId={spaceId}
-                totalCount={filteredApplications.length}
-                totalPages={totalPages}
-              />
-            </>
-          )}
+            ) : (
+              <>
+                <ApplicationListTable
+                  rows={paginatedApplications}
+                  actionLabel="詳細"
+                  openDetailInNewTab
+                  showApplicantEmail
+                  getDetailHref={(row) =>
+                    buildSpaceSubmissionDetailHref(row) ??
+                    `/space/${encodeURIComponent(spaceId)}/submissions/${encodeURIComponent(row.id)}`
+                  }
+                />
+                <PaginationControls
+                  currentPage={currentPage}
+                  filters={filters}
+                  pageSize={PAGE_SIZE}
+                  spaceId={spaceId}
+                  totalCount={filteredApplications.length}
+                  totalPages={totalPages}
+                />
+              </>
+            )}
           </div>
         </CardContent>
       </Card>

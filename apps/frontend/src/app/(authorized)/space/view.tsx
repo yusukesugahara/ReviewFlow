@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { PageHeader } from "@/app/_components/enterprise/page-header";
 import { MetricCard } from "@/app/(authorized)/space/_components/metric-card";
 import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
 import type { AdminDashboardViewProps } from "./types";
@@ -16,41 +17,23 @@ export function AdminDashboardView({
 }: AdminDashboardViewProps) {
   if (fetchErrorStatus !== undefined) {
     return (
-      <Card className="border-rose-200 bg-rose-50">
-        <CardContent className="pt-6">
-          <p className="text-sm font-medium text-rose-700">
-            ダッシュボードの取得に失敗しました（status: {fetchErrorStatus}）
-          </p>
-          <p className="mt-1 text-xs text-rose-600">
-            通信状況を確認してから再読み込みしてください。
-          </p>
-        </CardContent>
-      </Card>
+      <Alert variant="destructive">
+        <AlertTitle>ダッシュボードの取得に失敗しました</AlertTitle>
+        <AlertDescription>
+          status: {fetchErrorStatus}。通信状況を確認してから再読み込みしてください。
+        </AlertDescription>
+      </Alert>
     );
   }
 
   return (
     <div className="space-y-10">
-      <div className="space-y-2">
-        <h2 className="text-3xl font-semibold tracking-tight text-slate-900 md:text-4xl">
-          ダッシュボード
-        </h2>
-        <p className="max-w-2xl text-[15px] leading-6 text-slate-600 md:text-[16px]">
-          テナント全体の利用状況を確認できます
-        </p>
-      </div>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-slate-900">
-              主要アクション
-            </h3>
-            <p className="text-sm text-slate-600">
-              主要業務へ1クリックで移動できます。
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2">
+      <PageHeader
+        eyebrow="Workspace"
+        title="ダッシュボード"
+        description="テナント全体の利用状況と、よく使う業務アクションを確認できます。"
+        actions={
+          <>
             <Button asChild size="sm">
               <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
             </Button>
@@ -61,9 +44,9 @@ export function AdminDashboardView({
                 申請フォーム一覧を見る
               </Link>
             </Button>
-          </div>
-        </div>
-      </section>
+          </>
+        }
+      />
 
       <div className="grid gap-5 md:grid-cols-3">
         <MetricCard

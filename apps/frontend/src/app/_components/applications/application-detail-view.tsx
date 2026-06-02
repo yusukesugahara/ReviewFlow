@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeJa } from "@/lib/date-format";
+import { PageHeader } from "@/app/_components/enterprise/page-header";
 import { ApprovalProgressDiagram } from "./approval-progress-diagram";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { DynamicFieldInput, DynamicFieldsTable } from "./dynamic-fields";
@@ -50,18 +51,17 @@ export function ApplicationDetailView({
 }: ApplicationDetailViewProps) {
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
-          <p className="text-muted-foreground">
-            {description ?? `ID: ${application.id.slice(0, 12)}...`}
-          </p>
-        </div>
-        <ApplicationStatusBadge
-          status={application.status}
-          className="px-4 py-2 text-base"
-        />
-      </div>
+      <PageHeader
+        eyebrow="Application detail"
+        title={title}
+        description={description ?? `ID: ${application.id.slice(0, 12)}...`}
+        status={
+          <ApplicationStatusBadge
+            status={application.status}
+            className="px-3 py-1 text-sm"
+          />
+        }
+      />
 
       <ApplicationBasicInfo
         application={application}
@@ -129,10 +129,10 @@ function ApplicationBasicInfo({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="border-b border-slate-200">
         <CardTitle>基本情報</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
           <InfoTile
           label="申請フォーム"
@@ -286,11 +286,11 @@ function ApplicationFieldsCard({
 
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="border-b border-slate-200">
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {canReturn && returnAction ? (
           <div className="space-y-4">
             <form id={returnFormId} action={returnAction} className="space-y-4">
@@ -333,13 +333,13 @@ function OpenCorrectionSummary({
 }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="border-b border-slate-200">
         <CardTitle>現在オープン中の修正対象</CardTitle>
         <CardDescription>
           {items.length}個のフィールドが差し戻し対象となっています
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         <ul className="space-y-2">
           {items.map((item) => (
             <li
@@ -365,7 +365,7 @@ function CorrectionHistory({
 }) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="border-b border-slate-200">
         <CardTitle>差し戻し履歴</CardTitle>
         <CardDescription>
           {corrections.length === 0
@@ -373,7 +373,7 @@ function CorrectionHistory({
             : `${corrections.length}件の差し戻しがあります`}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="pt-6">
         {corrections.length === 0 ? (
           <p className="py-4 text-center text-muted-foreground">
             差し戻し履歴はありません
