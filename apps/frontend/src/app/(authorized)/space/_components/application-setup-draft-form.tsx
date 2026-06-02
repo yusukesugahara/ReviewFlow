@@ -5,8 +5,23 @@ import { Pencil, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FIELD_TYPE_OPTIONS,
@@ -137,9 +152,9 @@ function InlineFormBuilder({
     fieldsWithKeys.find(({ field }) => field.id === editingFieldId)?.field ?? null;
 
   return (
-    <div className="bg-white">
-      <div className="overflow-hidden border border-slate-400">
-        <div className="border-b border-slate-400 bg-slate-100 px-3 py-2 text-center text-sm font-semibold text-slate-900">
+    <div className="rounded-lg bg-white">
+      <div className="overflow-hidden rounded-lg border border-slate-200">
+        <div className="border-b border-slate-200 bg-slate-50 px-3 py-3 text-center text-sm font-semibold text-slate-900">
           申請書
         </div>
         <InsertFieldButton index={0} onInsert={insertFieldAt} />
@@ -149,18 +164,18 @@ function InlineFormBuilder({
             return (
               <div key={field.id}>
                 <div
-                  className="group relative grid min-h-16 grid-cols-1 divide-y divide-slate-300 border-t border-slate-300 md:grid-cols-[200px_minmax(0,1fr)] md:divide-x md:divide-y-0"
+                  className="group relative grid min-h-16 grid-cols-1 divide-y divide-slate-200 border-t border-slate-200 md:grid-cols-[220px_minmax(0,1fr)] md:divide-x md:divide-y-0"
                   onFocus={() => setSelectedFieldId(field.id)}
                   onMouseEnter={() => setSelectedFieldId(field.id)}
                 >
-                  <div className="flex items-start gap-2 bg-slate-50 px-3 py-3 text-sm font-medium text-slate-800">
+                  <div className="flex items-start gap-2 bg-slate-50 px-4 py-4 text-sm font-medium text-slate-800">
                     <span className="mt-0.5 min-w-5 text-xs text-slate-500">{index + 1}</span>
                     <span className="break-words">
                       {dynamicField.label}
                       {dynamicField.required ? <span className="ml-1 text-destructive">*</span> : null}
                     </span>
                   </div>
-                  <div className="min-w-0 bg-white px-3 py-3">
+                  <div className="min-w-0 bg-white px-4 py-4">
                     <DynamicFieldInput
                       field={dynamicField}
                       value={initialValues?.[fieldKey]}
@@ -265,32 +280,19 @@ function FieldContentModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <button
-        type="button"
-        aria-label="フォーム項目編集モーダルを閉じる"
-        className="absolute inset-0 bg-slate-950/40"
-        onClick={() => onOpenChange(false)}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="field-content-modal-title"
-        className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-lg border border-slate-200 bg-white p-6 shadow-xl"
-      >
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h3 id="field-content-modal-title" className="text-lg font-semibold text-slate-950">
-              フォーム項目を編集
-            </h3>
-            <p className="mt-1 text-sm text-slate-500">
-              選択中の項目に表示する内容をまとめて入力します。
-            </p>
-          </div>
-          <Button type="button" variant="outline" size="sm" onClick={() => onOpenChange(false)}>
-            閉じる
-          </Button>
-        </div>
+    <DialogContent
+      titleId="field-content-modal-title"
+      onClose={() => onOpenChange(false)}
+      className="max-h-[90vh] max-w-2xl overflow-y-auto"
+    >
+      <DialogHeader>
+        <DialogTitle id="field-content-modal-title">
+          フォーム項目を編集
+        </DialogTitle>
+        <DialogDescription>
+          選択中の項目に表示する内容をまとめて入力します。
+        </DialogDescription>
+      </DialogHeader>
 
         <div className="mt-5 space-y-5">
           <div className="grid gap-4 md:grid-cols-2">
@@ -306,18 +308,23 @@ function FieldContentModal({
             </div>
             <div className="space-y-2">
               <Label htmlFor={`modal-type-${field.id}`}>入力形式</Label>
-              <select
-                id={`modal-type-${field.id}`}
+              <Select
                 value={field.fieldType}
-                onChange={(event) => updateField(field.id, { fieldType: event.target.value as FieldType })}
-                className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm"
+                onValueChange={(value) =>
+                  updateField(field.id, { fieldType: value as FieldType })
+                }
               >
+                <SelectTrigger id={`modal-type-${field.id}`} className="bg-white">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
                 {FIELD_TYPE_OPTIONS.map((item) => (
-                  <option key={item.value} value={item.value}>
+                  <SelectItem key={item.value} value={item.value}>
                     {item.label}
-                  </option>
+                  </SelectItem>
                 ))}
-              </select>
+                </SelectContent>
+              </Select>
             </div>
           </div>
 
@@ -370,14 +377,13 @@ function FieldContentModal({
             </div>
           ) : null}
 
-          <div className="flex justify-end">
+          <DialogFooter>
             <Button type="button" onClick={() => onOpenChange(false)}>
               反映して閉じる
             </Button>
-          </div>
+          </DialogFooter>
         </div>
-      </div>
-    </div>
+    </DialogContent>
   );
 }
 
@@ -452,59 +458,65 @@ export function ApplicationSetupDraftForm({
       ) : null}
 
       {errorMessage ? (
-        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
-          {errorMessage}
-        </p>
+        <Alert variant="destructive">
+          <AlertDescription>{errorMessage}</AlertDescription>
+        </Alert>
       ) : null}
 
       {statusMessage ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-          {statusMessage}
-        </p>
+        <Alert variant="success">
+          <AlertDescription>{statusMessage}</AlertDescription>
+        </Alert>
       ) : null}
 
-      <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div className="w-full max-w-2xl space-y-2">
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-bold tracking-tight text-slate-950">申請フォーム作成</h2>
-              <Badge variant={publishedFormDefinitionId ? "default" : "outline"}>
-                {publishedFormDefinitionId ? "公開済み" : initialName ? "下書き" : "未保存"}
-              </Badge>
-            </div>
-            <Label htmlFor="templateName">申請フォーム名</Label>
-            <Input
-              id="templateName"
-              name="name"
-              placeholder="例: 経費申請"
-              required
-              defaultValue={initialName ?? ""}
-              className="bg-white"
-            />
-          </div>
-          <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
-            <div className="flex flex-wrap justify-end gap-2">
-              <Badge variant={hasFields ? "default" : "outline"}>申請項目 {hasFields ? "OK" : "未完了"}</Badge>
-              <Badge variant="default">承認フロー OK</Badge>
-            </div>
-            <div className="flex items-center justify-end gap-2">
-              <Button type="submit" name="intent" value="draft" variant="secondary">
-                下書き保存
-              </Button>
-              <Button type="submit" name="intent" value="publish">
-                公開
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl">フォームプレビュー</CardTitle>
-          <CardDescription>公開されるフォームと同じ表示です。鉛筆で編集、×で削除、行間の＋で追加できます。</CardDescription>
+        <CardHeader className="border-b border-slate-200">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div className="w-full max-w-2xl space-y-2">
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-xl">申請フォーム</CardTitle>
+                <Badge variant={publishedFormDefinitionId ? "default" : "outline"}>
+                  {publishedFormDefinitionId ? "公開済み" : initialName ? "下書き" : "未保存"}
+                </Badge>
+              </div>
+              <CardDescription>
+                フォーム名と、利用者が入力する申請項目を設定します。
+              </CardDescription>
+              <Label htmlFor="templateName">申請フォーム名</Label>
+              <Input
+                id="templateName"
+                name="name"
+                placeholder="例: 経費申請"
+                required
+                defaultValue={initialName ?? ""}
+                className="bg-white"
+              />
+            </div>
+            <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
+              <div className="flex flex-wrap justify-end gap-2">
+                <Badge variant={hasFields ? "default" : "outline"}>申請項目 {hasFields ? "OK" : "未完了"}</Badge>
+                <Badge variant="default">承認フロー OK</Badge>
+              </div>
+              <div className="flex items-center justify-end gap-2">
+                <Button type="submit" name="intent" value="draft" variant="secondary">
+                  下書き保存
+                </Button>
+                <Button type="submit" name="intent" value="publish">
+                  公開
+                </Button>
+              </div>
+            </div>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-5">
+        <CardContent className="space-y-5 pt-6">
+          <div>
+            <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+              <h3 className="text-base font-semibold text-slate-950">フォーム入力画面</h3>
+              <p className="mt-1 text-sm text-muted-foreground">
+                公開されるフォームと同じ表示です。鉛筆で編集、×で削除、行間の＋で追加できます。
+              </p>
+            </div>
+          </div>
           <InlineFormBuilder
             fieldsWithKeys={fieldsWithKeys}
             setSelectedFieldId={setSelectedFieldId}
@@ -517,11 +529,11 @@ export function ApplicationSetupDraftForm({
       </Card>
 
       <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader>
+        <CardHeader className="border-b border-slate-200">
           <CardTitle className="text-xl">承認フロー設定</CardTitle>
           <CardDescription>申請が提出された後の承認ステップを設定します。</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-4 pt-6">
           <ApprovalStepsBuilder assignees={assignees} defaultSteps={initialSteps} />
         </CardContent>
       </Card>

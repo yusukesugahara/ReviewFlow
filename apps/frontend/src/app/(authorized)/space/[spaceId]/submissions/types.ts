@@ -5,8 +5,10 @@ export type SpaceSubmissionsPageProps = {
     createdFrom?: string;
     createdTo?: string;
     form?: string;
+    jobId?: string;
     page?: string;
     status?: string;
+    summary?: string;
   }>;
 };
 

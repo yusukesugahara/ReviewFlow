@@ -2,11 +2,16 @@ import type { Application } from '../../../models/entities/application.entity';
 import type { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import type {
   ApplicationDetailDto,
+  ApplicationProgressStepDto,
   ApplicationSummaryDto,
   CorrectionRequestItemResponseDto,
   CorrectionRequestResponseDto,
   CorrectionsListResponseDto,
 } from './applications.dto';
+
+export type ApplicationWithProgress = Application & {
+  approvalProgress?: ApplicationProgressStepDto[];
+};
 
 export function mapApplicationToSummary(
   row: Application,
@@ -29,7 +34,9 @@ export function mapApplicationToSummary(
   };
 }
 
-export function mapApplicationToDetail(row: Application): ApplicationDetailDto {
+export function mapApplicationToDetail(
+  row: ApplicationWithProgress,
+): ApplicationDetailDto {
   const values: Record<string, unknown> = {};
   for (const v of row.fieldValues ?? []) {
     const key = v.formField?.fieldKey;
@@ -37,8 +44,16 @@ export function mapApplicationToDetail(row: Application): ApplicationDetailDto {
       values[key] = v.valueJson;
     }
   }
+  const currentStep =
+    row.currentStepOrder == null
+      ? null
+      : (row.approvalFlow?.steps ?? []).find(
+          (step) => step.stepOrder === row.currentStepOrder,
+        );
   return {
     ...mapApplicationToSummary(row),
+    currentStepCanReturn: currentStep?.canReturn ?? null,
+    approvalProgress: row.approvalProgress ?? [],
     values,
   };
 }

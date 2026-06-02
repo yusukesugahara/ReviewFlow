@@ -132,6 +132,25 @@ export class ApplicationsController {
   }
 
   @AuthApi()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Post(':id/return-email/resend')
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '差し戻しメール再送',
+    description:
+      'returned かつ open correction がある申請の申請者向け修正URLを再送する。',
+  })
+  @ApiSuccessResponse(ApplicationDetailDto)
+  async resendReturnEmail(
+    @Param('id', ParseUUIDPipe) id: string,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<ApplicationDetailDto>> {
+    const row = await this.applications.resendReturnEmail(actor, id);
+    return successResponse(this.applications.toDetail(row));
+  }
+
+  @AuthApi()
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/reject')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)

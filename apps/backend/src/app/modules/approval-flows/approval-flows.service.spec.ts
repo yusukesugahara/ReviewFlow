@@ -119,11 +119,14 @@ describe('ApprovalFlowsService', () => {
   });
 
   it('create accepts multiple assignees for a single approval step', async () => {
-    users.find.mockResolvedValue([{ id: 'user-1' }, { id: 'user-2' }]);
+    users.find.mockResolvedValue([
+      { id: 'user-1' },
+      { id: 'user-2' },
+    ] as User[]);
     members.find.mockResolvedValue([
       { userId: 'user-1' },
       { userId: 'user-2' },
-    ]);
+    ] as GroupMember[]);
     flows.findOne.mockResolvedValue({
       id: 'flow-new',
       tenantId: 'ten1',

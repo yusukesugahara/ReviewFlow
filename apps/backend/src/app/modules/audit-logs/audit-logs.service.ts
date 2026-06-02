@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Like, Repository } from 'typeorm';
+import { Repository } from 'typeorm';
 import { AuditLog } from '../../../models/entities/audit-log.entity';
 import type { AuditLogsQueryDto } from './audit-logs.dto';
 import { mapAuditLogToDto } from './audit-logs.mapper';
@@ -38,14 +38,50 @@ export class AuditLogsService {
 
   async listByTenant(tenantId: string, query: AuditLogsQueryDto) {
     const limit = query.limit ?? 50;
-    const where = query.actionType?.trim().length
-      ? { tenantId, actionType: Like(`${query.actionType.trim()}%`) }
-      : { tenantId };
-    const rows = await this.auditLogs.find({
-      where,
-      order: { createdAt: 'DESC' },
-      take: limit,
-    });
+    const actionType = query.actionType?.trim();
+    const keyword = query.q?.trim();
+    const builder = this.auditLogs
+      .createQueryBuilder('auditLog')
+      .leftJoinAndSelect('auditLog.actorUser', 'actorUser')
+      .where('auditLog.tenantId = :tenantId', { tenantId })
+      .orderBy('auditLog.createdAt', 'DESC')
+      .take(limit);
+
+    if (actionType) {
+      builder.andWhere('auditLog.actionType LIKE :actionType', {
+        actionType: `${escapeLike(actionType)}%`,
+      });
+    }
+    if (keyword) {
+      const q = `%${escapeLike(keyword)}%`;
+      builder.andWhere(
+        `(${[
+          'auditLog.actionType LIKE :q',
+          'auditLog.targetType LIKE :q',
+          'auditLog.targetId LIKE :q',
+          'auditLog.actorUserId LIKE :q',
+          'auditLog.groupId LIKE :q',
+          'actorUser.email LIKE :q',
+        ].join(' OR ')})`,
+        { q },
+      );
+    }
+    if (query.createdFrom) {
+      builder.andWhere('auditLog.createdAt >= :createdFrom', {
+        createdFrom: new Date(query.createdFrom),
+      });
+    }
+    if (query.createdTo) {
+      builder.andWhere('auditLog.createdAt <= :createdTo', {
+        createdTo: new Date(query.createdTo),
+      });
+    }
+
+    const rows = await builder.getMany();
     return rows.map(mapAuditLogToDto);
   }
+}
+
+function escapeLike(value: string): string {
+  return value.replace(/[%_]/g, (match) => `\\${match}`);
 }

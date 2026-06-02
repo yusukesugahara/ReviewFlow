@@ -39,6 +39,7 @@ export type RequestFormAccessInput = z.infer<typeof requestFormAccessSchema>;
 
 export const createExportJobSchema = z.object({
   groupId: z.string().min(1),
+  formDefinitionId: z.string().min(1).optional(),
 });
 
 export type CreateExportJobInput = z.infer<typeof createExportJobSchema>;

@@ -10,6 +10,7 @@ export type ApplicationRow = Pick<
   | "status"
   | "applicantEmail"
   | "createdAt"
+  | "updatedAt"
 > & {
   applicantUserId?: string | null;
 };

@@ -6,6 +6,7 @@ export function mapAuditLogToDto(row: AuditLog): AuditLogItemDto {
     id: row.id,
     groupId: row.groupId,
     actorUserId: row.actorUserId,
+    actorEmail: row.actorUser?.email ?? null,
     actionType: row.actionType,
     targetType: row.targetType,
     targetId: row.targetId,

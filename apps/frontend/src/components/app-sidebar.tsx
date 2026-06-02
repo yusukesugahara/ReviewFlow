@@ -69,12 +69,6 @@ const tenantAdminNavItems: SidebarNavItem[] = [
   { href: "/admin/spaces", label: "スペース", icon: ShieldCheck },
   { href: "/admin/invitations", label: "ユーザー", icon: Users },
   { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
-  {
-    href: "/admin/export-jobs",
-    label: "CSV出力ジョブ",
-    icon: FileText,
-    adminOnly: true,
-  },
 ];
 
 const applicantNavItems: SidebarNavItem[] = [
@@ -169,8 +163,8 @@ export function AppSidebar({
             />
           </div>
         </aside>
-        <main className="min-w-0 flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
-          <div className="mx-auto w-full max-w-6xl">
+        <main className="flex min-h-[calc(100vh-3.5rem)] min-w-0 flex-1 flex-col px-4 py-6 sm:px-6 lg:min-h-screen lg:px-8 lg:py-8">
+          <div className="mx-auto w-full max-w-6xl flex-1">
             <AppBreadcrumb spaces={spaces} />
             {children}
           </div>
@@ -412,7 +406,10 @@ function SidebarLink({
         pathname !== `${scopedHref}/new`) ||
       pathname === href);
   const isSubmissionsActive =
-    spacePath === "submissions" && (pathname === scopedHref || pathname === href);
+    spacePath === "submissions" &&
+    (pathname === scopedHref ||
+      pathname.startsWith(`${scopedHref}/`) ||
+      pathname === href);
   const isActive = spacePath === "applications" || spacePath === "applicationsNew" || spacePath === "submissions"
     ? isApplicationsActive || isApplicationNewActive || isSubmissionsActive
     : isSectionRoot
@@ -500,8 +497,6 @@ function buildAdminBreadcrumbItems(segments: string[]): BreadcrumbItem[] {
     items.push({ href: "/admin/invitations", label: "ユーザー" });
   } else if (section === "audit-logs") {
     items.push({ href: "/admin/audit-logs", label: "監査ログ" });
-  } else if (section === "export-jobs") {
-    items.push({ href: "/admin/export-jobs", label: "CSV出力ジョブ" });
   }
 
   return items;
@@ -566,6 +561,13 @@ function buildSpaceBreadcrumbItems(
 
     items.push({ href: `/space/${encodedSpaceId}/applications`, label: spaceName });
     items.push({ href: `/space/${encodedSpaceId}/submissions`, label: "申請一覧" });
+
+    if (fourth) {
+      items.push({
+        href: `/space/${encodedSpaceId}/submissions/${encodeURIComponent(fourth)}`,
+        label: "申請詳細",
+      });
+    }
   }
 
   return items;

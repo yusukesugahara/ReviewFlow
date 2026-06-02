@@ -8,6 +8,7 @@ import { getApplicationCapabilities } from "@/app/_components/applications/appli
 import {
   approveAction,
   rejectAction,
+  resendReturnEmailAction,
   resubmitAction,
   returnAction,
   submitAction,
@@ -190,6 +191,34 @@ export default async function SpaceApplicationDetailPage({
       );
     }
 
+    let formDetailHref: string | null = null;
+    if (definitionId) {
+      const applicationsRaw = await client.GET("/applications", {
+        params: { query: { groupId: spaceId } },
+        headers: authHeaders,
+      });
+      if (applicationsRaw.response.ok && applicationsRaw.data) {
+        const setupApplication =
+          unwrapData<{ applications?: ApplicationSummary[] }>(
+            applicationsRaw.data,
+          ).applications?.find(
+            (row) =>
+              row.formDefinitionId === definitionId &&
+              isFormSetupStatus(row.status),
+          ) ?? null;
+        if (setupApplication) {
+          formDetailHref = `/space/${encodeURIComponent(
+            spaceId,
+          )}/applications/${encodeURIComponent(
+            setupApplication.id,
+          )}?${new URLSearchParams({
+            view: "form",
+            definitionId,
+          }).toString()}`;
+        }
+      }
+    }
+
     return (
       <ApplicationDetailScreen
         actionError={query.actionError}
@@ -199,11 +228,12 @@ export default async function SpaceApplicationDetailPage({
         corrections={corrections}
         definitionId={definitionId}
         fields={fields}
+        formDetailHref={formDetailHref}
         isFormDetail={isFormDetail}
         missingRequiredFields={missingRequiredFields}
         openItems={openItems}
-        publicApplicationUrlPath={publicApplicationUrlPath}
         rejectAction={rejectAction.bind(null, spaceId, app.id)}
+        resendReturnEmailAction={resendReturnEmailAction.bind(null, spaceId, app.id)}
         resubmitAction={resubmitAction.bind(null, spaceId, app.id)}
         returnAction={returnAction.bind(null, spaceId, app.id, fieldMap)}
         spaceId={spaceId}

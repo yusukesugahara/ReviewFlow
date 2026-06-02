@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDateString,
   IsInt,
   IsOptional,
   IsString,
@@ -23,6 +24,29 @@ export class AuditLogsQueryDto {
   @IsString()
   @MaxLength(128)
   actionType?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'action_type / target_type / target_id / actor_user_id / group_id の部分一致検索',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  q?: string;
+
+  @ApiPropertyOptional({
+    description: 'created_at の検索開始日時（ISO 8601）',
+  })
+  @IsOptional()
+  @IsDateString()
+  createdFrom?: string;
+
+  @ApiPropertyOptional({
+    description: 'created_at の検索終了日時（ISO 8601）',
+  })
+  @IsOptional()
+  @IsDateString()
+  createdTo?: string;
 }
 
 export class AuditLogItemDto {
@@ -32,8 +56,11 @@ export class AuditLogItemDto {
   @ApiPropertyOptional({ type: String, nullable: true })
   groupId!: string | null;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   actorUserId!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  actorEmail!: string | null;
 
   @ApiProperty()
   actionType!: string;
@@ -41,7 +68,7 @@ export class AuditLogItemDto {
   @ApiProperty()
   targetType!: string;
 
-  @ApiPropertyOptional({ nullable: true })
+  @ApiPropertyOptional({ type: String, nullable: true })
   targetId!: string | null;
 
   @ApiPropertyOptional()

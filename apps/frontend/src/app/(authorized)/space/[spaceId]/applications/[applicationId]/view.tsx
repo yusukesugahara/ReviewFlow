@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarClock, ClipboardList, Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
@@ -12,10 +13,14 @@ import { ApplicantApplicationActions } from "@/app/_components/applications/appl
 import { ApplicationStatusBadge } from "@/app/_components/applications/application-status-badge";
 import { PublicApplicationUrlCard } from "@/app/_components/applications/public-application-url-card";
 import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
-import { ApplicationDetailView } from "@/app/_components/applications/application-detail-view";
+import {
+  ApplicationDetailView,
+  ApprovalProgressDiagram,
+} from "@/app/_components/applications/application-detail-view";
 import { ReviewerApplicationActions } from "@/app/_components/applications/reviewer-application-actions";
 import { buildSpaceApplicationEditHrefByIds } from "@/app/_components/applications/application-routes";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
+import { formatDateTimeJa } from "@/lib/date-format";
 import { DescriptionEditModal } from "./description-edit-modal";
 import type {
   ApplicationCorrection,
@@ -34,11 +39,12 @@ type ApplicationDetailScreenProps = {
   corrections: ApplicationCorrection[];
   definitionId?: string;
   fields: ApplicationFormField[];
+  formDetailHref?: string | null;
   isFormDetail: boolean;
   missingRequiredFields: ApplicationFormField[];
   openItems: ApplicationCorrectionTargetItem[];
-  publicApplicationUrlPath: string;
   rejectAction: (formData: FormData) => Promise<void>;
+  resendReturnEmailAction: () => Promise<void>;
   resubmitAction: () => Promise<void>;
   returnAction: (formData: FormData) => Promise<void>;
   spaceId: string;
@@ -185,6 +191,13 @@ export function FormDetailView({
           )}
         </CardContent>
       </Card>
+
+      <ApprovalProgressDiagram
+        application={application}
+        corrections={[]}
+        fields={fields}
+        steps={application.approvalProgress ?? []}
+      />
     </div>
   );
 }
@@ -197,11 +210,12 @@ export function ApplicationDetailScreen({
   corrections,
   definitionId,
   fields,
+  formDetailHref,
   isFormDetail,
   missingRequiredFields,
   openItems,
-  publicApplicationUrlPath,
   rejectAction,
+  resendReturnEmailAction,
   resubmitAction,
   returnAction,
   spaceId,
@@ -218,6 +232,8 @@ export function ApplicationDetailScreen({
         app.id,
       )}?definitionId=${encodeURIComponent(definitionId)}`
     : buildSpaceApplicationEditHrefByIds(spaceId, app.id);
+  const canResendReturnEmail =
+    app.status === APPLICATION_STATUSES.returned && openItems.length > 0;
 
   return (
     <ApplicationDetailView
@@ -237,48 +253,46 @@ export function ApplicationDetailScreen({
       }
       openCorrectionItems={openItems}
       corrections={corrections}
+      formDetailHref={formDetailHref}
       showApplicantEmail
       showCurrentStep
       showTimestamps
       showCorrectionHistory
       showOpenCorrectionSummary
-      publicApplicationUrlPath={publicApplicationUrlPath}
+      canReturnApplication={capabilities.canReturnApplication}
+      returnAction={returnAction}
       actions={
         <div className="space-y-3">
           {actionError ? (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-              {actionError}
-            </p>
+            <Alert variant="destructive">
+              <AlertDescription>{actionError}</AlertDescription>
+            </Alert>
           ) : null}
           <div className="flex flex-wrap gap-2">
-            <Button asChild variant="outline">
-              <Link href={`/space/${encodeURIComponent(spaceId)}/applications`}>
-                一覧へ戻る
-              </Link>
-            </Button>
             <ApplicantApplicationActions
               capabilities={actionCapabilities}
               editHref={editHref}
+              canResendReturnEmail={canResendReturnEmail}
+              resendReturnEmailAction={resendReturnEmailAction}
               submitAction={submitAction}
               resubmitAction={resubmitAction}
             />
           </div>
           {capabilities.canSubmitApplication &&
           missingRequiredFields.length > 0 ? (
-            <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <Alert variant="warning">
+              <AlertDescription>
               必須項目が未入力のため提出できません。必要な入力値を登録してから提出してください。
-            </p>
+              </AlertDescription>
+            </Alert>
           ) : null}
         </div>
       }
       reviewerActions={
         <ReviewerApplicationActions
-          fields={fields}
-          values={app.values}
           capabilities={capabilities}
           approveAction={approveAction}
           rejectAction={rejectAction}
-          returnAction={returnAction}
         />
       }
     />
@@ -339,5 +353,5 @@ function TimestampPanel({ label, value }: { label: string; value: string }) {
 }
 
 function formatDateTime(value?: string): string {
-  return value ? new Date(value).toLocaleString("ja-JP") : "-";
+  return value ? formatDateTimeJa(value) : "-";
 }

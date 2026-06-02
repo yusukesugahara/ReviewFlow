@@ -3,9 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createExportJobSchema } from "@/lib/auth-schema";
-import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
+import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type {
   CreateExportJobBody,
@@ -13,16 +12,20 @@ import type {
   ExportJobResponse,
 } from "@/lib/schema";
 
-export async function createExportJobAction(formData: FormData): Promise<void> {
+export async function createSubmissionCsvExportAction(
+  spaceId: string,
+  formData: FormData,
+): Promise<void> {
   const parsed = createExportJobSchema.safeParse({
-    groupId: formData.get("groupId"),
+    groupId: spaceId,
+    formDefinitionId: formData.get("formDefinitionId") || undefined,
   });
-  const me = await getCurrentSessionUser();
 
-  if (!me || !parsed.success) {
-    redirect(
-      "/admin/export-jobs?formError=エクスポート対象のスペースを選択してください",
-    );
+  if (!parsed.success || !parsed.data.formDefinitionId) {
+    redirectToSubmissions(spaceId, {
+      toast: "error",
+      message: "CSV出力対象の申請フォームを選択してください",
+    });
   }
 
   let job: ExportJobResponse;
@@ -31,7 +34,10 @@ export async function createExportJobAction(formData: FormData): Promise<void> {
     if (!accessToken) {
       redirect("/login");
     }
-    const body: CreateExportJobBody = { groupId: parsed.data.groupId };
+    const body: CreateExportJobBody = {
+      groupId: parsed.data.groupId,
+      formDefinitionId: parsed.data.formDefinitionId,
+    };
     const response = await client.POST("/export-jobs", {
       body,
       headers: { Authorization: `Bearer ${accessToken}` },
@@ -46,15 +52,21 @@ export async function createExportJobAction(formData: FormData): Promise<void> {
       typeof error === "number"
         ? `CSVジョブの作成に失敗しました（status: ${error}）`
         : "CSVジョブの作成に失敗しました";
-    const params = new URLSearchParams({ toast: "error", message });
-    redirect(`/admin/export-jobs?${params.toString()}`);
+    redirectToSubmissions(spaceId, { toast: "error", message });
   }
 
-  revalidatePath("/admin/export-jobs");
-  const params = new URLSearchParams({
+  revalidatePath(`/space/${encodeURIComponent(spaceId)}/submissions`);
+  redirectToSubmissions(spaceId, {
     jobId: job.id,
     toast: "success",
     message: "CSVジョブを作成しました",
   });
-  redirect(`/admin/export-jobs?${params.toString()}`);
+}
+
+function redirectToSubmissions(
+  spaceId: string,
+  params: Record<string, string>,
+): never {
+  const query = new URLSearchParams(params);
+  redirect(`/space/${encodeURIComponent(spaceId)}/submissions?${query.toString()}`);
 }

@@ -9,7 +9,10 @@ import {
   type ApplicationSetupError,
 } from "@/lib/constants/application-setup";
 import { FIELD_TYPES, type FieldType } from "@/lib/constants/form-fields";
+import { APPLICATION_STATUSES } from "@/lib/constants/applications";
+import { updateReturnedApplicationAction } from "./actions";
 import type {
+  CorrectionTargetItem,
   EditableApplicationDetail,
   EditableApprovalFlow,
   EditableFormDefinition,
@@ -19,6 +22,7 @@ import type {
   SpaceApplicationEditPageProps,
 } from "./types";
 import {
+  ReturnedApplicationCorrectionView,
   SpaceApplicationEditErrorView,
   SpaceApplicationEditUnavailableView,
   SpaceApplicationEditView,
@@ -135,12 +139,11 @@ export default async function SpaceApplicationEditPage({
       throw { status: appRaw.response.status };
     }
     const app = unwrapData<EditableApplicationDetail>(appRaw.data);
-    if (
-      !(
-        app.status === "draft" ||
-        app.status === "published"
-      )
-    ) {
+    const isSetupEditable =
+      app.status === APPLICATION_STATUSES.draft ||
+      app.status === APPLICATION_STATUSES.published;
+    const isReturnedEditable = app.status === APPLICATION_STATUSES.returned;
+    if (!isSetupEditable && !isReturnedEditable) {
       return <SpaceApplicationEditUnavailableView />;
     }
 
@@ -162,6 +165,47 @@ export default async function SpaceApplicationEditPage({
       : (unwrapData<{ definitions?: EditableFormDefinition[] }>(templateRaw.data)
           .definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
+    const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}${
+      definitionId ? `?definitionId=${encodeURIComponent(definitionId)}` : ""
+    }`;
+    const editPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}/edit${
+      definitionId ? `?definitionId=${encodeURIComponent(definitionId)}` : ""
+    }`;
+
+    if (isReturnedEditable) {
+      const correctionTargetsRaw = await client.GET("/applications/{id}/correction-targets", {
+        params: { path: { id: applicationId } },
+        headers: authHeaders,
+      });
+      if (!correctionTargetsRaw.response.ok || !correctionTargetsRaw.data) {
+        throw { status: correctionTargetsRaw.response.status };
+      }
+      const targets =
+        unwrapData<{
+          openCorrection?: {
+            overallComment?: string | null;
+            items?: CorrectionTargetItem[];
+          } | null;
+        }>(correctionTargetsRaw.data).openCorrection ?? null;
+
+      return (
+        <ReturnedApplicationCorrectionView
+          action={updateReturnedApplicationAction.bind(
+            null,
+            spaceId,
+            applicationId,
+            detailPath,
+            editPath,
+          )}
+          correctionError={query.correctionError}
+          detailPath={detailPath}
+          fields={fields}
+          overallComment={targets?.overallComment}
+          targets={targets?.items ?? []}
+        />
+      );
+    }
+
     const [membersRaw, flowsRaw] = await Promise.all([
       client.GET("/groups/{groupId}/members", {
         params: { path: { groupId: spaceId } },
@@ -187,11 +231,6 @@ export default async function SpaceApplicationEditPage({
     const flows = unwrapData<{ flows?: EditableApprovalFlow[] }>(flowsRaw.data).flows ?? [];
     const currentFlow =
       flows.find((flow) => flow.id === app.approvalFlowId) ?? null;
-    const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}`;
-    const editPath = `${detailPath}/edit${
-      definitionId ? `?definitionId=${encodeURIComponent(definitionId)}` : ""
-    }`;
-
     return (
       <SpaceApplicationEditView
         action={updateApplicationSetupAction.bind(null, applicationId)}

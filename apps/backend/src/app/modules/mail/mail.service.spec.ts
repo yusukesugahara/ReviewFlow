@@ -117,6 +117,7 @@ describe('MailService', () => {
     await service.sendApplicationReturnedEmail({
       to: 'applicant@example.com',
       applicationId: 'app-1',
+      accessToken: 'return-token',
       groupId: 'group-1',
       templateName: '経費申請',
       overallComment: '内容を確認してください',
@@ -135,8 +136,8 @@ describe('MailService', () => {
     expect(sent?.subject).toBe('ReviewFlow 経費申請 が差し戻されました');
     expect(sent?.text).toContain('備考: 詳細を追記してください');
     expect(sent?.text).toContain(
-      'https://review.example.com/space/group-1/applications/app-1',
+      'https://review.example.com/apply/access?token=return-token&next=%2Fapply%2Fcorrection',
     );
-    expect(sent?.html).toContain('申請詳細を開く');
+    expect(sent?.html).toContain('修正画面を開く');
   });
 });

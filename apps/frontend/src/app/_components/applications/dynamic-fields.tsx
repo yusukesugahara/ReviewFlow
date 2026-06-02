@@ -55,12 +55,14 @@ export function DynamicFieldInput({
   field,
   value,
   disabled = false,
+  readOnly = false,
   afterInput,
   variant = "default",
 }: DynamicFieldInputProps) {
   const name = `field:${field.fieldKey}`;
   const options = normalizeFieldOptions(field.options);
-  const stringValue = typeof value === "string" ? value : "";
+  const stringValue =
+    typeof value === "string" || typeof value === "number" ? String(value) : "";
   const selectedValues = Array.isArray(value)
     ? value.filter((x): x is string => typeof x === "string")
     : [];
@@ -71,6 +73,7 @@ export function DynamicFieldInput({
     selectedValues,
     options,
     disabled,
+    readOnly,
     afterInput,
     variant,
   };

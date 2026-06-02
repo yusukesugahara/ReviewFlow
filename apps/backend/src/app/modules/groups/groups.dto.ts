@@ -14,7 +14,7 @@ import {
 } from '../../../models/constants/group-member-role';
 
 export class CreateGroupDto {
-  @ApiProperty({ example: '経理部' })
+  @ApiProperty({ example: '経理部', description: 'スペース名' })
   @IsString()
   @MaxLength(255)
   name!: string;
@@ -36,7 +36,7 @@ export class CreateGroupDto {
 }
 
 export class AddGroupMemberDto {
-  @ApiProperty({ description: '追加するテナント内ユーザーID' })
+  @ApiProperty({ description: 'スペースに追加するテナント内ユーザーID' })
   @IsUUID('4')
   userId!: string;
 
@@ -54,13 +54,17 @@ export class UpdateGroupMemberRoleDto {
 }
 
 export class GroupSummaryDto {
-  @ApiProperty()
+  @ApiProperty({ description: 'スペースID。API では groupId として参照する。' })
   id!: string;
 
-  @ApiProperty()
+  @ApiProperty({ description: 'スペース名' })
   name!: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: 'スペース説明',
+    type: String,
+    nullable: true,
+  })
   description!: string | null;
 
   @ApiProperty()
@@ -82,7 +86,10 @@ export class GroupSummaryDto {
 }
 
 export class GroupsListResponseDto {
-  @ApiProperty({ type: [GroupSummaryDto] })
+  @ApiProperty({
+    description: 'スペース一覧。後方互換のためレスポンスキーは groups。',
+    type: [GroupSummaryDto],
+  })
   groups!: GroupSummaryDto[];
 }
 
@@ -90,7 +97,9 @@ export class GroupMemberSummaryDto {
   @ApiProperty()
   id!: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    description: '所属スペースID。後方互換のためプロパティ名は groupId。',
+  })
   groupId!: string;
 
   @ApiProperty()
@@ -102,7 +111,10 @@ export class GroupMemberSummaryDto {
   @ApiProperty()
   name!: string | null;
 
-  @ApiProperty({ enum: GROUP_MEMBER_ROLES })
+  @ApiProperty({
+    description: 'スペース内ロール',
+    enum: GROUP_MEMBER_ROLES,
+  })
   role!: string;
 
   @ApiProperty()

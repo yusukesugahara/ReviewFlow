@@ -33,6 +33,6 @@ export function getApplicationCapabilities(
       isApplicant && application.status === APPLICATION_STATUSES.returned,
     canApproveApplication: isInReview,
     canRejectApplication: isInReview,
-    canReturnApplication: isInReview,
+    canReturnApplication: isInReview && application.currentStepCanReturn === true,
   };
 }

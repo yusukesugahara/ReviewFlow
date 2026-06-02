@@ -65,6 +65,42 @@ docker compose --profile mysql up
 
 `NODE_ENV=production` のときは **`synchronize` を使わず**、起動時に `src/migrations`（ビルド後は `dist/migrations`）の未実行マイグレーションだけが走ります。ローカルで同期生成した SQLite をそのまま本番ボリュームに載せ替えると、既存テーブルとマイグレーションが衝突することがあるため、本番用 DB は空から起動するか、マイグレーション履歴と整合するファイルにしてください。
 
+## デモ seed データ
+
+ローカル確認用に、申請フォーム・承認フロー・申請一覧の各ステータスを含むデモデータを投入できます。
+
+```bash
+# リポジトリ直下で実行
+npm run seed:demo -w backend
+```
+
+SQLite の場合は `DB_PATH` を指定しなければ `apps/backend` 実行時の既定 DB（`var/sqlite.db`）に投入されます。別の DB に投入したい場合は、backend 起動時と同じ DB 環境変数を付けて実行してください。
+
+```bash
+# 例: Docker Compose の backend と同じ SQLite ボリューム内 DB を使う場合
+docker compose exec backend npm run seed:demo -w backend
+
+# 例: MySQL に投入する場合
+DB_DRIVER=mysql \
+DB_HOST=localhost \
+DB_PORT=3306 \
+DB_USERNAME=app \
+DB_PASSWORD=app \
+DB_NAME=app \
+npm run seed:demo -w backend
+```
+
+seed は冪等です。既存の `ReviewFlow Demo` テナントがある場合は削除して作り直します。
+
+投入後は次のアカウントでログインできます。パスワードはいずれも `Password123!` です。
+
+| メールアドレス | 用途 |
+|------|------|
+| `admin@reviewflow.demo` | テナント管理者・フォーム作成者 |
+| `manager@reviewflow.demo` | 一次承認者 |
+| `finance@reviewflow.demo` | 経理承認者 |
+| `applicant@reviewflow.demo` | 申請者 |
+
 ## よく使うコマンド
 
 ```bash
@@ -88,6 +124,9 @@ yarn lint
 
 # Lint のみ（修正しない）
 yarn lint:check
+
+# デモ seed データ投入
+npm run seed:demo -w backend
 ```
 
 ## 認証の考え方

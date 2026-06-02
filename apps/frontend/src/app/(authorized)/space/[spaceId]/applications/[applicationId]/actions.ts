@@ -6,7 +6,7 @@ import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { ApplicationDetailViewModel } from "@/app/_components/applications/application-detail.types";
-import { buildSpaceApplicationDetailHref } from "@/app/_components/applications/application-routes";
+import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
 
 type ApiFailure = { status: number; body: unknown };
 
@@ -43,7 +43,8 @@ async function postApplicationAction(
     | "/applications/{id}/resubmit"
     | "/applications/{id}/approve"
     | "/applications/{id}/reject"
-    | "/applications/{id}/return",
+    | "/applications/{id}/return"
+    | "/applications/{id}/return-email/resend",
   applicationId: string,
   body: Record<string, unknown>,
 ): Promise<ApplicationDetailViewModel> {
@@ -155,6 +156,23 @@ export async function returnAction(
   redirectToApplicationDetail(updated, "申請を差し戻しました");
 }
 
+export async function resendReturnEmailAction(
+  spaceId: string,
+  applicationId: string,
+): Promise<void> {
+  let updated: ApplicationDetailViewModel;
+  try {
+    updated = await postApplicationAction(
+      "/applications/{id}/return-email/resend",
+      applicationId,
+      {},
+    );
+  } catch (error) {
+    redirectToApplicationActionError(spaceId, applicationId, error);
+  }
+  redirectToApplicationDetail(updated, "差し戻しメールを再送しました");
+}
+
 export async function updateDescriptionAction(
   spaceId: string,
   applicationId: string,
@@ -206,16 +224,16 @@ function redirectToApplicationDetail(
   application: ApplicationDetailViewModel,
   message?: string,
 ): never {
-  const detailHref = buildSpaceApplicationDetailHref(application);
+  const detailHref = buildSpaceSubmissionDetailHref(application);
   if (detailHref) {
     revalidatePath(detailHref);
-    revalidatePath(`/space/${encodeURIComponent(application.groupId ?? "")}/applications`);
+    revalidatePath(`/space/${encodeURIComponent(application.groupId ?? "")}/submissions`);
     if (message) {
       const params = new URLSearchParams({
         toast: "success",
         message,
       });
-      redirect(`${detailHref}?${params.toString()}`);
+      redirect(appendQueryString(detailHref, params));
     }
     redirect(detailHref);
   }
@@ -228,12 +246,12 @@ function redirectToApplicationValidationError(
   applicationId: string,
   message: string,
 ): never {
-  const detailHref = buildSpaceApplicationDetailHref({
+  const detailHref = buildSpaceSubmissionDetailHref({
     id: applicationId,
     groupId: spaceId,
   });
   const params = new URLSearchParams({ actionError: message });
-  redirect(`${detailHref ?? "/space"}?${params.toString()}`);
+  redirect(appendQueryString(detailHref ?? "/space", params));
 }
 
 function redirectToApplicationActionError(
@@ -241,7 +259,7 @@ function redirectToApplicationActionError(
   applicationId: string,
   error: unknown,
 ): never {
-  const detailHref = buildSpaceApplicationDetailHref({
+  const detailHref = buildSpaceSubmissionDetailHref({
     id: applicationId,
     groupId: spaceId,
   });
@@ -249,7 +267,11 @@ function redirectToApplicationActionError(
     toast: "error",
     message: applicationActionErrorMessage(error),
   });
-  redirect(`${detailHref ?? "/space"}?${params.toString()}`);
+  redirect(appendQueryString(detailHref ?? "/space", params));
+}
+
+function appendQueryString(href: string, params: URLSearchParams): string {
+  return `${href}${href.includes("?") ? "&" : "?"}${params.toString()}`;
 }
 
 function applicationActionErrorMessage(error: unknown): string {
@@ -288,6 +310,9 @@ function applicationActionErrorMessage(error: unknown): string {
   }
   if (errorCode === "APPLICATION_CORRECTION_ALREADY_OPEN") {
     return "この申請には未解決の差し戻し依頼が既にあります。";
+  }
+  if (errorCode === "APPLICATION_NO_OPEN_CORRECTION") {
+    return "未解決の差し戻し依頼がないため、メールを再送できません。";
   }
 
   return `${errorMessageFromBody(error.body)}（status: ${error.status}）`;

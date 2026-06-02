@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -71,6 +72,7 @@ type ApplicationListTableProps = {
   rows: ApplicationListRow[];
   getDetailHref: (row: ApplicationListRow) => string;
   actionLabel?: string;
+  openDetailInNewTab?: boolean;
   showApplicantEmail?: boolean;
 };
 
@@ -78,6 +80,7 @@ export function ApplicationListTable({
   rows,
   getDetailHref,
   actionLabel = "詳細",
+  openDetailInNewTab = false,
   showApplicantEmail = false,
 }: ApplicationListTableProps) {
   return (
@@ -117,8 +120,16 @@ export function ApplicationListTable({
               {dateTimeFormatter.format(new Date(row.createdAt))}
             </TableCell>
             <TableCell className="text-right">
-              <Button asChild variant="ghost" size="sm">
-                <Link href={getDetailHref(row)}>{actionLabel}</Link>
+              <Button asChild variant="outline" size="sm">
+                <Link
+                  href={getDetailHref(row)}
+                  target={openDetailInNewTab ? "_blank" : undefined}
+                  rel={openDetailInNewTab ? "noopener noreferrer" : undefined}
+                  title={actionLabel}
+                >
+                  {actionLabel}
+                  <ArrowRight aria-hidden="true" />
+                </Link>
               </Button>
             </TableCell>
           </TableRow>

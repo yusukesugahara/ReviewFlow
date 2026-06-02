@@ -20,6 +20,7 @@ export type DynamicFieldInputProps = {
   field: DynamicFormField;
   value: unknown;
   disabled?: boolean;
+  readOnly?: boolean;
   afterInput?: ReactNode;
   variant?: "default" | "table";
 };

@@ -284,7 +284,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** フォーム定義取得（tenant_admin） */
+        /** フォーム定義取得（スペースメンバー） */
         get: operations["FormDefinitionsController_getOne"];
         put?: never;
         post?: never;
@@ -664,6 +664,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/applications/{id}/return-email/resend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 差し戻しメール再送
+         * @description returned かつ open correction がある申請の申請者向け修正URLを再送する。
+         */
+        post: operations["ApplicationsController_resendReturnEmail"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/applications/{id}/reject": {
         parameters: {
             query?: never;
@@ -770,6 +790,63 @@ export interface paths {
         put?: never;
         /** 公開申請フォーム送信 */
         post: operations["PublicApplicationsController_create"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/returned/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 申請者向け差し戻し修正対象取得
+         * @description 差し戻しメールの applicant access token に紐づく申請の open correction を返す。
+         */
+        get: operations["PublicApplicationsController_getReturnedCurrent"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/public/applications/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 申請者向け差し戻し項目更新
+         * @description returned かつ open correction の対象項目だけ更新できる。
+         */
+        patch: operations["PublicApplicationsController_patchReturned"];
+        trace?: never;
+    };
+    "/public/applications/{id}/resubmit": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** 申請者向け再提出 */
+        post: operations["PublicApplicationsController_resubmitReturned"];
         delete?: never;
         options?: never;
         head?: never;
@@ -922,10 +999,11 @@ export interface components {
         AuditLogItemDto: {
             id: string;
             groupId?: string | null;
-            actorUserId?: Record<string, never> | null;
+            actorUserId?: string | null;
+            actorEmail?: string | null;
             actionType: string;
             targetType: string;
-            targetId?: Record<string, never> | null;
+            targetId?: string | null;
             metadataJson?: Record<string, never>;
             createdAt: string;
         };
@@ -1094,9 +1172,12 @@ export interface components {
             steps: components["schemas"]["CreateApprovalFlowStepDto"][];
         };
         GroupSummaryDto: {
+            /** @description スペースID。API では groupId として参照する。 */
             id: string;
+            /** @description スペース名 */
             name: string;
-            description: Record<string, never>;
+            /** @description スペース説明 */
+            description: string | null;
             createdByUserId: string;
             createdAt: string;
             updatedAt: string;
@@ -1107,10 +1188,14 @@ export interface components {
             currentUserRole?: "admin" | "user" | null;
         };
         GroupsListResponseDto: {
+            /** @description スペース一覧。後方互換のためレスポンスキーは groups。 */
             groups: components["schemas"]["GroupSummaryDto"][];
         };
         CreateGroupDto: {
-            /** @example 経理部 */
+            /**
+             * @description スペース名
+             * @example 経理部
+             */
             name: string;
             /** @example 経理部向けの承認・レビュースペース */
             description?: string;
@@ -1119,11 +1204,15 @@ export interface components {
         };
         GroupMemberSummaryDto: {
             id: string;
+            /** @description 所属スペースID。後方互換のためプロパティ名は groupId。 */
             groupId: string;
             userId: string;
             email: string;
             name: Record<string, never>;
-            /** @enum {string} */
+            /**
+             * @description スペース内ロール
+             * @enum {string}
+             */
             role: "admin" | "user";
             createdAt: string;
             updatedAt: string;
@@ -1140,7 +1229,7 @@ export interface components {
             users: components["schemas"]["GroupAvailableUserSummaryDto"][];
         };
         AddGroupMemberDto: {
-            /** @description 追加するテナント内ユーザーID */
+            /** @description スペースに追加するテナント内ユーザーID */
             userId: string;
             /**
              * @example user
@@ -1205,6 +1294,28 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        ApplicationProgressUserDto: {
+            id: string;
+            email: string;
+            name?: string | null;
+        };
+        ApplicationProgressActionDto: {
+            id: string;
+            action: string;
+            comment?: string | null;
+            actedAt: string;
+            actedBy: components["schemas"]["ApplicationProgressUserDto"];
+        };
+        ApplicationProgressStepDto: {
+            id: string;
+            stepOrder: number;
+            stepName: string;
+            canReturn: boolean;
+            /** @enum {string} */
+            status: "pending" | "current" | "approved" | "returned" | "rejected";
+            assignees: components["schemas"]["ApplicationProgressUserDto"][];
+            actions: components["schemas"]["ApplicationProgressActionDto"][];
+        };
         ApplicationDetailDto: {
             id: string;
             groupId: string;
@@ -1219,6 +1330,9 @@ export interface components {
             submittedAt?: Record<string, never> | null;
             createdAt: string;
             updatedAt: string;
+            /** @description 現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。 */
+            currentStepCanReturn?: Record<string, never> | null;
+            approvalProgress: components["schemas"]["ApplicationProgressStepDto"][];
             /** @description field_key → 値 */
             values: {
                 [key: string]: unknown;
@@ -1332,6 +1446,11 @@ export interface components {
         CreateExportJobDto: {
             /** Format: uuid */
             groupId: string;
+            /**
+             * Format: uuid
+             * @description CSV 出力対象の申請フォーム定義。指定時はこのフォームへの申請のみ出力する。
+             */
+            formDefinitionId?: string;
             /** @enum {string} */
             status?: "draft" | "published" | "submitted" | "in_review" | "returned" | "approved" | "rejected";
         };
@@ -1639,6 +1758,12 @@ export interface operations {
                 limit?: number;
                 /** @description action_type で前方一致絞り込み */
                 actionType?: string;
+                /** @description action_type / target_type / target_id / actor_user_id / group_id の部分一致検索 */
+                q?: string;
+                /** @description created_at の検索開始日時（ISO 8601） */
+                createdFrom?: string;
+                /** @description created_at の検索終了日時（ISO 8601） */
+                createdTo?: string;
             };
             header?: never;
             path?: never;
@@ -2584,6 +2709,34 @@ export interface operations {
             };
         };
     };
+    ApplicationsController_resendReturnEmail: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApplicationDetailDto"];
+                    };
+                };
+            };
+        };
+    };
     ApplicationsController_reject: {
         parameters: {
             query?: never;
@@ -2787,6 +2940,65 @@ export interface operations {
                         data: components["schemas"]["ApplicationDetailDto"];
                     };
                 };
+            };
+        };
+    };
+    PublicApplicationsController_getReturnedCurrent: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicApplicationsController_patchReturned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PatchApplicationDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    PublicApplicationsController_resubmitReturned: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
         };
     };

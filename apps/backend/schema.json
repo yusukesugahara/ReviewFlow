@@ -526,6 +526,33 @@
             "schema": {
               "type": "string"
             }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "action_type / target_type / target_id / actor_user_id / group_id の部分一致検索",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索開始日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索終了日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -932,7 +959,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "フォーム定義取得（tenant_admin）",
+        "summary": "フォーム定義取得（スペースメンバー）",
         "tags": [
           "form-definitions"
         ]
@@ -1663,7 +1690,7 @@
         ],
         "summary": "スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       },
       "post": {
@@ -1717,7 +1744,7 @@
         ],
         "summary": "スペース作成（tenant_admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1749,7 +1776,7 @@
         ],
         "summary": "スペース削除（tenant_admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1804,7 +1831,7 @@
         ],
         "summary": "スペースメンバー一覧（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       },
       "post": {
@@ -1867,7 +1894,7 @@
         ],
         "summary": "スペースへユーザー追加（tenant_admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1922,7 +1949,7 @@
         ],
         "summary": "スペース追加候補ユーザー一覧（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -1995,7 +2022,7 @@
         ],
         "summary": "スペース管理者/ユーザ設定（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -2027,7 +2054,7 @@
         ],
         "summary": "スペースから退出（参加中ユーザー）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -2067,7 +2094,7 @@
         ],
         "summary": "スペースメンバー削除（tenant_admin / space admin）",
         "tags": [
-          "groups"
+          "spaces"
         ]
       }
     },
@@ -2362,6 +2389,62 @@
           }
         ],
         "summary": "差し戻し",
+        "tags": [
+          "applications"
+        ]
+      }
+    },
+    "/applications/{id}/return-email/resend": {
+      "post": {
+        "description": "returned かつ open correction がある申請の申請者向け修正URLを再送する。",
+        "operationId": "ApplicationsController_resendReturnEmail",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "差し戻しメール再送",
         "tags": [
           "applications"
         ]
@@ -2771,6 +2854,98 @@
         ]
       }
     },
+    "/public/applications/returned/current": {
+      "get": {
+        "description": "差し戻しメールの applicant access token に紐づく申請の open correction を返す。",
+        "operationId": "PublicApplicationsController_getReturnedCurrent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "申請者向け差し戻し修正対象取得",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}": {
+      "patch": {
+        "description": "returned かつ open correction の対象項目だけ更新できる。",
+        "operationId": "PublicApplicationsController_patchReturned",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PatchApplicationDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "申請者向け差し戻し項目更新",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
+    "/public/applications/{id}/resubmit": {
+      "post": {
+        "operationId": "PublicApplicationsController_resubmitReturned",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": ""
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "申請者向け再提出",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
     "/export-jobs": {
       "post": {
         "operationId": "ExportJobsController_create",
@@ -2916,8 +3091,8 @@
     }
   },
   "info": {
-    "title": "Cats example",
-    "description": "The cats API description.\n\nエラー: コントローラーで個別のエラーレスポンスは宣言しない。`throw new Error()` や `BaseError` / `HttpException` は `GlobalExceptionFilter` が JSON（`components.schemas.ErrorResponseDto` の最小形: statusCode, message）に正規化する。",
+    "title": "ReviewFlow API",
+    "description": "ReviewFlow のバックエンド API。申請フォーム、申請、承認、スペース、ユーザー、CSV 出力、監査ログを扱う。\n\nUI 上の「スペース」は、後方互換のため API path と request/response property では `groups` / `groupId` として公開する。\n\nエラー: コントローラーで個別のエラーレスポンスは宣言しない。`throw new Error()` や `BaseError` / `HttpException` は `GlobalExceptionFilter` が JSON（`components.schemas.ErrorResponseDto` の最小形: statusCode, message）に正規化する。",
     "version": "1.0",
     "contact": {}
   },
@@ -3188,7 +3363,11 @@
             "nullable": true
           },
           "actorUserId": {
-            "type": "object",
+            "type": "string",
+            "nullable": true
+          },
+          "actorEmail": {
+            "type": "string",
             "nullable": true
           },
           "actionType": {
@@ -3198,7 +3377,7 @@
             "type": "string"
           },
           "targetId": {
-            "type": "object",
+            "type": "string",
             "nullable": true
           },
           "metadataJson": {
@@ -3745,13 +3924,17 @@
         "type": "object",
         "properties": {
           "id": {
-            "type": "string"
+            "type": "string",
+            "description": "スペースID。API では groupId として参照する。"
           },
           "name": {
-            "type": "string"
+            "type": "string",
+            "description": "スペース名"
           },
           "description": {
-            "type": "object"
+            "type": "string",
+            "description": "スペース説明",
+            "nullable": true
           },
           "createdByUserId": {
             "type": "string"
@@ -3785,6 +3968,7 @@
         "type": "object",
         "properties": {
           "groups": {
+            "description": "スペース一覧。後方互換のためレスポンスキーは groups。",
             "type": "array",
             "items": {
               "$ref": "#/components/schemas/GroupSummaryDto"
@@ -3800,7 +3984,8 @@
         "properties": {
           "name": {
             "type": "string",
-            "example": "経理部"
+            "example": "経理部",
+            "description": "スペース名"
           },
           "description": {
             "type": "string",
@@ -3826,7 +4011,8 @@
             "type": "string"
           },
           "groupId": {
-            "type": "string"
+            "type": "string",
+            "description": "所属スペースID。後方互換のためプロパティ名は groupId。"
           },
           "userId": {
             "type": "string"
@@ -3839,6 +4025,7 @@
           },
           "role": {
             "type": "string",
+            "description": "スペース内ロール",
             "enum": [
               "admin",
               "user"
@@ -3914,7 +4101,7 @@
         "properties": {
           "userId": {
             "type": "string",
-            "description": "追加するテナント内ユーザーID"
+            "description": "スペースに追加するテナント内ユーザーID"
           },
           "role": {
             "type": "string",
@@ -4072,6 +4259,100 @@
           "groupId"
         ]
       },
+      "ApplicationProgressUserDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "email"
+        ]
+      },
+      "ApplicationProgressActionDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "comment": {
+            "type": "string",
+            "nullable": true
+          },
+          "actedAt": {
+            "type": "string"
+          },
+          "actedBy": {
+            "$ref": "#/components/schemas/ApplicationProgressUserDto"
+          }
+        },
+        "required": [
+          "id",
+          "action",
+          "actedAt",
+          "actedBy"
+        ]
+      },
+      "ApplicationProgressStepDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "stepOrder": {
+            "type": "number"
+          },
+          "stepName": {
+            "type": "string"
+          },
+          "canReturn": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "current",
+              "approved",
+              "returned",
+              "rejected"
+            ]
+          },
+          "assignees": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationProgressUserDto"
+            }
+          },
+          "actions": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationProgressActionDto"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "stepOrder",
+          "stepName",
+          "canReturn",
+          "status",
+          "assignees",
+          "actions"
+        ]
+      },
       "ApplicationDetailDto": {
         "type": "object",
         "properties": {
@@ -4117,6 +4398,17 @@
           "updatedAt": {
             "type": "string"
           },
+          "currentStepCanReturn": {
+            "type": "object",
+            "description": "現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。",
+            "nullable": true
+          },
+          "approvalProgress": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/ApplicationProgressStepDto"
+            }
+          },
           "values": {
             "type": "object",
             "additionalProperties": true,
@@ -4134,6 +4426,7 @@
           "applicantEmail",
           "createdAt",
           "updatedAt",
+          "approvalProgress",
           "values"
         ]
       },
@@ -4444,6 +4737,11 @@
           "groupId": {
             "type": "string",
             "format": "uuid"
+          },
+          "formDefinitionId": {
+            "type": "string",
+            "format": "uuid",
+            "description": "CSV 出力対象の申請フォーム定義。指定時はこのフォームへの申請のみ出力する。"
           },
           "status": {
             "type": "string",
