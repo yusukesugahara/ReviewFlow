@@ -1,6 +1,6 @@
 # Backend（NestJS）
 
-モノレポ内の API サーバーです。内部向け **X-API-Key**、ユーザー向け **JWT**（Passport）、**TypeORM**（既定は **SQLite**、**MySQL**（`mysql2`）も環境変数で選択可）、開発時 **Swagger**、**@nestjs/terminus** による readiness を備えています。
+モノレポ内の API サーバーです。内部向け **X-API-Key**、ユーザー向け **JWT**（Passport）、**TypeORM**（**PostgreSQL**）、開発時 **Swagger**、**@nestjs/terminus** による readiness を備えています。
 
 ## 前提
 
@@ -27,11 +27,9 @@ cp .env.example .env.dev
 | `INTERNAL_API_KEY` | サーバー間通信用（例: Next のサーバーから `X-API-Key` ヘッダで送信） |
 | `JWT_SECRET` | アクセストークン署名・検証用（十分に長いランダム文字列） |
 | `JWT_EXPIRES_IN` | JWT 有効期限（例: `7d`） |
-| `DB_DRIVER` | `sqlite`（省略時）、`mysql`、または `mariadb`。MySQL 系のときは `DATABASE_URL` または下記 `DB_*` が必要 |
-| `DB_PATH` | **SQLite 時**のファイルパス（省略時は `cwd` 基準の `var/sqlite.db`） |
-| `DATABASE_URL` | **MySQL / MariaDB 時**の接続 URL（例: `mysql://user:pass@host:3306/dbname`）。設定時は `DB_HOST` 等は不要 |
-| `DB_HOST` / `DB_PORT` / `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` | **MySQL / MariaDB 時**、`DATABASE_URL` を使わない場合の接続情報（`DB_PORT` 省略時は `3306`） |
-| `DB_SSL` | `true` のとき MySQL 接続に SSL を有効化（マネージド DB 向け） |
+| `DATABASE_URL` | PostgreSQL の接続 URL（例: `postgres://user:pass@host:5432/dbname`）。設定時は `DB_HOST` 等は不要 |
+| `DB_HOST` / `DB_PORT` / `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` | `DATABASE_URL` を使わない場合のPostgreSQL接続情報（`DB_PORT` 省略時は `5432`） |
+| `DB_SSL` | `true` のとき DB 接続に SSL を有効化（マネージド DB 向け） |
 | `DB_SSL_REJECT_UNAUTHORIZED` | `false` のとき SSL でもサーバー証明書の検証を緩める（自己署名検証用。省略時は検証する） |
 | `DB_SYNCHRONIZE` | `false` のときスキーマ自動同期をオフにしマイグレーションを実行（本番は `NODE_ENV=production` で常にこの挙動。ローカルでマイグレーション動作を試すときにも指定可） |
 | `THROTTLE_TTL_MS` | グローバルレート制限の窓幅（ミリ秒）。省略時 `60000` |
@@ -41,7 +39,7 @@ cp .env.example .env.dev
 | `JSON_BODY_LIMIT` | `express.json` / `urlencoded` の最大サイズ（省略時 `256kb`） |
 | `CORS_ORIGIN` | ブラウザから API を呼ぶ場合の許可オリジン（例: `http://localhost:3001`）。未設定時の挙動は利用するクライアントに合わせて確認すること |
 
-本番起動時（`main.ts`）は **`JWT_SECRET` が 32 文字未満**、または **`INTERNAL_API_KEY` が 16 文字未満**の場合、起動直後にエラーで終了します。**`DB_DRIVER` が `mysql` または `mariadb`** のときはさらに **`DATABASE_URL`、または `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` のすべて**が必要です。
+本番起動時（`main.ts`）は **`JWT_SECRET` が 32 文字未満**、または **`INTERNAL_API_KEY` が 16 文字未満**の場合、起動直後にエラーで終了します。さらに **`DATABASE_URL`、または `DB_HOST` / `DB_USERNAME` / `DB_PASSWORD` / `DB_NAME` のすべて**が必要です。
 
 ## ヘルスチェック（Terminus）
 
@@ -52,18 +50,17 @@ cp .env.example .env.dev
 
 いずれも **API Key / JWT / レート制限の対象外**です（Swagger には載せません）。
 
-## Docker Compose と MySQL
+## Docker Compose と PostgreSQL
 
-リポジトリ直下の `docker-compose.yml` に **`mysql` サービス**（**profile: `mysql`**）を用意しています。
+リポジトリ直下の `docker-compose.yml` は **PostgreSQL** を起動し、`backend` は既定でその PostgreSQL に接続します。
 
 ```bash
-# MySQL を同時起動（初回は backend に MySQL 向け環境変数を渡す必要あり）
-docker compose --profile mysql up
+docker compose up
 ```
 
-`backend` サービスに例えば `DB_DRIVER=mysql`、`DB_HOST=mysql`、`DB_PORT=3306`、`DB_USERNAME=app`、`DB_PASSWORD=app`、`DB_NAME=app` を設定します（`DB_DRIVER` が `mysql` / `mariadb` のときは SQLite を使いません）。
+`backend` サービスには `DB_HOST=postgres`、`DB_PORT=5432`、`DB_USERNAME=app`、`DB_PASSWORD=app`、`DB_NAME=app` を設定しています。
 
-`NODE_ENV=production` のときは **`synchronize` を使わず**、起動時に `src/migrations`（ビルド後は `dist/migrations`）の未実行マイグレーションだけが走ります。ローカルで同期生成した SQLite をそのまま本番ボリュームに載せ替えると、既存テーブルとマイグレーションが衝突することがあるため、本番用 DB は空から起動するか、マイグレーション履歴と整合するファイルにしてください。
+`NODE_ENV=production` のときは **`synchronize` を使わず**、起動時に `src/migrations`（ビルド後は `dist/migrations`）の未実行マイグレーションだけが走ります。本番用 DB は空から起動するか、マイグレーション履歴と整合する状態にしてください。
 
 ## よく使うコマンド
 

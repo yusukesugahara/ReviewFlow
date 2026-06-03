@@ -18,9 +18,7 @@ export function assertProductionEnvFromProcess(): void {
     );
   }
 
-  const driver = (process.env.DB_DRIVER ?? 'sqlite').toLowerCase();
-  const useMysql = driver === 'mysql' || driver === 'mariadb';
-  if (useMysql && !process.env.DATABASE_URL?.length) {
+  if (!process.env.DATABASE_URL?.length) {
     for (const key of [
       'DB_HOST',
       'DB_USERNAME',
@@ -29,7 +27,7 @@ export function assertProductionEnvFromProcess(): void {
     ] as const) {
       if (!process.env[key]?.length) {
         throw new Error(
-          `本番で MySQL を使うときは DATABASE_URL、または ${key} を設定してください。`,
+          `本番で PostgreSQL を使うときは DATABASE_URL、または ${key} を設定してください。`,
         );
       }
     }

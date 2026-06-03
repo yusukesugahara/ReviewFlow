@@ -1,13 +1,7 @@
-import { mkdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { ConfigService } from '@nestjs/config';
 import type { TypeOrmModuleOptions } from '@nestjs/typeorm';
 import { User } from '../models/entities/user.entity';
-
-function isMysqlDriver(raw: string | undefined): boolean {
-  const d = (raw ?? 'sqlite').toLowerCase();
-  return d === 'mysql' || d === 'mariadb';
-}
 
 export function buildTypeOrmOptions(
   config: ConfigService,
@@ -18,41 +12,19 @@ export function buildTypeOrmOptions(
   const migrationsRun = !synchronize;
   const migrations = [join(__dirname, '..', 'migrations', '*.{js,ts}')];
   const entities = [User];
+  const sslEnabled = config.get<string>('DB_SSL') === 'true';
+  const ssl = sslEnabled
+    ? {
+        rejectUnauthorized:
+          config.get<string>('DB_SSL_REJECT_UNAUTHORIZED') !== 'false',
+      }
+    : undefined;
+  const url = config.get<string>('DATABASE_URL');
 
-  if (isMysqlDriver(config.get<string>('DB_DRIVER'))) {
-    const url = config.get<string>('DATABASE_URL');
-    const sslEnabled = config.get<string>('DB_SSL') === 'true';
-    const ssl = sslEnabled
-      ? {
-          rejectUnauthorized:
-            config.get<string>('DB_SSL_REJECT_UNAUTHORIZED') !== 'false',
-        }
-      : undefined;
-
-    const dbType =
-      (config.get<string>('DB_DRIVER') ?? 'mysql').toLowerCase() === 'mariadb'
-        ? 'mariadb'
-        : 'mysql';
-
-    if (url?.length) {
-      return {
-        type: dbType,
-        url,
-        entities,
-        synchronize,
-        migrations,
-        migrationsRun,
-        ...(ssl !== undefined ? { ssl } : {}),
-      };
-    }
-
+  if (url?.length) {
     return {
-      type: dbType,
-      host: config.getOrThrow<string>('DB_HOST'),
-      port: Number(config.get<string>('DB_PORT') ?? 3306),
-      username: config.getOrThrow<string>('DB_USERNAME'),
-      password: config.getOrThrow<string>('DB_PASSWORD'),
-      database: config.getOrThrow<string>('DB_NAME'),
+      type: 'postgres',
+      url,
       entities,
       synchronize,
       migrations,
@@ -61,13 +33,13 @@ export function buildTypeOrmOptions(
     };
   }
 
-  const dbPath =
-    config.get<string>('DB_PATH') ?? join(process.cwd(), 'var', 'sqlite.db');
-  mkdirSync(dirname(dbPath), { recursive: true });
-
   return {
-    type: 'better-sqlite3',
-    database: dbPath,
+    type: 'postgres',
+    host: config.getOrThrow<string>('DB_HOST'),
+    port: Number(config.get<string>('DB_PORT') ?? 5432),
+    username: config.getOrThrow<string>('DB_USERNAME'),
+    password: config.getOrThrow<string>('DB_PASSWORD'),
+    database: config.getOrThrow<string>('DB_NAME'),
     entities,
     synchronize,
     migrations,

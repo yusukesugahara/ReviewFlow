@@ -11,7 +11,7 @@ import { AuditLogInterceptor } from '../common/logging/audit-log.interceptor';
 import { buildTypeOrmOptions } from './typeorm-options.factory';
 
 /*
- * データベースモジュール（`DB_DRIVER`: 省略時 sqlite / `mysql` で MySQL）
+ * データベースモジュール（PostgreSQL）
  */
 const dbModule = TypeOrmModule.forRootAsync({
   imports: [ConfigModule],

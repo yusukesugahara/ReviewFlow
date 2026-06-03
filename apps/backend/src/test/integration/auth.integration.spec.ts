@@ -1,40 +1,32 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
+import { DataSource } from 'typeorm';
 import { AppModule } from '../../app/app.module';
 import { AuthService } from '../../app/modules/auth/auth.service';
 import { ClientErrorCodes } from '../../common/errors';
+import {
+  configurePostgresTestEnv,
+  truncatePostgresTables,
+} from '../test-postgres';
 
 describe('Auth (integration)', () => {
   let moduleRef: TestingModule;
   let auth: AuthService;
-  const dbPath = join(__dirname, 'integration-auth.sqlite');
 
   beforeEach(async () => {
     process.env.INTERNAL_API_KEY = 'int-api-key';
     process.env.JWT_SECRET = 'int-jwt-secret-at-least-32-characters-long';
-    process.env.DB_PATH = dbPath;
-    try {
-      rmSync(dbPath, { force: true });
-    } catch {
-      /* ignore */
-    }
-    mkdirSync(join(dbPath, '..'), { recursive: true });
+    configurePostgresTestEnv();
 
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
     }).compile();
 
     auth = moduleRef.get(AuthService);
+    await truncatePostgresTables(moduleRef.get(DataSource));
   });
 
   afterEach(async () => {
-    await moduleRef.close();
-    try {
-      rmSync(dbPath, { force: true });
-    } catch {
-      /* ignore */
-    }
+    await moduleRef?.close();
   });
 
   it('first user is admin; login accepts lowercased email; duplicate register conflicts', async () => {
