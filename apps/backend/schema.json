@@ -16,34 +16,8 @@
           }
         },
         "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "status",
-                    "data"
-                  ],
-                  "properties": {
-                    "status": {
-                      "type": "number",
-                      "enum": [
-                        200
-                      ],
-                      "example": 200
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/AuthIssueTokensResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          },
           "201": {
-            "description": "Created",
+            "description": "",
             "content": {
               "application/json": {
                 "schema": {
