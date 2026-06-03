@@ -31,12 +31,12 @@ export class CreateApprovalFlowsAndSteps1748400000000 implements MigrationInterf
             },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],
@@ -97,12 +97,12 @@ export class CreateApprovalFlowsAndSteps1748400000000 implements MigrationInterf
             },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],

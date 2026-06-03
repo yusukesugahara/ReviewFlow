@@ -21,21 +21,21 @@ export class CorrectionRequest {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'application_id', type: 'varchar', length: 36 })
+  @Column({ name: 'application_id', type: 'uuid' })
   applicationId!: string;
 
   @ManyToOne(() => Application, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'application_id' })
   application!: Application;
 
-  @Column({ name: 'requested_by_user_id', type: 'varchar', length: 36 })
+  @Column({ name: 'requested_by_user_id', type: 'uuid' })
   requestedByUserId!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
@@ -53,7 +53,7 @@ export class CorrectionRequest {
   })
   overallComment!: string | null;
 
-  @Column({ name: 'resolved_at', type: 'datetime', nullable: true })
+  @Column({ name: 'resolved_at', type: 'timestamp', nullable: true })
   resolvedAt!: Date | null;
 
   @OneToMany(() => CorrectionRequestItem, (i) => i.correctionRequest)

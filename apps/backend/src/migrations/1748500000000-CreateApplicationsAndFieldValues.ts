@@ -54,17 +54,17 @@ export class CreateApplicationsAndFieldValues1748500000000 implements MigrationI
             },
             {
               name: 'submitted_at',
-              type: 'datetime',
+              type: 'timestamp',
               isNullable: true,
             },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],
@@ -131,12 +131,12 @@ export class CreateApplicationsAndFieldValues1748500000000 implements MigrationI
             { name: 'value_json', type: 'json', isNullable: false },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],

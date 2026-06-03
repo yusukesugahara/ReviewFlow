@@ -21,7 +21,7 @@ export class Invitation {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
@@ -34,7 +34,7 @@ export class Invitation {
   @Column({ type: 'varchar', length: 32 })
   role!: UserRoleValue;
 
-  @Column({ name: 'group_id', type: 'varchar', length: 36, nullable: true })
+  @Column({ name: 'group_id', type: 'uuid', nullable: true })
   groupId!: string | null;
 
   @ManyToOne(() => Group, { onDelete: 'SET NULL', nullable: true })
@@ -55,14 +55,14 @@ export class Invitation {
   @Column({ type: 'varchar', length: 32, default: InvitationStatus.PENDING })
   status!: InvitationStatusValue;
 
-  @Column({ name: 'invited_by_user_id', type: 'varchar', length: 36 })
+  @Column({ name: 'invited_by_user_id', type: 'uuid' })
   invitedByUserId!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'invited_by_user_id' })
   invitedBy!: User;
 
-  @Column({ name: 'expires_at', type: 'datetime' })
+  @Column({ name: 'expires_at', type: 'timestamp' })
   expiresAt!: Date;
 
   @CreateDateColumn({ name: 'created_at' })

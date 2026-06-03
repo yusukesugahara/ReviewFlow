@@ -28,21 +28,21 @@ export class ExportJob {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  @Column({ name: 'group_id', type: 'uuid' })
   groupId!: string;
 
   @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'group_id' })
   group!: Group;
 
-  @Column({ name: 'requested_by_user_id', type: 'varchar', length: 36 })
+  @Column({ name: 'requested_by_user_id', type: 'uuid' })
   requestedByUserId!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })
@@ -58,10 +58,10 @@ export class ExportJob {
   @Column({ name: 'file_path', type: 'varchar', length: 1000, nullable: true })
   filePath!: string | null;
 
-  @Column({ name: 'started_at', type: 'datetime', nullable: true })
+  @Column({ name: 'started_at', type: 'timestamp', nullable: true })
   startedAt!: Date | null;
 
-  @Column({ name: 'finished_at', type: 'datetime', nullable: true })
+  @Column({ name: 'finished_at', type: 'timestamp', nullable: true })
   finishedAt!: Date | null;
 
   @CreateDateColumn({ name: 'created_at' })
