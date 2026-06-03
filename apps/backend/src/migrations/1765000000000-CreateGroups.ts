@@ -37,12 +37,12 @@ export class CreateGroups1765000000000 implements MigrationInterface {
             },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],
@@ -107,12 +107,12 @@ export class CreateGroups1765000000000 implements MigrationInterface {
           },
           {
             name: 'created_at',
-            type: 'datetime',
+            type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
           },
           {
             name: 'updated_at',
-            type: 'datetime',
+            type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
           },
         ],

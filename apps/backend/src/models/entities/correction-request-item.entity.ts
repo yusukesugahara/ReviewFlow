@@ -18,21 +18,21 @@ export class CorrectionRequestItem {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'correction_request_id', type: 'varchar', length: 36 })
+  @Column({ name: 'correction_request_id', type: 'uuid' })
   correctionRequestId!: string;
 
   @ManyToOne(() => CorrectionRequest, (r) => r.items, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'correction_request_id' })
   correctionRequest!: CorrectionRequest;
 
-  @Column({ name: 'form_field_id', type: 'varchar', length: 36 })
+  @Column({ name: 'form_field_id', type: 'uuid' })
   formFieldId!: string;
 
   @ManyToOne(() => FormField, { onDelete: 'RESTRICT' })

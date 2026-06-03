@@ -23,14 +23,14 @@ export class FormDefinition {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  @Column({ name: 'group_id', type: 'uuid' })
   groupId!: string;
 
   @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
@@ -54,7 +54,7 @@ export class FormDefinition {
   })
   archivedFromStatus!: FormDefinitionStatusValue | null;
 
-  @Column({ name: 'created_by_user_id', type: 'varchar', length: 36 })
+  @Column({ name: 'created_by_user_id', type: 'uuid' })
   createdByUserId!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })

@@ -33,14 +33,14 @@ export class Application {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  @Column({ name: 'group_id', type: 'uuid' })
   groupId!: string;
 
   @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
@@ -49,8 +49,7 @@ export class Application {
 
   @Column({
     name: 'applicant_user_id',
-    type: 'varchar',
-    length: 36,
+    type: 'uuid',
     nullable: true,
   })
   applicantUserId!: string | null;
@@ -62,14 +61,14 @@ export class Application {
   @Column({ name: 'applicant_email', type: 'varchar', length: 255 })
   applicantEmail!: string;
 
-  @Column({ name: 'form_definition_id', type: 'varchar', length: 36 })
+  @Column({ name: 'form_definition_id', type: 'uuid' })
   formDefinitionId!: string;
 
   @ManyToOne(() => FormDefinition, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'form_definition_id' })
   formDefinition!: FormDefinition;
 
-  @Column({ name: 'approval_flow_id', type: 'varchar', length: 36 })
+  @Column({ name: 'approval_flow_id', type: 'uuid' })
   approvalFlowId!: string;
 
   @ManyToOne(() => ApprovalFlow, { onDelete: 'RESTRICT' })
@@ -82,7 +81,7 @@ export class Application {
   @Column({ type: 'varchar', length: 32 })
   status!: ApplicationStatusValue;
 
-  @Column({ name: 'submitted_at', type: 'datetime', nullable: true })
+  @Column({ name: 'submitted_at', type: 'timestamp', nullable: true })
   submittedAt!: Date | null;
 
   @OneToMany(() => ApplicationFieldValue, (v) => v.application)

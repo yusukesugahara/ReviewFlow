@@ -21,21 +21,21 @@ export class ApprovalStep {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'tenant_id' })
   tenant!: Tenant;
 
-  @Column({ name: 'group_id', type: 'varchar', length: 36 })
+  @Column({ name: 'group_id', type: 'uuid' })
   groupId!: string;
 
   @ManyToOne(() => Group, { onDelete: 'RESTRICT' })
   @JoinColumn({ name: 'group_id' })
   group!: Group;
 
-  @Column({ name: 'approval_flow_id', type: 'varchar', length: 36 })
+  @Column({ name: 'approval_flow_id', type: 'uuid' })
   approvalFlowId!: string;
 
   @ManyToOne(() => ApprovalFlow, (f) => f.steps, { onDelete: 'CASCADE' })
@@ -48,7 +48,7 @@ export class ApprovalStep {
   @Column({ name: 'step_name', type: 'varchar', length: 255 })
   stepName!: string;
 
-  @Column({ name: 'assignee_user_id', type: 'varchar', length: 36 })
+  @Column({ name: 'assignee_user_id', type: 'uuid' })
   assigneeUserId!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })

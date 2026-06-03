@@ -8,81 +8,65 @@ import {
 /** 既存 users 行を紐づける既定テナント（移行専用） */
 const DEFAULT_TENANT_ID = '00000000-0000-4000-8000-000000000001';
 
-export class TenantsAndMultitenantUsers1748100000000 implements MigrationInterface {
+export class TenantsAndMultitenantUsers1748100000000
+  implements MigrationInterface
+{
   name = 'TenantsAndMultitenantUsers1748100000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    const type = queryRunner.connection.options.type;
-
     if (!(await queryRunner.hasTable('tenants'))) {
-      if (type === 'better-sqlite3') {
-        await queryRunner.query(`
-          CREATE TABLE "tenants" (
-            "id" varchar(36) PRIMARY KEY NOT NULL,
-            "name" varchar(255) NOT NULL,
-            "plan" varchar(32) NOT NULL DEFAULT 'free',
-            "status" varchar(32) NOT NULL DEFAULT 'trial',
-            "created_at" datetime NOT NULL DEFAULT (datetime('now')),
-            "updated_at" datetime NOT NULL DEFAULT (datetime('now'))
-          )
-        `);
-      } else {
-        await queryRunner.query(`
-          CREATE TABLE \`tenants\` (
-            \`id\` varchar(36) NOT NULL,
-            \`name\` varchar(255) NOT NULL,
-            \`plan\` varchar(32) NOT NULL DEFAULT 'free',
-            \`status\` varchar(32) NOT NULL DEFAULT 'trial',
-            \`created_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6),
-            \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6),
-            PRIMARY KEY (\`id\`)
-          ) ENGINE=InnoDB
-        `);
-      }
+      await queryRunner.query(`
+        CREATE TABLE "tenants" (
+          "id" varchar(36) PRIMARY KEY NOT NULL,
+          "name" varchar(255) NOT NULL,
+          "plan" varchar(32) NOT NULL DEFAULT 'free',
+          "status" varchar(32) NOT NULL DEFAULT 'trial',
+          "created_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updated_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP
+        )
+      `);
     }
 
-    if (type === 'better-sqlite3') {
-      await queryRunner.query(
-        `INSERT OR IGNORE INTO "tenants" ("id", "name", "plan", "status") VALUES (?, 'Migrated workspace', 'free', 'active')`,
-        [DEFAULT_TENANT_ID],
-      );
-    } else {
-      await queryRunner.query(
-        `INSERT IGNORE INTO \`tenants\` (\`id\`, \`name\`, \`plan\`, \`status\`) VALUES (?, 'Migrated workspace', 'free', 'active')`,
-        [DEFAULT_TENANT_ID],
-      );
-    }
+    await queryRunner.query(
+      `
+      INSERT INTO "tenants" ("id", "name", "plan", "status")
+      VALUES ($1, 'Migrated workspace', 'free', 'active')
+      ON CONFLICT ("id") DO NOTHING
+      `,
+      [DEFAULT_TENANT_ID],
+    );
 
-    if (type === 'mysql' || type === 'mariadb') {
-      await this.upMysql(queryRunner);
-    } else if (type === 'better-sqlite3') {
-      await this.upSqlite(queryRunner);
-    }
-  }
-
-  private async upMysql(queryRunner: QueryRunner): Promise<void> {
     if (!(await queryRunner.hasColumn('users', 'tenant_id'))) {
       await queryRunner.query(
-        `ALTER TABLE \`users\` ADD \`tenant_id\` varchar(36) NULL`,
+        `ALTER TABLE "users" ADD "tenant_id" varchar(36) NULL`,
       );
       await queryRunner.query(
-        `ALTER TABLE \`users\` ADD \`name\` varchar(255) NULL`,
+        `ALTER TABLE "users" ADD "name" varchar(255) NULL`,
       );
       await queryRunner.query(
-        `ALTER TABLE \`users\` ADD \`is_active\` tinyint(1) NOT NULL DEFAULT 1`,
+        `ALTER TABLE "users" ADD "is_active" boolean NOT NULL DEFAULT true`,
       );
       await queryRunner.query(
-        `ALTER TABLE \`users\` ADD \`updated_at\` datetime(6) NOT NULL DEFAULT CURRENT_TIMESTAMP(6) ON UPDATE CURRENT_TIMESTAMP(6)`,
+        `ALTER TABLE "users" ADD "updated_at" timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP`,
       );
     }
 
     await queryRunner.query(
-      `UPDATE \`users\` SET \`tenant_id\` = COALESCE(\`tenant_id\`, ?), \`role\` = CASE \`role\` WHEN 'admin' THEN 'tenant_admin' WHEN 'user' THEN 'tenant_user' ELSE \`role\` END`,
+      `
+      UPDATE "users"
+      SET
+        "tenant_id" = COALESCE("tenant_id", $1),
+        "role" = CASE "role"
+          WHEN 'admin' THEN 'tenant_admin'
+          WHEN 'user' THEN 'tenant_user'
+          ELSE "role"
+        END
+      `,
       [DEFAULT_TENANT_ID],
     );
 
     await queryRunner.query(
-      `ALTER TABLE \`users\` MODIFY \`tenant_id\` varchar(36) NOT NULL`,
+      `ALTER TABLE "users" ALTER COLUMN "tenant_id" SET NOT NULL`,
     );
 
     const table = await queryRunner.getTable('users');
@@ -126,56 +110,6 @@ export class TenantsAndMultitenantUsers1748100000000 implements MigrationInterfa
         }),
       );
     }
-  }
-
-  private async upSqlite(queryRunner: QueryRunner): Promise<void> {
-    if (await queryRunner.hasColumn('users', 'tenant_id')) {
-      return;
-    }
-
-    await queryRunner.query(`PRAGMA foreign_keys = OFF`);
-
-    await queryRunner.query(`
-      CREATE TABLE "users_new" (
-        "id" varchar PRIMARY KEY NOT NULL,
-        "tenant_id" varchar(36) NOT NULL,
-        "name" varchar(255),
-        "email" varchar NOT NULL,
-        "password_hash" varchar NOT NULL,
-        "role" varchar(32) NOT NULL,
-        "is_active" integer NOT NULL DEFAULT 1,
-        "created_at" datetime NOT NULL DEFAULT (datetime('now')),
-        "updated_at" datetime NOT NULL DEFAULT (datetime('now')),
-        CONSTRAINT "FK_users_tenant" FOREIGN KEY ("tenant_id") REFERENCES "tenants" ("id") ON DELETE CASCADE
-      )
-    `);
-
-    await queryRunner.query(
-      `
-      INSERT INTO "users_new" ("id", "tenant_id", "name", "email", "password_hash", "role", "is_active", "created_at", "updated_at")
-      SELECT
-        "id",
-        ? AS "tenant_id",
-        NULL AS "name",
-        "email",
-        "password_hash",
-        CASE "role" WHEN 'admin' THEN 'tenant_admin' WHEN 'user' THEN 'tenant_user' ELSE "role" END,
-        1,
-        "created_at",
-        datetime('now')
-      FROM "users"
-    `,
-      [DEFAULT_TENANT_ID],
-    );
-
-    await queryRunner.query(`DROP TABLE "users"`);
-    await queryRunner.query(`ALTER TABLE "users_new" RENAME TO "users"`);
-
-    await queryRunner.query(
-      `CREATE UNIQUE INDEX "UQ_users_tenant_email" ON "users" ("tenant_id", "email")`,
-    );
-
-    await queryRunner.query(`PRAGMA foreign_keys = ON`);
   }
 
   public async down(): Promise<void> {
