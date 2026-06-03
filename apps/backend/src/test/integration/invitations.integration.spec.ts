@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { mkdirSync, rmSync } from 'node:fs';
-import { join } from 'node:path';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { AppModule } from '../../app/app.module';
 import { AuthService } from '../../app/modules/auth/auth.service';
 import { InvitationsService } from '../../app/modules/invitations/invitations.service';
@@ -11,25 +9,21 @@ import { ClientErrorCodes } from '../../common/errors';
 import { InvitationStatus } from '../../models/constants/invitation-status';
 import { UserRole } from '../../models/constants/user-role';
 import { Invitation } from '../../models/entities/invitation.entity';
+import {
+  configurePostgresTestEnv,
+  truncatePostgresTables,
+} from '../test-postgres';
 
 describe('Invitations (integration)', () => {
   let moduleRef: TestingModule;
   let auth: AuthService;
   let invitations: InvitationsService;
   let users: UsersService;
-  const dbPath = join(__dirname, 'integration-invitations.sqlite');
 
   beforeEach(async () => {
     process.env.INTERNAL_API_KEY = 'int-api-key';
     process.env.JWT_SECRET = 'int-jwt-secret-at-least-32-characters-long';
-    process.env.DB_PATH = dbPath;
-    process.env.MAIL_ENABLED = '0';
-    try {
-      rmSync(dbPath, { force: true });
-    } catch {
-      /* ignore */
-    }
-    mkdirSync(join(dbPath, '..'), { recursive: true });
+    configurePostgresTestEnv();
 
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
@@ -38,15 +32,11 @@ describe('Invitations (integration)', () => {
     auth = moduleRef.get(AuthService);
     invitations = moduleRef.get(InvitationsService);
     users = moduleRef.get(UsersService);
+    await truncatePostgresTables(moduleRef.get(DataSource));
   });
 
   afterEach(async () => {
-    await moduleRef.close();
-    try {
-      rmSync(dbPath, { force: true });
-    } catch {
-      /* ignore */
-    }
+    await moduleRef?.close();
   });
 
   it('system admin creates invitation; accept creates user and returns JWT', async () => {

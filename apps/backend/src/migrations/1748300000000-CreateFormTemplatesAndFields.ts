@@ -44,12 +44,12 @@ export class CreateFormDefinitionsAndFields1748300000000 implements MigrationInt
             },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],
@@ -135,12 +135,12 @@ export class CreateFormDefinitionsAndFields1748300000000 implements MigrationInt
             { name: 'sort_order', type: 'int', isNullable: false },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],

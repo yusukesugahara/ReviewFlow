@@ -19,7 +19,7 @@ export class Group {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
 
-  @Column({ name: 'tenant_id', type: 'varchar', length: 36 })
+  @Column({ name: 'tenant_id', type: 'uuid' })
   tenantId!: string;
 
   @ManyToOne(() => Tenant, { onDelete: 'CASCADE' })
@@ -32,7 +32,7 @@ export class Group {
   @Column({ type: 'varchar', length: 1000, nullable: true })
   description!: string | null;
 
-  @Column({ name: 'created_by_user_id', type: 'varchar', length: 36 })
+  @Column({ name: 'created_by_user_id', type: 'uuid' })
   createdByUserId!: string;
 
   @ManyToOne(() => User, { onDelete: 'RESTRICT' })

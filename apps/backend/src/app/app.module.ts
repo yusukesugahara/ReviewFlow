@@ -19,7 +19,7 @@ import { buildTypeOrmOptions } from './typeorm-options.factory';
 import { MailModule } from './modules/mail/mail.module';
 
 /*
- * データベースモジュール（`DB_DRIVER`: 省略時 sqlite / `mysql` で MySQL）
+ * データベースモジュール（PostgreSQL）
  */
 const dbModule = TypeOrmModule.forRootAsync({
   imports: [ConfigModule],

@@ -54,7 +54,7 @@ export class CreateApplicationApprovalsAndCorrections1748600000000 implements Mi
             },
             {
               name: 'acted_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],
@@ -133,17 +133,17 @@ export class CreateApplicationApprovalsAndCorrections1748600000000 implements Mi
             },
             {
               name: 'resolved_at',
-              type: 'datetime',
+              type: 'timestamp',
               isNullable: true,
             },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],
@@ -215,12 +215,12 @@ export class CreateApplicationApprovalsAndCorrections1748600000000 implements Mi
             },
             {
               name: 'created_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
             {
               name: 'updated_at',
-              type: 'datetime',
+              type: 'timestamp',
               default: 'CURRENT_TIMESTAMP',
             },
           ],

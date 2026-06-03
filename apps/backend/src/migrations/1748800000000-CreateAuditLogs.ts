@@ -52,7 +52,7 @@ export class CreateAuditLogs1748800000000 implements MigrationInterface {
           { name: 'metadata_json', type: 'json', isNullable: true },
           {
             name: 'created_at',
-            type: 'datetime',
+            type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
           },
         ],

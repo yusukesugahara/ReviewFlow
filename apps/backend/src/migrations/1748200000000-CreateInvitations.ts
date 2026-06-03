@@ -47,10 +47,10 @@ export class CreateInvitations1748200000000 implements MigrationInterface {
             length: '36',
             isNullable: false,
           },
-          { name: 'expires_at', type: 'datetime', isNullable: false },
+          { name: 'expires_at', type: 'timestamp', isNullable: false },
           {
             name: 'created_at',
-            type: 'datetime',
+            type: 'timestamp',
             default: 'CURRENT_TIMESTAMP',
           },
         ],
