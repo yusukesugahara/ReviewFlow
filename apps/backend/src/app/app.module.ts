@@ -5,10 +5,18 @@ import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './modules/auth/auth.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { HealthModule } from './modules/health/health.module';
+import { ApplicationsModule } from './modules/applications/applications.module';
+import { ApprovalFlowsModule } from './modules/approval-flows/approval-flows.module';
+import { ExportJobsModule } from './modules/export-jobs/export-jobs.module';
+import { FormDefinitionsModule } from './modules/form-definitions/form-definitions.module';
+import { GroupsModule } from './modules/groups/groups.module';
+import { InvitationsModule } from './modules/invitations/invitations.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuditLogInterceptor } from '../common/logging/audit-log.interceptor';
 import { buildTypeOrmOptions } from './typeorm-options.factory';
+import { MailModule } from './modules/mail/mail.module';
 
 /*
  * データベースモジュール（`DB_DRIVER`: 省略時 sqlite / `mysql` で MySQL）
@@ -24,10 +32,19 @@ const loggerModule = LoggerModule.forRoot({
     level: process.env.LOG_LEVEL ?? 'info',
     autoLogging: false,
     redact: {
+      censor: '＊＊＊＊＊＊＊＊',
       paths: [
         'req.headers.authorization',
         'req.headers.x-api-key',
         'req.headers.cookie',
+        'req.body.password',
+        'req.body.currentPassword',
+        'req.body.newPassword',
+        'req.body.confirmPassword',
+        'body.password',
+        'body.currentPassword',
+        'body.newPassword',
+        'body.confirmPassword',
       ],
     },
   },
@@ -72,6 +89,14 @@ const throttlerModule = ThrottlerModule.forRootAsync({
     HealthModule,
     UsersModule,
     AuthModule,
+    AuditLogsModule,
+    MailModule,
+    InvitationsModule,
+    FormDefinitionsModule,
+    GroupsModule,
+    ApprovalFlowsModule,
+    ApplicationsModule,
+    ExportJobsModule,
   ],
   providers: [
     AuditLogInterceptor,

@@ -1,19 +1,22 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { ClientErrorCodes } from '../../../common/errors';
+import { UserRole } from '../../../models/constants/user-role';
 import { User } from '../../../models/entities/user.entity';
 import { UsersService } from './users.service';
 
 describe('UsersService', () => {
   let service: UsersService;
   let repo: jest.Mocked<
-    Pick<Repository<User>, 'count' | 'findOne' | 'create' | 'save'>
+    Pick<Repository<User>, 'count' | 'findOne' | 'find' | 'create' | 'save'>
   >;
 
   beforeEach(async () => {
     repo = {
       count: jest.fn(),
       findOne: jest.fn(),
+      find: jest.fn(),
       create: jest.fn(),
       save: jest.fn(),
     };
@@ -33,52 +36,195 @@ describe('UsersService', () => {
     await expect(service.count()).resolves.toBe(3);
   });
 
-  it('findByEmail queries lowercase email', async () => {
-    repo.findOne.mockResolvedValue(null);
-    await service.findByEmail('User@Example.COM');
-    expect(repo.findOne).toHaveBeenCalledWith({
+  it('findAllByEmail queries lowercase email', async () => {
+    repo.find.mockResolvedValue([]);
+    await service.findAllByEmail('User@Example.COM');
+    expect(repo.find).toHaveBeenCalledWith({
       where: { email: 'user@example.com' },
     });
   });
 
-  it('create persists lowercased email and default role', async () => {
-    const entity: User = {
-      id: 'u1',
-      email: 'a@b.com',
-      passwordHash: 'hash',
-      role: 'user',
-      createdAt: new Date(),
-    };
-    repo.create.mockReturnValue(entity);
-    repo.save.mockResolvedValue(entity);
-
-    await service.create('A@B.COM', 'hash');
-
-    expect(repo.create).toHaveBeenCalledWith({
-      email: 'a@b.com',
-      passwordHash: 'hash',
-      role: 'user',
+  it('findByTenantAndEmail queries lowercase email', async () => {
+    repo.findOne.mockResolvedValue(null);
+    await service.findByTenantAndEmail('tenant-1', 'User@Example.COM');
+    expect(repo.findOne).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', email: 'user@example.com' },
     });
-    expect(repo.save).toHaveBeenCalledWith(entity);
   });
 
-  it('create respects explicit role', async () => {
-    const entity: User = {
-      id: 'u2',
-      email: 'a@b.com',
-      passwordHash: 'hash',
-      role: 'admin',
-      createdAt: new Date(),
-    };
-    repo.create.mockReturnValue(entity);
-    repo.save.mockResolvedValue(entity);
+  describe('updateRoleInTenant', () => {
+    it('forbids changing own role', async () => {
+      await expect(
+        service.updateRoleInTenant(
+          't1',
+          'same-id',
+          UserRole.TENANT_USER,
+          'same-id',
+        ),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.USER_ROLE_UPDATE_SELF_FORBIDDEN,
+      });
+    });
 
-    await service.create('a@b.com', 'hash', 'admin');
+    it('throws when user not in tenant', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(
+        service.updateRoleInTenant(
+          't1',
+          'missing',
+          UserRole.TENANT_USER,
+          'actor-id',
+        ),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
+      });
+    });
 
-    expect(repo.create).toHaveBeenCalledWith({
-      email: 'a@b.com',
-      passwordHash: 'hash',
-      role: 'admin',
+    it('protects last tenant_admin from demotion', async () => {
+      const adminUser = {
+        id: 'u-admin',
+        tenantId: 't1',
+        role: UserRole.TENANT_ADMIN,
+      } as User;
+      repo.findOne.mockResolvedValue(adminUser);
+      repo.count.mockResolvedValue(1);
+
+      await expect(
+        service.updateRoleInTenant(
+          't1',
+          'u-admin',
+          UserRole.TENANT_USER,
+          'actor-id',
+        ),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.LAST_TENANT_ADMIN_PROTECTED,
+      });
+    });
+
+    it('saves new role when allowed', async () => {
+      const approver = {
+        id: 'u-ap',
+        tenantId: 't1',
+        role: UserRole.TENANT_USER,
+        email: 'a@b.com',
+        name: null,
+        isActive: true,
+        createdAt: new Date(),
+      } as User;
+      repo.findOne.mockResolvedValue(approver);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.updateRoleInTenant(
+        't1',
+        'u-ap',
+        UserRole.TENANT_USER,
+        'actor-id',
+      );
+
+      expect(out.role).toBe(UserRole.TENANT_USER);
+      expect(repo.save).toHaveBeenCalled();
+    });
+
+    it('allows promoting another user to tenant_admin', async () => {
+      const approver = {
+        id: 'u-ap',
+        tenantId: 't1',
+        role: UserRole.TENANT_USER,
+        email: 'a@b.com',
+        name: null,
+        isActive: true,
+        createdAt: new Date(),
+      } as User;
+      repo.findOne.mockResolvedValue(approver);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.updateRoleInTenant(
+        't1',
+        'u-ap',
+        UserRole.TENANT_ADMIN,
+        'actor-id',
+      );
+
+      expect(out.role).toBe(UserRole.TENANT_ADMIN);
+      expect(repo.save).toHaveBeenCalled();
+    });
+  });
+
+  describe('deactivateInTenant', () => {
+    it('forbids deleting own account', async () => {
+      await expect(
+        service.deactivateInTenant('t1', 'same-id', 'same-id'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.USER_DELETE_SELF_FORBIDDEN,
+      });
+    });
+
+    it('throws when user not in tenant', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(
+        service.deactivateInTenant('t1', 'missing', 'actor-id'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
+      });
+    });
+
+    it('protects the last active tenant_admin from deletion', async () => {
+      repo.findOne.mockResolvedValue({
+        id: 'u-admin',
+        tenantId: 't1',
+        role: UserRole.TENANT_ADMIN,
+        isActive: true,
+      } as User);
+      repo.count.mockResolvedValue(1);
+
+      await expect(
+        service.deactivateInTenant('t1', 'u-admin', 'actor-id'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.LAST_TENANT_ADMIN_PROTECTED,
+      });
+    });
+
+    it('deactivates another user when allowed', async () => {
+      const target = {
+        id: 'u-member',
+        tenantId: 't1',
+        role: UserRole.TENANT_USER,
+        isActive: true,
+      } as User;
+      repo.findOne.mockResolvedValue(target);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      await service.deactivateInTenant('t1', 'u-member', 'actor-id');
+
+      expect(target.isActive).toBe(false);
+      expect(repo.save).toHaveBeenCalledWith(target);
+    });
+  });
+
+  describe('restoreInTenant', () => {
+    it('throws when user not in tenant', async () => {
+      repo.findOne.mockResolvedValue(null);
+      await expect(
+        service.restoreInTenant('t1', 'missing'),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
+      });
+    });
+
+    it('reactivates a user', async () => {
+      const target = {
+        id: 'u-member',
+        tenantId: 't1',
+        role: UserRole.TENANT_USER,
+        isActive: false,
+      } as User;
+      repo.findOne.mockResolvedValue(target);
+      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.restoreInTenant('t1', 'u-member');
+
+      expect(out.isActive).toBe(true);
+      expect(repo.save).toHaveBeenCalledWith(target);
     });
   });
 });

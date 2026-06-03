@@ -1,0 +1,51 @@
+"use server";
+
+import { redirect } from "next/navigation";
+import { acceptInvitationSchema } from "@/lib/auth-schema";
+import { client } from "@/lib/server/backend-fetch";
+import type { AcceptInvitationBody, AcceptInvitationSuccessJson } from "@/lib/schema";
+
+export async function acceptInvitationAction(formData: FormData): Promise<void> {
+  const parsed = acceptInvitationSchema.safeParse({
+    token: formData.get("token"),
+    name: formData.get("name") || undefined,
+    password: formData.get("password"),
+    next: formData.get("next") || undefined,
+  });
+
+  if (!parsed.success) {
+    redirect("/invitations/accept?formError=入力内容を確認してください");
+  }
+
+  const body: AcceptInvitationBody = {
+    token: parsed.data.token,
+    name: parsed.data.name && parsed.data.name.length > 0 ? parsed.data.name : undefined,
+    password: parsed.data.password,
+  };
+
+  try {
+    const response = await client.POST("/invitations/accept", { body });
+    const data: AcceptInvitationSuccessJson | undefined = response.data;
+    if (!response.response.ok || !data) {
+      throw new Error("invitation accept failed");
+    }
+  } catch {
+    const params = new URLSearchParams({
+      toast: "error",
+      message: "招待の受諾に失敗しました。入力内容を確認してください。",
+    });
+    if (parsed.data.next) {
+      params.set("next", parsed.data.next);
+    }
+    redirect(`/invitations/accept?${params.toString()}`);
+  }
+
+  const params = new URLSearchParams({
+    toast: "success",
+    message: "招待を受諾しました。ログインしてください。",
+  });
+  if (parsed.data.next) {
+    params.set("next", parsed.data.next);
+  }
+  redirect(`/login?${params.toString()}`);
+}
