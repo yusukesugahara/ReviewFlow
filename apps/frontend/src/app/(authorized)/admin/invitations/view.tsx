@@ -1,6 +1,7 @@
 "use client";
 
 import { useId, useRef, useState } from "react";
+import { Trash2 } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -20,6 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { userRoleLabel } from "@/lib/constants/role-labels";
 import { TENANT_ROLE_OPTIONS, TENANT_ROLES } from "@/lib/constants/roles";
 import { formatDateJa, formatDateTimeJa } from "@/lib/date-format";
@@ -206,14 +213,22 @@ function UserTable({
                       action={deleteUserAction.bind(null, user.id)}
                       ref={deleteTarget?.id === user.id ? deleteFormRef : null}
                     />
-                    <Button
-                      size="sm"
-                      type="button"
-                      variant="outline"
-                      onClick={() => setDeleteTarget(user)}
-                    >
-                      削除
-                    </Button>
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            type="button"
+                            variant="destructive"
+                            aria-label={`${user.email} を削除`}
+                            onClick={() => setDeleteTarget(user)}
+                          >
+                            <Trash2 aria-hidden="true" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>削除</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
                   </>
                 ) : (
                   <form action={restoreUserAction.bind(null, user.id)}>

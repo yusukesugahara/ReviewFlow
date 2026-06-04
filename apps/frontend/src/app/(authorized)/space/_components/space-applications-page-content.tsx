@@ -21,6 +21,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { PageHeader } from "@/app/_components/enterprise/page-header";
 import {
   Table,
@@ -168,69 +174,79 @@ export function SpaceApplicationsPageContent({
                       {row.processedCount}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {!showArchived && row.detailHref ? (
-                          <Button asChild variant="outline" size="sm">
-                            <Link
-                              href={row.detailHref}
-                              title="フォーム詳細"
-                            >
-                              詳細
-                              <ArrowRight aria-hidden="true" />
-                            </Link>
-                          </Button>
-                        ) : null}
-                        {!showArchived && row.publicHref ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const publicUrl = `${window.location.origin}${row.publicHref}`;
-                              void navigator.clipboard
-                                .writeText(publicUrl)
-                                .then(() => {
-                                  setCopiedPublicHref(row.publicHref);
-                                  toast.success("公開URLをコピーしました");
-                                  window.setTimeout(() => setCopiedPublicHref(null), 1200);
-                                })
-                                .catch(() => {
-                                  toast.error("公開URLのコピーに失敗しました");
-                                });
-                            }}
-                            title="公開URLをコピー"
-                          >
-                            公開URL
-                            <Copy aria-hidden="true" />
-                            <span className="sr-only">
-                              {copiedPublicHref === row.publicHref ? "コピー済み" : ""}
+                      <TooltipProvider>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {!showArchived && row.detailHref ? (
+                            <Button asChild variant="outline" size="sm">
+                              <Link href={row.detailHref} title="フォーム詳細">
+                                詳細
+                                <ArrowRight aria-hidden="true" />
+                              </Link>
+                            </Button>
+                          ) : null}
+                          {!showArchived && row.publicHref ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  aria-label="公開URLをコピー"
+                                  onClick={() => {
+                                    const publicUrl = `${window.location.origin}${row.publicHref}`;
+                                    void navigator.clipboard
+                                      .writeText(publicUrl)
+                                      .then(() => {
+                                        setCopiedPublicHref(row.publicHref);
+                                        toast.success("公開URLをコピーしました");
+                                        window.setTimeout(() => setCopiedPublicHref(null), 1200);
+                                      })
+                                      .catch(() => {
+                                        toast.error("公開URLのコピーに失敗しました");
+                                      });
+                                  }}
+                                >
+                                  <Copy aria-hidden="true" />
+                                  <span className="sr-only">
+                                    {copiedPublicHref === row.publicHref ? "コピー済み" : ""}
+                                  </span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>公開URLをコピー</TooltipContent>
+                            </Tooltip>
+                          ) : !showArchived ? (
+                            <span className="self-center text-sm text-muted-foreground">
+                              未公開
                             </span>
-                          </Button>
-                        ) : !showArchived ? (
-                          <span className="self-center text-sm text-muted-foreground">未公開</span>
-                        ) : null}
-                        {showArchived ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setRestoreTarget(row)}
-                          >
-                            <RotateCcw aria-hidden="true" />
-                            復元
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setArchiveTarget(row)}
-                          >
-                            <Trash2 aria-hidden="true" />
-                            削除
-                          </Button>
-                        )}
-                      </div>
+                          ) : null}
+                          {showArchived ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setRestoreTarget(row)}
+                            >
+                              <RotateCcw aria-hidden="true" />
+                              復元
+                            </Button>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  aria-label="削除"
+                                  onClick={() => setArchiveTarget(row)}
+                                >
+                                  <Trash2 aria-hidden="true" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>削除</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </TooltipProvider>
                     </TableCell>
                   </TableRow>
                 ))}
