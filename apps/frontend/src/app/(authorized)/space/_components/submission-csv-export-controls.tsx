@@ -5,6 +5,12 @@ import { useFormStatus } from "react-dom";
 import { Download, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { createSubmissionCsvExportAction } from "@/app/(authorized)/space/[spaceId]/submissions/actions";
 import type { ExportJobResponse } from "@/lib/schema";
 
@@ -91,10 +97,22 @@ export function SubmissionCsvExportControls({
 
   return (
     <>
-      <Button type="button" variant="outline" onClick={() => setIsOpen(true)}>
-        <Download aria-hidden="true" />
-        CSV出力
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              aria-label="CSV出力"
+              onClick={() => setIsOpen(true)}
+            >
+              <Download aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>CSV出力</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {isOpen ? (
         <div
