@@ -37,7 +37,7 @@ NestJS で applications module を実装してください。
 - audit_log を記録する
 
 # Prompt 4: Next.js 動的フォーム実装
-`docs/07_frontend_design.md` と `docs/10_correction_feature.md` を読み、Next.js App Router で動的フォーム描画を実装してください。
+`docs/07_frontend_design.md`, `docs/10_correction_feature.md`, `docs/14_ui_design_rules.md` を読み、Next.js App Router で動的フォーム描画を実装してください。
 制約:
 - field_type ごとにコンポーネントを分離する
 - draft の場合は全項目編集可
