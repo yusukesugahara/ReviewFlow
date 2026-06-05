@@ -98,47 +98,51 @@ export function AdminAuditLogsView({
             {hasSearch ? `「${query}」に一致する最新200件の操作履歴` : "最新200件の操作履歴"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <form className="space-y-4">
-            <div className="grid gap-3 xl:grid-cols-[minmax(280px,1fr)_160px_160px_220px]">
-              <div className="relative">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  name="q"
-                  defaultValue={query}
-                  placeholder="操作、対象、ID、操作者メールで検索"
-                  className="pl-9"
-                />
+        <CardContent className="space-y-5 pt-6">
+          <form className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="grid gap-3 xl:grid-cols-[minmax(280px,1fr)_160px_160px]">
+              <div className="space-y-2">
+                <Label htmlFor="audit-query">検索キーワード</Label>
+                <div className="relative">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="audit-query"
+                    name="q"
+                    defaultValue={query}
+                    placeholder="操作、対象、ID、操作者メールで検索"
+                    className="bg-white pl-9"
+                  />
+                </div>
               </div>
-              <Select name="risk" defaultValue={risk}>
-                <SelectTrigger className="h-10 rounded-lg bg-background text-[15px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">リスクすべて</SelectItem>
-                  <SelectItem value="high">高リスク</SelectItem>
-                  <SelectItem value="medium">要確認</SelectItem>
-                  <SelectItem value="low">通常</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select name="outcome" defaultValue={outcome}>
-                <SelectTrigger className="h-10 rounded-lg bg-background text-[15px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">結果すべて</SelectItem>
-                  <SelectItem value="failed">失敗のみ</SelectItem>
-                  <SelectItem value="success">成功のみ</SelectItem>
-                </SelectContent>
-              </Select>
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="submit">検索</Button>
-                <Button asChild type="button" variant="outline">
-                  <Link href="/admin/audit-logs">クリア</Link>
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="audit-risk">リスク</Label>
+                <Select name="risk" defaultValue={risk}>
+                  <SelectTrigger id="audit-risk" className="h-10 rounded-lg bg-white text-[15px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">リスクすべて</SelectItem>
+                    <SelectItem value="high">高リスク</SelectItem>
+                    <SelectItem value="medium">要確認</SelectItem>
+                    <SelectItem value="low">通常</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="audit-outcome">結果</Label>
+                <Select name="outcome" defaultValue={outcome}>
+                  <SelectTrigger id="audit-outcome" className="h-10 rounded-lg bg-white text-[15px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">結果すべて</SelectItem>
+                    <SelectItem value="failed">失敗のみ</SelectItem>
+                    <SelectItem value="success">成功のみ</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
             <div className="grid gap-3 sm:grid-cols-[220px_220px]">
@@ -162,6 +166,14 @@ export function AdminAuditLogsView({
                   defaultValue={createdTo}
                 />
               </div>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button type="submit" variant="outline" className="bg-white">
+                検索
+              </Button>
+              <Button asChild type="button" variant="outline" className="bg-white">
+                <Link href="/admin/audit-logs">クリア</Link>
+              </Button>
             </div>
           </form>
           {filteredRows.length === 0 ? (

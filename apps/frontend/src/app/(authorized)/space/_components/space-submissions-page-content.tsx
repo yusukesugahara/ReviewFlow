@@ -163,7 +163,7 @@ export function SpaceSubmissionsPageContent({
               </div>
               <div className="flex gap-2">
                 <SubmissionSearchSubmitButton />
-                <Button asChild type="button" variant="outline">
+                <Button asChild type="button" variant="outline" className="bg-white">
                   <Link href={`/space/${encodeURIComponent(spaceId)}/submissions`}>
                     クリア
                   </Link>
