@@ -4,6 +4,7 @@ import { AlertTriangle, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -142,9 +143,9 @@ export function AdminAuditLogsView({
             </div>
             <div className="grid gap-3 sm:grid-cols-[220px_220px]">
               <div className="space-y-2">
-                <label htmlFor="createdFrom" className="text-sm font-medium">
+                <Label htmlFor="createdFrom">
                   作成日 From
-                </label>
+                </Label>
                 <AuditLogDateFilterPicker
                   id="createdFrom"
                   name="createdFrom"
@@ -152,9 +153,9 @@ export function AdminAuditLogsView({
                 />
               </div>
               <div className="space-y-2">
-                <label htmlFor="createdTo" className="text-sm font-medium">
+                <Label htmlFor="createdTo">
                   作成日 To
-                </label>
+                </Label>
                 <AuditLogDateFilterPicker
                   id="createdTo"
                   name="createdTo"

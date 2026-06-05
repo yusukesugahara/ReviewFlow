@@ -2,6 +2,13 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 type ReturnApplicationConfirmButtonProps = {
   formId: string;
@@ -19,34 +26,28 @@ export function ReturnApplicationConfirmButton({
       </Button>
 
       {isOpen ? (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 px-4 py-6"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="return-application-confirm-title"
+        <DialogContent
+          titleId="return-application-confirm-title"
+          descriptionId="return-application-confirm-description"
+          onClose={() => setIsOpen(false)}
         >
-          <div className="w-full max-w-lg rounded-lg bg-white shadow-xl">
-            <div className="border-b border-slate-200 px-6 py-4">
-              <h2
-                id="return-application-confirm-title"
-                className="text-lg font-semibold text-slate-950"
-              >
-                選択した項目を差し戻しますか
-              </h2>
-              <p className="mt-1 text-sm text-slate-600">
-                差し戻し対象の選択とコメント内容を確認してから実行してください。
-              </p>
-            </div>
-            <div className="flex justify-end gap-2 px-6 py-5">
-              <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
-                キャンセル
-              </Button>
-              <Button type="submit" form={formId} variant="outline">
-                差し戻す
-              </Button>
-            </div>
-          </div>
-        </div>
+          <DialogHeader>
+            <DialogTitle id="return-application-confirm-title">
+              選択した項目を差し戻しますか
+            </DialogTitle>
+            <DialogDescription id="return-application-confirm-description">
+              差し戻し対象の選択とコメント内容を確認してから実行してください。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+              キャンセル
+            </Button>
+            <Button type="submit" form={formId} variant="outline">
+              差し戻す
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       ) : null}
     </>
   );

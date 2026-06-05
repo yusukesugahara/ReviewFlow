@@ -9,6 +9,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -247,38 +254,37 @@ function UserTable({
       </Table>
 
       {deleteTarget ? (
-        <div
-          aria-describedby={descriptionId}
-          aria-labelledby={titleId}
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-          role="dialog"
+        <DialogContent
+          titleId={titleId}
+          descriptionId={descriptionId}
+          className="max-w-md"
+          onClose={() => setDeleteTarget(null)}
         >
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
-            <h3 id={titleId} className="text-lg font-semibold text-slate-900">
+          <DialogHeader>
+            <DialogTitle id={titleId}>
               ユーザーを削除しますか
-            </h3>
-            <p id={descriptionId} className="mt-2 text-sm text-slate-600">
+            </DialogTitle>
+            <DialogDescription id={descriptionId}>
               {deleteTarget.email} を削除済みにします。削除後もこの画面から復活できます。
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDeleteTarget(null)}
-              >
-                キャンセル
-              </Button>
-              <Button
-                type="button"
-                variant="destructive"
-                onClick={() => deleteFormRef.current?.requestSubmit()}
-              >
-                削除
-              </Button>
-            </div>
-          </div>
-        </div>
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTarget(null)}
+            >
+              キャンセル
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deleteFormRef.current?.requestSubmit()}
+            >
+              削除
+            </Button>
+          </DialogFooter>
+        </DialogContent>
       ) : null}
     </>
   );

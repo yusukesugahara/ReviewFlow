@@ -2,8 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { Download, Loader2, X } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -122,39 +128,22 @@ export function SubmissionCsvExportControls({
       </TooltipProvider>
 
       {isOpen ? (
-        <div
-          aria-labelledby="submission-csv-export-title"
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-          role="dialog"
+        <DialogContent
+          titleId="submission-csv-export-title"
+          descriptionId="submission-csv-export-description"
+          className="max-w-md"
+          onClose={() => setIsOpen(false)}
         >
-          <div className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <h3
-                  id="submission-csv-export-title"
-                  className="text-lg font-semibold text-slate-900"
-                >
-                  CSV出力
-                </h3>
-                <p className="mt-1 text-sm text-slate-600">
-                  申請フォームを選択して、申請内容のCSVを作成します。
-                </p>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                aria-label="閉じる"
-                onClick={() => setIsOpen(false)}
-              >
-                <X aria-hidden="true" />
-              </Button>
-            </div>
+          <DialogHeader>
+            <DialogTitle id="submission-csv-export-title">CSV出力</DialogTitle>
+            <DialogDescription id="submission-csv-export-description">
+              申請フォームを選択して、申請内容のCSVを作成します。
+            </DialogDescription>
+          </DialogHeader>
 
             <form
               action={createSubmissionCsvExportAction.bind(null, spaceId)}
-              className="mt-5 space-y-4"
+              className="space-y-4"
             >
               <div className="space-y-2">
                 <Label htmlFor="csvFormDefinitionId">申請フォーム</Label>
@@ -195,8 +184,7 @@ export function SubmissionCsvExportControls({
                 />
               </div>
             </form>
-          </div>
-        </div>
+        </DialogContent>
       ) : null}
     </>
   );
