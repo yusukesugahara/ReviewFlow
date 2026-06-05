@@ -100,8 +100,8 @@ export function AdminAuditLogsView({
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
           <form className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-            <div className="grid gap-3 xl:grid-cols-[minmax(280px,1fr)_160px_160px]">
-              <div className="space-y-2">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="space-y-2 xl:col-span-3">
                 <Label htmlFor="audit-query">検索キーワード</Label>
                 <div className="relative">
                   <Search
@@ -145,35 +145,33 @@ export function AdminAuditLogsView({
                 </Select>
               </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-[220px_220px]">
-              <div className="space-y-2">
-                <Label htmlFor="createdFrom">
-                  作成日 From
-                </Label>
-                <AuditLogDateFilterPicker
-                  id="createdFrom"
-                  name="createdFrom"
-                  defaultValue={createdFrom}
-                />
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:max-w-md">
+                <div className="space-y-2">
+                  <Label htmlFor="createdFrom">作成日 From</Label>
+                  <AuditLogDateFilterPicker
+                    id="createdFrom"
+                    name="createdFrom"
+                    defaultValue={createdFrom}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="createdTo">作成日 To</Label>
+                  <AuditLogDateFilterPicker
+                    id="createdTo"
+                    name="createdTo"
+                    defaultValue={createdTo}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="createdTo">
-                  作成日 To
-                </Label>
-                <AuditLogDateFilterPicker
-                  id="createdTo"
-                  name="createdTo"
-                  defaultValue={createdTo}
-                />
+              <div className="flex gap-2">
+                <Button type="submit" variant="outline" className="bg-white">
+                  検索
+                </Button>
+                <Button asChild type="button" variant="outline" className="bg-white">
+                  <Link href="/admin/audit-logs">クリア</Link>
+                </Button>
               </div>
-            </div>
-            <div className="flex justify-end gap-2">
-              <Button type="submit" variant="outline" className="bg-white">
-                検索
-              </Button>
-              <Button asChild type="button" variant="outline" className="bg-white">
-                <Link href="/admin/audit-logs">クリア</Link>
-              </Button>
             </div>
           </form>
           {filteredRows.length === 0 ? (
