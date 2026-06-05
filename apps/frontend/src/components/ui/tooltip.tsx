@@ -14,7 +14,7 @@ const TooltipTrigger = TooltipPrimitive.Trigger;
 const TooltipContent = React.forwardRef<
   React.ElementRef<typeof TooltipPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TooltipPrimitive.Content>
->(({ className, sideOffset = 4, ...props }, ref) => (
+>(({ children, className, sideOffset = 4, ...props }, ref) => (
   <TooltipPrimitive.Portal>
     <TooltipPrimitive.Content
       ref={ref}
@@ -24,7 +24,10 @@ const TooltipContent = React.forwardRef<
         className,
       )}
       {...props}
-    />
+    >
+      {children}
+      <TooltipPrimitive.Arrow className="fill-slate-900" />
+    </TooltipPrimitive.Content>
   </TooltipPrimitive.Portal>
 ));
 TooltipContent.displayName = TooltipPrimitive.Content.displayName;
