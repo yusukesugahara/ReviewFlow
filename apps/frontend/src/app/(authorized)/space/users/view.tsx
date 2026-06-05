@@ -6,6 +6,13 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { SPACE_ROLE_OPTIONS, SPACE_ROLES } from "@/lib/constants/roles";
 import { formatDateJa } from "@/lib/date-format";
 import { addSpaceMemberAction } from "./actions";
@@ -39,31 +46,38 @@ export function SpaceUsersView({
               action={addSpaceMemberAction.bind(null, spaceId)}
               className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto]"
             >
-              <select
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+              <Select
                 name="userId"
                 required
                 disabled={availableUsers.length === 0}
               >
-                <option value="">追加するユーザーを選択</option>
-                {availableUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name ?? user.email} / {user.email}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                <SelectTrigger className="h-10 bg-background">
+                  <SelectValue placeholder="追加するユーザーを選択" />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name ?? user.email} / {user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <Select
                 name="role"
                 defaultValue={SPACE_ROLES.user}
                 disabled={availableUsers.length === 0}
               >
-                {SPACE_ROLE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger className="h-10 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPACE_ROLE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <Button type="submit" disabled={availableUsers.length === 0}>
                 追加
               </Button>

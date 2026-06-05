@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { DynamicFieldRendererProps } from "./dynamic-fields.types";
@@ -67,26 +74,31 @@ export function SelectFieldInput(props: DynamicFieldRendererProps) {
 
   return (
     <FieldShell {...props}>
-      <select
-        id={name}
+      <Select
         name={name}
         defaultValue={stringValue}
         disabled={disabled}
-        className={cn(
-          "flex h-9 w-full border bg-transparent px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-          variant === "table"
-            ? "rounded-none border-slate-300 bg-white shadow-none focus-visible:border-slate-900 focus-visible:ring-0"
-            : "rounded-md border-input shadow-sm",
-          readOnly && "bg-slate-50 font-medium text-slate-950 disabled:opacity-100",
-        )}
       >
-        <option value="">選択してください</option>
-        {options.map((opt) => (
-          <option key={`${field.id}-${opt.value}`} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger
+          id={name}
+          className={cn(
+            "bg-transparent",
+            variant === "table"
+              ? "rounded-none border-slate-300 bg-white shadow-none focus:border-slate-900 focus:ring-0"
+              : "border-input shadow-sm",
+            readOnly && "bg-slate-50 font-medium text-slate-950 disabled:opacity-100",
+          )}
+        >
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={`${field.id}-${opt.value}`} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </FieldShell>
   );
 }

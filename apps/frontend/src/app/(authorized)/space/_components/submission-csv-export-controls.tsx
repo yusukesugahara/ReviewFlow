@@ -6,6 +6,13 @@ import { Download, Loader2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
@@ -151,19 +158,21 @@ export function SubmissionCsvExportControls({
             >
               <div className="space-y-2">
                 <Label htmlFor="csvFormDefinitionId">申請フォーム</Label>
-                <select
-                  id="csvFormDefinitionId"
-                  name="formDefinitionId"
-                  required
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="">選択してください</option>
-                  {exportFormOptions.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.name}
-                    </option>
-                  ))}
-                </select>
+                <Select name="formDefinitionId" required>
+                  <SelectTrigger
+                    id="csvFormDefinitionId"
+                    className="bg-transparent"
+                  >
+                    <SelectValue placeholder="選択してください" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {exportFormOptions.map((option) => (
+                      <SelectItem key={option.id} value={option.id}>
+                        {option.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               {exportFormOptions.length === 0 ? (

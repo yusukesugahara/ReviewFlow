@@ -14,6 +14,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -79,18 +86,21 @@ export function AdminInvitationsView({
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">ロール</Label>
-              <select
-                id="role"
+              <Select
                 name="role"
                 defaultValue={TENANT_ROLES.user}
-                className="flex h-10 w-full rounded-md border border-input bg-background px-3 text-sm shadow-sm"
               >
-                {TENANT_ROLE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+                <SelectTrigger id="role" className="h-10 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TENANT_ROLE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <Button type="submit">招待メールを送信</Button>
           </form>

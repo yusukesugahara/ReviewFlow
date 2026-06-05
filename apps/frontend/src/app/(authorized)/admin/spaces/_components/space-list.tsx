@@ -12,6 +12,13 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { spaceRoleLabel } from "@/lib/constants/role-labels";
 import {
   SPACE_ROLE_OPTIONS,
@@ -128,29 +135,36 @@ export function SpaceList({
                               既存ユーザーを追加
                             </p>
                           </div>
-                          <select
-                            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                          <Select
                             name="userId"
                             required
                           >
-                            <option value="">追加するユーザーを選択</option>
-                            {addableUsers.map((user) => (
-                              <option key={user.id} value={user.id}>
-                                {user.name ?? user.email} / {user.email}
-                              </option>
-                            ))}
-                          </select>
-                          <select
-                            className="h-9 rounded-md border border-input bg-background px-2 text-sm"
+                            <SelectTrigger className="bg-background">
+                              <SelectValue placeholder="追加するユーザーを選択" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {addableUsers.map((user) => (
+                                <SelectItem key={user.id} value={user.id}>
+                                  {user.name ?? user.email} / {user.email}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Select
                             name="role"
                             defaultValue={SPACE_ROLES.user}
                           >
-                            {SPACE_ROLE_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="bg-background">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SPACE_ROLE_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           <Button size="sm" type="submit">
                             追加
                           </Button>
@@ -182,35 +196,41 @@ export function SpaceList({
                           <Label htmlFor={`tenant-role-${group.id}`}>
                             全体ロール
                           </Label>
-                          <select
-                            id={`tenant-role-${group.id}`}
+                          <Select
                             name="tenantRole"
                             defaultValue={TENANT_ROLES.user}
-                            className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                           >
-                            {TENANT_ROLE_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger id={`tenant-role-${group.id}`} className="h-10 bg-background">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {TENANT_ROLE_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="space-y-1">
                           <Label htmlFor={`group-role-${group.id}`}>
                             スペースロール
                           </Label>
-                          <select
-                            id={`group-role-${group.id}`}
+                          <Select
                             name="groupRole"
                             defaultValue={SPACE_ROLES.user}
-                            className="h-10 w-full rounded-md border border-input bg-background px-2 text-sm"
                           >
-                            {SPACE_ROLE_OPTIONS.map((option) => (
-                              <option key={option.value} value={option.value}>
-                                {option.label}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger id={`group-role-${group.id}`} className="h-10 bg-background">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {SPACE_ROLE_OPTIONS.map((option) => (
+                                <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                         </div>
                         <div className="flex items-end">
                           <Button size="sm" type="submit">
@@ -265,20 +285,24 @@ export function SpaceList({
                                   )}
                                   className="inline-flex items-center gap-2"
                                 >
-                                  <select
+                                  <Select
                                     name="role"
                                     defaultValue={member.role}
-                                    className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                                   >
-                                    {SPACE_ROLE_OPTIONS.map((option) => (
-                                      <option
-                                        key={option.value}
-                                        value={option.value}
-                                      >
-                                        {option.label}
-                                      </option>
-                                    ))}
-                                  </select>
+                                    <SelectTrigger className="w-28 bg-background">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {SPACE_ROLE_OPTIONS.map((option) => (
+                                        <SelectItem
+                                          key={option.value}
+                                          value={option.value}
+                                        >
+                                          {option.label}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
                                   <Button
                                     size="sm"
                                     type="submit"

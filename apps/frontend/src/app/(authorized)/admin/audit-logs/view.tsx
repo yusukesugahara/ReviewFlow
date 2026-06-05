@@ -4,9 +4,17 @@ import { AlertTriangle, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTimeJa } from "@/lib/date-format";
+import { AuditLogDateFilterPicker } from "./audit-log-date-filter-picker";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
 
 function shortId(value: unknown): string {
@@ -104,25 +112,27 @@ export function AdminAuditLogsView({
                   className="pl-9"
                 />
               </div>
-              <select
-                name="risk"
-                defaultValue={risk}
-                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-[15px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">リスクすべて</option>
-                <option value="high">高リスク</option>
-                <option value="medium">要確認</option>
-                <option value="low">通常</option>
-              </select>
-              <select
-                name="outcome"
-                defaultValue={outcome}
-                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-[15px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">結果すべて</option>
-                <option value="failed">失敗のみ</option>
-                <option value="success">成功のみ</option>
-              </select>
+              <Select name="risk" defaultValue={risk}>
+                <SelectTrigger className="h-10 rounded-lg bg-background text-[15px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">リスクすべて</SelectItem>
+                  <SelectItem value="high">高リスク</SelectItem>
+                  <SelectItem value="medium">要確認</SelectItem>
+                  <SelectItem value="low">通常</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select name="outcome" defaultValue={outcome}>
+                <SelectTrigger className="h-10 rounded-lg bg-background text-[15px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">結果すべて</SelectItem>
+                  <SelectItem value="failed">失敗のみ</SelectItem>
+                  <SelectItem value="success">成功のみ</SelectItem>
+                </SelectContent>
+              </Select>
               <div className="grid grid-cols-2 gap-2">
                 <Button type="submit">検索</Button>
                 <Button asChild type="button" variant="outline">
@@ -133,23 +143,21 @@ export function AdminAuditLogsView({
             <div className="grid gap-3 sm:grid-cols-[220px_220px]">
               <div className="space-y-2">
                 <label htmlFor="createdFrom" className="text-sm font-medium">
-                  日時 From
+                  作成日 From
                 </label>
-                <Input
+                <AuditLogDateFilterPicker
                   id="createdFrom"
                   name="createdFrom"
-                  type="datetime-local"
                   defaultValue={createdFrom}
                 />
               </div>
               <div className="space-y-2">
                 <label htmlFor="createdTo" className="text-sm font-medium">
-                  日時 To
+                  作成日 To
                 </label>
-                <Input
+                <AuditLogDateFilterPicker
                   id="createdTo"
                   name="createdTo"
-                  type="datetime-local"
                   defaultValue={createdTo}
                 />
               </div>

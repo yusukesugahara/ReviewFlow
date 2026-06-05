@@ -18,8 +18,8 @@ export default async function AdminAuditLogsPage({
   searchParams,
 }: AdminAuditLogsPageProps) {
   const params = await searchParams;
-  const createdFrom = normalizeDateTimeLocalValue(params?.createdFrom);
-  const createdTo = normalizeDateTimeLocalValue(params?.createdTo);
+  const createdFrom = normalizeDateValue(params?.createdFrom);
+  const createdTo = normalizeDateValue(params?.createdTo);
   const outcome = normalizeOption(params?.outcome, ["all", "failed", "success"]);
   const query = normalizeSearchValue(params?.q);
   const risk = normalizeOption(params?.risk, ["all", "high", "medium", "low"]);
@@ -33,8 +33,8 @@ export default async function AdminAuditLogsPage({
     const apiQuery = {
       limit: 200,
       ...(query ? { q: query } : {}),
-      ...(createdFrom ? { createdFrom: toIsoDateTime(createdFrom) } : {}),
-      ...(createdTo ? { createdTo: toIsoDateTime(createdTo) } : {}),
+      ...(createdFrom ? { createdFrom: toIsoDateStart(createdFrom) } : {}),
+      ...(createdTo ? { createdTo: toIsoDateEnd(createdTo) } : {}),
     };
     const response = await client.GET("/audit-logs", {
       params: { query: apiQuery },
@@ -69,17 +69,21 @@ function normalizeSearchValue(value?: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
-function normalizeDateTimeLocalValue(value?: string): string {
+function normalizeDateValue(value?: string): string {
   const normalized = normalizeSearchValue(value);
-  if (!normalized) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
     return "";
   }
-  const timestamp = new Date(normalized).getTime();
+  const timestamp = new Date(`${normalized}T00:00:00`).getTime();
   return Number.isNaN(timestamp) ? "" : normalized;
 }
 
-function toIsoDateTime(value: string): string {
-  return new Date(value).toISOString();
+function toIsoDateStart(value: string): string {
+  return new Date(`${value}T00:00:00`).toISOString();
+}
+
+function toIsoDateEnd(value: string): string {
+  return new Date(`${value}T23:59:59.999`).toISOString();
 }
 
 function normalizeOption(value: string | undefined, allowed: string[]): string {

@@ -5,6 +5,13 @@ import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -256,18 +263,21 @@ export function SpaceUsersTable({
             >
               スペースロール
             </label>
-            <select
-              id="space-role"
+            <Select
               name="role"
               defaultValue={roleTarget.role}
-              className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
             >
-              {SPACE_ROLE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
+              <SelectTrigger id="space-role" className="mt-2 h-10 bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {SPACE_ROLE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="mt-5 flex justify-end gap-2">
               <Button
                 type="button"

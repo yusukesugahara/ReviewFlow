@@ -4,6 +4,13 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import {
   FIELD_TYPE_OPTIONS,
@@ -91,19 +98,23 @@ function TypeSelect({
   disabled?: boolean;
 }) {
   return (
-    <select
-      value={value}
+    <Select
       name="fieldType"
+      value={value}
       disabled={disabled}
-      onChange={(event) => onChange(asFieldType(event.target.value))}
-      className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm disabled:cursor-not-allowed disabled:opacity-50"
+      onValueChange={(nextValue) => onChange(asFieldType(nextValue))}
     >
-      {FIELD_TYPE_OPTIONS.map((item) => (
-        <option key={item.value} value={item.value}>
-          {item.label}
-        </option>
-      ))}
-    </select>
+      <SelectTrigger className="bg-white">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {FIELD_TYPE_OPTIONS.map((item) => (
+          <SelectItem key={item.value} value={item.value}>
+            {item.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }
 
@@ -213,18 +224,18 @@ function FieldPreview({
           <Textarea placeholder={previewPlaceholder} rows={7} className="min-h-40 bg-white" disabled />
         ) : null}
         {fieldType === "select" ? (
-          <select
-            className="flex h-9 w-full rounded-md border border-input bg-white px-3 py-1 text-sm shadow-sm disabled:opacity-100"
-            disabled
-            defaultValue=""
-          >
-            <option value="">{previewPlaceholder || "選択してください"}</option>
-            {(options.length > 0 ? options : ["選択肢1", "選択肢2"]).map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
+          <Select disabled defaultValue="">
+            <SelectTrigger className="bg-white disabled:opacity-100">
+              <SelectValue placeholder={previewPlaceholder || "選択してください"} />
+            </SelectTrigger>
+            <SelectContent>
+              {(options.length > 0 ? options : ["選択肢1", "選択肢2"]).map((option) => (
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         ) : null}
         {fieldType === "radio" ? (
           <div className="space-y-2">
