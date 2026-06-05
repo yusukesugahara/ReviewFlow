@@ -20,17 +20,9 @@ export function SpaceUsersView({
   isTenantAdmin,
   members,
   spaceId,
-  spaceName,
 }: SpaceUsersViewProps) {
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">メンバー</h2>
-        <p className="text-muted-foreground">
-          {spaceName} のユーザーとスペースロールを確認できます
-        </p>
-      </div>
-
       {error ? <SpaceUsersMessage message={error} /> : null}
       {formError ? <SpaceUsersMessage message={formError} /> : null}
 

@@ -11,7 +11,6 @@ import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { PageHeader } from "@/app/_components/enterprise/page-header";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { getApplicationStatusLabel } from "@/app/_components/applications/application-status";
 import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
@@ -71,12 +70,6 @@ export function SpaceSubmissionsPageContent({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Submissions"
-        title="申請一覧"
-        description="利用者から届いた申請を、対応状況、ステータス、申請者、作成時期で確認できます。"
-      />
-
       <div className="grid gap-3 sm:grid-cols-2">
         <SummaryCard
           href={buildSummaryFilterHref(spaceId, "needsAction")}

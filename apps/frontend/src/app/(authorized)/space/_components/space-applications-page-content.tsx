@@ -27,7 +27,6 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { PageHeader } from "@/app/_components/enterprise/page-header";
 import {
   Table,
   TableBody,
@@ -95,17 +94,6 @@ export function SpaceApplicationsPageContent({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Applications"
-        title="申請フォーム一覧"
-        description="作成した申請フォームごとに、公開状態、未処理件数、利用者から届いた申請を確認できます。"
-        actions={
-          <Button asChild>
-          <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-          </Button>
-        }
-      />
-
       <Tabs>
         <TabsList aria-label="申請フォームの表示切り替え">
           <TabsTrigger href={activeHref} active={!showArchived}>
@@ -120,12 +108,21 @@ export function SpaceApplicationsPageContent({
 
       <Card>
         <CardHeader className="border-b border-slate-200">
-          <CardTitle>{showArchived ? "削除済み申請フォーム" : "申請フォーム"}</CardTitle>
-          <CardDescription>
-            {showArchived
-              ? "削除済みに移動したフォームを確認し、必要に応じて復元します"
-              : "公開URLの確認やフォーム詳細を管理します"}
-          </CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1.5">
+              <CardTitle>{showArchived ? "削除済み申請フォーム" : "申請フォーム"}</CardTitle>
+              <CardDescription>
+                {showArchived
+                  ? "削除済みに移動したフォームを確認し、必要に応じて復元します"
+                  : "公開URLの確認やフォーム詳細を管理します"}
+              </CardDescription>
+            </div>
+            {!showArchived ? (
+              <Button asChild className="sm:shrink-0">
+                <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
+              </Button>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
           {visibleRows.length === 0 ? (

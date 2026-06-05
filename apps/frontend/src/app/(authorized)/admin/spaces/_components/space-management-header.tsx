@@ -34,13 +34,7 @@ export function SpaceManagementHeader({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">スペース管理</h2>
-          <p className="text-muted-foreground">
-            スペースごとの管理者とユーザーを設定できます
-          </p>
-        </div>
+      <div className="flex justify-end">
         {canCreateSpace ? (
           <Button
             type="button"

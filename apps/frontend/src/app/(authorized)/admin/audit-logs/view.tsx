@@ -61,13 +61,6 @@ export function AdminAuditLogsView({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">監査ログ</h2>
-        <p className="text-muted-foreground">
-          テナント内のすべての操作履歴を確認できます
-        </p>
-      </div>
-
       <div className="grid gap-3 md:grid-cols-3">
         <AuditSummaryCard
           icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}

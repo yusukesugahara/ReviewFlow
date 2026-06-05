@@ -53,13 +53,6 @@ export function AdminInvitationsView({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">ユーザー</h2>
-        <p className="text-muted-foreground">
-          テナント内ユーザーの招待、一覧確認、削除ができます
-        </p>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>新しい招待を送信</CardTitle>

@@ -13,7 +13,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeJa } from "@/lib/date-format";
-import { PageHeader } from "@/app/_components/enterprise/page-header";
 import { ApprovalProgressDiagram } from "./approval-progress-diagram";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { DynamicFieldInput, DynamicFieldsTable } from "./dynamic-fields";
@@ -30,8 +29,6 @@ import type {
 export { ApprovalProgressDiagram } from "./approval-progress-diagram";
 
 export function ApplicationDetailView({
-  title,
-  description,
   application,
   fields,
   fieldsTitle = "申請内容",
@@ -55,17 +52,12 @@ export function ApplicationDetailView({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Application detail"
-        title={title}
-        description={description ?? `ID: ${application.id.slice(0, 12)}...`}
-        status={
-          <ApplicationStatusBadge
-            status={application.status}
-            className="px-3 py-1 text-sm"
-          />
-        }
-      />
+      <div className="flex justify-end">
+        <ApplicationStatusBadge
+          status={application.status}
+          className="px-3 py-1 text-sm"
+        />
+      </div>
 
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0 space-y-6">

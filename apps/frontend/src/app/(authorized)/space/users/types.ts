@@ -32,7 +32,6 @@ export type SpaceUsersViewProps = {
   isTenantAdmin: boolean;
   members: SpaceUsersMember[];
   spaceId: string;
-  spaceName: string;
 };
 
 export type SpaceUsersErrorViewProps = {
