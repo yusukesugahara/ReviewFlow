@@ -209,8 +209,16 @@ export function CheckboxFieldInput(props: DynamicFieldRendererProps) {
 
 export function ScalarFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, variant } = props;
+  const isReadonlyNumber = readOnly && field.fieldType === "number";
   const inputType =
-    field.fieldType === "number" ? "number" : field.fieldType === "date" ? "date" : "text";
+    field.fieldType === "number" && !isReadonlyNumber
+      ? "number"
+      : field.fieldType === "date"
+        ? "date"
+        : "text";
+  const displayValue = isReadonlyNumber
+    ? formatNumberDisplayValue(stringValue)
+    : stringValue;
 
   return (
     <FieldShell {...props}>
@@ -218,7 +226,7 @@ export function ScalarFieldInput(props: DynamicFieldRendererProps) {
         id={name}
         name={name}
         type={inputType}
-        defaultValue={stringValue}
+        defaultValue={displayValue}
         placeholder={field.placeholder ?? ""}
         disabled={disabled && !readOnly}
         readOnly={readOnly}
@@ -236,4 +244,18 @@ export function ScalarFieldInput(props: DynamicFieldRendererProps) {
       />
     </FieldShell>
   );
+}
+
+function formatNumberDisplayValue(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const number = Number(trimmed);
+  if (!Number.isFinite(number)) {
+    return value;
+  }
+  return new Intl.NumberFormat("ja-JP", {
+    maximumFractionDigits: 20,
+  }).format(number);
 }
