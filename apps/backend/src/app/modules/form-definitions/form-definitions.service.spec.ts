@@ -11,6 +11,11 @@ import { SpaceAccessService } from '../groups/space-access.service';
 import { MailService } from '../mail/mail.service';
 import { FormDefinitionsService } from './form-definitions.service';
 
+/**
+ * FormDefinitionsService のテスト
+ *
+ * @group form-definitions-service
+ */
 describe('FormDefinitionsService', () => {
   let service: FormDefinitionsService;
   let templates: jest.Mocked<
@@ -70,6 +75,9 @@ describe('FormDefinitionsService', () => {
     service = module.get(FormDefinitionsService);
   });
 
+  /**
+   * create は草稿定義を保存すること
+   */
   it('create saves draft definition', async () => {
     const saved = {
       id: 't1',
@@ -94,6 +102,9 @@ describe('FormDefinitionsService', () => {
     expect(out.id).toBe('t1');
   });
 
+  /**
+   * addField は草稿定義でない場合にエラーを返すこと
+   */
   it('addField rejects when definition not draft', async () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
@@ -115,6 +126,9 @@ describe('FormDefinitionsService', () => {
     });
   });
 
+  /**
+   * publish は草稿定義でない場合にエラーを返すこと
+   */
   it('publish rejects when not draft', async () => {
     templates.findOne.mockResolvedValue({
       id: 't1',
@@ -128,6 +142,9 @@ describe('FormDefinitionsService', () => {
     });
   });
 
+  /**
+   * archive は管理権限を確認し、定義をアーカイブにすること
+   */
   it('archive marks definition as archived after management check', async () => {
     const definition = {
       id: 't1',
@@ -146,6 +163,9 @@ describe('FormDefinitionsService', () => {
     expect(templates.save).toHaveBeenCalledWith(definition);
   });
 
+  /**
+   * restore は管理権限を確認し、アーカイブされた定義を元のステータスに戻すこと
+   */
   it('restore moves archived definition back to its previous status', async () => {
     const definition = {
       id: 't1',
@@ -165,6 +185,9 @@ describe('FormDefinitionsService', () => {
     expect(templates.save).toHaveBeenCalledWith(definition);
   });
 
+  /**
+   * getOneForActor はスペース利用権限のみを確認すること
+   */
   it('getOneForActor requires space usage access only', async () => {
     const definition = {
       id: 't1',

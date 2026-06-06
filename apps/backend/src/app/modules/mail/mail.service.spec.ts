@@ -6,6 +6,11 @@ jest.mock('nodemailer', () => ({
   createTransport: jest.fn(),
 }));
 
+/**
+ * MailService のテスト
+ *
+ * @group mail-service
+ */
 describe('MailService', () => {
   const sendMail = jest.fn();
   const createTransport = jest.mocked(nodemailer.createTransport);
@@ -19,6 +24,9 @@ describe('MailService', () => {
     createTransport.mockReturnValue(transporter);
   });
 
+  /**
+   * Gmail トランスポートを使用すること
+   */
   it('uses Gmail transport outside production by default', async () => {
     const config = new ConfigService({
       NODE_ENV: 'development',
@@ -52,6 +60,9 @@ describe('MailService', () => {
     );
   });
 
+  /**
+   * SMTP トランスポートを使用すること
+   */
   it('uses SMTP transport in production by default', async () => {
     const config = new ConfigService({
       NODE_ENV: 'production',
@@ -83,6 +94,9 @@ describe('MailService', () => {
     });
   });
 
+  /**
+   * メールが無効な場合に配信をスキップすること
+   */
   it('skips delivery when mail is disabled', async () => {
     const config = new ConfigService({
       NODE_ENV: 'test',
@@ -101,6 +115,9 @@ describe('MailService', () => {
     expect(sendMail).not.toHaveBeenCalled();
   });
 
+  /**
+   * 申請が差し戻されたメールを送信すること
+   */
   it('sends an application returned email with correction details', async () => {
     const config = new ConfigService({
       NODE_ENV: 'test',

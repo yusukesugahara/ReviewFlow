@@ -11,6 +11,11 @@ import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
 import { AuthService } from './auth.service';
 
+/**
+ * AuthService のテスト
+ *
+ * @group auth-service
+ */
 describe('AuthService', () => {
   let service: AuthService;
   let users: jest.Mocked<Pick<UsersService, 'findAllByEmail'>>;
@@ -54,6 +59,9 @@ describe('AuthService', () => {
   });
 
   describe('register', () => {
+    /**
+     * email が既に使用されている場合にエラーを返すこと
+     */
     it('throws when email is already taken', async () => {
       users.findAllByEmail.mockResolvedValue([
         {
@@ -73,7 +81,9 @@ describe('AuthService', () => {
         service.register({ email: 'a@b.com', password: 'password12' }),
       ).rejects.toMatchObject({ errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN });
     });
-
+    /**
+     * tenant + tenant_admin を作成し、tenantId を JWT に含めること
+     */
     it('creates tenant + tenant_admin and signs JWT with tenantId', async () => {
       users.findAllByEmail.mockResolvedValue([]);
       const tenantRepo = {
@@ -141,7 +151,9 @@ describe('AuthService', () => {
         errorCode: ClientErrorCodes.AUTH_INVALID_CREDENTIALS,
       });
     });
-
+    /**
+     * パスワードが一致しない場合にエラーを返すこと
+     */
     it('throws when password does not match', async () => {
       const hash = await bcrypt.hash('correct', 4);
       users.findAllByEmail.mockResolvedValue([
@@ -165,6 +177,9 @@ describe('AuthService', () => {
       });
     });
 
+    /**
+     * パスワードが一致する場合にトークンを返すこと
+     */
     it('returns tokens when credentials are valid', async () => {
       const hash = await bcrypt.hash('password12', 4);
       users.findAllByEmail.mockResolvedValue([
@@ -197,6 +212,9 @@ describe('AuthService', () => {
   });
 
   describe('password reset', () => {
+    /**
+     * アクティブなユーザーに対してリセットトークンを作成し、メールを送信すること
+     */
     it('creates reset token and sends mail for active users', async () => {
       users.findAllByEmail.mockResolvedValue([
         {
@@ -231,6 +249,9 @@ describe('AuthService', () => {
       );
     });
 
+    /**
+     * パスワードを更新し、トークンを使用済みにすること
+     */
     it('updates password and marks token used', async () => {
       const tokenRow = {
         id: 'rt1',

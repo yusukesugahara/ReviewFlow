@@ -12,6 +12,11 @@ import { MailService } from '../mail/mail.service';
 import { UsersService } from '../users/users.service';
 import { InvitationsService } from './invitations.service';
 
+/**
+ * InvitationsService のテスト
+ *
+ * @group invitations-service
+ */
 describe('InvitationsService', () => {
   let service: InvitationsService;
   let invitationsRepo: {
@@ -61,6 +66,9 @@ describe('InvitationsService', () => {
   };
 
   describe('create', () => {
+    /**
+     * テナント内に既存ユーザーがいる場合にエラーを返すこと
+     */
     it('throws when user already exists in tenant', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue({ id: 'u1' });
 
@@ -71,6 +79,9 @@ describe('InvitationsService', () => {
       });
     });
 
+    /**
+     * テナント内に既存の招待がある場合にエラーを返すこと
+     */
     it('throws when pending invitation exists', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue(null);
       invitationsRepo.findOne.mockResolvedValue({
@@ -85,6 +96,9 @@ describe('InvitationsService', () => {
       });
     });
 
+    /**
+     * 招待を保存し、トークンを含まないこと
+     */
     it('persists invitation with token', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue(null);
       invitationsRepo.findOne.mockResolvedValue(null);
@@ -115,6 +129,9 @@ describe('InvitationsService', () => {
       );
     });
 
+    /**
+     * メール配信失敗時に招待をロールバックすること
+     */
     it('rolls back invitation when mail delivery fails', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue(null);
       invitationsRepo.findOne.mockResolvedValue(null);
@@ -142,6 +159,9 @@ describe('InvitationsService', () => {
   });
 
   describe('accept', () => {
+    /**
+     * 未知のトークンに対してエラーを返すこと
+     */
     it('throws when token unknown', async () => {
       dataSource.transaction.mockImplementation(
         (fn: (m: unknown) => unknown) => {
@@ -169,6 +189,9 @@ describe('InvitationsService', () => {
       });
     });
 
+    /**
+     * 招待を受け入れ、ユーザーを作成し、トークンを返すこと
+     */
     it('creates user and returns tokens', async () => {
       const inv: Partial<Invitation> = {
         tenantId: 'tenant-1',
