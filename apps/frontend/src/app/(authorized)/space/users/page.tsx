@@ -4,7 +4,7 @@ import { unwrapData } from "@/lib/server/api-envelope";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { TENANT_ROLES } from "@/lib/constants/roles";
-import { SpaceEmptyState } from "@/app/(authorized)/space/_components/space-empty-state";
+import { SpaceEmptyState } from "@/components/space/space-empty-state";
 import type {
   GroupAvailableUsersSuccessJson,
   GroupMembersListSuccessJson,

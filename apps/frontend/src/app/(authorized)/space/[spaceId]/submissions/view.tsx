@@ -1,5 +1,5 @@
-import { SpaceSubmissionsPageContent } from "@/app/(authorized)/space/_components/space-submissions-page-content";
-import type { ApplicationRow } from "@/app/(authorized)/space/_components/space-applications.types";
+import { SpaceSubmissionsPageContent } from "@/app/(authorized)/space/[spaceId]/submissions/_components/space-submissions-page-content";
+import type { ApplicationRow } from "@/components/space/space-applications.types";
 import type { ExportJobResponse } from "@/lib/schema";
 
 type SpaceSubmissionsViewProps = {

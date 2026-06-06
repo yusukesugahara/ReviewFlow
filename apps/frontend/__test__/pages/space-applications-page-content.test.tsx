@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SpaceApplicationsPageContent } from "@/app/(authorized)/space/_components/space-applications-page-content";
+import { SpaceApplicationsPageContent } from "@/app/(authorized)/space/[spaceId]/applications/_components/space-applications-page-content";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 jest.mock("@/app/(authorized)/space/[spaceId]/applications/actions", () => ({

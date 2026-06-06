@@ -43,11 +43,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
-import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
+import { ApplicationEmptyState } from "@/components/applications/application-empty-state";
 import {
   buildSpaceApplicationDetailHref,
   buildSpaceApplicationNewHref,
-} from "@/app/_components/applications/application-routes";
+} from "@/components/applications/application-routes";
 import {
   archiveFormDefinitionAction,
   restoreFormDefinitionAction,
@@ -56,7 +56,7 @@ import type {
   ApplicationRow,
   FormDefinitionRow,
   SpaceApplicationsPageContentProps,
-} from "./space-applications.types";
+} from "@/components/space/space-applications.types";
 
 export function SpaceApplicationsPageContent({
   applications,

@@ -4,7 +4,7 @@ import { unwrapData } from "@/lib/server/api-envelope";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-import { getApplicationCapabilities } from "@/app/_components/applications/application-capabilities";
+import { getApplicationCapabilities } from "@/components/applications/application-capabilities";
 import {
   approveAction,
   rejectAction,
@@ -19,8 +19,8 @@ import type {
   ApplicationCorrectionTargetItem,
   ApplicationDetailViewModel,
   ApplicationFormField,
-} from "@/app/_components/applications/application-detail.types";
-import { buildSpaceApplicationEditHrefByIds } from "@/app/_components/applications/application-routes";
+} from "@/components/applications/application-detail.types";
+import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/application-routes";
 import type {
   ApplicationSummary,
   FormDefinitionDetail,

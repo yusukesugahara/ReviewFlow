@@ -1,7 +1,7 @@
 import {
   getApplicationStatusBadgeVariant,
   getApplicationStatusLabel,
-} from "@/app/_components/applications/application-status";
+} from "@/components/applications/application-status";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 describe("application-status", () => {

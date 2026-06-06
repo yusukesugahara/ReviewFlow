@@ -4,7 +4,7 @@ import {
   filterApplications,
   isFormSetupApplication,
   isPendingApplication,
-} from "@/app/(authorized)/space/_components/space-submissions.helpers";
+} from "@/app/(authorized)/space/[spaceId]/submissions/_components/space-submissions.helpers";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 const row = {

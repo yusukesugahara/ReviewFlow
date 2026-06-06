@@ -1,5 +1,5 @@
-import type { ApprovalAssigneeOption } from "@/app/(authorized)/space/_components/application-setup-draft-form";
-import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
+import type { ApprovalAssigneeOption } from "@/components/application-setup/application-setup-draft-form";
+import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";

@@ -3,7 +3,7 @@ import {
   normalizeFieldKey,
   optionLines,
   toDynamicField,
-} from "@/app/(authorized)/space/_components/application-setup-fields";
+} from "@/components/application-setup/application-setup-fields";
 
 describe("application setup fields", () => {
   // テスト内容: 既定のフォーム項目が一貫した初期値で作成されることを確認する

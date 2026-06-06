@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import {
   readDynamicValuesFromFormData,
   type DynamicFormField,
-} from "@/app/_components/applications/dynamic-fields";
+} from "@/components/applications/dynamic-fields";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 

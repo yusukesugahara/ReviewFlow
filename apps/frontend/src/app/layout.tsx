@@ -2,7 +2,7 @@ import './globals.css';
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import type { ReactNode } from 'react';
-import { QueryToast } from './_components/query-toast';
+import { QueryToast } from '@/components/query-toast';
 import { Toaster } from '@/components/ui/sonner';
 
 export const metadata: Metadata = {

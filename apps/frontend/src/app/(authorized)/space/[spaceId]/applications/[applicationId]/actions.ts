@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-import type { ApplicationDetailViewModel } from "@/app/_components/applications/application-detail.types";
-import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
+import type { ApplicationDetailViewModel } from "@/components/applications/application-detail.types";
+import { buildSpaceSubmissionDetailHref } from "@/components/applications/application-routes";
 
 type ApiFailure = { status: number; body: unknown };
 

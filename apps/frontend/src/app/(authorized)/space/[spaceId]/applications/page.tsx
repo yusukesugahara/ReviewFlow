@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { unwrapData } from "@/lib/server/api-envelope";
-import type { ApplicationRow, FormDefinitionRow } from "@/app/(authorized)/space/_components/space-applications.types";
+import type { ApplicationRow, FormDefinitionRow } from "@/components/space/space-applications.types";
 import type {
   ApplicationsListSuccessJson,
   FormDefinitionsListSuccessJson,

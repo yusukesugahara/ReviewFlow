@@ -1,5 +1,5 @@
-import type { DraftField } from "@/app/(authorized)/space/_components/application-setup-draft-form";
-import type { ApprovalStepItem } from "@/app/(authorized)/space/_components/approval-steps-builder";
+import type { DraftField } from "@/components/application-setup/application-setup-draft-form";
+import type { ApprovalStepItem } from "@/components/application-setup/approval-steps-builder";
 import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";

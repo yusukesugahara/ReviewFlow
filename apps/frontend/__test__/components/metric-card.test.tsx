@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { MetricCard } from "@/app/(authorized)/space/_components/metric-card";
+import { MetricCard } from "@/components/space/metric-card";
 
 describe("MetricCard", () => {
   // テスト内容: メトリクス内容とアイコンコンテナのクラスが表示されることを確認する

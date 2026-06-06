@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CopyButton as SpaceCopyButton } from "@/app/(authorized)/space/_components/copy-button";
-import { CopyButton as AdminCopyButton } from "@/app/(authorized)/admin/_components/copy-button";
+import { CopyButton as SpaceCopyButton } from "@/components/copy-button";
+import { CopyButton as AdminCopyButton } from "@/components/copy-button";
 
 describe("CopyButton", () => {
   // テスト内容: スペース用コピーボタンが値をコピーすることを確認する

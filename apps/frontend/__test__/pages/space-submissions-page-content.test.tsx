@@ -1,9 +1,9 @@
 import { render, screen, within } from "@testing-library/react";
-import { SpaceSubmissionsPageContent } from "@/app/(authorized)/space/_components/space-submissions-page-content";
+import { SpaceSubmissionsPageContent } from "@/app/(authorized)/space/[spaceId]/submissions/_components/space-submissions-page-content";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 jest.mock(
-  "@/app/(authorized)/space/_components/submission-csv-export-controls",
+  "@/app/(authorized)/space/[spaceId]/submissions/_components/submission-csv-export-controls",
   () => ({
     SubmissionCsvExportControls: ({
       exportFormOptions,

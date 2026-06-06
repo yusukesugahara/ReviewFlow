@@ -1,5 +1,5 @@
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
-import type { ApplicationRow } from "./space-applications.types";
+import type { ApplicationRow } from "@/components/space/space-applications.types";
 
 export type SubmissionFilters = {
   applicant: string;

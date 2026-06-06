@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ReviewerApplicationActions } from "@/app/_components/applications/reviewer-application-actions";
+import { ReviewerApplicationActions } from "@/components/applications/reviewer-application-actions";
 
 const approveAction = jest.fn(async () => undefined);
 const rejectAction = jest.fn(async () => undefined);

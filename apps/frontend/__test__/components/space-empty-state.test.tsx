@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { SpaceEmptyState } from "@/app/(authorized)/space/_components/space-empty-state";
+import { SpaceEmptyState } from "@/components/space/space-empty-state";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
 describe("SpaceEmptyState", () => {

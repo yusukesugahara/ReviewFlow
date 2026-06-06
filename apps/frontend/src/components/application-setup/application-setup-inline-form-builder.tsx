@@ -27,7 +27,7 @@ import {
   fieldTypeSupportsPlaceholder,
   type FieldType,
 } from "@/lib/constants/form-fields";
-import { DynamicFieldInput } from "@/app/_components/applications/dynamic-fields";
+import { DynamicFieldInput } from "@/components/applications/dynamic-fields";
 import {
   toDynamicField,
   type DraftField,

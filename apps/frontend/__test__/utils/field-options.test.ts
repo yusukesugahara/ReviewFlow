@@ -1,4 +1,4 @@
-import { normalizeFieldOptions } from "@/app/_components/applications/field-options";
+import { normalizeFieldOptions } from "@/components/applications/field-options";
 
 describe("application field-options", () => {
   // テスト内容: 有効な選択肢を正規化し、不正な項目を無視することを確認する

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ReturnApplicationConfirmButton } from "@/app/_components/applications/return-application-confirm-button";
+import { ReturnApplicationConfirmButton } from "@/components/applications/return-application-confirm-button";
 
 describe("ReturnApplicationConfirmButton", () => {
   // テスト内容: 確認ダイアログを開閉できることを確認する

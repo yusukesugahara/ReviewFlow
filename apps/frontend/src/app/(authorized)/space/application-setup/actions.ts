@@ -15,7 +15,7 @@ import {
   fieldTypeStoresValue,
   type FieldType,
 } from "@/lib/constants/form-fields";
-import type { DraftField } from "@/app/(authorized)/space/_components/application-setup-draft-form";
+import type { DraftField } from "@/components/application-setup/application-setup-draft-form";
 
 const applicationSetupFormSchema = z.object({
   name: z.string().trim().min(1),

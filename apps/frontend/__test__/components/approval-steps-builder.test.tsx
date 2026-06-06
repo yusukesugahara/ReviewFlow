@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ApprovalStepsBuilder } from "@/app/(authorized)/space/_components/approval-steps-builder";
+import { ApprovalStepsBuilder } from "@/components/application-setup/approval-steps-builder";
 
 const assignees = [
   { id: "user-1", label: "田中 太郎 <tanaka@example.com>" },

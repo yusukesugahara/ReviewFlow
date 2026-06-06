@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SubmissionCsvExportControls } from "@/app/(authorized)/space/_components/submission-csv-export-controls";
+import { SubmissionCsvExportControls } from "@/app/(authorized)/space/[spaceId]/submissions/_components/submission-csv-export-controls";
 
 jest.mock("@/app/(authorized)/space/[spaceId]/submissions/actions", () => ({
   createSubmissionCsvExportAction: jest.fn(),

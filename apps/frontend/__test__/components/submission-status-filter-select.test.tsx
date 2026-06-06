@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SubmissionStatusFilterSelect } from "@/app/(authorized)/space/_components/submission-status-filter-select";
+import { SubmissionStatusFilterSelect } from "@/app/(authorized)/space/[spaceId]/submissions/_components/submission-status-filter-select";
 
 describe("SubmissionStatusFilterSelect", () => {
   // テスト内容: 選択したステータスとhidden inputが同期することを確認する

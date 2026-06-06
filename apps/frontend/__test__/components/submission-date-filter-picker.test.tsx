@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SubmissionDateFilterPicker } from "@/app/(authorized)/space/_components/submission-date-filter-picker";
+import { SubmissionDateFilterPicker } from "@/app/(authorized)/space/[spaceId]/submissions/_components/submission-date-filter-picker";
 
 describe("SubmissionDateFilterPicker", () => {
   // テスト内容: 整形済みの日付表示とクリア操作を確認する

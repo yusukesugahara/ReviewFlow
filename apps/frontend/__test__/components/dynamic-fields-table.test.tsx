@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
-import type { DynamicFormField } from "@/app/_components/applications/dynamic-fields";
+import { DynamicFieldsTable } from "@/components/applications/dynamic-fields";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields";
 
 describe("DynamicFieldsTable", () => {
   const fields: DynamicFormField[] = [

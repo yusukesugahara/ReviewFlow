@@ -3,8 +3,8 @@
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { MetricCard } from "@/app/(authorized)/space/_components/metric-card";
-import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
+import { MetricCard } from "@/components/space/metric-card";
+import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
 import type { AdminDashboardViewProps } from "./types";
 
 export function AdminDashboardView({

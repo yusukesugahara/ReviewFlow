@@ -12,16 +12,16 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
-import { getApplicationStatusLabel } from "@/app/_components/applications/application-status";
-import { ApplicationEmptyState } from "@/app/_components/applications/application-empty-state";
-import { ApplicationListTable } from "@/app/_components/applications/application-list-table";
-import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
+import { getApplicationStatusLabel } from "@/components/applications/application-status";
+import { ApplicationEmptyState } from "@/components/applications/application-empty-state";
+import { ApplicationListTable } from "@/components/applications/application-list-table";
+import { buildSpaceSubmissionDetailHref } from "@/components/applications/application-routes";
 import type { ExportJobResponse } from "@/lib/schema";
 import { SubmissionCsvExportControls } from "./submission-csv-export-controls";
 import { SubmissionDateFilterPicker } from "./submission-date-filter-picker";
 import { SubmissionSearchSubmitButton } from "./submission-search-submit-button";
 import { SubmissionStatusFilterSelect } from "./submission-status-filter-select";
-import type { ApplicationRow } from "./space-applications.types";
+import type { ApplicationRow } from "@/components/space/space-applications.types";
 import {
   buildExportFormOptions,
   buildSubmissionsPageHref,

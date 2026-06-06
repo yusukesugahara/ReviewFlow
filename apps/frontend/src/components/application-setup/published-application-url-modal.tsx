@@ -9,7 +9,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { CopyButton } from "./copy-button";
+import { CopyButton } from "@/components/copy-button";
 
 type PublishedApplicationUrlModalProps = {
   groupId?: string;
