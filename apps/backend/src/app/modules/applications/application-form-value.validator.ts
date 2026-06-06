@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
-import { FormFieldType } from '../../../models/constants/form-field-type';
+import {
+  FORM_FIELD_TYPES_WITHOUT_VALUES,
+  FormFieldType,
+} from '../../../models/constants/form-field-type';
 import type { Application } from '../../../models/entities/application.entity';
 import type { FormField } from '../../../models/entities/form-field.entity';
 
@@ -60,6 +63,9 @@ export class ApplicationFormValueValidator {
     );
 
     for (const field of fields) {
+      if (FORM_FIELD_TYPES_WITHOUT_VALUES.includes(field.fieldType)) {
+        continue;
+      }
       if (!field.required) {
         continue;
       }
@@ -118,6 +124,17 @@ export class ApplicationFormValueValidator {
           !Array.isArray(value) ||
           !value.every((item) => typeof item === 'string')
         ) {
+          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
+        }
+        break;
+      case FormFieldType.CONSENT:
+        if (value !== true) {
+          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
+        }
+        break;
+      case FormFieldType.DESCRIPTION:
+      case FormFieldType.SECTION:
+        if (value !== null && value !== undefined) {
           throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
         }
         break;

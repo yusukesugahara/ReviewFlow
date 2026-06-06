@@ -44,6 +44,12 @@ export function renderFieldValue(field: DisplayableFormField, value: unknown): s
     }
     return asStrings.map((v) => opts.find((o) => o.value === v)?.label ?? v).join(", ");
   }
+  if (field.fieldType === "consent") {
+    return value === true ? "同意済み" : "未同意";
+  }
+  if (field.fieldType === "description" || field.fieldType === "section") {
+    return "-";
+  }
   if (typeof value === "string" || typeof value === "number") {
     const opts = normalizeFieldOptions(field.options);
     if (

@@ -12,6 +12,7 @@ import {
 import {
   FIELD_TYPES,
   fieldTypeNeedsOptions,
+  fieldTypeStoresValue,
   type FieldType,
 } from "@/lib/constants/form-fields";
 import type { DraftField } from "@/app/(authorized)/space/_components/application-setup-draft-form";
@@ -248,7 +249,10 @@ function readDraftFields(fieldsJson: FormDataEntryValue | null): DraftField[] {
           raw.fieldType === "date" ||
           raw.fieldType === "select" ||
           raw.fieldType === "radio" ||
-          raw.fieldType === "checkbox"
+          raw.fieldType === "checkbox" ||
+          raw.fieldType === "consent" ||
+          raw.fieldType === "description" ||
+          raw.fieldType === "section"
             ? raw.fieldType
             : FIELD_TYPES.text,
         required: raw.required,
@@ -268,7 +272,7 @@ function toFieldPayloads(fields: DraftField[]): FieldPayload[] {
       fieldKey: normalizeFieldKey(label, index, usedKeys),
       label,
       fieldType: field.fieldType,
-      required: field.required,
+      required: fieldTypeStoresValue(field.fieldType) ? field.required : false,
       placeholder: field.placeholder.trim(),
       helpText: field.helpText.trim(),
       options: fieldTypeNeedsOptions(field.fieldType)

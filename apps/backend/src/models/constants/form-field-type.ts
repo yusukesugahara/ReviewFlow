@@ -6,6 +6,9 @@ export const FormFieldType = {
   SELECT: 'select',
   RADIO: 'radio',
   CHECKBOX: 'checkbox',
+  CONSENT: 'consent',
+  DESCRIPTION: 'description',
+  SECTION: 'section',
 } as const;
 
 export type FormFieldTypeValue =
@@ -19,4 +22,12 @@ export const FORM_FIELD_TYPES: FormFieldTypeValue[] = [
   FormFieldType.SELECT,
   FormFieldType.RADIO,
   FormFieldType.CHECKBOX,
+  FormFieldType.CONSENT,
+  FormFieldType.DESCRIPTION,
+  FormFieldType.SECTION,
+];
+
+export const FORM_FIELD_TYPES_WITHOUT_VALUES: FormFieldTypeValue[] = [
+  FormFieldType.DESCRIPTION,
+  FormFieldType.SECTION,
 ];

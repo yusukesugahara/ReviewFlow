@@ -27,6 +27,7 @@ import {
   FIELD_TYPE_OPTIONS,
   FIELD_TYPES,
   fieldTypeNeedsOptions,
+  fieldTypeStoresValue,
   fieldTypeSupportsPlaceholder,
   type FieldType,
 } from "@/lib/constants/form-fields";
@@ -120,7 +121,7 @@ function toDynamicField(
     fieldKey,
     label,
     fieldType: field.fieldType,
-    required: field.required,
+    required: fieldTypeStoresValue(field.fieldType) ? field.required : false,
     placeholder: field.placeholder.trim() || null,
     helpText: field.helpText.trim() || null,
     options: fieldTypeNeedsOptions(field.fieldType)
@@ -241,7 +242,7 @@ function InlineFormBuilder({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 h-9 w-9 -translate-y-1/2 cursor-grab bg-white/90 text-slate-500 hover:bg-slate-100 hover:text-slate-900 active:cursor-grabbing"
+                    className="absolute right-2 top-1/2 h-10 w-10 -translate-y-1/2 cursor-grab bg-white/90 text-slate-500 hover:bg-slate-100 hover:text-slate-900 active:cursor-grabbing"
                     aria-label={`${dynamicField.label}をドラッグして並び替え`}
                     draggable
                     onDragStart={(event) => {
@@ -360,9 +361,13 @@ function FieldContentModal({
               <Label htmlFor={`modal-type-${field.id}`}>入力形式</Label>
               <Select
                 value={field.fieldType}
-                onValueChange={(value) =>
-                  updateField(field.id, { fieldType: value as FieldType })
-                }
+                onValueChange={(value) => {
+                  const nextFieldType = value as FieldType;
+                  updateField(field.id, {
+                    fieldType: nextFieldType,
+                    required: fieldTypeStoresValue(nextFieldType) ? field.required : false,
+                  });
+                }}
               >
                 <SelectTrigger id={`modal-type-${field.id}`} className="bg-white">
                   <SelectValue />
@@ -378,15 +383,17 @@ function FieldContentModal({
             </div>
           </div>
 
-          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={field.required}
-              onChange={(event) => updateField(field.id, { required: event.target.checked })}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            必須項目
-          </label>
+          {fieldTypeStoresValue(field.fieldType) ? (
+            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={field.required}
+                onChange={(event) => updateField(field.id, { required: event.target.checked })}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              必須項目
+            </label>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor={`modal-help-${field.id}`}>説明文</Label>

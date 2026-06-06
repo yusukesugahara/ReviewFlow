@@ -1,13 +1,17 @@
 import {
   CheckboxFieldInput,
+  ConsentFieldInput,
+  DescriptionFieldDisplay,
   RadioFieldInput,
   ScalarFieldInput,
   SelectFieldInput,
+  SectionFieldDisplay,
   TextareaFieldInput,
 } from "./dynamic-field-inputs";
 import type { ReactNode } from "react";
 import type { DynamicFieldInputProps, DynamicFormField } from "./dynamic-fields.types";
 import { normalizeFieldOptions } from "./field-options";
+import { fieldTypeStoresValue } from "@/lib/constants/form-fields";
 
 export type { DynamicFormField } from "./dynamic-fields.types";
 
@@ -18,6 +22,9 @@ export function readDynamicValuesFromFormData(
 ): Record<string, unknown> {
   const values: Record<string, unknown> = {};
   for (const field of fields) {
+    if (!fieldTypeStoresValue(field.fieldType)) {
+      continue;
+    }
     if (editableFieldKeys && !editableFieldKeys.has(field.fieldKey)) {
       continue;
     }
@@ -37,6 +44,10 @@ export function readDynamicValuesFromFormData(
       case "checkbox": {
         const raw = formData.getAll(name);
         values[field.fieldKey] = raw.filter((x): x is string => typeof x === "string");
+        break;
+      }
+      case "consent": {
+        values[field.fieldKey] = formData.get(name) === "true";
         break;
       }
       default: {
@@ -62,7 +73,9 @@ export function DynamicFieldInput({
   const name = `field:${field.fieldKey}`;
   const options = normalizeFieldOptions(field.options);
   const stringValue =
-    typeof value === "string" || typeof value === "number" ? String(value) : "";
+    typeof value === "string" || typeof value === "number" || typeof value === "boolean"
+      ? String(value)
+      : "";
   const selectedValues = Array.isArray(value)
     ? value.filter((x): x is string => typeof x === "string")
     : [];
@@ -94,6 +107,18 @@ export function DynamicFieldInput({
     return <CheckboxFieldInput {...rendererProps} />;
   }
 
+  if (field.fieldType === "consent") {
+    return <ConsentFieldInput {...rendererProps} />;
+  }
+
+  if (field.fieldType === "description") {
+    return <DescriptionFieldDisplay {...rendererProps} />;
+  }
+
+  if (field.fieldType === "section") {
+    return <SectionFieldDisplay {...rendererProps} />;
+  }
+
   return <ScalarFieldInput {...rendererProps} />;
 }
 
@@ -123,6 +148,32 @@ export function DynamicFieldsTable({
         {fields.map((field, index) => {
           const value = values?.[field.fieldKey];
           const fieldError = getFieldError?.(field);
+          if (!fieldTypeStoresValue(field.fieldType)) {
+            return (
+              <div
+                key={field.id}
+                className={`bg-white px-3 py-3 ${
+                  getRowClassName?.(field) ?? ""
+                }`}
+              >
+                {renderValue ? (
+                  renderValue(field, value)
+                ) : (
+                  <DynamicFieldInput
+                    field={field}
+                    value={value}
+                    disabled={disabled}
+                    afterInput={
+                      fieldError ? (
+                        <p className="text-sm font-medium text-red-700">{fieldError}</p>
+                      ) : null
+                    }
+                    variant="table"
+                  />
+                )}
+              </div>
+            );
+          }
           return (
             <div
               key={field.id}

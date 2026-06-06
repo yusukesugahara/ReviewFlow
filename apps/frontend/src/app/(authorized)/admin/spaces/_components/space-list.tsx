@@ -83,6 +83,7 @@ export function SpaceList({
     <div className="space-y-3">
       {spaces.map(({ group, members, addableUsers, canManageSpace }) => {
         const isOpen = openSpaceId === group.id;
+        const hasAddableUsers = addableUsers.length > 0;
 
         return (
           <Card key={group.id} className="overflow-hidden">
@@ -124,56 +125,76 @@ export function SpaceList({
                 </CardHeader>
                 <CardContent className="space-y-5">
                   {canManageSpace ? (
-                    <div className="grid gap-3">
+                    <div className="grid items-stretch gap-3 xl:grid-cols-2">
                       {isSystemAdmin ? (
                         <form
                           action={addMemberAction.bind(null, group.id)}
-                          className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_auto]"
+                          className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_auto] xl:h-full"
                         >
                           <div className="space-y-1 md:col-span-3">
                             <p className="text-sm font-medium">
                               既存ユーザーを追加
                             </p>
                           </div>
-                          <Select
-                            name="userId"
-                            required
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue placeholder="追加するユーザーを選択" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {addableUsers.map((user) => (
-                                <SelectItem key={user.id} value={user.id}>
-                                  {user.name ?? user.email} / {user.email}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Select
-                            name="role"
-                            defaultValue={SPACE_ROLES.user}
-                          >
-                            <SelectTrigger className="bg-background">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SPACE_ROLE_OPTIONS.map((option) => (
-                                <SelectItem key={option.value} value={option.value}>
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <Button size="sm" type="submit">
-                            追加
-                          </Button>
+                          <div className="space-y-1">
+                            <Label htmlFor={`add-user-${group.id}`}>
+                              ユーザー
+                            </Label>
+                            <Select
+                              name="userId"
+                              required
+                              disabled={!hasAddableUsers}
+                            >
+                              <SelectTrigger id={`add-user-${group.id}`} className="bg-background">
+                                <SelectValue
+                                  placeholder={
+                                    hasAddableUsers
+                                      ? "追加するユーザーを選択"
+                                      : "追加できるユーザーがいません"
+                                  }
+                                />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {addableUsers.map((user) => (
+                                  <SelectItem key={user.id} value={user.id}>
+                                    {user.name ?? user.email} / {user.email}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label htmlFor={`add-role-${group.id}`}>
+                              スペースロール
+                            </Label>
+                            <Select
+                              name="role"
+                              defaultValue={SPACE_ROLES.user}
+                            >
+                              <SelectTrigger id={`add-role-${group.id}`} className="bg-background">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {SPACE_ROLE_OPTIONS.map((option) => (
+                                  <SelectItem key={option.value} value={option.value}>
+                                    {option.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <span className="block h-5" aria-hidden="true" />
+                            <Button type="submit" disabled={!hasAddableUsers}>
+                              追加
+                            </Button>
+                          </div>
                         </form>
                       ) : null}
 
                       <form
                         action={inviteSpaceMemberAction.bind(null, group.id)}
-                        className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_140px_auto]"
+                        className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_140px_auto] xl:h-full"
                       >
                         <div className="space-y-1 md:col-span-4">
                           <p className="text-sm font-medium">
@@ -232,8 +253,9 @@ export function SpaceList({
                             </SelectContent>
                           </Select>
                         </div>
-                        <div className="flex items-end">
-                          <Button size="sm" type="submit">
+                        <div className="space-y-1">
+                          <span className="block h-5" aria-hidden="true" />
+                          <Button type="submit">
                             招待
                           </Button>
                         </div>
