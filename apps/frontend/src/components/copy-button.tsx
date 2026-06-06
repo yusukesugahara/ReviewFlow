@@ -2,12 +2,23 @@
 
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import type { ButtonProps } from "@/components/ui/button";
 
 type CopyButtonProps = {
+  copiedLabel?: string;
+  label?: string;
+  size?: ButtonProps["size"];
   value: string;
+  variant?: ButtonProps["variant"];
 };
 
-export function CopyButton({ value }: CopyButtonProps) {
+export function CopyButton({
+  copiedLabel = "コピー済み",
+  label = "URLをコピー",
+  size = "sm",
+  value,
+  variant = "outline",
+}: CopyButtonProps) {
   const [copied, setCopied] = useState(false);
 
   const onCopy = async () => {
@@ -21,8 +32,8 @@ export function CopyButton({ value }: CopyButtonProps) {
   };
 
   return (
-    <Button type="button" variant="outline" size="sm" onClick={onCopy}>
-      {copied ? "コピー済み" : "URLをコピー"}
+    <Button type="button" variant={variant} size={size} onClick={onCopy}>
+      {copied ? copiedLabel : label}
     </Button>
   );
 }
