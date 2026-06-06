@@ -32,9 +32,17 @@ const expectErrorCode = (act: () => void, errorCode: string): void => {
   }
 };
 
+/**
+ * ApplicationFormValueValidator のテスト
+ *
+ * @group application-form-value-validator
+ */
 describe('ApplicationFormValueValidator', () => {
   const validator = new ApplicationFormValueValidator();
 
+  /**
+   * フォーム定義のフィールドに一致する値を受け入れること
+   */
   it('accepts values that match form definition fields', () => {
     const fieldsByKey = validator.buildFieldsByKey([
       field({ id: 'text-1', fieldKey: 'title', fieldType: FormFieldType.TEXT }),
@@ -59,6 +67,9 @@ describe('ApplicationFormValueValidator', () => {
     ).not.toThrow();
   });
 
+  /**
+   * 未知のフィールドキーを拒否すること
+   */
   it('rejects unknown field keys', () => {
     const fieldsByKey = validator.buildFieldsByKey([
       field({ fieldKey: 'title' }),
@@ -71,6 +82,9 @@ describe('ApplicationFormValueValidator', () => {
     );
   });
 
+  /**
+   * フィールド型に一致しない値を拒否すること
+   */
   it('rejects values that do not match field type', () => {
     const fieldsByKey = validator.buildFieldsByKey([
       field({ fieldKey: 'amount', fieldType: FormFieldType.NUMBER }),
@@ -81,6 +95,9 @@ describe('ApplicationFormValueValidator', () => {
     }, ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
   });
 
+  /**
+   * 修正対象外のフィールドに対する値を拒否すること
+   */
   it('rejects patch values outside the open correction target fields', () => {
     const fieldsByKey = validator.buildFieldsByKey([
       field({ id: 'field-title', fieldKey: 'title' }),
@@ -97,6 +114,9 @@ describe('ApplicationFormValueValidator', () => {
     );
   });
 
+  /**
+   * 必須フィールドが未入力の場合に拒否すること
+   */
   it('requires required fields before submit', () => {
     expectErrorCode(
       () =>
@@ -115,6 +135,9 @@ describe('ApplicationFormValueValidator', () => {
     );
   });
 
+  /**
+   * 既存の申請値を検証すること
+   */
   it('validates existing application values before submit', () => {
     expectErrorCode(
       () =>

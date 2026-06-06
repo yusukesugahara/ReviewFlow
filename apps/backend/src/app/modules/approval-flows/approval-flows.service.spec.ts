@@ -9,6 +9,11 @@ import { User } from '../../../models/entities/user.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
 import { ApprovalFlowsService } from './approval-flows.service';
 
+/**
+ * ApprovalFlowsService のテスト
+ *
+ * @group approval-flows-service
+ */
 describe('ApprovalFlowsService', () => {
   let service: ApprovalFlowsService;
   let flows: jest.Mocked<
@@ -81,6 +86,9 @@ describe('ApprovalFlowsService', () => {
     service = module.get(ApprovalFlowsService);
   });
 
+  /**
+   * create はグループスコープの承認フローを保存すること
+   */
   it('create stores a group-scoped approval flow', async () => {
     flows.findOne.mockResolvedValue({
       id: 'flow-new',
@@ -118,6 +126,9 @@ describe('ApprovalFlowsService', () => {
     });
   });
 
+  /**
+   * create は単一の承認ステップに複数の担当者を設定できること
+   */
   it('create accepts multiple assignees for a single approval step', async () => {
     users.find.mockResolvedValue([
       { id: 'user-1' },
@@ -168,6 +179,9 @@ describe('ApprovalFlowsService', () => {
     });
   });
 
+  /**
+   * create はステップ順序が連続していない場合にエラーを返すこと
+   */
   it('create rejects when step orders are not contiguous from 1', async () => {
     await expect(
       service.create(actor, {

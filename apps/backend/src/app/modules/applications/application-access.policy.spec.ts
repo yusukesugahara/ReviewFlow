@@ -36,9 +36,17 @@ const application = (overrides: Partial<Application> = {}): Application =>
     ...overrides,
   }) as Application;
 
+/**
+ * ApplicationAccessPolicy のテスト
+ *
+ * @group application-access-policy
+ */
 describe('ApplicationAccessPolicy', () => {
   const policy = new ApplicationAccessPolicy();
 
+  /**
+   * tenant_admin が任意のテナントの申請を読み込めること
+   */
   it('allows tenant admins to read any tenant application', async () => {
     await expect(
       policy.assertCanRead(
@@ -49,6 +57,9 @@ describe('ApplicationAccessPolicy', () => {
     ).resolves.toBeUndefined();
   });
 
+  /**
+   * 申請者が自分の申請を読み込めること
+   */
   it('allows the applicant user to read their application', async () => {
     await expect(
       policy.assertCanRead(
@@ -59,12 +70,18 @@ describe('ApplicationAccessPolicy', () => {
     ).resolves.toBeUndefined();
   });
 
+  /**
+   * 現在の承認ステップの担当者が承認操作を行えること
+   */
   it('allows the current approval step assignee to act on review', () => {
     expect(policy.canActOnReview(actor('reviewer-1'), application())).toBe(
       true,
     );
   });
 
+  /**
+   * 現在の承認ステップに登録された担当者が承認操作を行えること
+   */
   it('allows any assignee registered on the current approval step to act', () => {
     expect(
       policy.canActOnReview(
@@ -85,6 +102,9 @@ describe('ApplicationAccessPolicy', () => {
     ).toBe(true);
   });
 
+  /**
+   * 過去に承認した担当者が非草稿の申請を読み込めること
+   */
   it('allows a past approver to read a non-draft application', async () => {
     await expect(
       policy.assertCanRead(
@@ -95,6 +115,9 @@ describe('ApplicationAccessPolicy', () => {
     ).resolves.toBeUndefined();
   });
 
+  /**
+   * 関係のないユーザーが申請を読み込めないこと
+   */
   it('denies unrelated users', async () => {
     await expect(
       policy.assertCanRead(

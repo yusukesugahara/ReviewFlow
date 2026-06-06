@@ -6,6 +6,11 @@ import { UserRole } from '../../../models/constants/user-role';
 import { User } from '../../../models/entities/user.entity';
 import { UsersService } from './users.service';
 
+/**
+ * UsersService のテスト
+ *
+ * @group users-service
+ */
 describe('UsersService', () => {
   let service: UsersService;
   let repo: jest.Mocked<
@@ -31,11 +36,17 @@ describe('UsersService', () => {
     service = module.get(UsersService);
   });
 
+  /**
+   * count はリポジトリに委譲すること
+   */
   it('count delegates to repository', async () => {
     repo.count.mockResolvedValue(3);
     await expect(service.count()).resolves.toBe(3);
   });
 
+  /**
+   * findAllByEmail は小文字のメールアドレスをクエリすること
+   */
   it('findAllByEmail queries lowercase email', async () => {
     repo.find.mockResolvedValue([]);
     await service.findAllByEmail('User@Example.COM');
@@ -44,6 +55,9 @@ describe('UsersService', () => {
     });
   });
 
+  /**
+   * findByTenantAndEmail は小文字のメールアドレスをクエリすること
+   */
   it('findByTenantAndEmail queries lowercase email', async () => {
     repo.findOne.mockResolvedValue(null);
     await service.findByTenantAndEmail('tenant-1', 'User@Example.COM');
@@ -53,6 +67,9 @@ describe('UsersService', () => {
   });
 
   describe('updateRoleInTenant', () => {
+    /**
+     * 自分のロールを変更しようとした場合にエラーを返すこと
+     */
     it('forbids changing own role', async () => {
       await expect(
         service.updateRoleInTenant(
@@ -66,6 +83,9 @@ describe('UsersService', () => {
       });
     });
 
+    /**
+     * テナント内にユーザーがいない場合にエラーを返すこと
+     */
     it('throws when user not in tenant', async () => {
       repo.findOne.mockResolvedValue(null);
       await expect(
@@ -80,6 +100,9 @@ describe('UsersService', () => {
       });
     });
 
+    /**
+     * 最後のテナント管理者が降格されないように保護すること
+     */
     it('protects last tenant_admin from demotion', async () => {
       const adminUser = {
         id: 'u-admin',
@@ -101,6 +124,9 @@ describe('UsersService', () => {
       });
     });
 
+    /**
+     * テナント管理者に昇格できること
+     */
     it('saves new role when allowed', async () => {
       const approver = {
         id: 'u-ap',
@@ -125,6 +151,9 @@ describe('UsersService', () => {
       expect(repo.save).toHaveBeenCalled();
     });
 
+    /**
+     * 他のユーザーをテナント管理者に昇格できること
+     */
     it('allows promoting another user to tenant_admin', async () => {
       const approver = {
         id: 'u-ap',
@@ -151,6 +180,9 @@ describe('UsersService', () => {
   });
 
   describe('deactivateInTenant', () => {
+    /**
+     * 自分のアカウントを削除しようとした場合にエラーを返すこと
+     */
     it('forbids deleting own account', async () => {
       await expect(
         service.deactivateInTenant('t1', 'same-id', 'same-id'),
@@ -159,6 +191,9 @@ describe('UsersService', () => {
       });
     });
 
+    /**
+     * テナント内にユーザーがいない場合にエラーを返すこと
+     */
     it('throws when user not in tenant', async () => {
       repo.findOne.mockResolvedValue(null);
       await expect(
@@ -168,6 +203,9 @@ describe('UsersService', () => {
       });
     });
 
+    /**
+     * 最後の有効なテナント管理者が削除されないように保護すること
+     */
     it('protects the last active tenant_admin from deletion', async () => {
       repo.findOne.mockResolvedValue({
         id: 'u-admin',
@@ -184,6 +222,9 @@ describe('UsersService', () => {
       });
     });
 
+    /**
+     * 他のユーザーを削除できること
+     */
     it('deactivates another user when allowed', async () => {
       const target = {
         id: 'u-member',
@@ -202,6 +243,9 @@ describe('UsersService', () => {
   });
 
   describe('restoreInTenant', () => {
+    /**
+     * テナント内にユーザーがいない場合にエラーを返すこと
+     */
     it('throws when user not in tenant', async () => {
       repo.findOne.mockResolvedValue(null);
       await expect(
@@ -211,6 +255,9 @@ describe('UsersService', () => {
       });
     });
 
+    /**
+     * ユーザーを復活できること
+     */
     it('reactivates a user', async () => {
       const target = {
         id: 'u-member',

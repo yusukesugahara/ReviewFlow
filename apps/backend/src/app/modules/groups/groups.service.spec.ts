@@ -10,6 +10,11 @@ import { User } from '../../../models/entities/user.entity';
 import { UsersService } from '../users/users.service';
 import { GroupsService } from './groups.service';
 
+/**
+ * GroupsService のテスト
+ *
+ * @group groups-service
+ */
 describe('GroupsService', () => {
   let service: GroupsService;
   let groupsRepo: {
@@ -104,6 +109,9 @@ describe('GroupsService', () => {
     service = module.get(GroupsService);
   });
 
+  /**
+   * 現在のユーザーのスペースロールをグループごとに独立して返すこと
+   */
   it('returns current user space roles independently per group', async () => {
     membersRepo.find.mockResolvedValue([
       {
@@ -130,6 +138,9 @@ describe('GroupsService', () => {
     ]);
   });
 
+  /**
+   * テナント管理者のグループ一覧をメンバーシップロールと共に返すこと
+   */
   it('returns tenant admin groups with membership role when present', async () => {
     groupsRepo.find.mockResolvedValue([
       { id: 'group-a', name: 'Aスペース' },
@@ -150,6 +161,9 @@ describe('GroupsService', () => {
     ]);
   });
 
+  /**
+   * グループを作成し、初期グループ管理者を設定すること
+   */
   it('creates a group with initial group admins', async () => {
     groupsRepo.findOne.mockResolvedValue(null);
     usersService.findAllByIdsInTenant.mockResolvedValue([
@@ -187,6 +201,9 @@ describe('GroupsService', () => {
     ]);
   });
 
+  /**
+   * 初期管理者がテナント外の場合にエラーを返すこと
+   */
   it('rejects initial admins outside the tenant', async () => {
     groupsRepo.findOne.mockResolvedValue(null);
     usersService.findAllByIdsInTenant.mockResolvedValue([{ id: 'admin-1' }]);
@@ -201,6 +218,9 @@ describe('GroupsService', () => {
     });
   });
 
+  /**
+   * テナント管理者がメンバーを追加できること
+   */
   it('allows a tenant admin to add a member', async () => {
     groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
     membersRepo.findOne.mockResolvedValueOnce(null);
@@ -226,6 +246,9 @@ describe('GroupsService', () => {
     );
   });
 
+  /**
+   * 非テナント管理者がメンバーを追加できないこと
+   */
   it('rejects adding members by non tenant admins', async () => {
     groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
 
@@ -240,6 +263,9 @@ describe('GroupsService', () => {
     });
   });
 
+  /**
+   * 最後のグループ管理者が降格されないように保護すること
+   */
   it('protects the last group admin from demotion', async () => {
     groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
     membersRepo.findOne
@@ -265,6 +291,9 @@ describe('GroupsService', () => {
     });
   });
 
+  /**
+   * グループ管理者がメンバーを削除できること
+   */
   it('allows a group admin to remove a group member', async () => {
     groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
     membersRepo.findOne
@@ -280,6 +309,9 @@ describe('GroupsService', () => {
     expect(membersRepo.delete).toHaveBeenCalledWith('member-2');
   });
 
+  /**
+   * 非グループ管理者がメンバーを削除できないこと
+   */
   it('rejects removing members by non group admins', async () => {
     groupsRepo.findOne.mockResolvedValue({ id: 'group-1' });
     membersRepo.findOne.mockResolvedValue(null);
