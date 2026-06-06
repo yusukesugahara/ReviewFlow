@@ -1,7 +1,14 @@
 "use client";
 
 import { useState } from "react";
+import { Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   DialogContent,
   DialogDescription,
@@ -25,9 +32,22 @@ export function DescriptionEditModal({
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" onClick={() => setIsOpen(true)}>
-        編集
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setIsOpen(true)}
+              aria-label="説明欄を編集"
+            >
+              <Edit3 aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>説明欄を編集</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       {isOpen ? (
         <DialogContent
           titleId="description-edit-title"

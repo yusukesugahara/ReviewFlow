@@ -16,7 +16,7 @@ import { formatDateTimeJa } from "@/lib/date-format";
 import { ApprovalProgressDiagram } from "./approval-progress-diagram";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { DynamicFieldInput, DynamicFieldsTable } from "./dynamic-fields";
-import { PublicApplicationUrlCard } from "./public-application-url-card";
+import { PublicApplicationUrlCopyButton } from "./public-application-url-card";
 import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
 import type {
   ApplicationCorrection,
@@ -105,7 +105,7 @@ export function ApplicationDetailView({
           />
           {actions ? <ActionPanel>{actions}</ActionPanel> : null}
           {publicApplicationUrlPath ? (
-            <PublicApplicationUrlCard path={publicApplicationUrlPath} />
+            <PublicApplicationUrlCopyButton path={publicApplicationUrlPath} />
           ) : null}
         </aside>
       </div>
