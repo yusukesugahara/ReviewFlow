@@ -29,7 +29,7 @@ export const PasswordInput = React.forwardRef<HTMLInputElement, PasswordInputPro
           disabled={disabled}
           aria-label={isVisible ? "パスワードを隠す" : "パスワードを表示"}
           aria-pressed={isVisible}
-          className="absolute right-1 top-1/2 h-8 w-8 -translate-y-1/2 text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+          className="absolute right-1 top-1/2 -translate-y-1/2 text-slate-500"
           onClick={() => setIsVisible((current) => !current)}
         >
           <Icon className="size-4" aria-hidden="true" />

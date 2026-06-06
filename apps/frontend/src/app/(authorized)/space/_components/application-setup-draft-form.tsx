@@ -231,7 +231,7 @@ function InlineFormBuilder({
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 w-8 bg-white p-0 text-red-600 hover:text-red-700"
+                      className="bg-white text-red-600"
                       aria-label={`${dynamicField.label}を削除`}
                       onClick={() => removeField(field.id)}
                     >
@@ -242,7 +242,7 @@ function InlineFormBuilder({
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute right-2 top-1/2 h-10 w-10 -translate-y-1/2 cursor-grab bg-white/90 text-slate-500 hover:bg-slate-100 hover:text-slate-900 active:cursor-grabbing"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 cursor-grab bg-white/90 text-slate-500 active:cursor-grabbing"
                     aria-label={`${dynamicField.label}をドラッグして並び替え`}
                     draggable
                     onDragStart={(event) => {
