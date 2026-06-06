@@ -3749,7 +3749,10 @@
               "date",
               "select",
               "radio",
-              "checkbox"
+              "checkbox",
+              "consent",
+              "description",
+              "section"
             ]
           },
           "required": {
@@ -3813,7 +3816,10 @@
               "date",
               "select",
               "radio",
-              "checkbox"
+              "checkbox",
+              "consent",
+              "description",
+              "section"
             ]
           },
           "required": {

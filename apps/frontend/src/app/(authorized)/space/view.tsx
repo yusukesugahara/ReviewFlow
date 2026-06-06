@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/app/_components/enterprise/page-header";
 import { MetricCard } from "@/app/(authorized)/space/_components/metric-card";
 import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
 import type { AdminDashboardViewProps } from "./types";
@@ -28,25 +27,16 @@ export function AdminDashboardView({
 
   return (
     <div className="space-y-10">
-      <PageHeader
-        eyebrow="Workspace"
-        title="ダッシュボード"
-        description="テナント全体の利用状況と、よく使う業務アクションを確認できます。"
-        actions={
-          <>
-            <Button asChild size="sm">
-              <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link
-                href={`/space/applications?spaceId=${encodeURIComponent(spaceId)}`}
-              >
-                申請フォーム一覧を見る
-              </Link>
-            </Button>
-          </>
-        }
-      />
+      <div className="flex flex-wrap items-center justify-end gap-2">
+        <Button asChild size="sm">
+          <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
+        </Button>
+        <Button asChild size="sm" variant="outline">
+          <Link href={`/space/applications?spaceId=${encodeURIComponent(spaceId)}`}>
+            申請フォーム一覧を見る
+          </Link>
+        </Button>
+      </div>
 
       <div className="grid gap-5 md:grid-cols-3">
         <MetricCard

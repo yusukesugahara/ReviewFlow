@@ -85,7 +85,6 @@ export default async function SpaceUsersPage({ searchParams }: SpaceUsersPagePro
     }
 
     const isTenantAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
-    const currentSpace = spaces.find((space) => space.id === spaceId);
     const [members, availableUsers] = await Promise.all([
       listSpaceMembers(spaceId, authHeaders),
       isTenantAdmin ? listAvailableUsers(spaceId, authHeaders) : Promise.resolve([]),
@@ -100,7 +99,6 @@ export default async function SpaceUsersPage({ searchParams }: SpaceUsersPagePro
         isTenantAdmin={isTenantAdmin}
         members={members}
         spaceId={spaceId}
-        spaceName={currentSpace?.name ?? "選択中スペース"}
       />
     );
   } catch (error) {

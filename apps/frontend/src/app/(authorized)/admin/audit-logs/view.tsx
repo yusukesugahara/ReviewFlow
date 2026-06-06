@@ -4,9 +4,18 @@ import { AlertTriangle, Search, ShieldAlert, ShieldCheck } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { formatDateTimeJa } from "@/lib/date-format";
+import { AuditLogDateFilterPicker } from "./audit-log-date-filter-picker";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
 
 function shortId(value: unknown): string {
@@ -61,13 +70,6 @@ export function AdminAuditLogsView({
 
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">監査ログ</h2>
-        <p className="text-muted-foreground">
-          テナント内のすべての操作履歴を確認できます
-        </p>
-      </div>
-
       <div className="grid gap-3 md:grid-cols-3">
         <AuditSummaryCard
           icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
@@ -96,69 +98,79 @@ export function AdminAuditLogsView({
             {hasSearch ? `「${query}」に一致する最新200件の操作履歴` : "最新200件の操作履歴"}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <form className="space-y-4">
-            <div className="grid gap-3 xl:grid-cols-[minmax(280px,1fr)_160px_160px_220px]">
-              <div className="relative">
-                <Search
-                  className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
-                  aria-hidden="true"
-                />
-                <Input
-                  name="q"
-                  defaultValue={query}
-                  placeholder="操作、対象、ID、操作者メールで検索"
-                  className="pl-9"
-                />
+        <CardContent className="space-y-5 pt-6">
+          <form className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+              <div className="space-y-2 xl:col-span-3">
+                <Label htmlFor="audit-query">検索キーワード</Label>
+                <div className="relative">
+                  <Search
+                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground"
+                    aria-hidden="true"
+                  />
+                  <Input
+                    id="audit-query"
+                    name="q"
+                    defaultValue={query}
+                    placeholder="操作、対象、ID、操作者メールで検索"
+                    className="bg-white pl-9"
+                  />
+                </div>
               </div>
-              <select
-                name="risk"
-                defaultValue={risk}
-                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-[15px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">リスクすべて</option>
-                <option value="high">高リスク</option>
-                <option value="medium">要確認</option>
-                <option value="low">通常</option>
-              </select>
-              <select
-                name="outcome"
-                defaultValue={outcome}
-                className="flex h-10 w-full rounded-lg border border-input bg-background px-3 py-2 text-[15px] shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-              >
-                <option value="all">結果すべて</option>
-                <option value="failed">失敗のみ</option>
-                <option value="success">成功のみ</option>
-              </select>
-              <div className="grid grid-cols-2 gap-2">
-                <Button type="submit">検索</Button>
-                <Button asChild type="button" variant="outline">
-                  <Link href="/admin/audit-logs">クリア</Link>
-                </Button>
+              <div className="space-y-2">
+                <Label htmlFor="audit-risk">リスク</Label>
+                <Select name="risk" defaultValue={risk}>
+                  <SelectTrigger id="audit-risk" className="h-10 rounded-lg bg-white text-[15px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">リスクすべて</SelectItem>
+                    <SelectItem value="high">高リスク</SelectItem>
+                    <SelectItem value="medium">要確認</SelectItem>
+                    <SelectItem value="low">通常</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="audit-outcome">結果</Label>
+                <Select name="outcome" defaultValue={outcome}>
+                  <SelectTrigger id="audit-outcome" className="h-10 rounded-lg bg-white text-[15px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">結果すべて</SelectItem>
+                    <SelectItem value="failed">失敗のみ</SelectItem>
+                    <SelectItem value="success">成功のみ</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
-            <div className="grid gap-3 sm:grid-cols-[220px_220px]">
-              <div className="space-y-2">
-                <label htmlFor="createdFrom" className="text-sm font-medium">
-                  日時 From
-                </label>
-                <Input
-                  id="createdFrom"
-                  name="createdFrom"
-                  type="datetime-local"
-                  defaultValue={createdFrom}
-                />
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:max-w-md">
+                <div className="space-y-2">
+                  <Label htmlFor="createdFrom">作成日 From</Label>
+                  <AuditLogDateFilterPicker
+                    id="createdFrom"
+                    name="createdFrom"
+                    defaultValue={createdFrom}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="createdTo">作成日 To</Label>
+                  <AuditLogDateFilterPicker
+                    id="createdTo"
+                    name="createdTo"
+                    defaultValue={createdTo}
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <label htmlFor="createdTo" className="text-sm font-medium">
-                  日時 To
-                </label>
-                <Input
-                  id="createdTo"
-                  name="createdTo"
-                  type="datetime-local"
-                  defaultValue={createdTo}
-                />
+              <div className="flex gap-2">
+                <Button type="submit" variant="outline" className="bg-white">
+                  検索
+                </Button>
+                <Button asChild type="button" variant="outline" className="bg-white">
+                  <Link href="/admin/audit-logs">クリア</Link>
+                </Button>
               </div>
             </div>
           </form>

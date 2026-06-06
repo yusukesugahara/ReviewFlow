@@ -1,22 +1,23 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Copy } from "lucide-react";
+import { Link as LinkIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-type PublicApplicationUrlCardProps = {
+type PublicApplicationUrlCopyButtonProps = {
   path: string;
 };
 
-export function PublicApplicationUrlCard({ path }: PublicApplicationUrlCardProps) {
+export function PublicApplicationUrlCopyButton({
+  path,
+}: PublicApplicationUrlCopyButtonProps) {
   const [origin] = useState(() =>
     typeof window === "undefined" ? "" : window.location.origin,
   );
@@ -39,30 +40,22 @@ export function PublicApplicationUrlCard({ path }: PublicApplicationUrlCardProps
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>公開URL</CardTitle>
-        <CardDescription>
-          申請者に共有する公開フォームのURLです
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <button
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Button
             type="button"
-            className="min-w-0 flex-1 break-all rounded-lg border bg-muted/30 px-3 py-2 text-left font-mono text-sm transition-colors hover:bg-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+            variant="outline"
+            size="icon"
             onClick={onCopy}
-            title="公開URLをコピー"
+            aria-label={copied ? "公開URLをコピー済み" : "公開URLをコピー"}
             suppressHydrationWarning
           >
-            {publicUrl}
-          </button>
-          <Button type="button" variant="outline" size="sm" onClick={onCopy}>
-            <Copy aria-hidden="true" />
-            {copied ? "コピー済み" : "URLをコピー"}
+            <LinkIcon aria-hidden="true" />
           </Button>
-        </div>
-      </CardContent>
-    </Card>
+        </TooltipTrigger>
+        <TooltipContent>{copied ? "コピー済み" : "公開URLをコピー"}</TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
 }

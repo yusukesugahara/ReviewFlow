@@ -1113,7 +1113,7 @@ export interface components {
              * @example text
              * @enum {string}
              */
-            fieldType: "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox";
+            fieldType: "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox" | "consent" | "description" | "section";
             required: boolean;
             placeholder?: string;
             helpText?: string;
@@ -1135,7 +1135,7 @@ export interface components {
              * @example text
              * @enum {string}
              */
-            fieldType: "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox";
+            fieldType: "text" | "textarea" | "number" | "date" | "select" | "radio" | "checkbox" | "consent" | "description" | "section";
             required: boolean;
             placeholder?: string;
             helpText?: string;

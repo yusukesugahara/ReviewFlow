@@ -5,6 +5,21 @@ import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -163,11 +178,7 @@ export function SpaceUsersTable({
             >
               スペースロールを変更
             </button>
-            {actionMenu.member.userId === currentUserId ? (
-              <span className="block px-3 py-2 text-sm text-muted-foreground">
-                自分自身
-              </span>
-            ) : (
+            {actionMenu.member.userId !== currentUserId ? (
               <button
                 type="button"
                 className="block w-full rounded px-3 py-2 text-left text-sm text-destructive hover:bg-rose-50 focus-visible:bg-rose-50 focus-visible:outline-none"
@@ -179,18 +190,17 @@ export function SpaceUsersTable({
               >
                 削除
               </button>
-            )}
+            ) : null}
           </div>
         </>
       ) : null}
 
       {deleteTarget ? (
-        <div
-          aria-describedby={deleteDescriptionId}
-          aria-labelledby={deleteTitleId}
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-          role="dialog"
+        <DialogContent
+          titleId={deleteTitleId}
+          descriptionId={deleteDescriptionId}
+          className="max-w-md"
+          onClose={() => setDeleteTarget(null)}
         >
           <form
             action={removeSpaceMemberAction.bind(
@@ -198,21 +208,17 @@ export function SpaceUsersTable({
               spaceId,
               deleteTarget.userId,
             )}
-            className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+            className="space-y-5"
           >
-            <h3
-              id={deleteTitleId}
-              className="text-lg font-semibold text-slate-900"
-            >
-              スペースメンバーを削除しますか
-            </h3>
-            <p
-              id={deleteDescriptionId}
-              className="mt-2 text-sm text-slate-600"
-            >
-              {deleteTarget.email} をこのスペースから削除します。
-            </p>
-            <div className="mt-5 flex justify-end gap-2">
+            <DialogHeader>
+              <DialogTitle id={deleteTitleId}>
+                スペースメンバーを削除しますか
+              </DialogTitle>
+              <DialogDescription id={deleteDescriptionId}>
+                {deleteTarget.email} をこのスペースから削除します。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -223,18 +229,17 @@ export function SpaceUsersTable({
               <Button type="submit" variant="destructive">
                 削除
               </Button>
-            </div>
+            </DialogFooter>
           </form>
-        </div>
+        </DialogContent>
       ) : null}
 
       {roleTarget ? (
-        <div
-          aria-describedby={roleDescriptionId}
-          aria-labelledby={roleTitleId}
-          aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4"
-          role="dialog"
+        <DialogContent
+          titleId={roleTitleId}
+          descriptionId={roleDescriptionId}
+          className="max-w-md"
+          onClose={() => setRoleTarget(null)}
         >
           <form
             action={updateSpaceMemberRoleAction.bind(
@@ -242,33 +247,30 @@ export function SpaceUsersTable({
               spaceId,
               roleTarget.userId,
             )}
-            className="w-full max-w-md rounded-lg border border-slate-200 bg-white p-5 shadow-xl"
+            className="space-y-5"
           >
-            <h3 id={roleTitleId} className="text-lg font-semibold text-slate-900">
-              スペースロールを変更
-            </h3>
-            <p id={roleDescriptionId} className="mt-2 text-sm text-slate-600">
-              {roleTarget.email} のスペースロールを変更します。
-            </p>
-            <label
-              className="mt-5 block text-sm font-medium text-slate-700"
-              htmlFor="space-role"
-            >
-              スペースロール
-            </label>
-            <select
-              id="space-role"
-              name="role"
-              defaultValue={roleTarget.role}
-              className="mt-2 h-10 w-full rounded-md border border-input bg-background px-3 text-sm"
-            >
-              {SPACE_ROLE_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            <div className="mt-5 flex justify-end gap-2">
+            <DialogHeader>
+              <DialogTitle id={roleTitleId}>スペースロールを変更</DialogTitle>
+              <DialogDescription id={roleDescriptionId}>
+                {roleTarget.email} のスペースロールを変更します。
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="space-role">スペースロール</Label>
+              <Select name="role" defaultValue={roleTarget.role}>
+                <SelectTrigger id="space-role" className="h-10 bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPACE_ROLE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <DialogFooter>
               <Button
                 type="button"
                 variant="outline"
@@ -277,9 +279,9 @@ export function SpaceUsersTable({
                 キャンセル
               </Button>
               <Button type="submit">保存</Button>
-            </div>
+            </DialogFooter>
           </form>
-        </div>
+        </DialogContent>
       ) : null}
     </>
   );

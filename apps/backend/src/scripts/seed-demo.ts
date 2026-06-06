@@ -25,8 +25,9 @@ import { Group } from '../models/entities/group.entity';
 import { Tenant } from '../models/entities/tenant.entity';
 import { User } from '../models/entities/user.entity';
 
-const DEMO_TENANT_NAME = 'ReviewFlow Demo';
+const DEMO_TENANT_NAME = 'みどり市 申請受付デモ';
 const DEMO_PASSWORD = 'Password123!';
+const RESET_DEMO_TENANT_NAMES = [DEMO_TENANT_NAME, 'ReviewFlow Demo'];
 
 type DemoUserKey = 'admin' | 'manager' | 'finance' | 'applicant';
 
@@ -49,8 +50,10 @@ type DemoApplication = {
   applicantEmail: string;
   createdAt: Date;
   currentStepOrder: number | null;
+  formName: string;
   status: (typeof ApplicationStatus)[keyof typeof ApplicationStatus];
   submittedAt: Date | null;
+  targetFieldKey?: string;
   updatedAt: Date;
   values: Record<string, unknown>;
 };
@@ -65,11 +68,13 @@ async function main() {
   try {
     const result = await dataSource.transaction(async (manager) => {
       const tenantRepo = manager.getRepository(Tenant);
-      const existingTenant = await tenantRepo.findOne({
-        where: { name: DEMO_TENANT_NAME },
-      });
-      if (existingTenant) {
-        await tenantRepo.remove(existingTenant);
+      for (const tenantName of RESET_DEMO_TENANT_NAMES) {
+        const existingTenant = await tenantRepo.findOne({
+          where: { name: tenantName },
+        });
+        if (existingTenant) {
+          await tenantRepo.remove(existingTenant);
+        }
       }
 
       const tenant = await tenantRepo.save(
@@ -107,11 +112,11 @@ async function main() {
         });
       }
 
-      await createExpenseApplications(manager, {
+      await createPublicProcedureApplications(manager, {
         approvalFlow,
         applicantUserId: users.applicant.id,
         financeUserId: users.finance.id,
-        formDefinition: formDefinitions[0],
+        formDefinitions,
         groupId: group.id,
         managerUserId: users.manager.id,
         tenantId: tenant.id,
@@ -127,7 +132,7 @@ async function main() {
     console.log(`Tenant: ${DEMO_TENANT_NAME} (${result.tenantId})`);
     console.log(`Space ID: ${result.spaceId}`);
     console.log(`Admin: admin@reviewflow.demo / ${DEMO_PASSWORD}`);
-    console.log(`Manager: manager@reviewflow.demo / ${DEMO_PASSWORD}`);
+    console.log(`Reviewer: reviewer@reviewflow.demo / ${DEMO_PASSWORD}`);
     console.log(`Finance: finance@reviewflow.demo / ${DEMO_PASSWORD}`);
     console.log(`Applicant: applicant@reviewflow.demo / ${DEMO_PASSWORD}`);
   } finally {
@@ -144,7 +149,7 @@ async function createUsers(
   const rows = {
     admin: userRepo.create({
       tenantId,
-      name: '佐藤 玲奈',
+      name: '青木 玲奈',
       email: 'admin@reviewflow.demo',
       passwordHash,
       role: UserRole.TENANT_ADMIN,
@@ -152,15 +157,15 @@ async function createUsers(
     }),
     manager: userRepo.create({
       tenantId,
-      name: '田中 健',
-      email: 'manager@reviewflow.demo',
+      name: '市民協働課 田中 健',
+      email: 'reviewer@reviewflow.demo',
       passwordHash,
       role: UserRole.TENANT_USER,
       isActive: true,
     }),
     finance: userRepo.create({
       tenantId,
-      name: '山本 美咲',
+      name: '財政課 山本 美咲',
       email: 'finance@reviewflow.demo',
       passwordHash,
       role: UserRole.TENANT_USER,
@@ -168,7 +173,7 @@ async function createUsers(
     }),
     applicant: userRepo.create({
       tenantId,
-      name: '高橋 翔太',
+      name: 'みどり商店会 高橋 翔太',
       email: 'applicant@reviewflow.demo',
       passwordHash,
       role: UserRole.TENANT_USER,
@@ -193,8 +198,9 @@ async function createGroup(
   return groupRepo.save(
     groupRepo.create({
       tenantId,
-      name: 'コーポレート業務',
-      description: '経費精算、稟議、備品購入などの社内申請を扱うデモスペース',
+      name: '公共申請受付',
+      description:
+        '補助金、施設利用、イベント開催などの公的申請を扱うデモスペース',
       createdByUserId: users.admin.id,
     }),
   );
@@ -251,7 +257,7 @@ async function createApprovalFlow(
     flowRepo.create({
       tenantId,
       groupId,
-      name: '部門長・経理承認フロー',
+      name: '担当課確認・財政確認フロー',
       isActive: true,
     }),
   );
@@ -261,7 +267,7 @@ async function createApprovalFlow(
       groupId,
       approvalFlowId: flow.id,
       stepOrder: 1,
-      stepName: '部門長承認',
+      stepName: '担当課確認',
       assigneeUserId: users.manager.id,
       assigneeUserIds: [users.manager.id],
       canReturn: true,
@@ -271,7 +277,7 @@ async function createApprovalFlow(
       groupId,
       approvalFlowId: flow.id,
       stepOrder: 2,
-      stepName: '経理確認',
+      stepName: '財政確認',
       assigneeUserId: users.finance.id,
       assigneeUserIds: [users.finance.id],
       canReturn: false,
@@ -288,75 +294,277 @@ async function createFormDefinitions(
 ): Promise<FormDefinition[]> {
   const definitions: DemoFormDefinition[] = [
     {
-      name: '経費精算申請',
-      description: '交通費、会議費、備品購入などの立替経費を申請します。',
+      name: '補助金申請',
+      description:
+        '事業者・住民団体が地域活動や設備導入に関する補助金を申請します。',
       fields: [
         {
-          fieldKey: 'expense_title',
-          label: '件名',
+          fieldKey: 'applicant_name',
+          label: '申請者・団体名',
           fieldType: FormFieldType.TEXT,
           required: true,
-          placeholder: '例: 4月分 交通費精算',
+          placeholder: '例: みどり商店会',
         },
         {
-          fieldKey: 'expense_category',
-          label: '経費区分',
+          fieldKey: 'subsidy_program',
+          label: '補助金種別',
           fieldType: FormFieldType.SELECT,
           required: true,
           optionsJson: [
-            { label: '交通費', value: '交通費' },
-            { label: '会議費', value: '会議費' },
-            { label: '備品購入', value: '備品購入' },
+            { label: '地域活動支援', value: '地域活動支援' },
+            { label: '商店街活性化', value: '商店街活性化' },
+            { label: '省エネ設備導入', value: '省エネ設備導入' },
             { label: 'その他', value: 'その他' },
           ],
         },
         {
-          fieldKey: 'amount',
-          label: '金額',
-          fieldType: FormFieldType.NUMBER,
+          fieldKey: 'project_name',
+          label: '事業名',
+          fieldType: FormFieldType.TEXT,
           required: true,
-          placeholder: '例: 12800',
+          placeholder: '例: 中央通り夜市活性化事業',
         },
         {
-          fieldKey: 'expense_date',
+          fieldKey: 'requested_amount',
+          label: '申請金額',
+          fieldType: FormFieldType.NUMBER,
+          required: true,
+          placeholder: '例: 450000',
+        },
+        {
+          fieldKey: 'project_start_date',
+          label: '事業開始予定日',
+          fieldType: FormFieldType.DATE,
+          required: true,
+        },
+        {
+          fieldKey: 'project_plan',
+          label: '事業計画・必要性',
+          fieldType: FormFieldType.TEXTAREA,
+          required: true,
+          helpText: '目的、実施内容、期待効果が分かるように記載してください。',
+        },
+        {
+          fieldKey: 'attachment_check',
+          label: '添付書類確認',
+          fieldType: FormFieldType.SELECT,
+          required: true,
+          optionsJson: [
+            { label: '見積書・収支計画を添付済み', value: '添付済み' },
+            { label: '一部未添付', value: '一部未添付' },
+          ],
+        },
+      ],
+    },
+    {
+      name: '施設利用申請',
+      description: '公民館、体育館、会議室などの公共施設利用を申請します。',
+      fields: [
+        {
+          fieldKey: 'applicant_name',
+          label: '申請者・団体名',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'facility_name',
+          label: '利用施設',
+          fieldType: FormFieldType.SELECT,
+          required: true,
+          optionsJson: [
+            { label: '中央公民館 ホール', value: '中央公民館 ホール' },
+            { label: '市民体育館', value: '市民体育館' },
+            { label: '駅前会議室', value: '駅前会議室' },
+          ],
+        },
+        {
+          fieldKey: 'use_date',
           label: '利用日',
           fieldType: FormFieldType.DATE,
           required: true,
         },
         {
-          fieldKey: 'description',
-          label: '申請理由',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-          helpText: '業務との関連が分かるように記載してください。',
-        },
-      ],
-    },
-    {
-      name: '稟議申請',
-      description: '契約、発注、予算利用などの事前承認を申請します。',
-      fields: [
-        {
-          fieldKey: 'request_title',
-          label: '稟議タイトル',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'vendor',
-          label: '取引先',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'budget',
-          label: '予算金額',
+          fieldKey: 'participants',
+          label: '利用予定人数',
           fieldType: FormFieldType.NUMBER,
           required: true,
         },
         {
           fieldKey: 'purpose',
-          label: '目的・背景',
+          label: '利用目的',
+          fieldType: FormFieldType.TEXTAREA,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: 'イベント開催申請',
+      description:
+        '道路使用、公共施設利用、地域イベントなど複数部署確認が必要な申請です。',
+      fields: [
+        {
+          fieldKey: 'organizer_name',
+          label: '主催者名',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'event_name',
+          label: 'イベント名',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'event_date',
+          label: '開催日',
+          fieldType: FormFieldType.DATE,
+          required: true,
+        },
+        {
+          fieldKey: 'venue',
+          label: '会場・使用場所',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'expected_visitors',
+          label: '想定来場者数',
+          fieldType: FormFieldType.NUMBER,
+          required: true,
+        },
+        {
+          fieldKey: 'safety_plan',
+          label: '安全対策・運営計画',
+          fieldType: FormFieldType.TEXTAREA,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: '事業者登録申請',
+      description: '指定業者、委託先、取引先として登録するための確認申請です。',
+      fields: [
+        {
+          fieldKey: 'business_name',
+          label: '事業者名',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'representative_name',
+          label: '代表者名',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'business_category',
+          label: '業種',
+          fieldType: FormFieldType.SELECT,
+          required: true,
+          optionsJson: [
+            { label: '建設・設備', value: '建設・設備' },
+            { label: '物品販売', value: '物品販売' },
+            { label: '業務委託', value: '業務委託' },
+            { label: 'その他', value: 'その他' },
+          ],
+        },
+        {
+          fieldKey: 'registration_reason',
+          label: '登録希望理由',
+          fieldType: FormFieldType.TEXTAREA,
+          required: true,
+        },
+        {
+          fieldKey: 'documents_status',
+          label: '添付書類',
+          fieldType: FormFieldType.SELECT,
+          required: true,
+          optionsJson: [
+            { label: '登記簿・納税証明を添付済み', value: '添付済み' },
+            { label: '一部未添付', value: '一部未添付' },
+          ],
+        },
+      ],
+    },
+    {
+      name: '各種減免申請',
+      description:
+        '施設使用料、保育料、税関連などの減免について判断根拠を確認します。',
+      fields: [
+        {
+          fieldKey: 'applicant_name',
+          label: '申請者名',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'exemption_type',
+          label: '減免種別',
+          fieldType: FormFieldType.SELECT,
+          required: true,
+          optionsJson: [
+            { label: '施設使用料', value: '施設使用料' },
+            { label: '保育料', value: '保育料' },
+            { label: '税関連', value: '税関連' },
+          ],
+        },
+        {
+          fieldKey: 'target_amount',
+          label: '対象金額',
+          fieldType: FormFieldType.NUMBER,
+          required: true,
+        },
+        {
+          fieldKey: 'reason',
+          label: '減免を希望する理由',
+          fieldType: FormFieldType.TEXTAREA,
+          required: true,
+        },
+        {
+          fieldKey: 'evidence_summary',
+          label: '判断根拠・証明書類',
+          fieldType: FormFieldType.TEXTAREA,
+          required: true,
+        },
+      ],
+    },
+    {
+      name: '住民向け手続き',
+      description:
+        '相談予約、申請受付、証明書関連依頼など住民向け手続きを受け付けます。',
+      fields: [
+        {
+          fieldKey: 'resident_name',
+          label: '氏名',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'procedure_type',
+          label: '手続き種別',
+          fieldType: FormFieldType.SELECT,
+          required: true,
+          optionsJson: [
+            { label: '相談予約', value: '相談予約' },
+            { label: '証明書関連依頼', value: '証明書関連依頼' },
+            { label: '申請受付相談', value: '申請受付相談' },
+          ],
+        },
+        {
+          fieldKey: 'preferred_date',
+          label: '希望日',
+          fieldType: FormFieldType.DATE,
+          required: true,
+        },
+        {
+          fieldKey: 'contact_email',
+          label: '連絡先メールアドレス',
+          fieldType: FormFieldType.TEXT,
+          required: true,
+        },
+        {
+          fieldKey: 'request_detail',
+          label: '相談・依頼内容',
           fieldType: FormFieldType.TEXTAREA,
           required: true,
         },
@@ -428,23 +636,35 @@ async function createFormSetupApplication(
   );
 }
 
-async function createExpenseApplications(
+async function createPublicProcedureApplications(
   manager: EntityManager,
   input: {
     approvalFlow: ApprovalFlow;
     applicantUserId: string;
     financeUserId: string;
-    formDefinition: FormDefinition;
+    formDefinitions: FormDefinition[];
     groupId: string;
     managerUserId: string;
     tenantId: string;
   },
 ) {
   const fieldRepo = manager.getRepository(FormField);
-  const fields = await fieldRepo.find({
-    where: { formDefinitionId: input.formDefinition.id },
-  });
-  const fieldByKey = new Map(fields.map((field) => [field.fieldKey, field]));
+  const formDefinitionByName = new Map(
+    input.formDefinitions.map((formDefinition) => [
+      formDefinition.name,
+      formDefinition,
+    ]),
+  );
+  const fieldsByFormName = new Map<string, Map<string, FormField>>();
+  for (const formDefinition of input.formDefinitions) {
+    const fields = await fieldRepo.find({
+      where: { formDefinitionId: formDefinition.id },
+    });
+    fieldsByFormName.set(
+      formDefinition.name,
+      new Map(fields.map((field) => [field.fieldKey, field])),
+    );
+  }
   const steps = await manager.getRepository(ApprovalStep).find({
     where: { approvalFlowId: input.approvalFlow.id },
     order: { stepOrder: 'ASC' },
@@ -454,87 +674,129 @@ async function createExpenseApplications(
     {
       applicant: 'applicant',
       applicantEmail: 'applicant@reviewflow.demo',
+      formName: '補助金申請',
       status: ApplicationStatus.SUBMITTED,
       currentStepOrder: 1,
       submittedAt: daysAgo(1),
       createdAt: daysAgo(1),
       updatedAt: daysAgo(1),
       values: {
-        expense_title: '大阪出張 交通費精算',
-        expense_category: '交通費',
-        amount: 18420,
-        expense_date: formatDate(daysAgo(3)),
-        description: '顧客定例会議への参加に伴う新幹線往復費用です。',
+        applicant_name: 'みどり商店会',
+        subsidy_program: '商店街活性化',
+        project_name: '中央通り夜市活性化事業',
+        requested_amount: 450000,
+        project_start_date: formatDate(daysFromNow(30)),
+        project_plan:
+          '夏季の歩行者回遊を増やすため、夜市の出店管理と広報を実施します。',
+        attachment_check: '添付済み',
       },
     },
     {
       applicant: 'applicant',
       applicantEmail: 'applicant@reviewflow.demo',
+      formName: '施設利用申請',
       status: ApplicationStatus.IN_REVIEW,
       currentStepOrder: 2,
       submittedAt: daysAgo(4),
       createdAt: daysAgo(4),
       updatedAt: daysAgo(2),
       values: {
-        expense_title: 'プロジェクト会議費',
-        expense_category: '会議費',
-        amount: 9600,
-        expense_date: formatDate(daysAgo(5)),
-        description: '新規導入プロジェクトのキックオフ会議で利用しました。',
+        applicant_name: '青葉町自治会',
+        facility_name: '中央公民館 ホール',
+        use_date: formatDate(daysFromNow(18)),
+        participants: 80,
+        purpose: '防災講習会と地域交流会を同日開催します。',
       },
     },
     {
       applicant: 'applicant',
       applicantEmail: 'applicant@reviewflow.demo',
+      formName: 'イベント開催申請',
       status: ApplicationStatus.RETURNED,
       currentStepOrder: 1,
       submittedAt: daysAgo(7),
       createdAt: daysAgo(7),
       updatedAt: daysAgo(6),
+      targetFieldKey: 'safety_plan',
       values: {
-        expense_title: '備品購入',
-        expense_category: '備品購入',
-        amount: 32800,
-        expense_date: formatDate(daysAgo(8)),
-        description: '開発チーム用のモニターを購入しました。',
+        organizer_name: 'みどり駅前実行委員会',
+        event_name: '駅前ストリートフェスタ',
+        event_date: formatDate(daysFromNow(45)),
+        venue: 'みどり駅前広場・中央通り歩道',
+        expected_visitors: 1200,
+        safety_plan: '警備担当を配置し、混雑時はスタッフが歩行者を誘導します。',
       },
     },
     {
       applicant: 'applicant',
       applicantEmail: 'applicant@reviewflow.demo',
+      formName: '事業者登録申請',
       status: ApplicationStatus.APPROVED,
       currentStepOrder: null,
       submittedAt: daysAgo(12),
       createdAt: daysAgo(12),
       updatedAt: daysAgo(9),
       values: {
-        expense_title: '展示会参加費',
-        expense_category: 'その他',
-        amount: 55000,
-        expense_date: formatDate(daysAgo(14)),
-        description: '業界展示会の参加費です。新規商談獲得を目的としています。',
+        business_name: '株式会社グリーン設備',
+        representative_name: '森下 一郎',
+        business_category: '建設・設備',
+        registration_reason:
+          '公共施設の省エネ改修案件に対応する指定業者として登録を希望します。',
+        documents_status: '添付済み',
       },
     },
     {
       applicant: null,
-      applicantEmail: 'external.vendor@example.com',
+      applicantEmail: 'resident@example.com',
       status: ApplicationStatus.REJECTED,
       currentStepOrder: null,
       submittedAt: daysAgo(18),
       createdAt: daysAgo(18),
       updatedAt: daysAgo(16),
+      formName: '各種減免申請',
       values: {
-        expense_title: '外部参加者 会議費',
-        expense_category: '会議費',
-        amount: 42000,
-        expense_date: formatDate(daysAgo(19)),
-        description: '金額根拠が不十分なため再申請予定です。',
+        applicant_name: '鈴木 花子',
+        exemption_type: '施設使用料',
+        target_amount: 32000,
+        reason: '地域活動に関する利用のため全額減免を希望します。',
+        evidence_summary:
+          '団体活動の実績資料が未提出で、減免対象要件の確認ができません。',
+      },
+    },
+    {
+      applicant: null,
+      applicantEmail: 'resident-consultation@example.com',
+      formName: '住民向け手続き',
+      status: ApplicationStatus.SUBMITTED,
+      currentStepOrder: 1,
+      submittedAt: daysAgo(2),
+      createdAt: daysAgo(2),
+      updatedAt: daysAgo(2),
+      values: {
+        resident_name: '中村 大輔',
+        procedure_type: '相談予約',
+        preferred_date: formatDate(daysFromNow(7)),
+        contact_email: 'resident-consultation@example.com',
+        request_detail:
+          '地域活動支援金の対象経費と申請前相談の日程を確認したいです。',
       },
     },
   ];
 
   for (const demoApplication of applications) {
-    const saved = await saveApplication(manager, input, demoApplication);
+    const formDefinition = formDefinitionByName.get(demoApplication.formName);
+    const fieldByKey = fieldsByFormName.get(demoApplication.formName);
+    if (!formDefinition || !fieldByKey) {
+      continue;
+    }
+    const saved = await saveApplication(
+      manager,
+      {
+        ...input,
+        formDefinition,
+      },
+      demoApplication,
+    );
     await saveFieldValues(
       manager,
       input.tenantId,
@@ -555,7 +817,7 @@ async function createExpenseApplications(
         applicationId: saved.id,
         requestedByUserId: input.managerUserId,
         tenantId: input.tenantId,
-        targetFieldId: fieldByKey.get('description')?.id,
+        targetFieldId: fieldByKey.get(demoApplication.targetFieldKey ?? '')?.id,
       });
     }
   }
@@ -647,7 +909,7 @@ async function saveApprovalHistory(
         approvalStepId: managerStep.id,
         actedByUserId: input.managerUserId,
         action: ApplicationApprovalAction.APPROVED,
-        comment: '内容を確認しました。',
+        comment: '申請内容と必要項目を確認しました。',
       }),
     );
   }
@@ -660,7 +922,7 @@ async function saveApprovalHistory(
         approvalStepId: financeStep.id,
         actedByUserId: input.financeUserId,
         action: ApplicationApprovalAction.APPROVED,
-        comment: '精算対象として承認します。',
+        comment: '予算・添付書類を確認し、承認します。',
       }),
     );
   }
@@ -673,7 +935,7 @@ async function saveApprovalHistory(
         approvalStepId: financeStep.id,
         actedByUserId: input.financeUserId,
         action: ApplicationApprovalAction.REJECTED,
-        comment: '金額根拠が不足しているため却下します。',
+        comment: '判断根拠が不足しているため却下します。',
       }),
     );
   }
@@ -701,7 +963,7 @@ async function saveCorrectionRequest(
       applicationId: input.applicationId,
       requestedByUserId: input.requestedByUserId,
       status: CorrectionRequestStatus.OPEN,
-      overallComment: '申請理由に購入目的と利用部門を追記してください。',
+      overallComment: '安全対策と関係部署への事前確認状況を追記してください。',
       resolvedAt: null,
     }),
   );
@@ -710,7 +972,8 @@ async function saveCorrectionRequest(
       tenantId: input.tenantId,
       correctionRequestId: request.id,
       formFieldId: input.targetFieldId,
-      comment: '備品購入の必要性が分かるように補足してください。',
+      comment:
+        '来場者誘導、緊急時連絡先、道路使用時の安全管理を補足してください。',
       isResolved: false,
     }),
   );
@@ -720,6 +983,13 @@ function daysAgo(days: number): Date {
   const date = new Date();
   date.setHours(10, 0, 0, 0);
   date.setDate(date.getDate() - days);
+  return date;
+}
+
+function daysFromNow(days: number): Date {
+  const date = new Date();
+  date.setHours(10, 0, 0, 0);
+  date.setDate(date.getDate() + days);
   return date;
 }
 

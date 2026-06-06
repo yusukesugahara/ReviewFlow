@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Pencil, Plus, X } from "lucide-react";
+import { Menu, Pencil, Plus, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +27,7 @@ import {
   FIELD_TYPE_OPTIONS,
   FIELD_TYPES,
   fieldTypeNeedsOptions,
+  fieldTypeStoresValue,
   fieldTypeSupportsPlaceholder,
   type FieldType,
 } from "@/lib/constants/form-fields";
@@ -120,7 +121,7 @@ function toDynamicField(
     fieldKey,
     label,
     fieldType: field.fieldType,
-    required: field.required,
+    required: fieldTypeStoresValue(field.fieldType) ? field.required : false,
     placeholder: field.placeholder.trim() || null,
     helpText: field.helpText.trim() || null,
     options: fieldTypeNeedsOptions(field.fieldType)
@@ -138,6 +139,7 @@ function InlineFormBuilder({
   updateField,
   insertFieldAt,
   removeField,
+  moveFieldTo,
   initialValues,
 }: {
   fieldsWithKeys: { field: DraftField; fieldKey: string }[];
@@ -145,9 +147,12 @@ function InlineFormBuilder({
   updateField: (id: string, patch: Partial<DraftField>) => void;
   insertFieldAt: (index: number) => void;
   removeField: (id: string) => void;
+  moveFieldTo: (id: string, targetIndex: number) => void;
   initialValues?: Record<string, unknown>;
 }) {
   const [editingFieldId, setEditingFieldId] = useState<string | null>(null);
+  const [draggingFieldId, setDraggingFieldId] = useState<string | null>(null);
+  const [dragOverFieldId, setDragOverFieldId] = useState<string | null>(null);
   const editingField =
     fieldsWithKeys.find(({ field }) => field.id === editingFieldId)?.field ?? null;
 
@@ -161,10 +166,36 @@ function InlineFormBuilder({
         <div>
           {fieldsWithKeys.map(({ field, fieldKey }, index) => {
             const dynamicField = toDynamicField(field, index, fieldKey);
+            const isDragging = draggingFieldId === field.id;
+            const isDragOver = dragOverFieldId === field.id && draggingFieldId !== field.id;
             return (
               <div key={field.id}>
                 <div
-                  className="group relative grid min-h-16 grid-cols-1 divide-y divide-slate-200 border-t border-slate-200 md:grid-cols-[220px_minmax(0,1fr)] md:divide-x md:divide-y-0"
+                  className={`group relative grid min-h-16 grid-cols-1 divide-y divide-slate-200 border-t border-slate-200 md:grid-cols-[220px_minmax(0,1fr)] md:divide-x md:divide-y-0 ${
+                    isDragging ? "opacity-50" : ""
+                  } ${isDragOver ? "ring-2 ring-blue-400 ring-inset" : ""}`}
+                  onDragOver={(event) => {
+                    event.preventDefault();
+                    if (draggingFieldId && draggingFieldId !== field.id) {
+                      event.dataTransfer.dropEffect = "move";
+                      setDragOverFieldId(field.id);
+                    }
+                  }}
+                  onDragLeave={() => {
+                    setDragOverFieldId((current) => (current === field.id ? null : current));
+                  }}
+                  onDrop={(event) => {
+                    event.preventDefault();
+                    const draggedId =
+                      event.dataTransfer.getData("text/plain") || draggingFieldId;
+                    setDraggingFieldId(null);
+                    setDragOverFieldId(null);
+                    if (!draggedId || draggedId === field.id) {
+                      return;
+                    }
+                    setSelectedFieldId(draggedId);
+                    moveFieldTo(draggedId, index);
+                  }}
                   onFocus={() => setSelectedFieldId(field.id)}
                   onMouseEnter={() => setSelectedFieldId(field.id)}
                 >
@@ -175,14 +206,14 @@ function InlineFormBuilder({
                       {dynamicField.required ? <span className="ml-1 text-destructive">*</span> : null}
                     </span>
                   </div>
-                  <div className="min-w-0 bg-white px-4 py-4">
+                  <div className="min-w-0 bg-white px-4 py-4 pr-14">
                     <DynamicFieldInput
                       field={dynamicField}
                       value={initialValues?.[fieldKey]}
                       variant="table"
                     />
                   </div>
-                  <div className="absolute right-2 top-2 flex gap-1 opacity-100 md:opacity-0 md:transition group-hover:opacity-100 group-focus-within:opacity-100">
+                  <div className="absolute right-12 top-2 flex gap-1 opacity-100 md:opacity-0 md:transition group-hover:opacity-100 group-focus-within:opacity-100">
                     <Button
                       type="button"
                       variant="outline"
@@ -200,13 +231,33 @@ function InlineFormBuilder({
                       type="button"
                       variant="outline"
                       size="sm"
-                      className="h-8 w-8 bg-white p-0 text-red-600 hover:text-red-700"
+                      className="bg-white text-red-600"
                       aria-label={`${dynamicField.label}を削除`}
                       onClick={() => removeField(field.id)}
                     >
                       <X className="h-4 w-4" aria-hidden="true" />
                     </Button>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 cursor-grab bg-white/90 text-slate-500 active:cursor-grabbing"
+                    aria-label={`${dynamicField.label}をドラッグして並び替え`}
+                    draggable
+                    onDragStart={(event) => {
+                      event.dataTransfer.effectAllowed = "move";
+                      event.dataTransfer.setData("text/plain", field.id);
+                      setSelectedFieldId(field.id);
+                      setDraggingFieldId(field.id);
+                    }}
+                    onDragEnd={() => {
+                      setDraggingFieldId(null);
+                      setDragOverFieldId(null);
+                    }}
+                  >
+                    <Menu className="h-5 w-5" aria-hidden="true" />
+                  </Button>
                 </div>
                 <InsertFieldButton index={index + 1} onInsert={insertFieldAt} />
               </div>
@@ -310,9 +361,13 @@ function FieldContentModal({
               <Label htmlFor={`modal-type-${field.id}`}>入力形式</Label>
               <Select
                 value={field.fieldType}
-                onValueChange={(value) =>
-                  updateField(field.id, { fieldType: value as FieldType })
-                }
+                onValueChange={(value) => {
+                  const nextFieldType = value as FieldType;
+                  updateField(field.id, {
+                    fieldType: nextFieldType,
+                    required: fieldTypeStoresValue(nextFieldType) ? field.required : false,
+                  });
+                }}
               >
                 <SelectTrigger id={`modal-type-${field.id}`} className="bg-white">
                   <SelectValue />
@@ -328,15 +383,17 @@ function FieldContentModal({
             </div>
           </div>
 
-          <label className="inline-flex items-center gap-2 text-sm text-slate-700">
-            <input
-              type="checkbox"
-              checked={field.required}
-              onChange={(event) => updateField(field.id, { required: event.target.checked })}
-              className="h-4 w-4 rounded border-gray-300"
-            />
-            必須項目
-          </label>
+          {fieldTypeStoresValue(field.fieldType) ? (
+            <label className="inline-flex items-center gap-2 text-sm text-slate-700">
+              <input
+                type="checkbox"
+                checked={field.required}
+                onChange={(event) => updateField(field.id, { required: event.target.checked })}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              必須項目
+            </label>
+          ) : null}
 
           <div className="space-y-2">
             <Label htmlFor={`modal-help-${field.id}`}>説明文</Label>
@@ -444,6 +501,27 @@ export function ApplicationSetupDraftForm({
     });
   };
 
+  const moveFieldTo = (id: string, targetIndex: number) => {
+    setFields((prev) => {
+      const currentIndex = prev.findIndex((field) => field.id === id);
+      if (
+        currentIndex < 0 ||
+        targetIndex < 0 ||
+        targetIndex >= prev.length ||
+        currentIndex === targetIndex
+      ) {
+        return prev;
+      }
+      const next = [...prev];
+      const [target] = next.splice(currentIndex, 1);
+      if (!target) {
+        return prev;
+      }
+      next.splice(targetIndex, 0, target);
+      return next;
+    });
+  };
+
   return (
     <form action={action} className="space-y-6">
       <PublishedApplicationUrlModal
@@ -523,6 +601,7 @@ export function ApplicationSetupDraftForm({
             updateField={updateField}
             insertFieldAt={insertFieldAt}
             removeField={removeField}
+            moveFieldTo={moveFieldTo}
             initialValues={initialValues}
           />
         </CardContent>

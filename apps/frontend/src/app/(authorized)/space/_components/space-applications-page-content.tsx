@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { Archive, ArrowRight, Copy, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArrowRight,
+  Copy,
+  FilePlusCorner,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -21,7 +28,12 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PageHeader } from "@/app/_components/enterprise/page-header";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import {
   Table,
   TableBody,
@@ -89,17 +101,6 @@ export function SpaceApplicationsPageContent({
 
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Applications"
-        title="申請フォーム一覧"
-        description="作成した申請フォームごとに、公開状態、未処理件数、利用者から届いた申請を確認できます。"
-        actions={
-          <Button asChild>
-          <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-          </Button>
-        }
-      />
-
       <Tabs>
         <TabsList aria-label="申請フォームの表示切り替え">
           <TabsTrigger href={activeHref} active={!showArchived}>
@@ -114,12 +115,33 @@ export function SpaceApplicationsPageContent({
 
       <Card>
         <CardHeader className="border-b border-slate-200">
-          <CardTitle>{showArchived ? "削除済み申請フォーム" : "申請フォーム"}</CardTitle>
-          <CardDescription>
-            {showArchived
-              ? "削除済みに移動したフォームを確認し、必要に応じて復元します"
-              : "公開URLの確認やフォーム詳細を管理します"}
-          </CardDescription>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="min-w-0 space-y-1.5">
+              <CardTitle>{showArchived ? "削除済み申請フォーム" : "申請フォーム"}</CardTitle>
+              <CardDescription>
+                {showArchived
+                  ? "削除済みに移動したフォームを確認し、必要に応じて復元します"
+                  : "公開URLの確認やフォーム詳細を管理します"}
+              </CardDescription>
+            </div>
+            {!showArchived ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="outline" size="icon" className="sm:shrink-0">
+                      <Link
+                        href={buildSpaceApplicationNewHref(spaceId)}
+                        aria-label="申請フォームを新規作成"
+                      >
+                        <FilePlusCorner aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>申請フォームを新規作成</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4 pt-6">
           {visibleRows.length === 0 ? (
@@ -135,11 +157,21 @@ export function SpaceApplicationsPageContent({
                     <Link href={activeHref}>申請フォームへ戻る</Link>
                   </Button>
                 ) : (
-                  <Button asChild variant="outline">
-                    <Link href={buildSpaceApplicationNewHref(spaceId)}>
-                      新規申請
-                    </Link>
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button asChild variant="outline" size="icon">
+                          <Link
+                            href={buildSpaceApplicationNewHref(spaceId)}
+                            aria-label="申請フォームを新規作成"
+                          >
+                            <FilePlusCorner aria-hidden="true" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>申請フォームを新規作成</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )
               }
             />
@@ -168,69 +200,79 @@ export function SpaceApplicationsPageContent({
                       {row.processedCount}
                     </TableCell>
                     <TableCell className="text-right">
-                      <div className="flex flex-wrap justify-end gap-2">
-                        {!showArchived && row.detailHref ? (
-                          <Button asChild variant="outline" size="sm">
-                            <Link
-                              href={row.detailHref}
-                              title="フォーム詳細"
-                            >
-                              詳細
-                              <ArrowRight aria-hidden="true" />
-                            </Link>
-                          </Button>
-                        ) : null}
-                        {!showArchived && row.publicHref ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => {
-                              const publicUrl = `${window.location.origin}${row.publicHref}`;
-                              void navigator.clipboard
-                                .writeText(publicUrl)
-                                .then(() => {
-                                  setCopiedPublicHref(row.publicHref);
-                                  toast.success("公開URLをコピーしました");
-                                  window.setTimeout(() => setCopiedPublicHref(null), 1200);
-                                })
-                                .catch(() => {
-                                  toast.error("公開URLのコピーに失敗しました");
-                                });
-                            }}
-                            title="公開URLをコピー"
-                          >
-                            公開URL
-                            <Copy aria-hidden="true" />
-                            <span className="sr-only">
-                              {copiedPublicHref === row.publicHref ? "コピー済み" : ""}
+                      <TooltipProvider>
+                        <div className="flex flex-wrap justify-end gap-2">
+                          {!showArchived && row.detailHref ? (
+                            <Button asChild variant="outline" size="sm">
+                              <Link href={row.detailHref} title="フォーム詳細">
+                                詳細
+                                <ArrowRight aria-hidden="true" />
+                              </Link>
+                            </Button>
+                          ) : null}
+                          {!showArchived && row.publicHref ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="outline"
+                                  size="icon"
+                                  aria-label="公開URLをコピー"
+                                  onClick={() => {
+                                    const publicUrl = `${window.location.origin}${row.publicHref}`;
+                                    void navigator.clipboard
+                                      .writeText(publicUrl)
+                                      .then(() => {
+                                        setCopiedPublicHref(row.publicHref);
+                                        toast.success("公開URLをコピーしました");
+                                        window.setTimeout(() => setCopiedPublicHref(null), 1200);
+                                      })
+                                      .catch(() => {
+                                        toast.error("公開URLのコピーに失敗しました");
+                                      });
+                                  }}
+                                >
+                                  <Copy aria-hidden="true" />
+                                  <span className="sr-only">
+                                    {copiedPublicHref === row.publicHref ? "コピー済み" : ""}
+                                  </span>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>公開URLをコピー</TooltipContent>
+                            </Tooltip>
+                          ) : !showArchived ? (
+                            <span className="self-center text-sm text-muted-foreground">
+                              未公開
                             </span>
-                          </Button>
-                        ) : !showArchived ? (
-                          <span className="self-center text-sm text-muted-foreground">未公開</span>
-                        ) : null}
-                        {showArchived ? (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setRestoreTarget(row)}
-                          >
-                            <RotateCcw aria-hidden="true" />
-                            復元
-                          </Button>
-                        ) : (
-                          <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setArchiveTarget(row)}
-                          >
-                            <Trash2 aria-hidden="true" />
-                            削除
-                          </Button>
-                        )}
-                      </div>
+                          ) : null}
+                          {showArchived ? (
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setRestoreTarget(row)}
+                            >
+                              <RotateCcw aria-hidden="true" />
+                              復元
+                            </Button>
+                          ) : (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  type="button"
+                                  variant="destructive"
+                                  size="icon"
+                                  aria-label="削除"
+                                  onClick={() => setArchiveTarget(row)}
+                                >
+                                  <Trash2 aria-hidden="true" />
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>削除</TooltipContent>
+                            </Tooltip>
+                          )}
+                        </div>
+                      </TooltipProvider>
                     </TableCell>
                   </TableRow>
                 ))}

@@ -1,6 +1,13 @@
 import type { ReactNode } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import type { DynamicFieldRendererProps } from "./dynamic-fields.types";
@@ -67,26 +74,31 @@ export function SelectFieldInput(props: DynamicFieldRendererProps) {
 
   return (
     <FieldShell {...props}>
-      <select
-        id={name}
+      <Select
         name={name}
         defaultValue={stringValue}
         disabled={disabled}
-        className={cn(
-          "flex h-9 w-full border bg-transparent px-3 py-1 text-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-          variant === "table"
-            ? "rounded-none border-slate-300 bg-white shadow-none focus-visible:border-slate-900 focus-visible:ring-0"
-            : "rounded-md border-input shadow-sm",
-          readOnly && "bg-slate-50 font-medium text-slate-950 disabled:opacity-100",
-        )}
       >
-        <option value="">選択してください</option>
-        {options.map((opt) => (
-          <option key={`${field.id}-${opt.value}`} value={opt.value}>
-            {opt.label}
-          </option>
-        ))}
-      </select>
+        <SelectTrigger
+          id={name}
+          className={cn(
+            "bg-transparent",
+            variant === "table"
+              ? "rounded-none border-slate-300 bg-white shadow-none focus:border-slate-900 focus:ring-0"
+              : "border-input shadow-sm",
+            readOnly && "bg-slate-50 font-medium text-slate-950 disabled:opacity-100",
+          )}
+        >
+          <SelectValue placeholder="選択してください" />
+        </SelectTrigger>
+        <SelectContent>
+          {options.map((opt) => (
+            <SelectItem key={`${field.id}-${opt.value}`} value={opt.value}>
+              {opt.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
     </FieldShell>
   );
 }
@@ -195,10 +207,92 @@ export function CheckboxFieldInput(props: DynamicFieldRendererProps) {
   );
 }
 
+export function ConsentFieldInput(props: DynamicFieldRendererProps) {
+  const { field, name, stringValue, disabled, readOnly, afterInput, variant } = props;
+  const isTable = variant === "table";
+  const checked = stringValue === "true";
+
+  return (
+    <div className={cn(isTable ? "space-y-1" : "space-y-2", disabled && !readOnly && "opacity-50")}>
+      {field.helpText ? (
+        <p className={cn(isTable ? "text-xs leading-5" : "text-sm", "text-muted-foreground")}>
+          {field.helpText}
+        </p>
+      ) : null}
+      <label
+        htmlFor={name}
+        className={cn(
+          "flex items-start gap-2 text-sm",
+          isTable && "min-h-9 border border-slate-300 bg-white px-3 py-2",
+          readOnly && checked && "border-blue-300 bg-blue-50 font-semibold text-blue-950",
+          readOnly && !checked && "bg-slate-50 text-slate-500",
+        )}
+      >
+        <input
+          type="checkbox"
+          id={name}
+          name={name}
+          value="true"
+          disabled={disabled}
+          className="mt-0.5 h-4 w-4 rounded border-gray-300"
+          {...(readOnly ? { checked, readOnly: true } : { defaultChecked: checked })}
+        />
+        <span className="break-words">
+          {field.label}
+          {field.required ? <span className="text-destructive ml-1">*</span> : null}
+        </span>
+      </label>
+      {afterInput}
+    </div>
+  );
+}
+
+export function DescriptionFieldDisplay(props: DynamicFieldRendererProps) {
+  const { field, afterInput, variant } = props;
+  const isTable = variant === "table";
+  const description = field.helpText?.trim() || field.placeholder?.trim() || field.label;
+
+  return (
+    <div className={cn(isTable ? "rounded-md border border-slate-200 bg-slate-50 px-3 py-2" : "rounded-lg border border-slate-200 bg-slate-50 px-4 py-3")}>
+      <p className="whitespace-pre-wrap text-sm leading-6 text-slate-700">
+        {description}
+      </p>
+      {afterInput}
+    </div>
+  );
+}
+
+export function SectionFieldDisplay(props: DynamicFieldRendererProps) {
+  const { field, afterInput, variant } = props;
+  const isTable = variant === "table";
+
+  return (
+    <div className={cn("border-b border-slate-300 pb-2", isTable && "border-b-0 pb-0")}>
+      <h3 className={cn(isTable ? "text-base" : "text-lg", "font-semibold text-slate-950")}>
+        {field.label}
+      </h3>
+      {field.helpText ? (
+        <p className="mt-1 whitespace-pre-wrap text-sm leading-6 text-muted-foreground">
+          {field.helpText}
+        </p>
+      ) : null}
+      {afterInput}
+    </div>
+  );
+}
+
 export function ScalarFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, variant } = props;
+  const isReadonlyNumber = readOnly && field.fieldType === "number";
   const inputType =
-    field.fieldType === "number" ? "number" : field.fieldType === "date" ? "date" : "text";
+    field.fieldType === "number" && !isReadonlyNumber
+      ? "number"
+      : field.fieldType === "date"
+        ? "date"
+        : "text";
+  const displayValue = isReadonlyNumber
+    ? formatNumberDisplayValue(stringValue)
+    : stringValue;
 
   return (
     <FieldShell {...props}>
@@ -206,7 +300,7 @@ export function ScalarFieldInput(props: DynamicFieldRendererProps) {
         id={name}
         name={name}
         type={inputType}
-        defaultValue={stringValue}
+        defaultValue={displayValue}
         placeholder={field.placeholder ?? ""}
         disabled={disabled && !readOnly}
         readOnly={readOnly}
@@ -224,4 +318,18 @@ export function ScalarFieldInput(props: DynamicFieldRendererProps) {
       />
     </FieldShell>
   );
+}
+
+function formatNumberDisplayValue(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return "";
+  }
+  const number = Number(trimmed);
+  if (!Number.isFinite(number)) {
+    return value;
+  }
+  return new Intl.NumberFormat("ja-JP", {
+    maximumFractionDigits: 20,
+  }).format(number);
 }

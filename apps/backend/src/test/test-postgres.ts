@@ -22,11 +22,11 @@ export function configurePostgresTestEnv(): void {
 export async function truncatePostgresTables(
   dataSource: DataSource,
 ): Promise<void> {
-  const rows = (await dataSource.query(`
+  const rows = await dataSource.query<{ tablename: string }[]>(`
     SELECT tablename
     FROM pg_tables
     WHERE schemaname = 'public'
-  `)) as { tablename: string }[];
+  `);
 
   if (rows.length === 0) {
     return;

@@ -108,6 +108,7 @@ The `docs/` directory is the engineering reference for the product. GitHub rende
 | [Architecture](docs/05_architecture.md) | Frontend/backend/database responsibility boundaries. |
 | [Auth and multitenancy](docs/08_auth_and_multitenant.md) | Tenant, role, and space authorization rules. |
 | [Workflow and approval](docs/09_workflow_and_approval.md) | Application status transitions and approval rules. |
+| [UI design rules](docs/14_ui_design_rules.md) | Frontend UI design principles, component usage, and SaaS dashboard consistency rules. |
 
 Mermaid is installed at the repository root for documentation tooling and future rendering/validation scripts:
 
@@ -316,6 +317,7 @@ Key documents:
 - `docs/11_coding_rules.md`: Coding rules
 - `docs/12_tasks.md`: Task notes
 - `docs/13_codex_prompt_examples.md`: Codex prompt examples
+- `docs/14_ui_design_rules.md`: UI design rules
 
 ## Portfolio Review Notes
 

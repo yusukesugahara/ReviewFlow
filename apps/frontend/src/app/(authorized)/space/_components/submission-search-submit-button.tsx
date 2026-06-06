@@ -8,7 +8,7 @@ export function SubmissionSearchSubmitButton() {
   const { pending } = useFormStatus();
 
   return (
-    <Button type="submit" disabled={pending}>
+    <Button type="submit" variant="outline" className="bg-white" disabled={pending}>
       {pending ? (
         <>
           <Loader2 className="animate-spin" aria-hidden="true" />

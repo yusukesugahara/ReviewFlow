@@ -1,6 +1,14 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { CopyButton } from "./copy-button";
 
 type PublishedApplicationUrlModalProps = {
@@ -37,32 +45,31 @@ export function PublishedApplicationUrlModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 px-4">
-      <div className="w-full max-w-2xl rounded-xl border border-slate-200 bg-white shadow-2xl">
-        <div className="border-b border-slate-200 px-6 py-4">
-          <h3 className="text-lg font-semibold text-slate-900">申請URLを発行しました</h3>
-          <p className="mt-1 text-sm text-slate-600">
-            このURLをユーザーに共有すると、メールアドレス入力後に申請フォームの案内を送れます。
-          </p>
-        </div>
-        <div className="space-y-4 px-6 py-5">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="break-all font-mono text-sm text-slate-700" suppressHydrationWarning>
-              {applicationUrl}
-            </p>
-          </div>
-          <div className="flex items-center justify-end gap-2">
-            <CopyButton value={applicationUrl} />
-            <button
-              type="button"
-              onClick={() => setIsOpen(false)}
-              className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-300 bg-white px-3 text-sm font-medium text-slate-700 transition-colors hover:bg-slate-100 hover:text-slate-900"
-            >
-              閉じる
-            </button>
-          </div>
-        </div>
+    <DialogContent
+      className="max-w-2xl"
+      titleId="published-application-url-title"
+      descriptionId="published-application-url-description"
+      onClose={() => setIsOpen(false)}
+    >
+      <DialogHeader>
+        <DialogTitle id="published-application-url-title">
+          申請URLを発行しました
+        </DialogTitle>
+        <DialogDescription id="published-application-url-description">
+          このURLをユーザーに共有すると、メールアドレス入力後に申請フォームの案内を送れます。
+        </DialogDescription>
+      </DialogHeader>
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+        <p className="break-all font-mono text-sm text-slate-700" suppressHydrationWarning>
+          {applicationUrl}
+        </p>
       </div>
-    </div>
+      <DialogFooter>
+        <CopyButton value={applicationUrl} />
+        <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
+          閉じる
+        </Button>
+      </DialogFooter>
+    </DialogContent>
   );
 }
