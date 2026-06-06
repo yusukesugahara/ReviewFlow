@@ -17,44 +17,46 @@ import { UsersModule } from './modules/users/users.module';
 import { AuditLogInterceptor } from '../common/logging/audit-log.interceptor';
 import { buildTypeOrmOptions } from './typeorm-options.factory';
 import { MailModule } from './modules/mail/mail.module';
+import { validateEnv } from './config/validate-env';
 
-/*
- * データベースモジュール（PostgreSQL）
- */
+const configModule = ConfigModule.forRoot({
+  isGlobal: true,
+  envFilePath:
+    process.env.NODE_ENV === 'production' ? ['.env'] : ['.env', '.env.dev'],
+  validate: validateEnv,
+});
+
 const dbModule = TypeOrmModule.forRootAsync({
   imports: [ConfigModule],
   useFactory: (config: ConfigService) => buildTypeOrmOptions(config),
   inject: [ConfigService],
 });
 
-const loggerModule = LoggerModule.forRoot({
-  pinoHttp: {
-    level: process.env.LOG_LEVEL ?? 'info',
-    autoLogging: false,
-    redact: {
-      censor: '＊＊＊＊＊＊＊＊',
-      paths: [
-        'req.headers.authorization',
-        'req.headers.x-api-key',
-        'req.headers.cookie',
-        'req.body.password',
-        'req.body.currentPassword',
-        'req.body.newPassword',
-        'req.body.confirmPassword',
-        'body.password',
-        'body.currentPassword',
-        'body.newPassword',
-        'body.confirmPassword',
-      ],
+const loggerModule = LoggerModule.forRootAsync({
+  imports: [ConfigModule],
+  useFactory: (config: ConfigService) => ({
+    pinoHttp: {
+      level: config.get<string>('LOG_LEVEL') ?? 'info',
+      autoLogging: false,
+      redact: {
+        censor: '＊＊＊＊＊＊＊＊',
+        paths: [
+          'req.headers.authorization',
+          'req.headers.x-api-key',
+          'req.headers.cookie',
+          'req.body.password',
+          'req.body.currentPassword',
+          'req.body.newPassword',
+          'req.body.confirmPassword',
+          'body.password',
+          'body.currentPassword',
+          'body.newPassword',
+          'body.confirmPassword',
+        ],
+      },
     },
-  },
-});
-
-const configModule = ConfigModule.forRoot({
-  isGlobal: true,
-  // 本番は `.env` のみ。それ以外は `.env` のあと `.env.dev` で上書き（ローカル開発用）
-  envFilePath:
-    process.env.NODE_ENV === 'production' ? ['.env'] : ['.env', '.env.dev'],
+  }),
+  inject: [ConfigService],
 });
 
 const throttlerModule = ThrottlerModule.forRootAsync({
@@ -66,6 +68,7 @@ const throttlerModule = ThrottlerModule.forRootAsync({
       nodeEnv === 'production'
         ? Number(config.get<string>('THROTTLE_LIMIT') ?? 120)
         : Number(config.get<string>('THROTTLE_LIMIT_DEV') ?? 2000);
+
     return {
       skipIf: (context: ExecutionContext) => {
         if (config.get<string>('NODE_ENV') === 'test') {
