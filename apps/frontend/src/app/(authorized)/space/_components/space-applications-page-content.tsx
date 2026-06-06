@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { useId, useState } from "react";
-import { Archive, ArrowRight, Copy, RotateCcw, Trash2 } from "lucide-react";
+import {
+  Archive,
+  ArrowRight,
+  Copy,
+  FilePlusCorner,
+  RotateCcw,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -118,9 +125,21 @@ export function SpaceApplicationsPageContent({
               </CardDescription>
             </div>
             {!showArchived ? (
-              <Button asChild className="sm:shrink-0">
-                <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-              </Button>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button asChild variant="outline" size="icon" className="sm:shrink-0">
+                      <Link
+                        href={buildSpaceApplicationNewHref(spaceId)}
+                        aria-label="申請フォームを新規作成"
+                      >
+                        <FilePlusCorner aria-hidden="true" />
+                      </Link>
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>申請フォームを新規作成</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
             ) : null}
           </div>
         </CardHeader>
@@ -138,11 +157,21 @@ export function SpaceApplicationsPageContent({
                     <Link href={activeHref}>申請フォームへ戻る</Link>
                   </Button>
                 ) : (
-                  <Button asChild variant="outline">
-                    <Link href={buildSpaceApplicationNewHref(spaceId)}>
-                      新規申請
-                    </Link>
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button asChild variant="outline" size="icon">
+                          <Link
+                            href={buildSpaceApplicationNewHref(spaceId)}
+                            aria-label="申請フォームを新規作成"
+                          >
+                            <FilePlusCorner aria-hidden="true" />
+                          </Link>
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>申請フォームを新規作成</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
                 )
               }
             />
