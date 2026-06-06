@@ -178,11 +178,7 @@ export function SpaceUsersTable({
             >
               スペースロールを変更
             </button>
-            {actionMenu.member.userId === currentUserId ? (
-              <span className="block px-3 py-2 text-sm text-muted-foreground">
-                自分自身
-              </span>
-            ) : (
+            {actionMenu.member.userId !== currentUserId ? (
               <button
                 type="button"
                 className="block w-full rounded px-3 py-2 text-left text-sm text-destructive hover:bg-rose-50 focus-visible:bg-rose-50 focus-visible:outline-none"
@@ -194,7 +190,7 @@ export function SpaceUsersTable({
               >
                 削除
               </button>
-            )}
+            ) : null}
           </div>
         </>
       ) : null}

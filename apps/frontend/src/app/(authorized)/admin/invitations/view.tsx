@@ -213,11 +213,7 @@ function UserTable({
                 {formatDateJa(user.createdAt)}
               </TableCell>
               <TableCell className="text-right">
-                {user.id === currentUserId ? (
-                  <span className="text-sm text-muted-foreground">
-                    自分自身
-                  </span>
-                ) : user.isActive ? (
+                {user.id === currentUserId ? null : user.isActive ? (
                   <>
                     <form
                       action={deleteUserAction.bind(null, user.id)}
