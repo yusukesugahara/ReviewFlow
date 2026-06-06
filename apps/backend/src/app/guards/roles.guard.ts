@@ -3,6 +3,12 @@ import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, SKIP_JWT_KEY } from '../../common/constants';
 import { ClientErrorCodes, clientError } from '../../common/errors';
 
+/**
+ * ロールガード
+ *
+ * @param context ExecutionContext
+ * @returns boolean
+ */
 @Injectable()
 export class RolesGuard implements CanActivate {
   constructor(private readonly reflector: Reflector) {}

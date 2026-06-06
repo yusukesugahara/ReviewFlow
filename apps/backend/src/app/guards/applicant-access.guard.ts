@@ -10,6 +10,14 @@ type RequestWithApplicantSession = {
   headers: { [key: string]: string | string[] | undefined };
 };
 
+/**
+ * Applicant Access Guard
+ *
+ * 申請者がアクセスできるかどうかを判断する。
+ *
+ * @param context ExecutionContext
+ * @returns boolean
+ */
 @Injectable()
 export class ApplicantAccessGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
