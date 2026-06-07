@@ -6,8 +6,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   ClipboardList,
-  FileText,
   Inbox,
+  FilePlusCorner,
   type LucideIcon,
   Menu,
   ShieldCheck,
@@ -58,7 +58,7 @@ const spaceNavItems: SidebarNavItem[] = [
   {
     href: "/space/applications/new",
     label: "新規申請",
-    icon: FileText,
+    icon: FilePlusCorner,
     spacePath: "applicationsNew",
   },
   { href: "/space/users", label: "メンバー", icon: Users, spaceAdminOnly: true },
@@ -80,7 +80,7 @@ const applicantNavItems: SidebarNavItem[] = [
   {
     href: "/space/applications/new",
     label: "新規申請",
-    icon: FileText,
+    icon: FilePlusCorner,
     spacePath: "applicationsNew",
   },
 ];
