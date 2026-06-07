@@ -39,6 +39,49 @@ function formatDateTime(value?: string | null): string {
   return value ? formatDateTimeJa(value) : "-";
 }
 
+function formatFieldKeyLabel(fieldKey: string): string {
+  return fieldKey
+    .split("_")
+    .filter(Boolean)
+    .map((word) => {
+      const dictionary: Record<string, string> = {
+        applicant: "申請者",
+        procedure: "手続き",
+        type: "種別",
+        email: "メール",
+        name: "氏名",
+        address: "住所",
+        phone: "電話番号",
+        reason: "理由",
+        date: "日付",
+        content: "内容",
+      };
+      return dictionary[word] ?? word;
+    })
+    .join("");
+}
+
+function getCorrectionItemLabel(
+  item: Pick<ApplicationCorrection["items"][number], "formFieldId" | "fieldKey">,
+  fields: ApplicationFormField[],
+): string {
+  const field = fields.find(
+    (candidate) =>
+      candidate.id === item.formFieldId || candidate.fieldKey === item.fieldKey,
+  );
+  return field?.label ?? formatFieldKeyLabel(item.fieldKey);
+}
+
+function getCorrectionItemField(
+  item: Pick<ApplicationCorrection["items"][number], "formFieldId" | "fieldKey">,
+  fields: ApplicationFormField[],
+): ApplicationFormField | undefined {
+  return fields.find(
+    (candidate) =>
+      candidate.id === item.formFieldId || candidate.fieldKey === item.fieldKey,
+  );
+}
+
 export function ApplicationBasicInfo({
   application,
   formDetailHref,
@@ -334,9 +377,6 @@ export function OpenCorrectionSummary({
               className="flex items-center gap-2 border-l-2 border-amber-400 p-2 pl-3"
             >
               <Badge variant="outline">{item.label}</Badge>
-              <span className="font-mono text-xs text-muted-foreground">
-                ({item.fieldKey})
-              </span>
             </li>
           ))}
         </ul>
@@ -347,8 +387,12 @@ export function OpenCorrectionSummary({
 
 export function CorrectionHistory({
   corrections,
+  fields,
+  values,
 }: {
   corrections: ApplicationCorrection[];
+  fields: ApplicationFormField[];
+  values: Record<string, unknown>;
 }) {
   return (
     <Card>
@@ -389,15 +433,12 @@ export function CorrectionHistory({
                     <p className="mb-2 text-sm font-medium">個別コメント</p>
                     <ul className="space-y-1">
                       {correction.items.map((item) => (
-                        <li
+                        <CorrectionHistoryItem
                           key={`${correction.id}-${item.fieldKey}`}
-                          className="border-l-2 border-amber-400 pl-4 text-sm"
-                        >
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {item.fieldKey}:
-                          </span>{" "}
-                          {item.comment || "（コメントなし）"}
-                        </li>
+                          fields={fields}
+                          item={item}
+                          values={values}
+                        />
                       ))}
                     </ul>
                   </div>
@@ -408,5 +449,41 @@ export function CorrectionHistory({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function CorrectionHistoryItem({
+  fields,
+  item,
+  values,
+}: {
+  fields: ApplicationFormField[];
+  item: ApplicationCorrection["items"][number];
+  values: Record<string, unknown>;
+}) {
+  const field = getCorrectionItemField(item, fields);
+  const label = getCorrectionItemLabel(item, fields);
+  const submittedValue = field
+    ? renderFieldValue(field, values[field.fieldKey])
+    : renderFieldValue(
+        {
+          fieldType: "text",
+        },
+        values[item.fieldKey],
+      );
+
+  return (
+    <li className="space-y-2 border-l-2 border-amber-400 pl-4 text-sm">
+      <p>
+        <span className="font-medium text-slate-900">{label}:</span>{" "}
+        {item.comment || "（コメントなし）"}
+      </p>
+      <div className="rounded-md bg-slate-50 px-3 py-2">
+        <p className="text-xs font-medium text-slate-500">申請内容</p>
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
+          {submittedValue}
+        </p>
+      </div>
+    </li>
   );
 }

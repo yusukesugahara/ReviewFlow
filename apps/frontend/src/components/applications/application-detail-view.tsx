@@ -79,7 +79,11 @@ export function ApplicationDetailView({
           ) : null}
 
           {showCorrectionHistory ? (
-            <CorrectionHistory corrections={corrections} />
+            <CorrectionHistory
+              corrections={corrections}
+              fields={fields}
+              values={application.values}
+            />
           ) : null}
         </div>
 

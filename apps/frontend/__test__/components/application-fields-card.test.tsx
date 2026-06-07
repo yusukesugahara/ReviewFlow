@@ -1,6 +1,10 @@
 import { render, screen } from "@testing-library/react";
-import { ApplicationFieldsCard } from "@/components/applications/application-detail-sections";
+import {
+  ApplicationFieldsCard,
+  CorrectionHistory,
+} from "@/components/applications/application-detail-sections";
 import type {
+  ApplicationCorrection,
   ApplicationDetailViewModel,
   ApplicationFormField,
 } from "@/components/applications/application-detail.types";
@@ -51,5 +55,36 @@ describe("ApplicationFieldsCard", () => {
     expect(screen.getByText("住民票の写し")).toBeInTheDocument();
     expect(screen.getByText("勤務先への提出")).toBeInTheDocument();
     expect(screen.queryByText("選択してください")).not.toBeInTheDocument();
+  });
+
+  it("renders correction history field labels instead of raw field keys", () => {
+    const corrections: ApplicationCorrection[] = [
+      {
+        id: "correction-1",
+        status: "open",
+        overallComment: null,
+        createdAt: "2026-06-07T00:00:00.000Z",
+        items: [
+          {
+            formFieldId: "field-1",
+            fieldKey: "procedure_type",
+            comment: "手続き種別を確認してください",
+          },
+        ],
+      },
+    ];
+
+    render(
+      <CorrectionHistory
+        corrections={corrections}
+        fields={fields}
+        values={{ certificate_type: "resident_record" }}
+      />,
+    );
+
+    expect(screen.getByText("証明書種別:")).toBeInTheDocument();
+    expect(screen.getByText("申請内容")).toBeInTheDocument();
+    expect(screen.getByText("住民票の写し")).toBeInTheDocument();
+    expect(screen.queryByText("procedure_type:")).not.toBeInTheDocument();
   });
 });
