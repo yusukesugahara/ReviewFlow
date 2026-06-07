@@ -89,13 +89,13 @@ npm run seed:demo -w backend
 
 seed は冪等です。既存の `ReviewFlow Demo` テナントがある場合は削除して作り直します。
 
-Docker 本番イメージでは、デプロイ環境変数 `SEED_DEMO_ON_START=true` を設定すると、アプリ起動前に `dist/scripts/seed-demo.js` を実行します。デモ環境や検証環境だけで有効化してください。
+本番起動スクリプトでは、デプロイ環境変数 `SEED_DEMO_ON_START=true` を設定すると、アプリ起動前に `dist/scripts/seed-demo.js` を実行します。デモ環境や検証環境だけで有効化してください。
 
 ```bash
-SEED_DEMO_ON_START=true node apps/backend/dist/main.js
+SEED_DEMO_ON_START=true npm run start:prod -w backend
 ```
 
-Dockerfile の entrypoint がこの環境変数を見て seed を実行してから通常起動します。
+Render の Start Command では `npm run start:prod -w backend` または `node apps/backend/scripts/start-prod.cjs` を使ってください。`node apps/backend/dist/main.js` を直接実行すると seed は通りません。
 
 投入後は次のアカウントでログインできます。パスワードはいずれも `Password123!` です。
 
