@@ -14,7 +14,7 @@
     "start": "nest start",
     "start:dev": "nest start --watch",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node dist/main",
+    "start:prod": "node scripts/start-prod.cjs",
     "lint": "eslint \"src/**/*.ts\" --fix",
     "lint:check": "eslint \"src/**/*.ts\" --max-warnings 0",
     "test": "jest --passWithNoTests --selectProjects unit && jest --passWithNoTests --selectProjects integration --runInBand",
