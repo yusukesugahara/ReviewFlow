@@ -3,7 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import {
+  errorMessageFromBody,
+  isApiFailure,
+  throwIfApiResponseFailed,
+} from "@/lib/server/api-error";
 import {
   addGroupMemberSchema,
   createSpaceSchema,
@@ -21,42 +26,14 @@ import type {
   UpdateGroupMemberRoleSuccessJson,
 } from "@/lib/schema";
 
-type ApiFailure = { status: number; body: unknown };
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is ApiFailure {
-  return (
-    !!error &&
-    typeof error === "object" &&
-    typeof (error as { status?: unknown }).status === "number" &&
-    "body" in error
-  );
-}
-
-function throwIfFailed(response: { response: Response; error?: unknown }): void {
-  if (!response.response.ok) {
-    throw { status: response.response.status, body: response.error };
-  }
-}
-
 function spaceErrorMessage(error: unknown, fallback: string) {
   if (!isApiFailure(error)) {
     return fallback;
   }
 
-  const body = error.body;
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
+  const message = errorMessageFromBody(error.body, "");
+  if (message) {
+    return message;
   }
 
   if (error.status === 403) {
@@ -109,7 +86,7 @@ export async function createSpaceAction(formData: FormData): Promise<void> {
       headers: await authHeadersOrRedirect(),
     });
     const data: CreateGroupSuccessJson | undefined = response.data;
-    throwIfFailed(response);
+    throwIfApiResponseFailed(response);
     if (!data) {
       throw { status: response.response.status, body: response.error };
     }
@@ -143,7 +120,7 @@ export async function addMemberAction(
       headers: await authHeadersOrRedirect(),
     });
     const data: AddGroupMemberSuccessJson | undefined = response.data;
-    throwIfFailed(response);
+    throwIfApiResponseFailed(response);
     if (!data) {
       throw { status: response.response.status, body: response.error };
     }
@@ -184,7 +161,7 @@ export async function inviteSpaceMemberAction(
       headers: await authHeadersOrRedirect(),
     });
     const data: CreateInvitationSuccessJson | undefined = response.data;
-    throwIfFailed(response);
+    throwIfApiResponseFailed(response);
     if (!data) {
       throw { status: response.response.status, body: response.error };
     }
@@ -218,7 +195,7 @@ export async function updateMemberRoleAction(
       headers: await authHeadersOrRedirect(),
     });
     const data: UpdateGroupMemberRoleSuccessJson | undefined = response.data;
-    throwIfFailed(response);
+    throwIfApiResponseFailed(response);
     if (!data) {
       throw { status: response.response.status, body: response.error };
     }
@@ -241,7 +218,7 @@ export async function removeMemberAction(
       params: { path: { groupId, userId } },
       headers: await authHeadersOrRedirect(),
     });
-    throwIfFailed(response);
+    throwIfApiResponseFailed(response);
   } catch (error) {
     redirectWithSpaceError(error, "スペースメンバーの削除に失敗しました");
   }
@@ -257,7 +234,7 @@ export async function leaveSpaceAction(groupId: string): Promise<void> {
       params: { path: { groupId } },
       headers: await authHeadersOrRedirect(),
     });
-    throwIfFailed(response);
+    throwIfApiResponseFailed(response);
   } catch (error) {
     redirectWithSpaceError(error, "スペースからの退出に失敗しました");
   }
@@ -271,7 +248,7 @@ export async function removeSpaceAction(groupId: string): Promise<void> {
       params: { path: { groupId } },
       headers: await authHeadersOrRedirect(),
     });
-    throwIfFailed(response);
+    throwIfApiResponseFailed(response);
   } catch (error) {
     redirectWithSpaceError(error, "スペースの削除に失敗しました");
   }

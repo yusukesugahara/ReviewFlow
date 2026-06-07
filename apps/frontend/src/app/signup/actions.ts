@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { client } from "@/lib/server/backend-fetch";
+import { errorMessageFromBody } from "@/lib/server/api-error";
 import type { AuthRegisterSuccessJson, RegisterRequestBody } from "@/lib/schema";
 import { persistAccessTokenCookie } from "../login/actions";
 
@@ -26,20 +27,7 @@ function authCredentialsFromFormData(formData: FormData): SignupSchema {
  * @returns 認証エラーメッセージ
  */
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
-  return errorMessageFromBody(result.body);
-}
-
-function errorMessageFromBody(body: unknown): string {
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
-    if (Array.isArray(message)) {
-      return message.filter((item): item is string => typeof item === "string").join(", ");
-    }
-  }
-  return "登録に失敗しました";
+  return errorMessageFromBody(result.body, "登録に失敗しました");
 }
 
 function isAuthIssueTokensSuccessJson(json: unknown): json is AuthRegisterSuccessJson {

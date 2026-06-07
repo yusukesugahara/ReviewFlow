@@ -1,9 +1,9 @@
-import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { isApiFailure } from "@/lib/server/api-error";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { getApplicationCapabilities } from "@/components/applications/application-capabilities";
 import {
   approveAction,
@@ -24,7 +24,6 @@ import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/ap
 import type {
   ApplicationSummary,
   FormDefinitionDetail,
-  SpaceApplicationDetailApiFailure,
   SpaceApplicationDetailPageProps,
 } from "./types";
 import {
@@ -32,23 +31,6 @@ import {
   ApplicationDetailScreen,
   FormDetailView,
 } from "./view";
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is SpaceApplicationDetailApiFailure {
-  return (
-    !!error &&
-    typeof error === "object" &&
-    typeof (error as SpaceApplicationDetailApiFailure).status === "number" &&
-    "body" in error
-  );
-}
 
 function hasRequiredValue(value: unknown): boolean {
   if (value === null || value === undefined) {

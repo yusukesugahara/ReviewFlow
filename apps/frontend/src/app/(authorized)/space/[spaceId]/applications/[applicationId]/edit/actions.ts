@@ -7,15 +7,7 @@ import {
   type DynamicFormField,
 } from "@/components/applications/dynamic-fields";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 
 function isDynamicFormField(value: unknown): value is DynamicFormField {
   if (!value || typeof value !== "object") {

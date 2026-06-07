@@ -7,6 +7,7 @@ import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
 import { client } from "@/lib/server/backend-fetch";
+import { errorMessageFromBody } from "@/lib/server/api-error";
 import type { AuthLoginSuccessJson, LoginRequestBody } from "@/lib/schema";
 
 export type LoginSchema = AuthCredentials & { next?: string };
@@ -33,20 +34,7 @@ function resolveSafeNextPath(next?: string): string {
 }
 
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
-  return errorMessageFromBody(result.body);
-}
-
-function errorMessageFromBody(body: unknown): string {
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
-    if (Array.isArray(message)) {
-      return message.filter((item): item is string => typeof item === "string").join(", ");
-    }
-  }
-  return "ログインに失敗しました";
+  return errorMessageFromBody(result.body, "ログインに失敗しました");
 }
 
 function isAuthIssueTokensSuccessJson(json: unknown): json is AuthLoginSuccessJson {

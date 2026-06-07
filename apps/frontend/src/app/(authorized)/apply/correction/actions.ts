@@ -6,7 +6,8 @@ import {
   type DynamicFormField,
 } from "@/components/applications/dynamic-fields";
 import { client } from "@/lib/server/backend-fetch";
-import { errorMessageFromBody, isApiFailure, isDynamicFormField } from "../form/helpers";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
+import { isDynamicFormField } from "../form/helpers";
 import { applicantHeaders } from "../form/server";
 import type { PublicCorrectionSubmitState } from "./types";
 
@@ -103,7 +104,7 @@ export async function submitPublicCorrectionAction(
     }
   } catch (error) {
     const message = isApiFailure(error)
-      ? errorMessageFromBody(error.body)
+      ? errorMessageFromBody(error.body, "submit_failed")
       : "submit_failed";
     return {
       formError:

@@ -1,8 +1,5 @@
-import {
-  errorMessageFromBody,
-  isApiFailure,
-  isDynamicFormField,
-} from "@/app/(authorized)/apply/form/helpers";
+import { isDynamicFormField } from "@/app/(authorized)/apply/form/helpers";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
 
 describe("apply form helpers", () => {
   // テスト内容: 通信失敗オブジェクトの形を判定できることを確認する
@@ -17,8 +14,8 @@ describe("apply form helpers", () => {
     expect(errorMessageFromBody({ message: "入力内容を確認してください" })).toBe(
       "入力内容を確認してください",
     );
-    expect(errorMessageFromBody({ message: "" })).toBe("submit_failed");
-    expect(errorMessageFromBody("invalid")).toBe("submit_failed");
+    expect(errorMessageFromBody({ message: "" }, "submit_failed")).toBe("submit_failed");
+    expect(errorMessageFromBody("invalid", "submit_failed")).toBe("submit_failed");
   });
 
   // テスト内容: 動的フォーム項目の行を判定できることを確認する

@@ -4,38 +4,10 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
 import type { ApplicationDetailViewModel } from "@/components/applications/application-detail.types";
 import { buildSpaceSubmissionDetailHref } from "@/components/applications/application-routes";
-
-type ApiFailure = { status: number; body: unknown };
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is ApiFailure {
-  return (
-    !!error &&
-    typeof error === "object" &&
-    typeof (error as ApiFailure).status === "number" &&
-    "body" in error
-  );
-}
-
-function errorMessageFromBody(body: unknown): string {
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
-  }
-  return "申請の操作に失敗しました";
-}
 
 async function postApplicationAction(
   path:
@@ -315,5 +287,5 @@ function applicationActionErrorMessage(error: unknown): string {
     return "未解決の差し戻し依頼がないため、メールを再送できません。";
   }
 
-  return `${errorMessageFromBody(error.body)}（status: ${error.status}）`;
+  return `${errorMessageFromBody(error.body, "申請の操作に失敗しました")}（status: ${error.status}）`;
 }

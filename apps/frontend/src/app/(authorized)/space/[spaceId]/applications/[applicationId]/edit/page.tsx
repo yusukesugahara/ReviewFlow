@@ -1,9 +1,9 @@
 import type { DraftField } from "@/components/application-setup/application-setup-draft-form";
 import type { ApprovalStepItem } from "@/components/application-setup/approval-steps-builder";
 import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
-import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { isApiFailure } from "@/lib/server/api-error";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   type ApplicationSetupError,
@@ -18,7 +18,6 @@ import type {
   EditableFormDefinition,
   EditableFormField,
   EditableGroupMember,
-  SpaceApplicationEditApiFailure,
   SpaceApplicationEditPageProps,
 } from "./types";
 import {
@@ -33,18 +32,6 @@ function unwrapData<T>(raw: unknown): T {
     throw new Error("invalid success envelope");
   }
   return (raw as { data: T }).data;
-}
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is SpaceApplicationEditApiFailure {
-  return !!error && typeof error === "object" && typeof (error as SpaceApplicationEditApiFailure).status === "number";
 }
 
 function asFieldType(value: string): FieldType {

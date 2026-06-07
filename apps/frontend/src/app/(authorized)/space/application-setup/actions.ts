@@ -4,7 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
 import {
   APPLICATION_SETUP_ERRORS,
   APPLICATION_SETUP_ERROR_MESSAGES,
@@ -42,7 +43,6 @@ type BackendErrorBody = {
   errorCode?: unknown;
   message?: unknown;
 };
-type ApiFailure = { status: number; body: unknown };
 
 type ApprovalStepPayload = {
   stepOrder: number;
@@ -108,33 +108,6 @@ function unwrapData<T>(raw: unknown): T {
     throw new Error("invalid success envelope");
   }
   return (raw as { data: T }).data;
-}
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is ApiFailure {
-  return (
-    !!error &&
-    typeof error === "object" &&
-    typeof (error as ApiFailure).status === "number" &&
-    "body" in error
-  );
-}
-
-function errorMessageFromBody(body: unknown): string {
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
-  }
-  return "unknown_error";
 }
 
 function setupErrorRedirectUrl(base: string, error: unknown): string {
