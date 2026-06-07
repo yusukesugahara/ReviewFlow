@@ -1,4 +1,4 @@
-import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-fields";
+import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-field-form-data";
 import type { DynamicFormField } from "@/components/applications/dynamic-fields";
 
 describe("readDynamicValuesFromFormData", () => {

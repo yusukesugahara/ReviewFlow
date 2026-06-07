@@ -1,8 +1,8 @@
 "use server";
 
 import { client } from "@/lib/server/backend-fetch";
+import { parseAuthMeSuccess } from "@/lib/server/auth-response-schema";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-import type { AuthMeSuccessJson } from "@/lib/schema";
 
 export type CurrentSessionUser = {
   id: string;
@@ -11,33 +11,15 @@ export type CurrentSessionUser = {
   roles: string[];
 };
 
-function isAuthMeSuccessJson(json: unknown): json is AuthMeSuccessJson {
-  if (!json || typeof json !== "object") {
-    return false;
-  }
-  const root = json as Record<string, unknown>;
-  const data = root.data;
-  if (root.status !== 200 || !data || typeof data !== "object") {
-    return false;
-  }
-  const d = data as Record<string, unknown>;
-  return (
-    typeof d.id === "string" &&
-    typeof d.email === "string" &&
-    typeof d.tenantId === "string" &&
-    Array.isArray(d.roles) &&
-    d.roles.every((role) => typeof role === "string")
-  );
-}
-
 async function getAuthMe(accessToken: string): Promise<CurrentSessionUser | null> {
   const response = await client.POST("/auth/me", {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
-  if (!response.response.ok || !isAuthMeSuccessJson(response.data)) {
+  const data = parseAuthMeSuccess(response.data);
+  if (!response.response.ok || !data) {
     return null;
   }
-  return response.data.data;
+  return data.data;
 }
 
 export async function getCurrentSessionUser(): Promise<CurrentSessionUser | null> {

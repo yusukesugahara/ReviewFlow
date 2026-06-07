@@ -21,6 +21,40 @@ export type ApprovalStepInput = {
   canReturn: boolean;
 };
 
+const draftFieldTypeSchema = z
+  .enum([
+    FIELD_TYPES.text,
+    FIELD_TYPES.textarea,
+    FIELD_TYPES.number,
+    FIELD_TYPES.date,
+    FIELD_TYPES.select,
+    FIELD_TYPES.radio,
+    FIELD_TYPES.checkbox,
+    FIELD_TYPES.consent,
+    FIELD_TYPES.description,
+    FIELD_TYPES.section,
+  ])
+  .catch(FIELD_TYPES.text);
+
+const draftFieldSchema = z.object({
+  id: z.string(),
+  label: z.string(),
+  fieldType: draftFieldTypeSchema,
+  required: z.boolean(),
+  placeholder: z.string().catch(""),
+  helpText: z.string().catch(""),
+  optionsText: z.string().catch(""),
+});
+
+const unknownArraySchema = z.array(z.unknown());
+
+const approvalStepSchema = z.object({
+  stepName: z.string().trim().catch(""),
+  assigneeUserId: z.string().min(1).optional(),
+  assigneeUserIds: z.array(z.string().min(1)).catch([]),
+  canReturn: z.boolean().catch(false),
+});
+
 export function readApplicationSetupForm(formData: FormData) {
   return applicationSetupFormSchema.safeParse({
     name: formData.get("name"),
@@ -37,67 +71,35 @@ export function readDraftFields(fieldsJson: FormDataEntryValue | null): DraftFie
     return [];
   }
   const parsed: unknown = JSON.parse(fieldsJson);
-  if (!Array.isArray(parsed)) {
+  const items = unknownArraySchema.safeParse(parsed);
+  if (!items.success) {
     return [];
   }
-  return parsed.flatMap((item): DraftField[] => {
-    if (!item || typeof item !== "object") {
-      return [];
-    }
-    const raw = item as Record<string, unknown>;
-    if (
-      typeof raw.id !== "string" ||
-      typeof raw.label !== "string" ||
-      typeof raw.fieldType !== "string" ||
-      typeof raw.required !== "boolean"
-    ) {
-      return [];
-    }
-    return [
-      {
-        id: raw.id,
-        label: raw.label,
-        fieldType:
-          raw.fieldType === "textarea" ||
-          raw.fieldType === "number" ||
-          raw.fieldType === "date" ||
-          raw.fieldType === "select" ||
-          raw.fieldType === "radio" ||
-          raw.fieldType === "checkbox" ||
-          raw.fieldType === "consent" ||
-          raw.fieldType === "description" ||
-          raw.fieldType === "section"
-            ? raw.fieldType
-            : FIELD_TYPES.text,
-        required: raw.required,
-        placeholder: typeof raw.placeholder === "string" ? raw.placeholder : "",
-        helpText: typeof raw.helpText === "string" ? raw.helpText : "",
-        optionsText: typeof raw.optionsText === "string" ? raw.optionsText : "",
-      },
-    ];
+  return items.data.flatMap((item): DraftField[] => {
+    const result = draftFieldSchema.safeParse(item);
+    return result.success ? [result.data] : [];
   });
 }
 
 export function parseSteps(stepsJson: string): ApprovalStepInput[] {
   const parsed: unknown = JSON.parse(stepsJson);
-  if (!Array.isArray(parsed)) {
+  const items = unknownArraySchema.safeParse(parsed);
+  if (!items.success) {
     return [];
   }
 
-  return parsed.flatMap((item, index): ApprovalStepInput[] => {
-    if (!item || typeof item !== "object") {
+  return items.data.flatMap((item, index): ApprovalStepInput[] => {
+    const result = approvalStepSchema.safeParse(item);
+    if (!result.success) {
       return [];
     }
-    const raw = item as Record<string, unknown>;
-    const stepNameRaw =
-      typeof raw.stepName === "string" ? raw.stepName.trim() : "";
-    const assigneeUserIds = Array.isArray(raw.assigneeUserIds)
-      ? raw.assigneeUserIds.filter(
-          (id): id is string => typeof id === "string" && id.length > 0,
-        )
-      : typeof raw.assigneeUserId === "string" && raw.assigneeUserId.length > 0
-        ? [raw.assigneeUserId]
-        : [];
+    const step = result.data;
+    const assigneeUserIds =
+      step.assigneeUserIds.length > 0
+        ? step.assigneeUserIds
+        : step.assigneeUserId
+          ? [step.assigneeUserId]
+          : [];
     if (assigneeUserIds.length === 0) {
       return [];
     }
@@ -108,10 +110,10 @@ export function parseSteps(stepsJson: string): ApprovalStepInput[] {
     return [
       {
         stepOrder: index + 1,
-        stepName: stepNameRaw || `Step ${index + 1}`,
+        stepName: step.stepName || `Step ${index + 1}`,
         assigneeUserId: primaryAssigneeUserId,
         assigneeUserIds: Array.from(new Set(assigneeUserIds)),
-        canReturn: raw.canReturn === true,
+        canReturn: step.canReturn,
       },
     ];
   });

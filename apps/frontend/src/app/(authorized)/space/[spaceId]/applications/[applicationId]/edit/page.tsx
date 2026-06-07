@@ -4,11 +4,12 @@ import { updateApplicationSetupAction } from "@/app/(authorized)/space/applicati
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure } from "@/lib/server/api-failure";
+import { normalizeFieldOptions } from "@/components/applications/field-options";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   type ApplicationSetupError,
 } from "@/lib/constants/application-setup";
-import { FIELD_TYPES, type FieldType } from "@/lib/constants/form-fields";
+import { FIELD_TYPES, isFieldType, type FieldType } from "@/lib/constants/form-fields";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { updateReturnedApplicationAction } from "./actions";
 import type {
@@ -35,36 +36,12 @@ function unwrapData<T>(raw: unknown): T {
 }
 
 function asFieldType(value: string): FieldType {
-  return value === FIELD_TYPES.textarea ||
-    value === FIELD_TYPES.number ||
-    value === FIELD_TYPES.date ||
-    value === FIELD_TYPES.select ||
-    value === FIELD_TYPES.radio ||
-    value === FIELD_TYPES.checkbox
-    ? value
-    : FIELD_TYPES.text;
+  return isFieldType(value) ? value : FIELD_TYPES.text;
 }
 
 function optionsToText(options: unknown[] | null | undefined): string {
-  if (!Array.isArray(options)) {
-    return "";
-  }
-  return options
-    .map((option) => {
-      if (typeof option === "string") {
-        return option;
-      }
-      if (option && typeof option === "object") {
-        const raw = option as Record<string, unknown>;
-        if (typeof raw.label === "string") {
-          return raw.label;
-        }
-        if (typeof raw.value === "string") {
-          return raw.value;
-        }
-      }
-      return "";
-    })
+  return normalizeFieldOptions(options)
+    .map((option) => option.label || option.value)
     .filter((option) => option.length > 0)
     .join("\n");
 }

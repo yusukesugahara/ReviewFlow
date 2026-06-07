@@ -1,66 +1,42 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import {
-  readDynamicValuesFromFormData,
-  type DynamicFormField,
-} from "@/components/applications/dynamic-fields";
+import { z } from "zod";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields";
+import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-field-form-data";
+import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-field-schema";
+import { validateRequiredDynamicFields } from "@/components/applications/dynamic-field-validation";
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
-import { isDynamicFormField } from "../form/helpers";
 import { applicantHeaders } from "../form/server";
 import type { PublicCorrectionSubmitState } from "./types";
 
-function valuePresent(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return false;
-  }
-  if (typeof value === "string") {
-    return value.trim().length > 0;
-  }
-  if (typeof value === "number") {
-    return Number.isFinite(value);
-  }
-  if (Array.isArray(value)) {
-    return value.length > 0;
-  }
-  return true;
-}
+const publicCorrectionFormSchema = z.object({
+  applicationId: z.string().min(1),
+  fieldsJson: z.string().min(1),
+});
 
 function parseFields(fieldsJson: FormDataEntryValue | null): DynamicFormField[] {
-  if (typeof fieldsJson !== "string") {
-    return [];
-  }
   try {
-    const parsed: unknown = JSON.parse(fieldsJson);
-    return Array.isArray(parsed) ? parsed.filter(isDynamicFormField) : [];
+    return parseDynamicFormFieldsJson(fieldsJson);
   } catch {
     return [];
   }
-}
-
-function validateRequiredFields(
-  fields: DynamicFormField[],
-  values: Record<string, unknown>,
-): { fieldErrors: Record<string, string>; missingFieldLabels: string[] } {
-  const fieldErrors: Record<string, string> = {};
-  const missingFieldLabels: string[] = [];
-  for (const field of fields) {
-    if (field.required && !valuePresent(values[field.fieldKey])) {
-      fieldErrors[field.fieldKey] = "必須項目です";
-      missingFieldLabels.push(field.label);
-    }
-  }
-  return { fieldErrors, missingFieldLabels };
 }
 
 export async function submitPublicCorrectionAction(
   _previousState: PublicCorrectionSubmitState,
   formData: FormData,
 ): Promise<PublicCorrectionSubmitState> {
-  const applicationId = formData.get("applicationId");
-  const fields = parseFields(formData.get("fieldsJson"));
-  if (typeof applicationId !== "string" || fields.length === 0) {
+  const parsedForm = publicCorrectionFormSchema.safeParse({
+    applicationId: formData.get("applicationId"),
+    fieldsJson: formData.get("fieldsJson"),
+  });
+  if (!parsedForm.success) {
+    return { formError: "修正対象項目を取得できませんでした" };
+  }
+  const fields = parseFields(parsedForm.data.fieldsJson);
+  if (fields.length === 0) {
     return { formError: "修正対象項目を取得できませんでした" };
   }
 
@@ -69,7 +45,7 @@ export async function submitPublicCorrectionAction(
     formData,
     new Set(fields.map((field) => field.fieldKey)),
   );
-  const { fieldErrors, missingFieldLabels } = validateRequiredFields(fields, values);
+  const { fieldErrors, missingFieldLabels } = validateRequiredDynamicFields(fields, values);
   if (Object.keys(fieldErrors).length > 0) {
     return {
       formError: "未入力の必須項目があります",
@@ -81,7 +57,7 @@ export async function submitPublicCorrectionAction(
   try {
     const headers = await applicantHeaders();
     const patchResponse = await client.PATCH("/public/applications/{id}", {
-      params: { path: { id: applicationId } },
+      params: { path: { id: parsedForm.data.applicationId } },
       body: { values },
       headers,
     });
@@ -92,7 +68,7 @@ export async function submitPublicCorrectionAction(
     const resubmitResponse = await client.POST(
       "/public/applications/{id}/resubmit",
       {
-        params: { path: { id: applicationId } },
+        params: { path: { id: parsedForm.data.applicationId } },
         headers,
       },
     );

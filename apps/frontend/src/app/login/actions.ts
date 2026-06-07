@@ -2,25 +2,30 @@
 
 import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
+import { z } from "zod";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody } from "@/lib/server/api-failure";
-import type { AuthLoginSuccessJson, LoginRequestBody } from "@/lib/schema";
+import { parseAuthLoginSuccess } from "@/lib/server/auth-response-schema";
+import type { LoginRequestBody } from "@/lib/schema";
 
 export type LoginSchema = AuthCredentials & { next?: string };
 
+const loginFormSchema = z.object({
+  email: z.string().catch(""),
+  password: z.string().catch(""),
+  next: z.string().optional(),
+});
+
 function authCredentialsFromFormData(formData: FormData): LoginSchema {
-  const email = formData.get("email");
-  const password = formData.get("password");
-  const next = formData.get("next");
-  return {
-    email: typeof email === "string" ? email : "",
-    password: typeof password === "string" ? password : "",
-    ...(typeof next === "string" ? { next } : {}),
-  };
+  return loginFormSchema.parse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    next: formData.get("next") || undefined,
+  });
 }
 
 function resolveSafeNextPath(next?: string): string {
@@ -37,20 +42,6 @@ function authErrorMessage(result: { ok: false; status: number; body: unknown }):
   return errorMessageFromBody(result.body, "ログインに失敗しました");
 }
 
-function isAuthIssueTokensSuccessJson(json: unknown): json is AuthLoginSuccessJson {
-  if (!json || typeof json !== "object") {
-    return false;
-  }
-  const root = json as Record<string, unknown>;
-  const data = root.data;
-  return (
-    (root.status === 200 || root.status === 201) &&
-    !!data &&
-    typeof data === "object" &&
-    typeof (data as { access_token?: unknown }).access_token === "string"
-  );
-}
-
 async function postAuthLogin(
   body: LoginRequestBody,
 ): Promise<
@@ -58,14 +49,15 @@ async function postAuthLogin(
   | { ok: false; status: number; body: unknown }
 > {
   const response = await client.POST("/auth/login", { body });
-  if (!response.response.ok || !isAuthIssueTokensSuccessJson(response.data)) {
+  const data = parseAuthLoginSuccess(response.data);
+  if (!response.response.ok || !data) {
     return {
       ok: false,
       status: response.response.status,
       body: response.error ?? response.data,
     };
   }
-  return { ok: true, accessToken: response.data.data.access_token };
+  return { ok: true, accessToken: data.data.access_token };
 }
 
 const FALLBACK_MAX_AGE_SEC = 60 * 60 * 24 * 7;

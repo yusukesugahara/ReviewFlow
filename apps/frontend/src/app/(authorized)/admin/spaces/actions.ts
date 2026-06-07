@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import {
@@ -25,6 +26,8 @@ import type {
   UpdateGroupMemberRoleBody,
   UpdateGroupMemberRoleSuccessJson,
 } from "@/lib/schema";
+
+const formDataStringArraySchema = z.array(z.string());
 
 function spaceErrorMessage(error: unknown, fallback: string) {
   if (!isApiFailure(error)) {
@@ -61,13 +64,16 @@ function redirectWithSpaceValidationError(message: string): never {
   redirect(`/admin/spaces?${nextParams.toString()}`);
 }
 
+function readStringFormDataValues(formData: FormData, key: string): string[] {
+  const parsed = formDataStringArraySchema.safeParse(formData.getAll(key));
+  return parsed.success ? parsed.data : [];
+}
+
 export async function createSpaceAction(formData: FormData): Promise<void> {
   const parsed = createSpaceSchema.safeParse({
     name: formData.get("name"),
     description: formData.get("description") || undefined,
-    adminUserIds: formData
-      .getAll("adminUserIds")
-      .filter((value): value is string => typeof value === "string"),
+    adminUserIds: readStringFormDataValues(formData, "adminUserIds"),
   });
 
   if (!parsed.success) {

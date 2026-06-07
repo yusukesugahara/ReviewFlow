@@ -2,33 +2,15 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import {
-  readDynamicValuesFromFormData,
-  type DynamicFormField,
-} from "@/components/applications/dynamic-fields";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields";
+import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-field-form-data";
+import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-field-schema";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 
-function isDynamicFormField(value: unknown): value is DynamicFormField {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-  const raw = value as Record<string, unknown>;
-  return (
-    typeof raw.id === "string" &&
-    typeof raw.fieldKey === "string" &&
-    typeof raw.label === "string" &&
-    typeof raw.fieldType === "string"
-  );
-}
-
 function parseFields(fieldsJson: FormDataEntryValue | null): DynamicFormField[] {
-  if (typeof fieldsJson !== "string") {
-    return [];
-  }
   try {
-    const parsed: unknown = JSON.parse(fieldsJson);
-    return Array.isArray(parsed) ? parsed.filter(isDynamicFormField) : [];
+    return parseDynamicFormFieldsJson(fieldsJson);
   } catch {
     return [];
   }

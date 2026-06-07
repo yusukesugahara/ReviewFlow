@@ -9,58 +9,15 @@ import {
   TextareaFieldInput,
 } from "./dynamic-field-inputs";
 import type { ReactNode } from "react";
+import { z } from "zod";
 import type { DynamicFieldInputProps, DynamicFormField } from "./dynamic-fields.types";
 import { normalizeFieldOptions } from "./field-options";
 import { fieldTypeStoresValue } from "@/lib/constants/form-fields";
 
 export type { DynamicFormField } from "./dynamic-fields.types";
 
-export function readDynamicValuesFromFormData(
-  fields: DynamicFormField[],
-  formData: FormData,
-  editableFieldKeys?: Set<string>,
-): Record<string, unknown> {
-  const values: Record<string, unknown> = {};
-  for (const field of fields) {
-    if (!fieldTypeStoresValue(field.fieldType)) {
-      continue;
-    }
-    if (editableFieldKeys && !editableFieldKeys.has(field.fieldKey)) {
-      continue;
-    }
-    const name = `field:${field.fieldKey}`;
-    switch (field.fieldType) {
-      case "number": {
-        const raw = formData.get(name);
-        if (typeof raw !== "string" || raw.trim().length === 0) {
-          break;
-        }
-        const num = Number(raw);
-        if (Number.isFinite(num)) {
-          values[field.fieldKey] = num;
-        }
-        break;
-      }
-      case "checkbox": {
-        const raw = formData.getAll(name);
-        values[field.fieldKey] = raw.filter((x): x is string => typeof x === "string");
-        break;
-      }
-      case "consent": {
-        values[field.fieldKey] = formData.get(name) === "true";
-        break;
-      }
-      default: {
-        const raw = formData.get(name);
-        if (typeof raw === "string") {
-          values[field.fieldKey] = raw;
-        }
-        break;
-      }
-    }
-  }
-  return values;
-}
+const stringArraySchema = z.array(z.string());
+const scalarInputValueSchema = z.union([z.string(), z.number(), z.boolean()]);
 
 export function DynamicFieldInput({
   field,
@@ -72,13 +29,10 @@ export function DynamicFieldInput({
 }: DynamicFieldInputProps) {
   const name = `field:${field.fieldKey}`;
   const options = normalizeFieldOptions(field.options);
-  const stringValue =
-    typeof value === "string" || typeof value === "number" || typeof value === "boolean"
-      ? String(value)
-      : "";
-  const selectedValues = Array.isArray(value)
-    ? value.filter((x): x is string => typeof x === "string")
-    : [];
+  const scalarValue = scalarInputValueSchema.safeParse(value);
+  const stringValue = scalarValue.success ? String(scalarValue.data) : "";
+  const selectedValueResult = stringArraySchema.safeParse(value);
+  const selectedValues = selectedValueResult.success ? selectedValueResult.data : [];
   const rendererProps = {
     field,
     name,
