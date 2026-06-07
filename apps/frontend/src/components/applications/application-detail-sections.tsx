@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeJa } from "@/lib/date-format";
+import { renderFieldValue } from "@/lib/form-field-value";
 import { ApplicationStatusBadge } from "./application-status-badge";
-import { DynamicFieldInput, DynamicFieldsTable } from "./dynamic-fields";
+import { DynamicFieldsTable } from "./dynamic-fields";
 import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
 import type {
   ApplicationCorrection,
@@ -278,13 +279,9 @@ export function ApplicationFieldsCard({
           correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey);
         return (
           <div className="space-y-3">
-            <DynamicFieldInput
-              field={field}
-              value={value}
-              disabled
-              readOnly
-              variant="table"
-            />
+            <p className="whitespace-pre-wrap break-words text-sm font-medium leading-6 text-slate-950">
+              {renderFieldValue(field, value)}
+            </p>
             {isCorrectionTarget ? (
               <p className="text-xs font-medium text-amber-700">
                 差し戻し対象項目です
