@@ -7,8 +7,8 @@ import { ApprovalFlowsModule } from '../approval-flows/approval-flows.module';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
-import { FormDefinitionsController } from './form-definitions.controller';
-import { FormDefinitionsService } from './form-definitions.service';
+import { FormDefinitionsController } from './controllers/form-definitions.controller';
+import { FormDefinitionsService } from './services/form-definitions.service';
 
 @Module({
   imports: [

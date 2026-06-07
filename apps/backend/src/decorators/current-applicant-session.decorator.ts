@@ -1,5 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
-import type { ApplicantAccessTokenPayload } from '../app/modules/auth/auth.service';
+import type { ApplicantAccessTokenPayload } from '../app/modules/auth/services/auth.service';
 
 export const CurrentApplicantSession = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): ApplicantAccessTokenPayload => {

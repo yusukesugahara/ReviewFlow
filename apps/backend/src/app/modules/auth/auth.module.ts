@@ -11,8 +11,8 @@ import { JwtStrategy } from '../../../strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { PasswordResetToken } from '../../../models/entities/password-reset-token.entity';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
+import { AuthController } from './controllers/auth.controller';
+import { AuthService } from './services/auth.service';
 
 const jwtModule = JwtModule.registerAsync({
   imports: [ConfigModule],

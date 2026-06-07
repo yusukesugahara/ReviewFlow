@@ -4,8 +4,8 @@ import { Invitation } from '../../../models/entities/invitation.entity';
 import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
-import { InvitationsController } from './invitations.controller';
-import { InvitationsService } from './invitations.service';
+import { InvitationsController } from './controllers/invitations.controller';
+import { InvitationsService } from './services/invitations.service';
 
 @Module({
   imports: [

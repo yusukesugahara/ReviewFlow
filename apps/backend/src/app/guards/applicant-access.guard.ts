@@ -3,7 +3,7 @@ import { ClientErrorCodes, clientError } from '../../common/errors';
 import {
   AuthService,
   type ApplicantAccessTokenPayload,
-} from '../modules/auth/auth.service';
+} from '../modules/auth/services/auth.service';
 
 type RequestWithApplicantSession = {
   applicantSession?: ApplicantAccessTokenPayload;

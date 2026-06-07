@@ -1,7 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { DataSource } from 'typeorm';
 import { AppModule } from '../../app/app.module';
-import { AuthService } from '../../app/modules/auth/auth.service';
+import { AuthService } from '../../app/modules/auth/services/auth.service';
 import { ClientErrorCodes } from '../../common/errors';
 import { UserRole } from '../../models/constants/user-role';
 import {

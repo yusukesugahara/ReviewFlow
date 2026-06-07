@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { ClientErrorCodes, clientError } from '../common/errors';
-import { UsersService } from '../app/modules/users/users.service';
+import { UsersService } from '../app/modules/users/services/users.service';
 
 /*
  * JWT 認証戦略

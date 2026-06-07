@@ -9,7 +9,7 @@ import { PinoLogger } from 'nestjs-pino';
 import { Observable, catchError, tap, throwError } from 'rxjs';
 import { BaseError } from '../../utils/errors/base.error';
 import { ServerErrorCodes } from '../errors/server-error-catalog';
-import { AuditLogsService } from '../../app/modules/audit-logs/audit-logs.service';
+import { AuditLogsService } from '../../app/modules/audit-logs/services/audit-logs.service';
 import type { RequestWithContext } from './request-context.middleware';
 
 @Injectable()
