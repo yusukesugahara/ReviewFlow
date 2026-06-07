@@ -6,6 +6,21 @@
 
 ---
 
+#### デモ環境
+
+以下のURLからデモ環境を確認できます。
+
+https://review-flow-frontend.vercel.app/login
+
+デモ用アカウント：
+
+```txt
+Email: admin@reviewflow.demo
+Password: Password123!
+```
+
+---
+
 ## 1. アプリ概要
 
 ReviewFlow は、市役所・自治体における補助金申請、施設利用申請、各種届出などの業務を想定した、**マルチテナント対応の申請ワークフロー管理アプリ**です。部署や課ごとに申請フォーム・承認フロー・申請データ・監査ログを管理できます。
