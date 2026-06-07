@@ -70,7 +70,7 @@ export function SpaceNewApplicationView({
         </div>
       ) : (
         <p className="rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-muted-foreground">
-          新規申請を作成するにはスペース管理者権限が必要です。
+          申請フォームを作成するにはスペース管理者権限が必要です。
         </p>
       )}
     </div>

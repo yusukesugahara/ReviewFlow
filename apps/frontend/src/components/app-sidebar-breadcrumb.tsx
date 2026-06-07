@@ -125,7 +125,7 @@ function buildSpaceBreadcrumbItems(
     items.push({ href: `/space/${encodedSpaceId}/applications`, label: "申請フォーム一覧" });
 
     if (fourth === "new") {
-      items.push({ href: `/space/${encodedSpaceId}/applications/new`, label: "新規申請" });
+      items.push({ href: `/space/${encodedSpaceId}/applications/new`, label: "申請フォーム作成" });
     } else if (fourth) {
       const isFormDetail = searchParams.get("view") === "form";
       items.push({

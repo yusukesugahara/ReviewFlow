@@ -57,7 +57,7 @@ const spaceNavItems: SidebarNavItem[] = [
   },
   {
     href: "/space/applications/new",
-    label: "新規申請",
+    label: "申請フォーム作成",
     icon: FilePlusCorner,
     spacePath: "applicationsNew",
   },
@@ -79,7 +79,7 @@ const applicantNavItems: SidebarNavItem[] = [
   },
   {
     href: "/space/applications/new",
-    label: "新規申請",
+    label: "申請フォーム作成",
     icon: FilePlusCorner,
     spacePath: "applicationsNew",
   },
