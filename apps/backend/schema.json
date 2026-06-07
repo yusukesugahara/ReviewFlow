@@ -4174,6 +4174,13 @@
             "type": "object",
             "nullable": true
           },
+          "currentStepAssigneeUserIds": {
+            "description": "現在の承認ステップ担当者のユーザーID一覧。現在ステップが無い場合は空配列。",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "submittedAt": {
             "type": "object",
             "nullable": true
@@ -4194,6 +4201,7 @@
           "formDefinitionName",
           "applicationName",
           "applicantEmail",
+          "currentStepAssigneeUserIds",
           "createdAt",
           "updatedAt"
         ]
@@ -4394,6 +4402,13 @@
             "type": "object",
             "nullable": true
           },
+          "currentStepAssigneeUserIds": {
+            "description": "現在の承認ステップ担当者のユーザーID一覧。現在ステップが無い場合は空配列。",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "submittedAt": {
             "type": "object",
             "nullable": true
@@ -4430,6 +4445,7 @@
           "formDefinitionName",
           "applicationName",
           "applicantEmail",
+          "currentStepAssigneeUserIds",
           "createdAt",
           "updatedAt",
           "approvalProgress",

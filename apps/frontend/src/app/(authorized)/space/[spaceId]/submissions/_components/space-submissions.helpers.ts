@@ -11,7 +11,12 @@ export type SubmissionFilters = {
   summary: SummaryFilter;
 };
 
-export type SummaryFilter = "" | "needsAction" | "recentProcessed";
+export type SummaryFilter =
+  | ""
+  | "myNeedsAction"
+  | "spaceNeedsAction"
+  | "returned"
+  | "recentProcessed";
 
 const RECENT_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -36,6 +41,7 @@ export function buildExportFormOptions(
 export function filterApplications(
   applications: ApplicationRow[],
   filters: SubmissionFilters,
+  currentUserId?: string | null,
 ): ApplicationRow[] {
   const applicant = filters.applicant.toLowerCase();
   const form = filters.form.toLowerCase();
@@ -43,7 +49,19 @@ export function filterApplications(
   const createdTo = parseDateEnd(filters.createdTo);
 
   return applications.filter((row) => {
-    if (filters.summary === "needsAction" && !isPendingApplication(row)) {
+    if (
+      filters.summary === "myNeedsAction" &&
+      !isAssignedToCurrentUser(row, currentUserId)
+    ) {
+      return false;
+    }
+    if (
+      filters.summary === "spaceNeedsAction" &&
+      !isSpaceNeedsActionApplication(row)
+    ) {
+      return false;
+    }
+    if (filters.summary === "returned" && !isReturnedApplication(row)) {
       return false;
     }
     if (
@@ -124,6 +142,27 @@ export function isPendingApplication(row: ApplicationRow): boolean {
     row.status === APPLICATION_STATUSES.inReview ||
     row.status === APPLICATION_STATUSES.returned
   );
+}
+
+export function isSpaceNeedsActionApplication(row: ApplicationRow): boolean {
+  return (
+    row.status === APPLICATION_STATUSES.submitted ||
+    row.status === APPLICATION_STATUSES.inReview
+  );
+}
+
+export function isReturnedApplication(row: ApplicationRow): boolean {
+  return row.status === APPLICATION_STATUSES.returned;
+}
+
+export function isAssignedToCurrentUser(
+  row: ApplicationRow,
+  currentUserId?: string | null,
+): boolean {
+  if (!currentUserId || !isSpaceNeedsActionApplication(row)) {
+    return false;
+  }
+  return row.currentStepAssigneeUserIds?.includes(currentUserId) ?? false;
 }
 
 export function isProcessedApplication(row: ApplicationRow): boolean {
