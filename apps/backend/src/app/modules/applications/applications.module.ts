@@ -14,6 +14,7 @@ import { MailModule } from '../mail/mail.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationAccessPolicy } from './application-access.policy';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
+import { ApplicationProgressService } from './application-progress.service';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
@@ -41,6 +42,7 @@ import { PublicApplicationsController } from './public-applications.controller';
     ApplicantAccessGuard,
     ApplicationAccessPolicy,
     ApplicationFormValueValidator,
+    ApplicationProgressService,
     ApplicationTransitionPolicy,
   ],
 })
