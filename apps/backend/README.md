@@ -32,6 +32,7 @@ cp .env.example .env.dev
 | `DB_SSL` | `true` のとき PostgreSQL 接続に SSL を有効化（マネージド DB 向け） |
 | `DB_SSL_REJECT_UNAUTHORIZED` | `false` のとき SSL でもサーバー証明書の検証を緩める（自己署名検証用。省略時は検証する） |
 | `DB_SYNCHRONIZE` | `false` のときスキーマ自動同期をオフにしマイグレーションを実行（本番は `NODE_ENV=production` で常にこの挙動。ローカルでマイグレーション動作を試すときにも指定可） |
+| `SEED_DEMO_ON_START` | `true` または `1` のとき、Docker 本番起動前にビルド済みのデモ seed を投入する。デモ環境向け。 |
 | `THROTTLE_TTL_MS` | グローバルレート制限の窓幅（ミリ秒）。省略時 `60000` |
 | `THROTTLE_LIMIT` | 本番（`NODE_ENV=production`）での上記窓あたりの最大リクエスト数（IP 単位）。省略時 `120` |
 | `THROTTLE_LIMIT_DEV` | 非本番のグローバル上限（省略時 `2000`）。`/auth/register`・`/auth/login` は別途 60 秒あたり 20 回まで |
@@ -88,14 +89,25 @@ npm run seed:demo -w backend
 
 seed は冪等です。既存の `ReviewFlow Demo` テナントがある場合は削除して作り直します。
 
+Docker 本番イメージでは、デプロイ環境変数 `SEED_DEMO_ON_START=true` を設定すると、アプリ起動前に `dist/scripts/seed-demo.js` を実行します。デモ環境や検証環境だけで有効化してください。
+
+```bash
+SEED_DEMO_ON_START=true node apps/backend/dist/main.js
+```
+
+Dockerfile の entrypoint がこの環境変数を見て seed を実行してから通常起動します。
+
 投入後は次のアカウントでログインできます。パスワードはいずれも `Password123!` です。
 
 | メールアドレス | 用途 |
 |------|------|
 | `admin@reviewflow.demo` | テナント管理者・フォーム作成者 |
-| `manager@reviewflow.demo` | 一次承認者 |
-| `finance@reviewflow.demo` | 経理承認者 |
-| `applicant@reviewflow.demo` | 申請者 |
+| `citizen-reviewer@reviewflow.demo` | 市民課 窓口担当 |
+| `citizen-approver@reviewflow.demo` | 市民課 係長 |
+| `citizen-operator@reviewflow.demo` | 市民課 窓口担当 |
+| `road-reviewer@reviewflow.demo` | 道路公園課 担当者 |
+| `road-approver@reviewflow.demo` | 道路公園課 課長 |
+| `road-inspector@reviewflow.demo` | 道路公園課 現地確認担当 |
 
 ## よく使うコマンド
 
