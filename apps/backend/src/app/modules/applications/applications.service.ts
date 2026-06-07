@@ -8,14 +8,9 @@ import {
 } from '../auth/auth.service';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
 import { ApplicationStatus } from '../../../models/constants/application-status';
-import { CorrectionRequestStatus } from '../../../models/constants/correction-request-status';
-import { FormDefinitionStatus } from '../../../models/constants/form-definition-status';
 import { UserRole } from '../../../models/constants/user-role';
 import { ApplicationApproval } from '../../../models/entities/application-approval.entity';
-import { ApplicationFieldValue } from '../../../models/entities/application-field-value.entity';
 import { Application } from '../../../models/entities/application.entity';
-import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
-import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
 import { MailService } from '../mail/mail.service';
@@ -31,11 +26,12 @@ import type {
 import {
   mapApplicationToDetail,
   mapApplicationToSummary,
-  mapCorrectionsList,
 } from './applications.mapper';
 import { ApplicationAccessPolicy } from './application-access.policy';
+import { ApplicationApprovalFlowResolver } from './application-approval-flow.resolver';
+import { ApplicationCorrectionService } from './application-correction.service';
+import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
-import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationProgressService } from './application-progress.service';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationSubmissionService } from './application-submission.service';
@@ -57,22 +53,18 @@ export class ApplicationsService {
   constructor(
     @InjectRepository(Application)
     private readonly apps: Repository<Application>,
-    @InjectRepository(ApplicationFieldValue)
-    private readonly fieldValues: Repository<ApplicationFieldValue>,
     @InjectRepository(ApplicationApproval)
     private readonly approvals: Repository<ApplicationApproval>,
-    @InjectRepository(CorrectionRequest)
-    private readonly correctionRequests: Repository<CorrectionRequest>,
     @InjectRepository(FormDefinition)
     private readonly templates: Repository<FormDefinition>,
-    @InjectRepository(ApprovalFlow)
-    private readonly flows: Repository<ApprovalFlow>,
     private readonly authService: AuthService,
     private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
     private readonly accessPolicy: ApplicationAccessPolicy,
+    private readonly correctionService: ApplicationCorrectionService,
+    private readonly creationService: ApplicationCreationService,
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
-    private readonly formValueValidator: ApplicationFormValueValidator,
+    private readonly flowResolver: ApplicationApprovalFlowResolver,
     private readonly progressService: ApplicationProgressService,
     private readonly reviewActionService: ApplicationReviewActionService,
     private readonly submissionService: ApplicationSubmissionService,
@@ -86,54 +78,6 @@ export class ApplicationsService {
     return this.approvals.count({
       where: { applicationId, actedByUserId: actorId },
     });
-  }
-
-  private async resolveActiveFlow(
-    tenantId: string,
-    groupId: string,
-    approvalFlowId?: string,
-  ): Promise<ApprovalFlow> {
-    if (approvalFlowId) {
-      const flow = await this.flows.findOne({
-        where: {
-          id: approvalFlowId,
-          tenantId,
-          groupId,
-          isActive: true,
-        },
-        relations: ['steps'],
-      });
-      if (!flow) {
-        throw clientError(ClientErrorCodes.APPROVAL_FLOW_NOT_FOUND);
-      }
-      return flow;
-    }
-    const list = await this.flows.find({
-      where: { tenantId, groupId, isActive: true },
-      relations: ['steps'],
-    });
-    if (list.length === 0) {
-      throw clientError(ClientErrorCodes.APPLICATION_NO_APPROVAL_FLOW);
-    }
-    if (list.length > 1) {
-      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FLOW_AMBIGUOUS);
-    }
-    return list[0];
-  }
-
-  private async resolveDefaultActiveFlow(
-    tenantId: string,
-    groupId: string,
-  ): Promise<ApprovalFlow> {
-    const list = await this.flows.find({
-      where: { tenantId, groupId, isActive: true },
-      relations: ['steps'],
-      order: { createdAt: 'ASC', id: 'ASC' },
-    });
-    if (list.length === 0) {
-      throw clientError(ClientErrorCodes.APPLICATION_NO_APPROVAL_FLOW);
-    }
-    return list[0];
   }
 
   private async loadApplicationOrThrow(
@@ -246,104 +190,17 @@ export class ApplicationsService {
     return this.progressService.hydrate(row);
   }
 
-  private async createInternal(
-    tenantId: string,
-    applicantEmail: string,
-    applicantUserId: string | null,
-    dto: CreateApplicationDto,
-  ): Promise<Application> {
-    const template = await this.resolvePublishedTemplate(tenantId, dto);
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-
-    const values = dto.values ?? {};
-    const fieldsByKey = this.formValueValidator.buildFieldsByKey(
-      template.fields ?? [],
-    );
-    this.formValueValidator.assertValuesMatchFields(fieldsByKey, values);
-
-    const flow = await this.resolveActiveFlow(
-      tenantId,
-      dto.groupId,
-      dto.approvalFlowId,
-    );
-
-    let newId = '';
-    await this.apps.manager.transaction(async (em) => {
-      const appRepo = em.getRepository(Application);
-      const valRepo = em.getRepository(ApplicationFieldValue);
-      const app = appRepo.create({
-        tenantId,
-        groupId: dto.groupId,
-        applicantUserId,
-        applicantEmail,
-        formDefinitionId: template.id,
-        approvalFlowId: flow.id,
-        status:
-          dto.status === ApplicationStatus.PUBLISHED
-            ? ApplicationStatus.PUBLISHED
-            : ApplicationStatus.DRAFT,
-        currentStepOrder: null,
-        submittedAt: null,
-      });
-      const saved = await appRepo.save(app);
-      newId = saved.id;
-      for (const [key, val] of Object.entries(values)) {
-        const field = this.formValueValidator.getKnownField(fieldsByKey, key);
-        await valRepo.save(
-          valRepo.create({
-            tenantId,
-            applicationId: saved.id,
-            formFieldId: field.id,
-            valueJson: val,
-          }),
-        );
-      }
-    });
-
-    const created = await this.loadApplicationOrThrow(tenantId, newId, {
-      detail: true,
-    });
-    return created;
-  }
-
-  private async resolvePublishedTemplate(
-    tenantId: string,
-    dto: CreateApplicationDto,
-  ): Promise<FormDefinition | null> {
-    if (dto.formDefinitionId) {
-      return this.templates.findOne({
-        where: {
-          id: dto.formDefinitionId,
-          tenantId,
-          groupId: dto.groupId,
-          status: FormDefinitionStatus.PUBLISHED,
-        },
-        relations: ['fields'],
-      });
-    }
-
-    const templates = await this.templates.find({
-      where: {
-        tenantId,
-        groupId: dto.groupId,
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-      relations: ['fields'],
-    });
-    if (templates.length > 1) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_AMBIGUOUS);
-    }
-    return templates[0] ?? null;
-  }
-
   async create(
     actor: AuthUserPayload,
     dto: CreateApplicationDto,
   ): Promise<Application> {
     await this.spaceAccess.assertCanUseGroup(actor, dto.groupId);
-    return this.createInternal(actor.tenantId, actor.email, actor.id, dto);
+    return this.creationService.create(
+      actor.tenantId,
+      actor.email,
+      actor.id,
+      dto,
+    );
   }
 
   async createAndSubmitForApplicant(
@@ -353,11 +210,11 @@ export class ApplicationsService {
     if (dto.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    const flow = await this.resolveDefaultActiveFlow(
+    const flow = await this.flowResolver.resolveDefaultActiveFlow(
       actor.tenantId,
       actor.groupId,
     );
-    const created = await this.createInternal(
+    const created = await this.creationService.create(
       actor.tenantId,
       actor.email,
       null,
@@ -399,18 +256,6 @@ export class ApplicationsService {
     return app;
   }
 
-  private async findOpenCorrection(
-    applicationId: string,
-  ): Promise<CorrectionRequest | null> {
-    return this.correctionRequests.findOne({
-      where: {
-        applicationId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
-  }
-
   async patch(
     actor: AuthUserPayload,
     id: string,
@@ -419,7 +264,7 @@ export class ApplicationsService {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     if (dto.approvalFlowId) {
-      await this.resolveActiveFlow(
+      await this.flowResolver.resolveActiveFlow(
         actor.tenantId,
         app.groupId,
         dto.approvalFlowId,
@@ -552,30 +397,8 @@ export class ApplicationsService {
     );
     this.transitionPolicy.assertReturned(app);
 
-    const openCorrection = await this.findOpenCorrection(app.id);
-    if (!openCorrection) {
-      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
-    }
-
-    const template = await this.templates.findOne({
-      where: {
-        id: app.formDefinitionId,
-        tenantId: actor.tenantId,
-        groupId: app.groupId,
-      },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-
-    await this.notifyApplicantOfReturn(app, template, {
-      overallComment: openCorrection.overallComment ?? undefined,
-      fields: (openCorrection.items ?? []).map((item) => ({
-        fieldId: item.formFieldId,
-        comment: item.comment ?? undefined,
-      })),
-    });
+    const context = await this.correctionService.getReturnEmailContext(app);
+    await this.notifyApplicantOfReturn(app, context.template, context.dto);
 
     return this.getOneForActor(actor, id);
   }
@@ -609,7 +432,7 @@ export class ApplicationsService {
     if (app.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    return this.buildCorrectionTargetsResponse(app);
+    return this.correctionService.buildTargetsResponse(app);
   }
 
   async patchReturnedForApplicant(
@@ -656,73 +479,7 @@ export class ApplicationsService {
         this.countApprovalsByActor(applicationId, actorId),
     );
 
-    const rows = await this.correctionRequests.find({
-      where: { applicationId: app.id, tenantId: actor.tenantId },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
-    return mapCorrectionsList(rows);
-  }
-
-  private async findOpenCorrectionWithItems(
-    tenantId: string,
-    applicationId: string,
-  ): Promise<CorrectionRequest | null> {
-    const opens = await this.correctionRequests.find({
-      where: {
-        applicationId,
-        tenantId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
-    return opens[0] ?? null;
-  }
-
-  private async buildCorrectionTargetsResponse(
-    app: Application,
-  ): Promise<CorrectionTargetsResponseDto> {
-    const open = await this.findOpenCorrectionWithItems(app.tenantId, app.id);
-
-    if (!open) {
-      return {
-        applicationId: app.id,
-        applicationStatus: app.status,
-        openCorrection: null,
-      };
-    }
-
-    const valueByFieldId = new Map(
-      (app.fieldValues ?? []).map((v) => [v.formFieldId, v.valueJson]),
-    );
-
-    const items = (open.items ?? []).map((it) => {
-      const ff = it.formField;
-      return {
-        itemId: it.id,
-        formFieldId: it.formFieldId,
-        fieldKey: ff?.fieldKey ?? '',
-        label: ff?.label ?? '',
-        fieldType: ff?.fieldType ?? '',
-        required: ff?.required ?? false,
-        comment: it.comment,
-        currentValue: valueByFieldId.has(it.formFieldId)
-          ? valueByFieldId.get(it.formFieldId)
-          : null,
-      };
-    });
-
-    return {
-      applicationId: app.id,
-      applicationStatus: app.status,
-      openCorrection: {
-        id: open.id,
-        overallComment: open.overallComment,
-        createdAt: open.createdAt.toISOString(),
-        items,
-      },
-    };
+    return this.correctionService.listCorrections(actor.tenantId, app);
   }
 
   async getCorrectionTargetsForActor(
@@ -744,7 +501,7 @@ export class ApplicationsService {
         this.countApprovalsByActor(applicationId, actorId),
     );
 
-    return this.buildCorrectionTargetsResponse(app);
+    return this.correctionService.buildTargetsResponse(app);
   }
 
   toSummary(row: Application) {
