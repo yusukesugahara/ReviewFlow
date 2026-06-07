@@ -3,13 +3,12 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Not, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { MailService } from '../../mail/services/mail.service';
 import { AuthService } from '../../auth/services/auth.service';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
@@ -31,10 +30,7 @@ export class FormDefinitionsService {
   private readonly logger = new Logger(FormDefinitionsService.name);
 
   constructor(
-    @InjectRepository(FormDefinition)
-    private readonly definitions: Repository<FormDefinition>,
-    @InjectRepository(FormField)
-    private readonly fields: Repository<FormField>,
+    private readonly formDefinitionsRepository: FormDefinitionsRepository,
     private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
     private readonly authService: AuthService,
@@ -46,16 +42,10 @@ export class FormDefinitionsService {
     includeArchived = false,
   ): Promise<FormDefinition[]> {
     await this.spaceAccess.assertCanManageGroup(actor, groupId);
-    return this.definitions.find({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        ...(includeArchived
-          ? { status: FormDefinitionStatus.ARCHIVED }
-          : { status: Not(FormDefinitionStatus.ARCHIVED) }),
-      },
-      relations: ['fields'],
-      order: { updatedAt: 'DESC', fields: { sortOrder: 'ASC' } },
+    return this.formDefinitionsRepository.listByGroup({
+      tenantId: actor.tenantId,
+      groupId,
+      includeArchived,
     });
   }
 
@@ -64,10 +54,9 @@ export class FormDefinitionsService {
     groupId: string,
   ): Promise<FormDefinition> {
     await this.spaceAccess.assertCanManageGroup(actor, groupId);
-    const row = await this.definitions.findOne({
-      where: { tenantId: actor.tenantId, groupId },
-      relations: ['fields'],
-      order: { fields: { sortOrder: 'ASC' } },
+    const row = await this.formDefinitionsRepository.findOneByGroup({
+      tenantId: actor.tenantId,
+      groupId,
     });
     if (!row) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
@@ -80,27 +69,25 @@ export class FormDefinitionsService {
     dto: CreateFormDefinitionDto,
   ): Promise<FormDefinition> {
     await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
-    const row = this.definitions.create({
+    return this.formDefinitionsRepository.createDefinition({
       tenantId: actor.tenantId,
       groupId: dto.groupId,
       name: dto.name.trim(),
       description: dto.description?.trim().length
         ? dto.description.trim()
         : null,
-      status: FormDefinitionStatus.DRAFT,
       createdByUserId: actor.id,
     });
-    return this.definitions.save(row);
   }
 
   private async findDraftDefinitionOrThrow(
     tenantId: string,
     id: string,
   ): Promise<FormDefinition> {
-    const t = await this.definitions.findOne({
-      where: { id, tenantId },
-      relations: ['fields'],
-    });
+    const t = await this.formDefinitionsRepository.findByIdWithFields(
+      tenantId,
+      id,
+    );
     if (!t) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -129,14 +116,15 @@ export class FormDefinitionsService {
     await this.assertCanManageDefinition(actor, definition);
 
     const key = dto.fieldKey.trim();
-    const existing = await this.fields.findOne({
-      where: { formDefinitionId: definitionId, fieldKey: key },
-    });
+    const existing = await this.formDefinitionsRepository.findFieldByKey(
+      definitionId,
+      key,
+    );
     if (existing) {
       throw clientError(ClientErrorCodes.FORM_FIELD_KEY_EXISTS);
     }
 
-    const row = this.fields.create({
+    return this.formDefinitionsRepository.createField({
       tenantId: actor.tenantId,
       formDefinitionId: definitionId,
       fieldKey: key,
@@ -151,7 +139,6 @@ export class FormDefinitionsService {
         dto.options !== undefined && dto.options !== null ? dto.options : null,
       sortOrder: dto.sortOrder,
     });
-    return this.fields.save(row);
   }
 
   async moveField(
@@ -165,10 +152,10 @@ export class FormDefinitionsService {
       definitionId,
     );
     await this.assertCanManageDefinition(actor, definition);
-    const rows = await this.fields.find({
-      where: { tenantId: actor.tenantId, formDefinitionId: definitionId },
-      order: { sortOrder: 'ASC', createdAt: 'ASC' },
-    });
+    const rows = await this.formDefinitionsRepository.findFieldsOrdered(
+      actor.tenantId,
+      definitionId,
+    );
     const fromIndex = rows.findIndex((f) => f.id === fieldId);
     if (fromIndex < 0) {
       throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
@@ -187,7 +174,7 @@ export class FormDefinitionsService {
       field.sortOrder = index;
       return field;
     });
-    await this.fields.save(normalized);
+    await this.formDefinitionsRepository.saveFields(normalized);
   }
 
   async deleteField(
@@ -200,28 +187,27 @@ export class FormDefinitionsService {
       definitionId,
     );
     await this.assertCanManageDefinition(actor, definition);
-    const target = await this.fields.findOne({
-      where: {
-        id: fieldId,
+    const target =
+      await this.formDefinitionsRepository.findFieldByIdInDefinition({
         tenantId: actor.tenantId,
-        formDefinitionId: definitionId,
-      },
-    });
+        definitionId,
+        fieldId,
+      });
     if (!target) {
       throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
     }
-    await this.fields.remove(target);
+    await this.formDefinitionsRepository.removeField(target);
 
-    const remaining = await this.fields.find({
-      where: { tenantId: actor.tenantId, formDefinitionId: definitionId },
-      order: { sortOrder: 'ASC', createdAt: 'ASC' },
-    });
+    const remaining = await this.formDefinitionsRepository.findFieldsOrdered(
+      actor.tenantId,
+      definitionId,
+    );
     const normalized = remaining.map((field, index) => {
       field.sortOrder = index;
       return field;
     });
     if (normalized.length > 0) {
-      await this.fields.save(normalized);
+      await this.formDefinitionsRepository.saveFields(normalized);
     }
   }
 
@@ -236,13 +222,12 @@ export class FormDefinitionsService {
       definitionId,
     );
     await this.assertCanManageDefinition(actor, definition);
-    const target = await this.fields.findOne({
-      where: {
-        id: fieldId,
+    const target =
+      await this.formDefinitionsRepository.findFieldByIdInDefinition({
         tenantId: actor.tenantId,
-        formDefinitionId: definitionId,
-      },
-    });
+        definitionId,
+        fieldId,
+      });
     if (!target) {
       throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
     }
@@ -257,17 +242,17 @@ export class FormDefinitionsService {
     target.helpText = dto.helpText?.trim().length ? dto.helpText.trim() : null;
     target.optionsJson =
       dto.options !== undefined && dto.options !== null ? dto.options : null;
-    await this.fields.save(target);
+    await this.formDefinitionsRepository.saveField(target);
   }
 
   async publish(
     actor: AuthUserPayload,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const t = await this.definitions.findOne({
-      where: { id: definitionId, tenantId: actor.tenantId },
-      relations: ['fields'],
-    });
+    const t = await this.formDefinitionsRepository.findByIdWithFields(
+      actor.tenantId,
+      definitionId,
+    );
     if (!t) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -276,7 +261,7 @@ export class FormDefinitionsService {
     }
     await this.assertCanManageDefinition(actor, t);
     t.status = FormDefinitionStatus.PUBLISHED;
-    return this.definitions.save(t);
+    return this.formDefinitionsRepository.saveDefinition(t);
   }
 
   async archive(
@@ -290,7 +275,7 @@ export class FormDefinitionsService {
     }
     definition.archivedFromStatus = definition.status;
     definition.status = FormDefinitionStatus.ARCHIVED;
-    return this.definitions.save(definition);
+    return this.formDefinitionsRepository.saveDefinition(definition);
   }
 
   async restore(
@@ -305,17 +290,17 @@ export class FormDefinitionsService {
     definition.status =
       definition.archivedFromStatus ?? FormDefinitionStatus.PUBLISHED;
     definition.archivedFromStatus = null;
-    return this.definitions.save(definition);
+    return this.formDefinitionsRepository.saveDefinition(definition);
   }
 
   async getOne(
     tenantId: string,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const t = await this.definitions.findOne({
-      where: { id: definitionId, tenantId },
-      relations: ['fields'],
-    });
+    const t = await this.formDefinitionsRepository.findByIdWithFields(
+      tenantId,
+      definitionId,
+    );
     if (!t) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -341,22 +326,18 @@ export class FormDefinitionsService {
     definition.description = dto.description?.trim().length
       ? dto.description.trim()
       : null;
-    return this.definitions.save(definition);
+    return this.formDefinitionsRepository.saveDefinition(definition);
   }
 
   async getPublishedDefinitionForApplicant(
     actor: ApplicantAccessTokenPayload,
   ): Promise<FormDefinition> {
-    const definition = await this.definitions.findOne({
-      where: {
-        ...(actor.formDefinitionId ? { id: actor.formDefinitionId } : {}),
+    const definition =
+      await this.formDefinitionsRepository.findPublishedForApplicant({
         tenantId: actor.tenantId,
         groupId: actor.groupId,
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-      relations: ['fields'],
-      order: { fields: { sortOrder: 'ASC' } },
-    });
+        formDefinitionId: actor.formDefinitionId,
+      });
     if (!definition) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -368,13 +349,11 @@ export class FormDefinitionsService {
     dto: RequestFormAccessDto,
     formDefinitionId?: string,
   ) {
-    const definitions = await this.definitions.find({
-      where: {
-        ...(formDefinitionId ? { id: formDefinitionId } : {}),
+    const definitions =
+      await this.formDefinitionsRepository.findPublishedForAccessRequest({
         groupId,
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-    });
+        formDefinitionId,
+      });
     if (!formDefinitionId && definitions.length > 1) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_AMBIGUOUS);
     }

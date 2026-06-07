@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
-import { CorrectionRequestStatus } from '../../../../models/constants/correction-request-status';
 import type { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type {
   CorrectionTargetsResponseDto,
   ReturnApplicationDto,
@@ -15,18 +13,14 @@ import { mapCorrectionsList } from '../mappers/applications.mapper';
 @Injectable()
 export class ApplicationCorrectionService {
   constructor(
-    @InjectRepository(CorrectionRequest)
-    private readonly correctionRequests: Repository<CorrectionRequest>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
+    private readonly applicationsRepository: ApplicationsRepository,
   ) {}
 
   async listCorrections(tenantId: string, app: Application) {
-    const rows = await this.correctionRequests.find({
-      where: { applicationId: app.id, tenantId },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
+    const rows = await this.applicationsRepository.listCorrections(
+      tenantId,
+      app.id,
+    );
     return mapCorrectionsList(rows);
   }
 
@@ -86,13 +80,10 @@ export class ApplicationCorrectionService {
       throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
     }
 
-    const template = await this.templates.findOne({
-      where: {
-        id: app.formDefinitionId,
-        tenantId: app.tenantId,
-        groupId: app.groupId,
-      },
-      relations: ['fields'],
+    const template = await this.applicationsRepository.findTemplateByIdInGroup({
+      tenantId: app.tenantId,
+      groupId: app.groupId,
+      formDefinitionId: app.formDefinitionId,
     });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
@@ -113,28 +104,16 @@ export class ApplicationCorrectionService {
   private async findOpenCorrection(
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    return this.correctionRequests.findOne({
-      where: {
-        applicationId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
+    return this.applicationsRepository.findOpenCorrection(applicationId);
   }
 
   private async findOpenCorrectionWithItems(
     tenantId: string,
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    const opens = await this.correctionRequests.find({
-      where: {
-        applicationId,
-        tenantId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
-    return opens[0] ?? null;
+    return this.applicationsRepository.findLatestOpenCorrectionWithItems(
+      tenantId,
+      applicationId,
+    );
   }
 }

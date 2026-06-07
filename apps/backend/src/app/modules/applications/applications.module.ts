@@ -8,6 +8,7 @@ import { CorrectionRequest } from '../../../models/entities/correction-request.e
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { User } from '../../../models/entities/user.entity';
+import { ApplicationsRepository } from '../../../models/repositories/applications.repository';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
@@ -45,6 +46,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
   controllers: [ApplicationsController, PublicApplicationsController],
   providers: [
     ApplicationsService,
+    ApplicationsRepository,
     ApplicantAccessGuard,
     ApplicationAccessPolicy,
     ApplicationApprovalFlowResolver,

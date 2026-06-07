@@ -1,9 +1,8 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { UserRole } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
+import { UsersRepository } from '../../../../models/repositories/users.repository';
 import { UsersService } from './users.service';
 
 /**
@@ -13,23 +12,32 @@ import { UsersService } from './users.service';
  */
 describe('UsersService', () => {
   let service: UsersService;
-  let repo: jest.Mocked<
-    Pick<Repository<User>, 'count' | 'findOne' | 'find' | 'create' | 'save'>
+  let usersRepository: jest.Mocked<
+    Pick<
+      UsersRepository,
+      | 'count'
+      | 'findAllByEmail'
+      | 'findByTenantAndEmail'
+      | 'findByIdAndTenant'
+      | 'countTenantAdmins'
+      | 'save'
+    >
   >;
 
   beforeEach(async () => {
-    repo = {
+    usersRepository = {
       count: jest.fn(),
-      findOne: jest.fn(),
-      find: jest.fn(),
-      create: jest.fn(),
+      findAllByEmail: jest.fn(),
+      findByTenantAndEmail: jest.fn(),
+      findByIdAndTenant: jest.fn(),
+      countTenantAdmins: jest.fn(),
       save: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
-        { provide: getRepositoryToken(User), useValue: repo },
+        { provide: UsersRepository, useValue: usersRepository },
       ],
     }).compile();
 
@@ -40,7 +48,7 @@ describe('UsersService', () => {
    * count はリポジトリに委譲すること
    */
   it('count delegates to repository', async () => {
-    repo.count.mockResolvedValue(3);
+    usersRepository.count.mockResolvedValue(3);
     await expect(service.count()).resolves.toBe(3);
   });
 
@@ -48,22 +56,23 @@ describe('UsersService', () => {
    * findAllByEmail は小文字のメールアドレスをクエリすること
    */
   it('findAllByEmail queries lowercase email', async () => {
-    repo.find.mockResolvedValue([]);
+    usersRepository.findAllByEmail.mockResolvedValue([]);
     await service.findAllByEmail('User@Example.COM');
-    expect(repo.find).toHaveBeenCalledWith({
-      where: { email: 'user@example.com' },
-    });
+    expect(usersRepository.findAllByEmail).toHaveBeenCalledWith(
+      'User@Example.COM',
+    );
   });
 
   /**
    * findByTenantAndEmail は小文字のメールアドレスをクエリすること
    */
   it('findByTenantAndEmail queries lowercase email', async () => {
-    repo.findOne.mockResolvedValue(null);
+    usersRepository.findByTenantAndEmail.mockResolvedValue(null);
     await service.findByTenantAndEmail('tenant-1', 'User@Example.COM');
-    expect(repo.findOne).toHaveBeenCalledWith({
-      where: { tenantId: 'tenant-1', email: 'user@example.com' },
-    });
+    expect(usersRepository.findByTenantAndEmail).toHaveBeenCalledWith(
+      'tenant-1',
+      'User@Example.COM',
+    );
   });
 
   describe('updateRoleInTenant', () => {
@@ -87,7 +96,7 @@ describe('UsersService', () => {
      * テナント内にユーザーがいない場合にエラーを返すこと
      */
     it('throws when user not in tenant', async () => {
-      repo.findOne.mockResolvedValue(null);
+      usersRepository.findByIdAndTenant.mockResolvedValue(null);
       await expect(
         service.updateRoleInTenant(
           't1',
@@ -109,8 +118,8 @@ describe('UsersService', () => {
         tenantId: 't1',
         role: UserRole.TENANT_ADMIN,
       } as User;
-      repo.findOne.mockResolvedValue(adminUser);
-      repo.count.mockResolvedValue(1);
+      usersRepository.findByIdAndTenant.mockResolvedValue(adminUser);
+      usersRepository.countTenantAdmins.mockResolvedValue(1);
 
       await expect(
         service.updateRoleInTenant(
@@ -137,8 +146,8 @@ describe('UsersService', () => {
         isActive: true,
         createdAt: new Date(),
       } as User;
-      repo.findOne.mockResolvedValue(approver);
-      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+      usersRepository.findByIdAndTenant.mockResolvedValue(approver);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
 
       const out = await service.updateRoleInTenant(
         't1',
@@ -148,7 +157,7 @@ describe('UsersService', () => {
       );
 
       expect(out.role).toBe(UserRole.TENANT_USER);
-      expect(repo.save).toHaveBeenCalled();
+      expect(usersRepository.save).toHaveBeenCalled();
     });
 
     /**
@@ -164,8 +173,8 @@ describe('UsersService', () => {
         isActive: true,
         createdAt: new Date(),
       } as User;
-      repo.findOne.mockResolvedValue(approver);
-      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+      usersRepository.findByIdAndTenant.mockResolvedValue(approver);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
 
       const out = await service.updateRoleInTenant(
         't1',
@@ -175,7 +184,7 @@ describe('UsersService', () => {
       );
 
       expect(out.role).toBe(UserRole.TENANT_ADMIN);
-      expect(repo.save).toHaveBeenCalled();
+      expect(usersRepository.save).toHaveBeenCalled();
     });
   });
 
@@ -195,7 +204,7 @@ describe('UsersService', () => {
      * テナント内にユーザーがいない場合にエラーを返すこと
      */
     it('throws when user not in tenant', async () => {
-      repo.findOne.mockResolvedValue(null);
+      usersRepository.findByIdAndTenant.mockResolvedValue(null);
       await expect(
         service.deactivateInTenant('t1', 'missing', 'actor-id'),
       ).rejects.toMatchObject({
@@ -207,13 +216,13 @@ describe('UsersService', () => {
      * 最後の有効なテナント管理者が削除されないように保護すること
      */
     it('protects the last active tenant_admin from deletion', async () => {
-      repo.findOne.mockResolvedValue({
+      usersRepository.findByIdAndTenant.mockResolvedValue({
         id: 'u-admin',
         tenantId: 't1',
         role: UserRole.TENANT_ADMIN,
         isActive: true,
       } as User);
-      repo.count.mockResolvedValue(1);
+      usersRepository.countTenantAdmins.mockResolvedValue(1);
 
       await expect(
         service.deactivateInTenant('t1', 'u-admin', 'actor-id'),
@@ -232,13 +241,13 @@ describe('UsersService', () => {
         role: UserRole.TENANT_USER,
         isActive: true,
       } as User;
-      repo.findOne.mockResolvedValue(target);
-      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+      usersRepository.findByIdAndTenant.mockResolvedValue(target);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
 
       await service.deactivateInTenant('t1', 'u-member', 'actor-id');
 
       expect(target.isActive).toBe(false);
-      expect(repo.save).toHaveBeenCalledWith(target);
+      expect(usersRepository.save).toHaveBeenCalledWith(target);
     });
   });
 
@@ -247,7 +256,7 @@ describe('UsersService', () => {
      * テナント内にユーザーがいない場合にエラーを返すこと
      */
     it('throws when user not in tenant', async () => {
-      repo.findOne.mockResolvedValue(null);
+      usersRepository.findByIdAndTenant.mockResolvedValue(null);
       await expect(
         service.restoreInTenant('t1', 'missing'),
       ).rejects.toMatchObject({
@@ -265,13 +274,13 @@ describe('UsersService', () => {
         role: UserRole.TENANT_USER,
         isActive: false,
       } as User;
-      repo.findOne.mockResolvedValue(target);
-      repo.save.mockImplementation((u: User) => Promise.resolve(u));
+      usersRepository.findByIdAndTenant.mockResolvedValue(target);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
 
       const out = await service.restoreInTenant('t1', 'u-member');
 
       expect(out.isActive).toBe(true);
-      expect(repo.save).toHaveBeenCalledWith(target);
+      expect(usersRepository.save).toHaveBeenCalledWith(target);
     });
   });
 });

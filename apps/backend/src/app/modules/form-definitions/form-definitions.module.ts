@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
+import { FormDefinitionsRepository } from '../../../models/repositories/form-definitions.repository';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApprovalFlowsModule } from '../approval-flows/approval-flows.module';
 import { AuthModule } from '../auth/auth.module';
@@ -19,7 +20,11 @@ import { FormDefinitionsService } from './services/form-definitions.service';
     MailModule,
   ],
   controllers: [FormDefinitionsController],
-  providers: [FormDefinitionsService, ApplicantAccessGuard],
+  providers: [
+    FormDefinitionsService,
+    FormDefinitionsRepository,
+    ApplicantAccessGuard,
+  ],
   exports: [FormDefinitionsService],
 })
 export class FormDefinitionsModule {}

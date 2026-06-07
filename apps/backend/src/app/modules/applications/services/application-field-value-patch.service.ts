@@ -1,15 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
-import { CorrectionRequestStatus } from '../../../../models/constants/correction-request-status';
-import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { ApplicationFieldValue } from '../../../../models/entities/application-field-value.entity';
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
-import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type { PatchApplicationDto } from '../dto/applications.dto';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 
@@ -22,14 +18,7 @@ type EditablePatchContext = {
 @Injectable()
 export class ApplicationFieldValuePatchService {
   constructor(
-    @InjectRepository(Application)
-    private readonly apps: Repository<Application>,
-    @InjectRepository(ApplicationFieldValue)
-    private readonly fieldValues: Repository<ApplicationFieldValue>,
-    @InjectRepository(CorrectionRequest)
-    private readonly correctionRequests: Repository<CorrectionRequest>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
+    private readonly applicationsRepository: ApplicationsRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
 
@@ -75,14 +64,11 @@ export class ApplicationFieldValuePatchService {
     ) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
-    const template = await this.templates.findOne({
-      where: {
-        id: formDefinitionId ?? app.formDefinitionId,
-        tenantId,
-        groupId: app.groupId,
-        ...(formDefinitionId ? { status: FormDefinitionStatus.PUBLISHED } : {}),
-      },
-      relations: ['fields'],
+    const template = await this.applicationsRepository.findTemplateByIdInGroup({
+      tenantId,
+      groupId: app.groupId,
+      formDefinitionId: formDefinitionId ?? app.formDefinitionId,
+      onlyPublished: !!formDefinitionId,
     });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
@@ -112,13 +98,7 @@ export class ApplicationFieldValuePatchService {
   private async findOpenCorrection(
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    return this.correctionRequests.findOne({
-      where: {
-        applicationId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
+    return this.applicationsRepository.findOpenCorrection(applicationId);
   }
 
   private async buildFieldValuePatch(
@@ -131,9 +111,8 @@ export class ApplicationFieldValuePatchService {
       context.allowedFieldIds,
     );
 
-    const existingValues = await this.fieldValues.find({
-      where: { applicationId: context.app.id },
-    });
+    const existingValues =
+      await this.applicationsRepository.findExistingFieldValues(context.app.id);
     const existingByFieldId = new Map(
       existingValues.map((value) => [value.formFieldId, value]),
     );
@@ -150,7 +129,7 @@ export class ApplicationFieldValuePatchService {
         patchedValues.push(existing);
       } else {
         patchedValues.push(
-          this.fieldValues.create({
+          this.applicationsRepository.createFieldValue({
             tenantId: context.app.tenantId,
             applicationId: context.app.id,
             formFieldId: field.id,
@@ -171,22 +150,11 @@ export class ApplicationFieldValuePatchService {
     if (!dto.formDefinitionId && !dto.approvalFlowId && values.length === 0) {
       return;
     }
-    await this.apps.manager.transaction(async (em: EntityManager) => {
-      const appRepo = em.getRepository(Application);
-      const valueRepo = em.getRepository(ApplicationFieldValue);
-      if (dto.formDefinitionId) {
-        app.formDefinitionId = dto.formDefinitionId;
-        await valueRepo.delete({ applicationId: app.id });
-      }
-      if (dto.approvalFlowId) {
-        app.approvalFlowId = dto.approvalFlowId;
-      }
-      if (dto.formDefinitionId || dto.approvalFlowId) {
-        await appRepo.save(app);
-      }
-      if (values.length > 0) {
-        await valueRepo.save(values);
-      }
+    await this.applicationsRepository.saveApplicationPatch({
+      app,
+      formDefinitionId: dto.formDefinitionId,
+      approvalFlowId: dto.approvalFlowId,
+      values,
     });
   }
 }

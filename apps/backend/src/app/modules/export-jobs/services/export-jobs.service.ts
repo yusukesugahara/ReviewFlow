@@ -1,14 +1,11 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { Application } from '../../../../models/entities/application.entity';
-import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { ExportJobStatus } from '../../../../models/constants/export-job-status';
-import { ExportJob } from '../../../../models/entities/export-job.entity';
+import { ExportJobsRepository } from '../../../../models/repositories/export-jobs.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { CreateExportJobDto } from '../dto/export-jobs.dto';
 import { mapExportJobToDto } from '../mappers/export-jobs.mapper';
@@ -18,10 +15,7 @@ type CsvDownload = { fileName: string; content: Buffer };
 @Injectable()
 export class ExportJobsService {
   constructor(
-    @InjectRepository(ExportJob)
-    private readonly jobs: Repository<ExportJob>,
-    @InjectRepository(Application)
-    private readonly applications: Repository<Application>,
+    private readonly exportJobsRepository: ExportJobsRepository,
     private readonly spaceAccess: SpaceAccessService,
   ) {}
 
@@ -110,41 +104,23 @@ export class ExportJobsService {
       filterJson.formDefinitionId = dto.formDefinitionId;
     }
 
-    const job = await this.jobs.save(
-      this.jobs.create({
-        tenantId: actor.tenantId,
-        groupId: dto.groupId,
-        requestedByUserId: actor.id,
-        status: ExportJobStatus.QUEUED,
-        filterJson: Object.keys(filterJson).length ? filterJson : null,
-        filePath: null,
-        startedAt: null,
-        finishedAt: null,
-      }),
-    );
+    const job = await this.exportJobsRepository.createQueuedJob({
+      tenantId: actor.tenantId,
+      groupId: dto.groupId,
+      requestedByUserId: actor.id,
+      filterJson: Object.keys(filterJson).length ? filterJson : null,
+    });
 
     try {
       job.status = ExportJobStatus.PROCESSING;
       job.startedAt = new Date();
-      await this.jobs.save(job);
+      await this.exportJobsRepository.saveJob(job);
 
-      const where: Record<string, unknown> = {
+      const rows = await this.exportJobsRepository.findExportableApplications({
         tenantId: actor.tenantId,
         groupId: dto.groupId,
-        status: Not(In([ApplicationStatus.DRAFT, ApplicationStatus.PUBLISHED])),
-      };
-      if (dto.status) where.status = dto.status;
-      if (dto.formDefinitionId) where.formDefinitionId = dto.formDefinitionId;
-
-      const rows = await this.applications.find({
-        where,
-        relations: [
-          'formDefinition',
-          'formDefinition.fields',
-          'fieldValues',
-          'fieldValues.formField',
-        ],
-        order: { createdAt: 'ASC' },
+        status: dto.status,
+        formDefinitionId: dto.formDefinitionId,
       });
 
       const csv = this.buildCsv(rows);
@@ -155,20 +131,21 @@ export class ExportJobsService {
       job.status = ExportJobStatus.COMPLETED;
       job.filePath = outputPath;
       job.finishedAt = new Date();
-      await this.jobs.save(job);
+      await this.exportJobsRepository.saveJob(job);
     } catch {
       job.status = ExportJobStatus.FAILED;
       job.finishedAt = new Date();
-      await this.jobs.save(job);
+      await this.exportJobsRepository.saveJob(job);
     }
 
     return this.getOne(actor, job.id);
   }
 
   async getOne(actor: AuthUserPayload, id: string) {
-    const row = await this.jobs.findOne({
-      where: { id, tenantId: actor.tenantId },
-    });
+    const row = await this.exportJobsRepository.findJobByIdInTenant(
+      actor.tenantId,
+      id,
+    );
     if (!row) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_FOUND);
     }
@@ -177,9 +154,10 @@ export class ExportJobsService {
   }
 
   async getDownload(actor: AuthUserPayload, id: string): Promise<CsvDownload> {
-    const row = await this.jobs.findOne({
-      where: { id, tenantId: actor.tenantId },
-    });
+    const row = await this.exportJobsRepository.findJobByIdInTenant(
+      actor.tenantId,
+      id,
+    );
     if (!row) {
       throw clientError(ClientErrorCodes.EXPORT_JOB_NOT_FOUND);
     }

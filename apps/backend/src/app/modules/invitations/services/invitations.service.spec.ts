@@ -1,12 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { DataSource } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { InvitationStatus } from '../../../../models/constants/invitation-status';
 import { UserRole } from '../../../../models/constants/user-role';
 import { Invitation } from '../../../../models/entities/invitation.entity';
 import { User } from '../../../../models/entities/user.entity';
+import {
+  InvitationRepositoryError,
+  InvitationsRepository,
+} from '../../../../models/repositories/invitations.repository';
 import { AuthService } from '../../auth/services/auth.service';
 import { MailService } from '../../mail/services/mail.service';
 import { UsersService } from '../../users/services/users.service';
@@ -19,13 +21,12 @@ import { InvitationsService } from './invitations.service';
  */
 describe('InvitationsService', () => {
   let service: InvitationsService;
-  let invitationsRepo: {
-    findOne: jest.Mock;
-    create: jest.Mock;
-    save: jest.Mock;
-    delete: jest.Mock;
+  let invitationsRepository: {
+    findPendingByTenantAndEmail: jest.Mock;
+    createInvitation: jest.Mock;
+    deleteInvitation: jest.Mock;
+    acceptInvitation: jest.Mock;
   };
-  let dataSource: { transaction: jest.Mock };
   let usersService: {
     findByTenantAndEmail: jest.Mock;
   };
@@ -33,13 +34,19 @@ describe('InvitationsService', () => {
   let mailService: { sendInvitationEmail: jest.Mock };
 
   beforeEach(async () => {
-    invitationsRepo = {
-      findOne: jest.fn(),
-      create: jest.fn((x: object) => ({ ...x })),
-      save: jest.fn((row: Invitation) => Promise.resolve(row)),
-      delete: jest.fn(),
+    invitationsRepository = {
+      findPendingByTenantAndEmail: jest.fn(),
+      createInvitation: jest.fn((row: Partial<Invitation>) =>
+        Promise.resolve({
+          id: 'inv-1',
+          token: 't'.repeat(64),
+          expiresAt: new Date(Date.now() + 60_000),
+          ...row,
+        } as Invitation),
+      ),
+      deleteInvitation: jest.fn(),
+      acceptInvitation: jest.fn(),
     };
-    dataSource = { transaction: jest.fn() };
     usersService = { findByTenantAndEmail: jest.fn() };
     authService = { issueTokensForUser: jest.fn() };
     mailService = { sendInvitationEmail: jest.fn() };
@@ -47,8 +54,7 @@ describe('InvitationsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         InvitationsService,
-        { provide: getRepositoryToken(Invitation), useValue: invitationsRepo },
-        { provide: DataSource, useValue: dataSource },
+        { provide: InvitationsRepository, useValue: invitationsRepository },
         { provide: UsersService, useValue: usersService },
         { provide: AuthService, useValue: authService },
         { provide: MailService, useValue: mailService },
@@ -84,7 +90,7 @@ describe('InvitationsService', () => {
      */
     it('throws when pending invitation exists', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue(null);
-      invitationsRepo.findOne.mockResolvedValue({
+      invitationsRepository.findPendingByTenantAndEmail.mockResolvedValue({
         id: 'inv-1',
         status: InvitationStatus.PENDING,
       });
@@ -101,20 +107,19 @@ describe('InvitationsService', () => {
      */
     it('persists invitation with token', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue(null);
-      invitationsRepo.findOne.mockResolvedValue(null);
+      invitationsRepository.findPendingByTenantAndEmail.mockResolvedValue(null);
 
       const out = await service.create(
         { email: 'New@Y.com', role: UserRole.TENANT_USER },
         actor,
       );
 
-      expect(invitationsRepo.create).toHaveBeenCalledWith(
+      expect(invitationsRepository.createInvitation).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 'tenant-1',
           email: 'new@y.com',
           role: UserRole.TENANT_USER,
           invitedByUserId: 'admin-1',
-          status: InvitationStatus.PENDING,
         }),
       );
       expect(out.email).toBe('new@y.com');
@@ -134,8 +139,8 @@ describe('InvitationsService', () => {
      */
     it('rolls back invitation when mail delivery fails', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue(null);
-      invitationsRepo.findOne.mockResolvedValue(null);
-      invitationsRepo.save.mockResolvedValue({
+      invitationsRepository.findPendingByTenantAndEmail.mockResolvedValue(null);
+      invitationsRepository.createInvitation.mockResolvedValue({
         id: 'inv-1',
         tenantId: 'tenant-1',
         email: 'new@y.com',
@@ -154,7 +159,9 @@ describe('InvitationsService', () => {
         status: 500,
       });
 
-      expect(invitationsRepo.delete).toHaveBeenCalledWith('inv-1');
+      expect(invitationsRepository.deleteInvitation).toHaveBeenCalledWith(
+        'inv-1',
+      );
     });
   });
 
@@ -163,23 +170,8 @@ describe('InvitationsService', () => {
      * 未知のトークンに対してエラーを返すこと
      */
     it('throws when token unknown', async () => {
-      dataSource.transaction.mockImplementation(
-        (fn: (m: unknown) => unknown) => {
-          const invRepo = {
-            findOne: jest.fn().mockResolvedValue(null),
-          };
-          const userRepo = {
-            findOne: jest.fn(),
-            create: jest.fn(),
-            save: jest.fn(),
-          };
-          return Promise.resolve(
-            fn({
-              getRepository: (e: unknown) =>
-                e === Invitation ? invRepo : userRepo,
-            }),
-          );
-        },
+      invitationsRepository.acceptInvitation.mockRejectedValue(
+        new InvitationRepositoryError('not_found'),
       );
 
       await expect(
@@ -193,35 +185,16 @@ describe('InvitationsService', () => {
      * 招待を受け入れ、ユーザーを作成し、トークンを返すこと
      */
     it('creates user and returns tokens', async () => {
-      const inv: Partial<Invitation> = {
-        tenantId: 'tenant-1',
-        email: 'join@y.com',
-        role: UserRole.TENANT_USER,
-        status: InvitationStatus.PENDING,
-        expiresAt: new Date(Date.now() + 60_000),
-      };
-
-      const invRepo = {
-        findOne: jest.fn().mockResolvedValue(inv),
-        save: jest.fn(),
-      };
-      const userRepo = {
-        findOne: jest.fn().mockResolvedValue(null),
-        create: jest.fn((u: object) => u),
-        save: jest.fn((u: User & { id?: string }) => {
-          u.id = 'new-user';
-          return Promise.resolve(u);
-        }),
-      };
-
-      dataSource.transaction.mockImplementation(
-        (fn: (m: unknown) => unknown) => {
-          return Promise.resolve(
-            fn({
-              getRepository: (e: unknown) =>
-                e === Invitation ? invRepo : userRepo,
-            }),
-          );
+      let capturedPasswordHash = '';
+      invitationsRepository.acceptInvitation.mockImplementation(
+        ({ passwordHash }: { passwordHash: string }) => {
+          capturedPasswordHash = passwordHash;
+          return Promise.resolve({
+            id: 'new-user',
+            tenantId: 'tenant-1',
+            email: 'join@y.com',
+            role: UserRole.TENANT_USER,
+          } as User);
         },
       );
 
@@ -241,14 +214,14 @@ describe('InvitationsService', () => {
         password: 'password12',
       });
 
-      expect(userRepo.save).toHaveBeenCalled();
-      const savedUser = userRepo.save.mock.calls[0][0];
-      expect(savedUser.email).toBe('join@y.com');
       await expect(
-        bcrypt.compare('password12', savedUser.passwordHash),
+        bcrypt.compare('password12', capturedPasswordHash),
       ).resolves.toBe(true);
-      expect(invRepo.save).toHaveBeenCalledWith(
-        expect.objectContaining({ status: InvitationStatus.ACCEPTED }),
+      expect(invitationsRepository.acceptInvitation).toHaveBeenCalledWith(
+        expect.objectContaining({
+          token: 'tok',
+          name: 'Joiner',
+        }),
       );
       expect(out.access_token).toBe('jwt');
     });

@@ -1,24 +1,18 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
-import { GroupMemberRole } from '../../../../models/constants/group-member-role';
 import { UserRole } from '../../../../models/constants/user-role';
-import { GroupMember } from '../../../../models/entities/group-member.entity';
-import { Group } from '../../../../models/entities/group.entity';
+import { GroupsRepository } from '../../../../models/repositories/groups.repository';
 
 @Injectable()
 export class SpaceAccessService {
-  constructor(
-    @InjectRepository(Group)
-    private readonly groups: Repository<Group>,
-    @InjectRepository(GroupMember)
-    private readonly members: Repository<GroupMember>,
-  ) {}
+  constructor(private readonly groupsRepository: GroupsRepository) {}
 
   async assertGroupInTenant(tenantId: string, groupId: string): Promise<void> {
-    const count = await this.groups.count({ where: { id: groupId, tenantId } });
+    const count = await this.groupsRepository.countGroupInTenant(
+      tenantId,
+      groupId,
+    );
     if (count === 0) {
       throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
     }
@@ -32,9 +26,11 @@ export class SpaceAccessService {
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return;
     }
-    const member = await this.members.findOne({
-      where: { tenantId: actor.tenantId, groupId, userId: actor.id },
-    });
+    const member = await this.groupsRepository.findMember(
+      actor.tenantId,
+      groupId,
+      actor.id,
+    );
     if (!member) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
@@ -48,14 +44,11 @@ export class SpaceAccessService {
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return;
     }
-    const member = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
+    const member = await this.groupsRepository.findAdminMember(
+      actor.tenantId,
+      groupId,
+      actor.id,
+    );
     if (!member) {
       throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
     }
@@ -69,14 +62,11 @@ export class SpaceAccessService {
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
       return true;
     }
-    const member = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
+    const member = await this.groupsRepository.findAdminMember(
+      actor.tenantId,
+      groupId,
+      actor.id,
+    );
     return !!member;
   }
 }

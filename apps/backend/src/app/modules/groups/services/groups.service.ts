@@ -1,6 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { GroupMemberRole } from '../../../../models/constants/group-member-role';
@@ -8,6 +6,7 @@ import { UserRole } from '../../../../models/constants/user-role';
 import { GroupMember } from '../../../../models/entities/group-member.entity';
 import { Group } from '../../../../models/entities/group.entity';
 import { User } from '../../../../models/entities/user.entity';
+import { GroupsRepository } from '../../../../models/repositories/groups.repository';
 import { UsersService } from '../../users/services/users.service';
 import type {
   AddGroupMemberDto,
@@ -18,25 +17,18 @@ import type {
 @Injectable()
 export class GroupsService {
   constructor(
-    @InjectRepository(Group)
-    private readonly groups: Repository<Group>,
-    @InjectRepository(GroupMember)
-    private readonly members: Repository<GroupMember>,
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
+    private readonly groupsRepository: GroupsRepository,
     private readonly usersService: UsersService,
   ) {}
 
   async list(actor: AuthUserPayload): Promise<Group[]> {
     if (this.isSystemAdmin(actor)) {
       const [groups, memberships] = await Promise.all([
-        this.groups.find({
-          where: { tenantId: actor.tenantId },
-          order: { createdAt: 'ASC' },
-        }),
-        this.members.find({
-          where: { tenantId: actor.tenantId, userId: actor.id },
-        }),
+        this.groupsRepository.findGroupsByTenant(actor.tenantId),
+        this.groupsRepository.findMembershipsByTenantAndUser(
+          actor.tenantId,
+          actor.id,
+        ),
       ]);
       const roleByGroupId = new Map(
         memberships.map((member) => [member.groupId, member.role]),
@@ -48,11 +40,11 @@ export class GroupsService {
       );
     }
 
-    const rows = await this.members.find({
-      where: { tenantId: actor.tenantId, userId: actor.id },
-      relations: { group: true },
-      order: { createdAt: 'ASC' },
-    });
+    const rows =
+      await this.groupsRepository.findMembershipsWithGroupsByTenantAndUser(
+        actor.tenantId,
+        actor.id,
+      );
     return rows.map((row) =>
       Object.assign(row.group, { currentUserRole: row.role }),
     );
@@ -64,9 +56,10 @@ export class GroupsService {
       throw clientError(ClientErrorCodes.GROUP_NAME_EXISTS);
     }
 
-    const exists = await this.groups.findOne({
-      where: { tenantId: actor.tenantId, name },
-    });
+    const exists = await this.groupsRepository.findGroupByTenantAndName(
+      actor.tenantId,
+      name,
+    );
     if (exists) {
       throw clientError(ClientErrorCodes.GROUP_NAME_EXISTS);
     }
@@ -80,40 +73,18 @@ export class GroupsService {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 
-    return this.dataSource.transaction(async (manager) => {
-      const groupRepo = manager.getRepository(Group);
-      const memberRepo = manager.getRepository(GroupMember);
-
-      const group = await groupRepo.save(
-        groupRepo.create({
-          tenantId: actor.tenantId,
-          name,
-          description: dto.description?.trim().length
-            ? dto.description.trim()
-            : null,
-          createdByUserId: actor.id,
-        }),
-      );
-
-      await memberRepo.save(
-        adminUserIds.map((userId) =>
-          memberRepo.create({
-            tenantId: actor.tenantId,
-            groupId: group.id,
-            userId,
-            role: GroupMemberRole.ADMIN,
-            invitedByUserId: actor.id,
-          }),
-        ),
-      );
-
-      return group;
+    return this.groupsRepository.createGroupWithAdmins({
+      tenantId: actor.tenantId,
+      name,
+      description: dto.description ?? null,
+      createdByUserId: actor.id,
+      adminUserIds,
     });
   }
 
   async remove(groupId: string, actor: AuthUserPayload): Promise<void> {
     const group = await this.findGroupInTenant(groupId, actor.tenantId);
-    await this.groups.delete(group.id);
+    await this.groupsRepository.deleteGroup(group.id);
   }
 
   async listMembers(
@@ -121,11 +92,7 @@ export class GroupsService {
     actor: AuthUserPayload,
   ): Promise<GroupMember[]> {
     await this.assertCanManageGroup(groupId, actor);
-    return this.members.find({
-      where: { tenantId: actor.tenantId, groupId },
-      relations: { user: true },
-      order: { createdAt: 'ASC' },
-    });
+    return this.groupsRepository.findMembersWithUsers(actor.tenantId, groupId);
   }
 
   async listAvailableUsers(
@@ -135,7 +102,7 @@ export class GroupsService {
     await this.assertCanManageGroup(groupId, actor);
     const [users, members] = await Promise.all([
       this.usersService.findAllByTenant(actor.tenantId),
-      this.members.find({ where: { tenantId: actor.tenantId, groupId } }),
+      this.groupsRepository.findMembershipsByGroup(actor.tenantId, groupId),
     ]);
     const memberUserIds = new Set(members.map((member) => member.userId));
     return users.filter((user) => !memberUserIds.has(user.id));
@@ -156,22 +123,22 @@ export class GroupsService {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 
-    const exists = await this.members.findOne({
-      where: { tenantId: actor.tenantId, groupId, userId: dto.userId },
-    });
+    const exists = await this.groupsRepository.findMember(
+      actor.tenantId,
+      groupId,
+      dto.userId,
+    );
     if (exists) {
       throw clientError(ClientErrorCodes.GROUP_MEMBER_EXISTS);
     }
 
-    const saved = await this.members.save(
-      this.members.create({
-        tenantId: actor.tenantId,
-        groupId,
-        userId: dto.userId,
-        role: dto.role,
-        invitedByUserId: actor.id,
-      }),
-    );
+    const saved = await this.groupsRepository.createMember({
+      tenantId: actor.tenantId,
+      groupId,
+      userId: dto.userId,
+      role: dto.role,
+      invitedByUserId: actor.id,
+    });
 
     saved.user = user;
     return saved;
@@ -194,11 +161,7 @@ export class GroupsService {
     }
 
     member.role = dto.role;
-    const saved = await this.members.save(member);
-    return this.members.findOneOrFail({
-      where: { id: saved.id },
-      relations: { user: true },
-    });
+    return this.groupsRepository.saveMember(member);
   }
 
   async removeMember(
@@ -213,7 +176,7 @@ export class GroupsService {
       await this.assertAnotherAdminRemains(groupId, actor.tenantId, userId);
     }
 
-    await this.members.delete(member.id);
+    await this.groupsRepository.deleteMember(member.id);
   }
 
   async leave(groupId: string, actor: AuthUserPayload): Promise<void> {
@@ -224,16 +187,17 @@ export class GroupsService {
       await this.assertAnotherAdminRemains(groupId, actor.tenantId, actor.id);
     }
 
-    await this.members.delete(member.id);
+    await this.groupsRepository.deleteMember(member.id);
   }
 
   private async findGroupInTenant(
     groupId: string,
     tenantId: string,
   ): Promise<Group> {
-    const group = await this.groups.findOne({
-      where: { id: groupId, tenantId },
-    });
+    const group = await this.groupsRepository.findGroupByIdInTenant(
+      groupId,
+      tenantId,
+    );
     if (!group) {
       throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
     }
@@ -245,10 +209,11 @@ export class GroupsService {
     userId: string,
     tenantId: string,
   ): Promise<GroupMember> {
-    const member = await this.members.findOne({
-      where: { tenantId, groupId, userId },
-      relations: { user: true },
-    });
+    const member = await this.groupsRepository.findMember(
+      tenantId,
+      groupId,
+      userId,
+    );
     if (!member) {
       throw clientError(ClientErrorCodes.GROUP_MEMBER_NOT_FOUND);
     }
@@ -264,14 +229,11 @@ export class GroupsService {
       return;
     }
 
-    const actorMember = await this.members.findOne({
-      where: {
-        tenantId: actor.tenantId,
-        groupId,
-        userId: actor.id,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
+    const actorMember = await this.groupsRepository.findAdminMember(
+      actor.tenantId,
+      groupId,
+      actor.id,
+    );
     if (!actorMember) {
       throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
     }
@@ -292,13 +254,7 @@ export class GroupsService {
     tenantId: string,
     exceptUserId: string,
   ): Promise<void> {
-    const admins = await this.members.find({
-      where: {
-        tenantId,
-        groupId,
-        role: GroupMemberRole.ADMIN,
-      },
-    });
+    const admins = await this.groupsRepository.findAdmins(tenantId, groupId);
     const another = admins.some((admin) => admin.userId !== exceptUserId);
     if (!another) {
       throw clientError(ClientErrorCodes.LAST_GROUP_ADMIN_PROTECTED);

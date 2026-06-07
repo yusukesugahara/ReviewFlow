@@ -1,14 +1,12 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 
 @Injectable()
 export class ApplicationApprovalFlowResolver {
   constructor(
-    @InjectRepository(ApprovalFlow)
-    private readonly flows: Repository<ApprovalFlow>,
+    private readonly applicationsRepository: ApplicationsRepository,
   ) {}
 
   async resolveActiveFlow(
@@ -17,14 +15,10 @@ export class ApplicationApprovalFlowResolver {
     approvalFlowId?: string,
   ): Promise<ApprovalFlow> {
     if (approvalFlowId) {
-      const flow = await this.flows.findOne({
-        where: {
-          id: approvalFlowId,
-          tenantId,
-          groupId,
-          isActive: true,
-        },
-        relations: ['steps'],
+      const flow = await this.applicationsRepository.findActiveApprovalFlow({
+        tenantId,
+        groupId,
+        approvalFlowId,
       });
       if (!flow) {
         throw clientError(ClientErrorCodes.APPROVAL_FLOW_NOT_FOUND);
@@ -32,9 +26,9 @@ export class ApplicationApprovalFlowResolver {
       return flow;
     }
 
-    const list = await this.flows.find({
-      where: { tenantId, groupId, isActive: true },
-      relations: ['steps'],
+    const list = await this.applicationsRepository.listActiveApprovalFlows({
+      tenantId,
+      groupId,
     });
     if (list.length === 0) {
       throw clientError(ClientErrorCodes.APPLICATION_NO_APPROVAL_FLOW);
@@ -49,10 +43,10 @@ export class ApplicationApprovalFlowResolver {
     tenantId: string,
     groupId: string,
   ): Promise<ApprovalFlow> {
-    const list = await this.flows.find({
-      where: { tenantId, groupId, isActive: true },
-      relations: ['steps'],
-      order: { createdAt: 'ASC', id: 'ASC' },
+    const list = await this.applicationsRepository.listActiveApprovalFlows({
+      tenantId,
+      groupId,
+      defaultOrder: true,
     });
     if (list.length === 0) {
       throw clientError(ClientErrorCodes.APPLICATION_NO_APPROVAL_FLOW);

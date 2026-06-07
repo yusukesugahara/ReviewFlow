@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
-import { CorrectionRequestStatus } from '../../../../models/constants/correction-request-status';
 import { Application } from '../../../../models/entities/application.entity';
-import { CorrectionRequestItem } from '../../../../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -22,12 +19,7 @@ type ResubmittableApplicationContext = SubmittableApplicationContext & {
 @Injectable()
 export class ApplicationSubmissionService {
   constructor(
-    @InjectRepository(Application)
-    private readonly apps: Repository<Application>,
-    @InjectRepository(CorrectionRequest)
-    private readonly correctionRequests: Repository<CorrectionRequest>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
+    private readonly applicationsRepository: ApplicationsRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
@@ -53,9 +45,10 @@ export class ApplicationSubmissionService {
   ): Promise<SubmittableApplicationContext> {
     this.transitionPolicy.assertDraft(app);
 
-    const template = await this.templates.findOne({
-      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
-      relations: ['fields'],
+    const template = await this.applicationsRepository.findTemplateByIdInGroup({
+      tenantId,
+      groupId: app.groupId,
+      formDefinitionId: app.formDefinitionId,
     });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
@@ -74,9 +67,7 @@ export class ApplicationSubmissionService {
   }
 
   private async saveSubmittedApplication(app: Application): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
-      await em.getRepository(Application).save(app);
-    });
+    await this.applicationsRepository.saveSubmittedApplication(app);
   }
 
   private async applySubmitTransition(
@@ -92,20 +83,17 @@ export class ApplicationSubmissionService {
   ): Promise<ResubmittableApplicationContext> {
     this.transitionPolicy.assertReturned(app);
 
-    const openCorrection = await this.correctionRequests.findOne({
-      where: {
-        applicationId: app.id,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
+    const openCorrection = await this.applicationsRepository.findOpenCorrection(
+      app.id,
+    );
     if (!openCorrection) {
       throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
     }
 
-    const template = await this.templates.findOne({
-      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
-      relations: ['fields'],
+    const template = await this.applicationsRepository.findTemplateByIdInGroup({
+      tenantId,
+      groupId: app.groupId,
+      formDefinitionId: app.formDefinitionId,
     });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
@@ -117,22 +105,10 @@ export class ApplicationSubmissionService {
   private async applyResubmitTransition(
     context: ResubmittableApplicationContext,
   ): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
-      const corrRepo = em.getRepository(CorrectionRequest);
-      const itemRepo = em.getRepository(CorrectionRequestItem);
-      const appRepo = em.getRepository(Application);
-
-      context.openCorrection.status = CorrectionRequestStatus.RESOLVED;
-      context.openCorrection.resolvedAt = new Date();
-      await corrRepo.save(context.openCorrection);
-
-      for (const it of context.openCorrection.items ?? []) {
-        it.isResolved = true;
-        await itemRepo.save(it);
-      }
-
-      this.transitionPolicy.applyResubmit(context.app);
-      await appRepo.save(context.app);
+    this.transitionPolicy.applyResubmit(context.app);
+    await this.applicationsRepository.saveResubmittedApplication({
+      app: context.app,
+      openCorrection: context.openCorrection,
     });
   }
 }

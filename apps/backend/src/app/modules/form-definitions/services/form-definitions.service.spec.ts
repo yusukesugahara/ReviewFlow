@@ -1,11 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { FormFieldType } from '../../../../models/constants/form-field-type';
-import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { AuthService } from '../../auth/services/auth.service';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { MailService } from '../../mail/services/mail.service';
@@ -18,11 +16,11 @@ import { FormDefinitionsService } from './form-definitions.service';
  */
 describe('FormDefinitionsService', () => {
   let service: FormDefinitionsService;
-  let templates: jest.Mocked<
-    Pick<Repository<FormDefinition>, 'find' | 'findOne' | 'create' | 'save'>
-  >;
-  let fields: jest.Mocked<
-    Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
+  let formDefinitionsRepository: jest.Mocked<
+    Pick<
+      FormDefinitionsRepository,
+      'createDefinition' | 'findByIdWithFields' | 'saveDefinition'
+    >
   >;
   let spaceAccess: jest.Mocked<
     Pick<SpaceAccessService, 'assertCanManageGroup' | 'assertCanUseGroup'>
@@ -35,21 +33,11 @@ describe('FormDefinitionsService', () => {
   };
 
   beforeEach(async () => {
-    templates = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn((x: object) => ({ ...x })),
-      save: jest.fn((x: FormDefinition) => Promise.resolve(x)),
-    } as unknown as jest.Mocked<
-      Pick<Repository<FormDefinition>, 'find' | 'findOne' | 'create' | 'save'>
-    >;
-    fields = {
-      findOne: jest.fn(),
-      create: jest.fn((x: object) => ({ ...x })),
-      save: jest.fn((x: FormField) => Promise.resolve(x)),
-    } as unknown as jest.Mocked<
-      Pick<Repository<FormField>, 'findOne' | 'create' | 'save'>
-    >;
+    formDefinitionsRepository = {
+      createDefinition: jest.fn(),
+      findByIdWithFields: jest.fn(),
+      saveDefinition: jest.fn(),
+    };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
       assertCanUseGroup: jest.fn().mockResolvedValue(undefined),
@@ -58,8 +46,10 @@ describe('FormDefinitionsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FormDefinitionsService,
-        { provide: getRepositoryToken(FormDefinition), useValue: templates },
-        { provide: getRepositoryToken(FormField), useValue: fields },
+        {
+          provide: FormDefinitionsRepository,
+          useValue: formDefinitionsRepository,
+        },
         { provide: SpaceAccessService, useValue: spaceAccess },
         {
           provide: MailService,
@@ -87,15 +77,14 @@ describe('FormDefinitionsService', () => {
       status: FormDefinitionStatus.DRAFT,
       createdByUserId: 'u1',
     } as FormDefinition;
-    templates.save.mockResolvedValue(saved);
+    formDefinitionsRepository.createDefinition.mockResolvedValue(saved);
 
     const out = await service.create(actor, { groupId: 'g1', name: '  A  ' });
 
-    expect(templates.create).toHaveBeenCalledWith(
+    expect(formDefinitionsRepository.createDefinition).toHaveBeenCalledWith(
       expect.objectContaining({
         name: 'A',
         groupId: 'g1',
-        status: FormDefinitionStatus.DRAFT,
         createdByUserId: 'u1',
       }),
     );
@@ -106,7 +95,7 @@ describe('FormDefinitionsService', () => {
    * addField は草稿定義でない場合にエラーを返すこと
    */
   it('addField rejects when definition not draft', async () => {
-    templates.findOne.mockResolvedValue({
+    formDefinitionsRepository.findByIdWithFields.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
@@ -130,7 +119,7 @@ describe('FormDefinitionsService', () => {
    * publish は草稿定義でない場合にエラーを返すこと
    */
   it('publish rejects when not draft', async () => {
-    templates.findOne.mockResolvedValue({
+    formDefinitionsRepository.findByIdWithFields.mockResolvedValue({
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
@@ -152,15 +141,17 @@ describe('FormDefinitionsService', () => {
       groupId: 'g1',
       status: FormDefinitionStatus.PUBLISHED,
     } as FormDefinition;
-    templates.findOne.mockResolvedValue(definition);
-    templates.save.mockResolvedValue(definition);
+    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
+    formDefinitionsRepository.saveDefinition.mockResolvedValue(definition);
 
     const out = await service.archive(actor, 't1');
 
     expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
     expect(out.status).toBe(FormDefinitionStatus.ARCHIVED);
     expect(out.archivedFromStatus).toBe(FormDefinitionStatus.PUBLISHED);
-    expect(templates.save).toHaveBeenCalledWith(definition);
+    expect(formDefinitionsRepository.saveDefinition).toHaveBeenCalledWith(
+      definition,
+    );
   });
 
   /**
@@ -174,15 +165,17 @@ describe('FormDefinitionsService', () => {
       status: FormDefinitionStatus.ARCHIVED,
       archivedFromStatus: FormDefinitionStatus.DRAFT,
     } as FormDefinition;
-    templates.findOne.mockResolvedValue(definition);
-    templates.save.mockResolvedValue(definition);
+    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
+    formDefinitionsRepository.saveDefinition.mockResolvedValue(definition);
 
     const out = await service.restore(actor, 't1');
 
     expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
     expect(out.status).toBe(FormDefinitionStatus.DRAFT);
     expect(out.archivedFromStatus).toBeNull();
-    expect(templates.save).toHaveBeenCalledWith(definition);
+    expect(formDefinitionsRepository.saveDefinition).toHaveBeenCalledWith(
+      definition,
+    );
   });
 
   /**
@@ -195,7 +188,7 @@ describe('FormDefinitionsService', () => {
       groupId: 'g1',
       status: FormDefinitionStatus.PUBLISHED,
     } as FormDefinition;
-    templates.findOne.mockResolvedValue(definition);
+    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
 
     const out = await service.getOneForActor(actor, 't1');
 

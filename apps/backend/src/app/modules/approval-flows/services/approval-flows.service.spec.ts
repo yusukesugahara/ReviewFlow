@@ -1,11 +1,9 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getRepositoryToken } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
-import { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 import { GroupMember } from '../../../../models/entities/group-member.entity';
 import { User } from '../../../../models/entities/user.entity';
+import { ApprovalFlowsRepository } from '../../../../models/repositories/approval-flows.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { ApprovalFlowsService } from './approval-flows.service';
 
@@ -16,11 +14,15 @@ import { ApprovalFlowsService } from './approval-flows.service';
  */
 describe('ApprovalFlowsService', () => {
   let service: ApprovalFlowsService;
-  let flows: jest.Mocked<
-    Pick<Repository<ApprovalFlow>, 'find' | 'findOne' | 'manager'>
+  let approvalFlowsRepository: jest.Mocked<
+    Pick<
+      ApprovalFlowsRepository,
+      | 'findAssignees'
+      | 'findAssigneeMemberships'
+      | 'createFlowWithSteps'
+      | 'findOneById'
+    >
   >;
-  let members: jest.Mocked<Pick<Repository<GroupMember>, 'findOne' | 'find'>>;
-  let users: jest.Mocked<Pick<Repository<User>, 'find'>>;
   let spaceAccess: jest.Mocked<
     Pick<SpaceAccessService, 'assertCanManageGroup'>
   >;
@@ -32,53 +34,24 @@ describe('ApprovalFlowsService', () => {
   };
 
   beforeEach(async () => {
-    users = {
-      find: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
-    };
-    members = {
-      findOne: jest.fn(),
-      find: jest.fn().mockResolvedValue([{ userId: 'user-1' }]),
+    approvalFlowsRepository = {
+      findAssignees: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
+      findAssigneeMemberships: jest
+        .fn()
+        .mockResolvedValue([{ userId: 'user-1' }]),
+      createFlowWithSteps: jest.fn().mockResolvedValue('flow-new'),
+      findOneById: jest.fn(),
     };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
     };
-    flows = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      manager: {
-        transaction: jest.fn(async (fn: (em: unknown) => Promise<void>) => {
-          const flowRepo = {
-            create: jest.fn((x: object) => ({ ...x, id: 'flow-new' })),
-            save: jest.fn((x: ApprovalFlow & { id?: string }) => ({
-              ...x,
-              id: x.id ?? 'flow-new',
-            })),
-          };
-          const stepRepo = {
-            create: jest.fn((x: object) => ({ ...x })),
-            save: jest.fn((x: unknown) => x),
-          };
-          await fn({
-            getRepository: (entity: unknown) => {
-              if (entity === ApprovalFlow) {
-                return flowRepo;
-              }
-              if (entity === ApprovalStep) {
-                return stepRepo;
-              }
-              throw new Error('unexpected entity in transaction mock');
-            },
-          });
-        }),
-      } as unknown as Repository<ApprovalFlow>['manager'],
-    };
-
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ApprovalFlowsService,
-        { provide: getRepositoryToken(ApprovalFlow), useValue: flows },
-        { provide: getRepositoryToken(GroupMember), useValue: members },
-        { provide: getRepositoryToken(User), useValue: users },
+        {
+          provide: ApprovalFlowsRepository,
+          useValue: approvalFlowsRepository,
+        },
         { provide: SpaceAccessService, useValue: spaceAccess },
       ],
     }).compile();
@@ -90,7 +63,7 @@ describe('ApprovalFlowsService', () => {
    * create はグループスコープの承認フローを保存すること
    */
   it('create stores a group-scoped approval flow', async () => {
-    flows.findOne.mockResolvedValue({
+    approvalFlowsRepository.findOneById.mockResolvedValue({
       id: 'flow-new',
       tenantId: 'ten1',
       groupId: 'g1',
@@ -130,15 +103,15 @@ describe('ApprovalFlowsService', () => {
    * create は単一の承認ステップに複数の担当者を設定できること
    */
   it('create accepts multiple assignees for a single approval step', async () => {
-    users.find.mockResolvedValue([
+    approvalFlowsRepository.findAssignees.mockResolvedValue([
       { id: 'user-1' },
       { id: 'user-2' },
     ] as User[]);
-    members.find.mockResolvedValue([
+    approvalFlowsRepository.findAssigneeMemberships.mockResolvedValue([
       { userId: 'user-1' },
       { userId: 'user-2' },
     ] as GroupMember[]);
-    flows.findOne.mockResolvedValue({
+    approvalFlowsRepository.findOneById.mockResolvedValue({
       id: 'flow-new',
       tenantId: 'ten1',
       groupId: 'g1',

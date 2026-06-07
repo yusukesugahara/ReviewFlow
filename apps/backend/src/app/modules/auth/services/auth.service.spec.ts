@@ -1,12 +1,10 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { getDataSourceToken, getRepositoryToken } from '@nestjs/typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { UserRole } from '../../../../models/constants/user-role';
-import { PasswordResetToken } from '../../../../models/entities/password-reset-token.entity';
-import { Tenant } from '../../../../models/entities/tenant.entity';
 import { User } from '../../../../models/entities/user.entity';
+import { AuthRepository } from '../../../../models/repositories/auth.repository';
 import { MailService } from '../../mail/services/mail.service';
 import { UsersService } from '../../users/services/users.service';
 import { AuthService } from './auth.service';
@@ -20,11 +18,11 @@ describe('AuthService', () => {
   let service: AuthService;
   let users: jest.Mocked<Pick<UsersService, 'findAllByEmail'>>;
   let jwt: { sign: jest.Mock };
-  let dataSource: { transaction: jest.Mock };
-  let passwordResetTokens: {
-    create: jest.Mock;
-    findOne: jest.Mock;
-    save: jest.Mock;
+  let authRepository: {
+    createTenantAdmin: jest.Mock;
+    createPasswordResetToken: jest.Mock;
+    findPasswordResetToken: jest.Mock;
+    updatePasswordAndMarkResetTokenUsed: jest.Mock;
   };
   let mailService: { sendPasswordResetEmail: jest.Mock };
 
@@ -33,25 +31,23 @@ describe('AuthService', () => {
       findAllByEmail: jest.fn(),
     };
     jwt = { sign: jest.fn().mockReturnValue('signed-jwt') };
-    dataSource = { transaction: jest.fn() };
-    passwordResetTokens = {
-      create: jest.fn((x: object) => ({ ...x })),
-      findOne: jest.fn(),
-      save: jest.fn((x: object) => Promise.resolve({ id: 'reset-1', ...x })),
+    authRepository = {
+      createTenantAdmin: jest.fn(),
+      createPasswordResetToken: jest.fn((x: object) =>
+        Promise.resolve({ id: 'reset-1', ...x }),
+      ),
+      findPasswordResetToken: jest.fn(),
+      updatePasswordAndMarkResetTokenUsed: jest.fn(),
     };
     mailService = { sendPasswordResetEmail: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
+        { provide: AuthRepository, useValue: authRepository },
         { provide: UsersService, useValue: users },
         { provide: MailService, useValue: mailService },
         { provide: JwtService, useValue: jwt },
-        { provide: getDataSourceToken(), useValue: dataSource },
-        {
-          provide: getRepositoryToken(PasswordResetToken),
-          useValue: passwordResetTokens,
-        },
       ],
     }).compile();
 
@@ -86,46 +82,24 @@ describe('AuthService', () => {
      */
     it('creates tenant + tenant_admin and signs JWT with tenantId', async () => {
       users.findAllByEmail.mockResolvedValue([]);
-      const tenantRepo = {
-        create: jest.fn((x: object) => ({ ...x })),
-        save: jest.fn((t: Tenant) => {
-          Object.assign(t, { id: 'tenant-1' });
-          return Promise.resolve(t);
-        }),
-      };
-      const userRepo = {
-        create: jest.fn((x: object) => ({ ...x })),
-        save: jest.fn((u: User) => {
-          Object.assign(u, { id: 'id-admin' });
-          return Promise.resolve(u);
-        }),
-      };
-
-      const manager = {
-        getRepository: (entity: unknown) => {
-          if (entity === Tenant) {
-            return tenantRepo;
-          }
-          if (entity === User) {
-            return userRepo;
-          }
-          throw new Error('unexpected entity');
-        },
-      };
-
-      dataSource.transaction.mockImplementation(
-        async (fn: (m: typeof manager) => Promise<User>) => {
-          return fn(manager);
-        },
-      );
+      authRepository.createTenantAdmin.mockResolvedValue({
+        id: 'id-admin',
+        tenantId: 'tenant-1',
+        email: 'first@example.com',
+        role: UserRole.TENANT_ADMIN,
+      });
 
       const out = await service.register({
         email: 'First@Example.com',
         password: 'password12',
       });
 
-      expect(tenantRepo.save).toHaveBeenCalled();
-      expect(userRepo.save).toHaveBeenCalled();
+      expect(authRepository.createTenantAdmin).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'first@example.com',
+          tenantName: 'My workspace',
+        }),
+      );
       expect(jwt.sign).toHaveBeenCalledWith({
         sub: 'id-admin',
         email: 'first@example.com',
@@ -232,12 +206,11 @@ describe('AuthService', () => {
 
       await service.requestPasswordReset({ email: 'A@B.com' });
 
-      expect(passwordResetTokens.save).toHaveBeenCalledWith(
+      expect(authRepository.createPasswordResetToken).toHaveBeenCalledWith(
         expect.objectContaining({
           tenantId: 't1',
           userId: 'u1',
           email: 'a@b.com',
-          usedAt: null,
         }),
       );
       expect(mailService.sendPasswordResetEmail).toHaveBeenCalledWith(
@@ -262,35 +235,20 @@ describe('AuthService', () => {
         expiresAt: new Date(Date.now() + 60_000),
         usedAt: null,
       };
-      passwordResetTokens.findOne.mockResolvedValue(tokenRow);
-      const userRepo = { update: jest.fn() };
-      const resetRepo = { update: jest.fn() };
-      dataSource.transaction.mockImplementation(
-        (
-          fn: (manager: {
-            getRepository: (
-              entity: unknown,
-            ) => typeof userRepo | typeof resetRepo;
-          }) => Promise<unknown>,
-        ) =>
-          fn({
-            getRepository: (entity: unknown) =>
-              entity === User ? userRepo : resetRepo,
-          }),
-      );
+      authRepository.findPasswordResetToken.mockResolvedValue(tokenRow);
 
       await service.confirmPasswordReset({
         token: 'token',
         password: 'newpassword12',
       });
 
-      expect(userRepo.update).toHaveBeenCalledWith(
-        { id: 'u1', tenantId: 't1', email: 'a@b.com' },
-        { passwordHash: expect.any(String) as string },
-      );
-      expect(resetRepo.update).toHaveBeenCalledWith(
-        { id: 'rt1' },
-        { usedAt: expect.any(Date) as Date },
+      expect(
+        authRepository.updatePasswordAndMarkResetTokenUsed,
+      ).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tokenRow,
+          passwordHash: expect.any(String) as string,
+        }),
       );
     });
   });

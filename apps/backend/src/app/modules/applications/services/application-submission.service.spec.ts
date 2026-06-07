@@ -8,6 +8,7 @@ import type { ApprovalStep } from '../../../../models/entities/approval-step.ent
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationSubmissionService } from './application-submission.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
@@ -71,47 +72,23 @@ const expectErrorCode = async (
  * @group application-submission-service
  */
 describe('ApplicationSubmissionService', () => {
-  let appsRepo: { manager: { transaction: jest.Mock } };
-  let correctionRequestsRepo: { findOne: jest.Mock };
-  let templatesRepo: { findOne: jest.Mock };
-  let appSave: jest.Mock;
-  let correctionSave: jest.Mock;
-  let correctionItemSave: jest.Mock;
   let service: ApplicationSubmissionService;
+  let applicationsRepository: {
+    findTemplateByIdInGroup: jest.Mock;
+    saveSubmittedApplication: jest.Mock;
+    findOpenCorrection: jest.Mock;
+    saveResubmittedApplication: jest.Mock;
+  };
 
   beforeEach(() => {
-    appSave = jest.fn((value: Application) => Promise.resolve(value));
-    correctionSave = jest.fn((value: CorrectionRequest) =>
-      Promise.resolve(value),
-    );
-    correctionItemSave = jest.fn((value: unknown) => Promise.resolve(value));
-    appsRepo = {
-      manager: {
-        transaction: jest.fn((fn: (em: unknown) => unknown) =>
-          Promise.resolve(
-            fn({
-              getRepository: (entity: unknown) => {
-                if (entity === Application) {
-                  return { save: appSave };
-                }
-                if (
-                  (entity as { name?: string }).name === 'CorrectionRequest'
-                ) {
-                  return { save: correctionSave };
-                }
-                return { save: correctionItemSave };
-              },
-            }),
-          ),
-        ),
-      },
+    applicationsRepository = {
+      findTemplateByIdInGroup: jest.fn(),
+      saveSubmittedApplication: jest.fn(),
+      findOpenCorrection: jest.fn(),
+      saveResubmittedApplication: jest.fn(),
     };
-    correctionRequestsRepo = { findOne: jest.fn() };
-    templatesRepo = { findOne: jest.fn() };
     service = new ApplicationSubmissionService(
-      appsRepo as never,
-      correctionRequestsRepo as never,
-      templatesRepo as never,
+      applicationsRepository as unknown as ApplicationsRepository,
       new ApplicationFormValueValidator(),
       new ApplicationTransitionPolicy(),
     );
@@ -122,20 +99,26 @@ describe('ApplicationSubmissionService', () => {
    */
   it('submits a draft application when required values are present', async () => {
     const target = app();
-    templatesRepo.findOne.mockResolvedValue(template([field()]));
+    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+      template([field()]),
+    );
 
     await service.submit('tenant-1', target);
 
     expect(target.status).toBe(ApplicationStatus.IN_REVIEW);
     expect(target.currentStepOrder).toBe(1);
-    expect(appSave).toHaveBeenCalledWith(target);
+    expect(
+      applicationsRepository.saveSubmittedApplication,
+    ).toHaveBeenCalledWith(target);
   });
 
   /**
    * 必須項目不足の申請提出を拒否すること
    */
   it('rejects submit when required values are missing', async () => {
-    templatesRepo.findOne.mockResolvedValue(template([field()]));
+    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+      template([field()]),
+    );
 
     await expectErrorCode(
       () =>
@@ -168,8 +151,26 @@ describe('ApplicationSubmissionService', () => {
       resolvedAt: null,
       items: [item],
     } as CorrectionRequest;
-    correctionRequestsRepo.findOne.mockResolvedValue(correction);
-    templatesRepo.findOne.mockResolvedValue(template([field()]));
+    applicationsRepository.findOpenCorrection.mockResolvedValue(correction);
+    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+      template([field()]),
+    );
+    applicationsRepository.saveResubmittedApplication.mockImplementation(
+      ({
+        app,
+        openCorrection,
+      }: {
+        app: Application;
+        openCorrection: CorrectionRequest;
+      }) => {
+        openCorrection.status = CorrectionRequestStatus.RESOLVED;
+        openCorrection.resolvedAt = new Date();
+        for (const correctionItem of openCorrection.items ?? []) {
+          correctionItem.isResolved = true;
+        }
+        return Promise.resolve(app);
+      },
+    );
 
     await service.resubmit('tenant-1', target);
 
@@ -177,5 +178,8 @@ describe('ApplicationSubmissionService', () => {
     expect(correction.resolvedAt).toBeInstanceOf(Date);
     expect(item.isResolved).toBe(true);
     expect(target.status).toBe(ApplicationStatus.IN_REVIEW);
+    expect(
+      applicationsRepository.saveResubmittedApplication,
+    ).toHaveBeenCalled();
   });
 });

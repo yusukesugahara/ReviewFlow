@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import {
   AuthService,
@@ -9,9 +7,9 @@ import {
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { UserRole } from '../../../../models/constants/user-role';
-import { ApplicationApproval } from '../../../../models/entities/application-approval.entity';
 import { Application } from '../../../../models/entities/application.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { MailService } from '../../mail/services/mail.service';
 import type {
@@ -51,12 +49,7 @@ export class ApplicationsService {
   private readonly logger = new Logger(ApplicationsService.name);
 
   constructor(
-    @InjectRepository(Application)
-    private readonly apps: Repository<Application>,
-    @InjectRepository(ApplicationApproval)
-    private readonly approvals: Repository<ApplicationApproval>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
+    private readonly applicationsRepository: ApplicationsRepository,
     private readonly authService: AuthService,
     private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
@@ -75,9 +68,10 @@ export class ApplicationsService {
     applicationId: string,
     actorId: string,
   ): Promise<number> {
-    return this.approvals.count({
-      where: { applicationId, actedByUserId: actorId },
-    });
+    return this.applicationsRepository.countApprovalsByActor(
+      applicationId,
+      actorId,
+    );
   }
 
   private async loadApplicationOrThrow(
@@ -85,24 +79,13 @@ export class ApplicationsService {
     id: string,
     withRelations: { detail: boolean },
   ): Promise<Application> {
-    const relations = withRelations.detail
-      ? [
-          'fieldValues',
-          'fieldValues.formField',
-          'formDefinition',
-          'approvalFlow',
-          'approvalFlow.steps',
-        ]
-      : ['formDefinition', 'approvalFlow', 'approvalFlow.steps'];
-    const row = await this.apps.findOne({
-      where: { id, tenantId },
-      relations,
+    const row = await this.applicationsRepository.findById({
+      tenantId,
+      id,
+      detail: withRelations.detail,
     });
     if (!row) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    if (row.approvalFlow?.steps?.length) {
-      row.approvalFlow.steps.sort((a, b) => a.stepOrder - b.stepOrder);
     }
     return row;
   }
@@ -113,18 +96,16 @@ export class ApplicationsService {
   ): Promise<Application[]> {
     await this.spaceAccess.assertCanUseGroup(actor, groupId);
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      const rows = await this.apps.find({
-        where: { tenantId: actor.tenantId, groupId },
-        relations: ['formDefinition'],
-        order: { createdAt: 'DESC' },
-      });
+      const rows = await this.applicationsRepository.listForTenantAdmin(
+        actor.tenantId,
+        groupId,
+      );
       return this.hydrateListFormDefinitions(actor.tenantId, rows);
     }
-    const rows = await this.apps.find({
-      where: { tenantId: actor.tenantId, groupId },
-      relations: ['approvalFlow', 'approvalFlow.steps', 'formDefinition'],
-      order: { createdAt: 'DESC' },
-    });
+    const rows = await this.applicationsRepository.listForGroup(
+      actor.tenantId,
+      groupId,
+    );
     const canManageGroup = await this.spaceAccess.actorCanManageGroup(
       actor,
       groupId,
@@ -142,29 +123,7 @@ export class ApplicationsService {
     tenantId: string,
     rows: Application[],
   ): Promise<Application[]> {
-    const missingDefinitionIds = Array.from(
-      new Set(
-        rows
-          .filter((row) => !row.formDefinition)
-          .map((row) => row.formDefinitionId),
-      ),
-    );
-    if (missingDefinitionIds.length === 0) {
-      return rows;
-    }
-    const definitions = await this.templates.find({
-      where: { tenantId, id: In(missingDefinitionIds) },
-    });
-    const definitionById = new Map(
-      definitions.map((definition) => [definition.id, definition]),
-    );
-    for (const row of rows) {
-      const definition = definitionById.get(row.formDefinitionId);
-      if (definition) {
-        row.formDefinition = definition;
-      }
-    }
-    return rows;
+    return this.applicationsRepository.hydrateFormDefinitions(tenantId, rows);
   }
 
   async getOneForActor(
@@ -240,15 +199,11 @@ export class ApplicationsService {
     actor: { tenantId: string; id?: string; email: string },
     id: string,
   ): Promise<Application> {
-    const app = await this.apps.findOne({
-      where: {
-        id,
-        tenantId: actor.tenantId,
-        ...(actor.id
-          ? { applicantUserId: actor.id }
-          : { applicantEmail: actor.email }),
-      },
-      relations: ['fieldValues'],
+    const app = await this.applicationsRepository.findApplicantEditable({
+      id,
+      tenantId: actor.tenantId,
+      applicantUserId: actor.id,
+      applicantEmail: actor.email,
     });
     if (!app) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);

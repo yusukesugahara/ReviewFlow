@@ -1,5 +1,6 @@
 import { ClientErrorCodes } from '../../../../common/errors';
 import type { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationApprovalFlowResolver } from './application-approval-flow.resolver';
 
 const flow = (overrides: Partial<ApprovalFlow> = {}): ApprovalFlow =>
@@ -30,15 +31,20 @@ const expectErrorCode = async (
  * @group application-approval-flow-resolver
  */
 describe('ApplicationApprovalFlowResolver', () => {
-  let flowsRepo: { find: jest.Mock; findOne: jest.Mock };
+  let applicationsRepository: {
+    findActiveApprovalFlow: jest.Mock;
+    listActiveApprovalFlows: jest.Mock;
+  };
   let resolver: ApplicationApprovalFlowResolver;
 
   beforeEach(() => {
-    flowsRepo = {
-      find: jest.fn(),
-      findOne: jest.fn(),
+    applicationsRepository = {
+      findActiveApprovalFlow: jest.fn(),
+      listActiveApprovalFlows: jest.fn(),
     };
-    resolver = new ApplicationApprovalFlowResolver(flowsRepo as never);
+    resolver = new ApplicationApprovalFlowResolver(
+      applicationsRepository as unknown as ApplicationsRepository,
+    );
   });
 
   /**
@@ -46,7 +52,7 @@ describe('ApplicationApprovalFlowResolver', () => {
    */
   it('resolves an explicitly selected active flow', async () => {
     const selected = flow({ id: 'flow-selected' });
-    flowsRepo.findOne.mockResolvedValue(selected);
+    applicationsRepository.findActiveApprovalFlow.mockResolvedValue(selected);
 
     await expect(
       resolver.resolveActiveFlow('tenant-1', 'group-1', 'flow-selected'),
@@ -57,7 +63,7 @@ describe('ApplicationApprovalFlowResolver', () => {
    * 有効な承認フローが複数ある場合は明示指定を要求すること
    */
   it('rejects ambiguous active flows', async () => {
-    flowsRepo.find.mockResolvedValue([
+    applicationsRepository.listActiveApprovalFlows.mockResolvedValue([
       flow({ id: 'flow-1' }),
       flow({ id: 'flow-2' }),
     ]);
@@ -73,15 +79,15 @@ describe('ApplicationApprovalFlowResolver', () => {
    */
   it('resolves the default active flow', async () => {
     const selected = flow({ id: 'flow-default' });
-    flowsRepo.find.mockResolvedValue([selected]);
+    applicationsRepository.listActiveApprovalFlows.mockResolvedValue([
+      selected,
+    ]);
 
     await expect(
       resolver.resolveDefaultActiveFlow('tenant-1', 'group-1'),
     ).resolves.toBe(selected);
-    expect(flowsRepo.find).toHaveBeenCalledWith(
-      expect.objectContaining({
-        order: { createdAt: 'ASC', id: 'ASC' },
-      }),
+    expect(applicationsRepository.listActiveApprovalFlows).toHaveBeenCalledWith(
+      expect.objectContaining({ defaultOrder: true }),
     );
   });
 });

@@ -1,14 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationApprovalAction } from '../../../../models/constants/application-approval-action';
-import { CorrectionRequestStatus } from '../../../../models/constants/correction-request-status';
-import { ApplicationApproval } from '../../../../models/entities/application-approval.entity';
 import { Application } from '../../../../models/entities/application.entity';
-import { CorrectionRequestItem } from '../../../../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type {
   ApproveApplicationDto,
   RejectApplicationDto,
@@ -19,12 +15,7 @@ import { ApplicationTransitionPolicy } from '../policies/application-transition.
 @Injectable()
 export class ApplicationReviewActionService {
   constructor(
-    @InjectRepository(Application)
-    private readonly apps: Repository<Application>,
-    @InjectRepository(CorrectionRequest)
-    private readonly correctionRequests: Repository<CorrectionRequest>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
+    private readonly applicationsRepository: ApplicationsRepository,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
@@ -37,21 +28,13 @@ export class ApplicationReviewActionService {
     const next = this.transitionPolicy.getNextStep(app, cur);
     const comment = this.trimComment(dto.comment);
 
-    await this.apps.manager.transaction(async (em) => {
-      const approvalRepo = em.getRepository(ApplicationApproval);
-      const appRepo = em.getRepository(Application);
-      await approvalRepo.save(
-        approvalRepo.create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          approvalStepId: cur.id,
-          actedByUserId: actorId,
-          action: ApplicationApprovalAction.APPROVED,
-          comment,
-        }),
-      );
-      this.transitionPolicy.applyApproval(app, next);
-      await appRepo.save(app);
+    this.transitionPolicy.applyApproval(app, next);
+    await this.applicationsRepository.saveApproval({
+      app,
+      approvalStepId: cur.id,
+      actorId,
+      action: ApplicationApprovalAction.APPROVED,
+      comment,
     });
   }
 
@@ -63,19 +46,13 @@ export class ApplicationReviewActionService {
     const cur = this.transitionPolicy.getCurrentStep(app);
     const comment = this.trimComment(dto.comment);
 
-    await this.apps.manager.transaction(async (em) => {
-      await em.getRepository(ApplicationApproval).save(
-        em.getRepository(ApplicationApproval).create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          approvalStepId: cur.id,
-          actedByUserId: actorId,
-          action: ApplicationApprovalAction.REJECTED,
-          comment,
-        }),
-      );
-      this.transitionPolicy.applyReject(app);
-      await em.getRepository(Application).save(app);
+    this.transitionPolicy.applyReject(app);
+    await this.applicationsRepository.saveApproval({
+      app,
+      approvalStepId: cur.id,
+      actorId,
+      action: ApplicationApprovalAction.REJECTED,
+      comment,
     });
   }
 
@@ -92,13 +69,10 @@ export class ApplicationReviewActionService {
       throw clientError(ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN);
     }
 
-    const template = await this.templates.findOne({
-      where: {
-        id: app.formDefinitionId,
-        tenantId: app.tenantId,
-        groupId: app.groupId,
-      },
-      relations: ['fields'],
+    const template = await this.applicationsRepository.findTemplateByIdInGroup({
+      tenantId: app.tenantId,
+      groupId: app.groupId,
+      formDefinitionId: app.formDefinitionId,
     });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
@@ -107,48 +81,16 @@ export class ApplicationReviewActionService {
 
     const overall = this.trimComment(dto.overallComment);
 
-    await this.apps.manager.transaction(async (em) => {
-      const approvalRepo = em.getRepository(ApplicationApproval);
-      const corrRepo = em.getRepository(CorrectionRequest);
-      const itemRepo = em.getRepository(CorrectionRequestItem);
-      const appRepo = em.getRepository(Application);
-
-      await approvalRepo.save(
-        approvalRepo.create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          approvalStepId: cur.id,
-          actedByUserId: actorId,
-          action: ApplicationApprovalAction.RETURNED,
-          comment: overall,
-        }),
-      );
-
-      const correction = await corrRepo.save(
-        corrRepo.create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          requestedByUserId: actorId,
-          status: CorrectionRequestStatus.OPEN,
-          overallComment: overall,
-          resolvedAt: null,
-        }),
-      );
-
-      for (const row of dto.fields) {
-        await itemRepo.save(
-          itemRepo.create({
-            tenantId: app.tenantId,
-            correctionRequestId: correction.id,
-            formFieldId: row.fieldId,
-            comment: this.trimComment(row.comment),
-            isResolved: false,
-          }),
-        );
-      }
-
-      this.transitionPolicy.applyReturn(app);
-      await appRepo.save(app);
+    this.transitionPolicy.applyReturn(app);
+    await this.applicationsRepository.saveReturnForCorrection({
+      app,
+      approvalStepId: cur.id,
+      actorId,
+      overallComment: overall,
+      fields: dto.fields.map((field) => ({
+        fieldId: field.fieldId,
+        comment: this.trimComment(field.comment),
+      })),
     });
 
     return template;
@@ -157,13 +99,7 @@ export class ApplicationReviewActionService {
   private async findOpenCorrection(
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    return this.correctionRequests.findOne({
-      where: {
-        applicationId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
+    return this.applicationsRepository.findOpenCorrection(applicationId);
   }
 
   private assertReturnFieldsBelongToTemplate(

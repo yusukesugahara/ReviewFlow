@@ -3,17 +3,14 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
-import { DataSource, Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { GroupMemberRole } from '../../../../models/constants/group-member-role';
-import { InvitationStatus } from '../../../../models/constants/invitation-status';
-import { GroupMember } from '../../../../models/entities/group-member.entity';
-import { Group } from '../../../../models/entities/group.entity';
-import { Invitation } from '../../../../models/entities/invitation.entity';
-import { User } from '../../../../models/entities/user.entity';
+import {
+  InvitationRepositoryError,
+  InvitationsRepository,
+} from '../../../../models/repositories/invitations.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { AuthService } from '../../auth/services/auth.service';
 import { MailService } from '../../mail/services/mail.service';
@@ -30,10 +27,7 @@ export class InvitationsService {
   private readonly logger = new Logger(InvitationsService.name);
 
   constructor(
-    @InjectRepository(Invitation)
-    private readonly invitations: Repository<Invitation>,
-    @InjectDataSource()
-    private readonly dataSource: DataSource,
+    private readonly invitationsRepository: InvitationsRepository,
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly mailService: MailService,
@@ -51,35 +45,29 @@ export class InvitationsService {
       throw clientError(ClientErrorCodes.INVITATION_MEMBER_EXISTS);
     }
 
-    const pending = await this.invitations.findOne({
-      where: {
+    const pending =
+      await this.invitationsRepository.findPendingByTenantAndEmail(
         tenantId,
         email,
-        status: InvitationStatus.PENDING,
-      },
-    });
+      );
     if (pending) {
       throw clientError(ClientErrorCodes.INVITATION_PENDING_EXISTS);
     }
 
     if (dto.groupId) {
-      const group = await this.dataSource.getRepository(Group).findOne({
-        where: { id: dto.groupId, tenantId },
-      });
-      if (!group) {
+      const groupExists = await this.invitationsRepository.groupExistsInTenant(
+        tenantId,
+        dto.groupId,
+      );
+      if (!groupExists) {
         throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
       }
       if (!this.canCreateTenantInvitation(actor)) {
-        const member = await this.dataSource
-          .getRepository(GroupMember)
-          .findOne({
-            where: {
-              tenantId,
-              groupId: dto.groupId,
-              userId: actor.id,
-              role: GroupMemberRole.ADMIN,
-            },
-          });
+        const member = await this.invitationsRepository.findGroupAdminMember({
+          tenantId,
+          groupId: dto.groupId,
+          userId: actor.id,
+        });
         if (!member) {
           throw clientError(ClientErrorCodes.GROUP_ADMIN_REQUIRED);
         }
@@ -91,18 +79,16 @@ export class InvitationsService {
     const token = randomBytes(32).toString('hex');
     const expiresAt = new Date(Date.now() + INVITE_TTL_MS);
 
-    const row = this.invitations.create({
+    const saved = await this.invitationsRepository.createInvitation({
       tenantId,
       email,
       role: dto.role,
       groupId: dto.groupId ?? null,
       groupRole: dto.groupId ? (dto.groupRole ?? GroupMemberRole.USER) : null,
       token,
-      status: InvitationStatus.PENDING,
       invitedByUserId: actor.id,
       expiresAt,
     });
-    const saved = await this.invitations.save(row);
 
     try {
       await this.mailService.sendInvitationEmail({
@@ -117,7 +103,7 @@ export class InvitationsService {
         `failed to send invitation email to ${saved.email}`,
         error instanceof Error ? error.stack : undefined,
       );
-      await this.invitations.delete(saved.id);
+      await this.invitationsRepository.deleteInvitation(saved.id);
       throw new InternalServerErrorException('failed to send invitation email');
     }
 
@@ -135,66 +121,37 @@ export class InvitationsService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const name = dto.name?.trim().length ? dto.name.trim() : null;
 
-    const user = await this.dataSource.transaction(async (manager) => {
-      const invRepo = manager.getRepository(Invitation);
-      const userRepo = manager.getRepository(User);
-      const groupRepo = manager.getRepository(Group);
-      const memberRepo = manager.getRepository(GroupMember);
-
-      const inv = await invRepo.findOne({ where: { token: dto.token } });
-      if (!inv) {
-        throw clientError(ClientErrorCodes.INVITATION_NOT_FOUND);
-      }
-      if (inv.status !== InvitationStatus.PENDING) {
-        throw clientError(ClientErrorCodes.INVITATION_NOT_ACCEPTABLE);
-      }
-      if (new Date() > inv.expiresAt) {
-        throw clientError(ClientErrorCodes.INVITATION_NOT_ACCEPTABLE);
-      }
-
-      const dup = await userRepo.findOne({
-        where: { tenantId: inv.tenantId, email: inv.email },
-      });
-      if (dup) {
-        throw clientError(ClientErrorCodes.INVITATION_MEMBER_EXISTS);
-      }
-
-      const newUser = userRepo.create({
-        tenantId: inv.tenantId,
-        email: inv.email,
-        passwordHash,
-        role: inv.role,
-        name,
-        isActive: true,
-      });
-      await userRepo.save(newUser);
-
-      if (inv.groupId) {
-        const group = await groupRepo.findOne({
-          where: { id: inv.groupId, tenantId: inv.tenantId },
-        });
-        if (!group) {
-          throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
-        }
-
-        await memberRepo.save(
-          memberRepo.create({
-            tenantId: inv.tenantId,
-            groupId: inv.groupId,
-            userId: newUser.id,
-            role: inv.groupRole ?? GroupMemberRole.USER,
-            invitedByUserId: inv.invitedByUserId,
-          }),
-        );
-      }
-
-      inv.status = InvitationStatus.ACCEPTED;
-      await invRepo.save(inv);
-
-      return newUser;
+    const user = await this.acceptInvitationOrThrow({
+      token: dto.token,
+      passwordHash,
+      name,
     });
 
     return this.authService.issueTokensForUser(user);
+  }
+
+  private async acceptInvitationOrThrow(params: {
+    token: string;
+    passwordHash: string;
+    name: string | null;
+  }) {
+    try {
+      return await this.invitationsRepository.acceptInvitation(params);
+    } catch (error) {
+      if (!(error instanceof InvitationRepositoryError)) {
+        throw error;
+      }
+      if (error.reason === 'not_found') {
+        throw clientError(ClientErrorCodes.INVITATION_NOT_FOUND);
+      }
+      if (error.reason === 'member_exists') {
+        throw clientError(ClientErrorCodes.INVITATION_MEMBER_EXISTS);
+      }
+      if (error.reason === 'group_not_found') {
+        throw clientError(ClientErrorCodes.GROUP_NOT_FOUND);
+      }
+      throw clientError(ClientErrorCodes.INVITATION_NOT_ACCEPTABLE);
+    }
   }
 
   private canCreateTenantInvitation(actor: AuthUserPayload): boolean {

@@ -1,14 +1,11 @@
 import { ClientErrorCodes } from '../../../../common/errors';
 import { ApplicationApprovalAction } from '../../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
-import { CorrectionRequestStatus } from '../../../../models/constants/correction-request-status';
-import type { ApplicationApproval } from '../../../../models/entities/application-approval.entity';
 import { Application } from '../../../../models/entities/application.entity';
 import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
-import type { CorrectionRequestItem } from '../../../../models/entities/correction-request-item.entity';
-import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -64,65 +61,23 @@ const expectErrorCode = async (
  * @group application-review-action-service
  */
 describe('ApplicationReviewActionService', () => {
-  let appsRepo: { manager: { transaction: jest.Mock } };
-  let correctionRequestsRepo: { findOne: jest.Mock };
-  let templatesRepo: { findOne: jest.Mock };
-  let approvalRepo: { create: jest.Mock; save: jest.Mock };
-  let appRepo: { save: jest.Mock };
-  let correctionRepo: { create: jest.Mock; save: jest.Mock };
-  let correctionItemRepo: { create: jest.Mock; save: jest.Mock };
   let service: ApplicationReviewActionService;
+  let applicationsRepository: {
+    saveApproval: jest.Mock;
+    findOpenCorrection: jest.Mock;
+    findTemplateByIdInGroup: jest.Mock;
+    saveReturnForCorrection: jest.Mock;
+  };
 
   beforeEach(() => {
-    approvalRepo = {
-      create: jest.fn((value: Partial<ApplicationApproval>) => ({ ...value })),
-      save: jest.fn((value: ApplicationApproval) => Promise.resolve(value)),
+    applicationsRepository = {
+      saveApproval: jest.fn(),
+      findOpenCorrection: jest.fn(),
+      findTemplateByIdInGroup: jest.fn(),
+      saveReturnForCorrection: jest.fn(),
     };
-    appRepo = { save: jest.fn((value: Application) => Promise.resolve(value)) };
-    correctionRepo = {
-      create: jest.fn((value: Partial<CorrectionRequest>) => ({ ...value })),
-      save: jest.fn((value: CorrectionRequest) =>
-        Promise.resolve({ ...value, id: 'correction-1' }),
-      ),
-    };
-    correctionItemRepo = {
-      create: jest.fn((value: Partial<CorrectionRequestItem>) => ({
-        ...value,
-      })),
-      save: jest.fn((value: CorrectionRequestItem) => Promise.resolve(value)),
-    };
-    appsRepo = {
-      manager: {
-        transaction: jest.fn((fn: (em: unknown) => unknown) =>
-          Promise.resolve(
-            fn({
-              getRepository: (entity: unknown) => {
-                if (entity === Application) {
-                  return appRepo;
-                }
-                if (
-                  (entity as { name?: string }).name === 'ApplicationApproval'
-                ) {
-                  return approvalRepo;
-                }
-                if (
-                  (entity as { name?: string }).name === 'CorrectionRequest'
-                ) {
-                  return correctionRepo;
-                }
-                return correctionItemRepo;
-              },
-            }),
-          ),
-        ),
-      },
-    };
-    correctionRequestsRepo = { findOne: jest.fn() };
-    templatesRepo = { findOne: jest.fn() };
     service = new ApplicationReviewActionService(
-      appsRepo as never,
-      correctionRequestsRepo as never,
-      templatesRepo as never,
+      applicationsRepository as unknown as ApplicationsRepository,
       new ApplicationTransitionPolicy(),
     );
   });
@@ -135,7 +90,7 @@ describe('ApplicationReviewActionService', () => {
 
     await service.approve(target, 'actor-1', { comment: ' ok ' });
 
-    expect(approvalRepo.create).toHaveBeenCalledWith(
+    expect(applicationsRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
         action: ApplicationApprovalAction.APPROVED,
         comment: 'ok',
@@ -154,7 +109,7 @@ describe('ApplicationReviewActionService', () => {
 
     await service.reject(target, 'actor-1', { comment: ' no ' });
 
-    expect(approvalRepo.create).toHaveBeenCalledWith(
+    expect(applicationsRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
         action: ApplicationApprovalAction.REJECTED,
         comment: 'no',
@@ -169,8 +124,8 @@ describe('ApplicationReviewActionService', () => {
    * 差し戻し対象がフォーム定義に存在しない場合に拒否すること
    */
   it('rejects return fields outside the form definition', async () => {
-    correctionRequestsRepo.findOne.mockResolvedValue(null);
-    templatesRepo.findOne.mockResolvedValue(
+    applicationsRepository.findOpenCorrection.mockResolvedValue(null);
+    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title' } as FormField]),
     );
 
@@ -188,8 +143,8 @@ describe('ApplicationReviewActionService', () => {
    */
   it('records return action and creates correction items', async () => {
     const target = app();
-    correctionRequestsRepo.findOne.mockResolvedValue(null);
-    templatesRepo.findOne.mockResolvedValue(
+    applicationsRepository.findOpenCorrection.mockResolvedValue(null);
+    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title', label: 'Title' } as FormField]),
     );
 
@@ -203,22 +158,15 @@ describe('ApplicationReviewActionService', () => {
     );
 
     expect(returnedTemplate.id).toBe('template-1');
-    expect(approvalRepo.create).toHaveBeenCalledWith(
+    expect(applicationsRepository.saveReturnForCorrection).toHaveBeenCalledWith(
       expect.objectContaining({
-        action: ApplicationApprovalAction.RETURNED,
-        comment: 'fix',
-      }),
-    );
-    expect(correctionRepo.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        status: CorrectionRequestStatus.OPEN,
         overallComment: 'fix',
-      }),
-    );
-    expect(correctionItemRepo.create).toHaveBeenCalledWith(
-      expect.objectContaining({
-        formFieldId: 'field-title',
-        comment: 'title',
+        fields: [
+          expect.objectContaining({
+            fieldId: 'field-title',
+            comment: 'title',
+          }),
+        ],
       }),
     );
     expect(target.status).toBe(ApplicationStatus.RETURNED);

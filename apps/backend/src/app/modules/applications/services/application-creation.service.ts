@@ -1,12 +1,9 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
-import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
-import { ApplicationFieldValue } from '../../../../models/entities/application-field-value.entity';
 import { Application } from '../../../../models/entities/application.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type { CreateApplicationDto } from '../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -14,12 +11,7 @@ import { ApplicationFormValueValidator } from '../validators/application-form-va
 @Injectable()
 export class ApplicationCreationService {
   constructor(
-    @InjectRepository(Application)
-    private readonly apps: Repository<Application>,
-    @InjectRepository(ApplicationFieldValue)
-    private readonly fieldValues: Repository<ApplicationFieldValue>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
+    private readonly applicationsRepository: ApplicationsRepository,
     private readonly flowResolver: ApplicationApprovalFlowResolver,
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
@@ -47,11 +39,8 @@ export class ApplicationCreationService {
       dto.approvalFlowId,
     );
 
-    let newId = '';
-    await this.apps.manager.transaction(async (em) => {
-      const appRepo = em.getRepository(Application);
-      const valRepo = em.getRepository(ApplicationFieldValue);
-      const app = appRepo.create({
+    const newId = await this.applicationsRepository.createApplicationWithValues(
+      {
         tenantId,
         groupId: dto.groupId,
         applicantUserId,
@@ -62,23 +51,15 @@ export class ApplicationCreationService {
           dto.status === ApplicationStatus.PUBLISHED
             ? ApplicationStatus.PUBLISHED
             : ApplicationStatus.DRAFT,
-        currentStepOrder: null,
-        submittedAt: null,
-      });
-      const saved = await appRepo.save(app);
-      newId = saved.id;
-      for (const [key, val] of Object.entries(values)) {
-        const field = this.formValueValidator.getKnownField(fieldsByKey, key);
-        await valRepo.save(
-          valRepo.create({
-            tenantId,
-            applicationId: saved.id,
+        values: Object.entries(values).map(([key, val]) => {
+          const field = this.formValueValidator.getKnownField(fieldsByKey, key);
+          return {
             formFieldId: field.id,
             valueJson: val,
-          }),
-        );
-      }
-    });
+          };
+        }),
+      },
+    );
 
     return this.loadCreatedApplication(tenantId, newId);
   }
@@ -87,26 +68,15 @@ export class ApplicationCreationService {
     tenantId: string,
     dto: CreateApplicationDto,
   ): Promise<FormDefinition | null> {
-    if (dto.formDefinitionId) {
-      return this.templates.findOne({
-        where: {
-          id: dto.formDefinitionId,
-          tenantId,
-          groupId: dto.groupId,
-          status: FormDefinitionStatus.PUBLISHED,
-        },
-        relations: ['fields'],
-      });
-    }
-
-    const templates = await this.templates.find({
-      where: {
-        tenantId,
-        groupId: dto.groupId,
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-      relations: ['fields'],
+    const result = await this.applicationsRepository.findPublishedTemplate({
+      tenantId,
+      groupId: dto.groupId,
+      formDefinitionId: dto.formDefinitionId,
     });
+    if (!Array.isArray(result)) {
+      return result;
+    }
+    const templates = result;
     if (templates.length > 1) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_AMBIGUOUS);
     }
@@ -117,16 +87,10 @@ export class ApplicationCreationService {
     tenantId: string,
     id: string,
   ): Promise<Application> {
-    const created = await this.apps.findOne({
-      where: { id, tenantId },
-      relations: [
-        'fieldValues',
-        'fieldValues.formField',
-        'formDefinition',
-        'approvalFlow',
-        'approvalFlow.steps',
-      ],
-    });
+    const created = await this.applicationsRepository.findCreatedApplication(
+      tenantId,
+      id,
+    );
     if (!created) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
     }
