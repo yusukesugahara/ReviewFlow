@@ -127,7 +127,7 @@ export function AdminInvitationsView({
           <CardHeader>
             <CardTitle>招待メールを送信しました</CardTitle>
             <CardDescription>
-              対象ユーザーはメール内のリンクから招待を受諾できます
+              対象ユーザはメール内のリンクから招待を受諾できます
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -146,9 +146,9 @@ export function AdminInvitationsView({
 
       <Card>
         <CardHeader>
-          <CardTitle>ユーザー一覧</CardTitle>
+          <CardTitle>ユーザ一覧</CardTitle>
           <CardDescription>
-            {users.length}名のユーザーが登録されています
+            {users.length}名のユーザが登録されています
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -158,7 +158,7 @@ export function AdminInvitationsView({
             </p>
           ) : users.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              ユーザーが見つかりません
+              ユーザが見つかりません
             </p>
           ) : (
             <UserTable currentUserId={currentUserId} users={users} />
@@ -258,7 +258,7 @@ function UserTable({
         >
           <DialogHeader>
             <DialogTitle id={titleId}>
-              ユーザーを削除しますか
+              ユーザを削除しますか
             </DialogTitle>
             <DialogDescription id={descriptionId}>
               {deleteTarget.email} を削除済みにします。削除後もこの画面から復活できます。

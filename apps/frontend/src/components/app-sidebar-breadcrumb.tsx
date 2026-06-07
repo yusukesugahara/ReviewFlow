@@ -81,7 +81,7 @@ function buildAdminBreadcrumbItems(segments: string[]): BreadcrumbItem[] {
   if (section === "spaces") {
     items.push({ href: "/admin/spaces", label: "スペース" });
   } else if (section === "invitations") {
-    items.push({ href: "/admin/invitations", label: "ユーザー" });
+    items.push({ href: "/admin/invitations", label: "ユーザ" });
   } else if (section === "audit-logs") {
     items.push({ href: "/admin/audit-logs", label: "監査ログ" });
   }
@@ -125,7 +125,7 @@ function buildSpaceBreadcrumbItems(
     items.push({ href: `/space/${encodedSpaceId}/applications`, label: "申請フォーム一覧" });
 
     if (fourth === "new") {
-      items.push({ href: `/space/${encodedSpaceId}/applications/new`, label: "新規申請" });
+      items.push({ href: `/space/${encodedSpaceId}/applications/new`, label: "申請フォーム作成" });
     } else if (fourth) {
       const isFormDetail = searchParams.get("view") === "form";
       items.push({

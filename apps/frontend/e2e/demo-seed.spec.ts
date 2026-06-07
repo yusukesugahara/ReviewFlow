@@ -103,7 +103,7 @@ test.describe("デモseedデータ表示", () => {
     }
   });
 
-  test("各スペースの所属ユーザーは職員4人で表示される", async ({
+  test("各スペースの所属ユーザは職員4人で表示される", async ({
     page,
     request,
   }) => {

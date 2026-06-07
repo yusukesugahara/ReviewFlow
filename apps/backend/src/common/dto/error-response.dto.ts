@@ -15,7 +15,7 @@ export class ErrorResponseDto {
     oneOf: [{ type: 'string' }, { type: 'array', items: { type: 'string' } }],
     example: 'Invalid email or password',
     description:
-      'ユーザー向けメッセージ（バリデーション時は文字列の配列になり得る）',
+      'ユーザ向けメッセージ（バリデーション時は文字列の配列になり得る）',
   })
   message!: string | string[];
 }

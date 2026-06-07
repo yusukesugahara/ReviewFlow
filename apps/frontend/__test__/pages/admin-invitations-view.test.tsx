@@ -30,7 +30,7 @@ const deletedUser = {
 };
 
 describe("AdminInvitationsView", () => {
-  // テスト内容: 招待フォーム、送信結果、エラー、ユーザー一覧が表示されることを確認する
+  // テスト内容: 招待フォーム、送信結果、エラー、ユーザ一覧が表示されることを確認する
   it("renders invitation form, sent summary, errors, and users", () => {
     render(
       <AdminInvitationsView
@@ -53,13 +53,13 @@ describe("AdminInvitationsView", () => {
     expect(screen.getByRole("heading", { name: "招待メールを送信しました" })).toBeInTheDocument();
     expect(screen.getAllByText("テナント管理者").length).toBeGreaterThan(0);
     expect(screen.getByText("invitee@example.com")).toBeInTheDocument();
-    expect(screen.getByText("2名のユーザーが登録されています")).toBeInTheDocument();
+    expect(screen.getByText("2名のユーザが登録されています")).toBeInTheDocument();
     expect(screen.getByText("active@example.com")).toBeInTheDocument();
     expect(screen.getByText("deleted@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "復活" })).toBeInTheDocument();
   });
 
-  // テスト内容: 自分自身の操作は表示せず、他ユーザーの削除確認が開くことを確認する
+  // テスト内容: 自分自身の操作は表示せず、他ユーザの削除確認が開くことを確認する
   it("does not render actions for the current user and opens delete confirmation for others", async () => {
     const user = userEvent.setup();
     render(
@@ -79,27 +79,27 @@ describe("AdminInvitationsView", () => {
 
     await user.click(screen.getByRole("button", { name: "other@example.com を削除" }));
 
-    expect(screen.getByRole("heading", { name: "ユーザーを削除しますか" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "ユーザを削除しますか" })).toBeInTheDocument();
     expect(screen.getByText(/other@example.com を削除済みにします/)).toBeInTheDocument();
   });
 
-  // テスト内容: ユーザー一覧のエラーと空状態が表示されることを確認する
+  // テスト内容: ユーザ一覧のエラーと空状態が表示されることを確認する
   it("renders user list errors and empty states", () => {
     const { rerender } = render(
       <AdminInvitationsView
         currentUserId={null}
         sent={undefined}
-        userListError="ユーザー一覧を取得できません"
+        userListError="ユーザ一覧を取得できません"
         users={[]}
       />,
     );
 
-    expect(screen.getByText("ユーザー一覧を取得できません")).toBeInTheDocument();
+    expect(screen.getByText("ユーザ一覧を取得できません")).toBeInTheDocument();
 
     rerender(
       <AdminInvitationsView currentUserId={null} sent={undefined} users={[]} />,
     );
 
-    expect(screen.getByText("ユーザーが見つかりません")).toBeInTheDocument();
+    expect(screen.getByText("ユーザが見つかりません")).toBeInTheDocument();
   });
 });

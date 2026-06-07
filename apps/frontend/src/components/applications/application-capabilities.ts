@@ -11,13 +11,44 @@ export type ApplicationCapabilities = {
   canReturnApplication: boolean;
 };
 
+function isCurrentStepAssignee(
+  application: ApplicationDetailViewModel,
+  actor: CurrentSessionUser,
+): boolean {
+  if (application.currentStepAssigneeUserIds?.includes(actor.id)) {
+    return true;
+  }
+
+  const currentStep = application.approvalProgress?.find(
+    (step) => step.status === "current",
+  );
+  if (!currentStep) {
+    return false;
+  }
+
+  return currentStep.assignees.some((assignee) => assignee.id === actor.id);
+}
+
+function canActOnReview(
+  application: ApplicationDetailViewModel,
+  actor: CurrentSessionUser | null,
+): boolean {
+  if (!actor || application.status !== APPLICATION_STATUSES.inReview) {
+    return false;
+  }
+  return isCurrentStepAssignee(application, actor);
+}
+
 export function getApplicationCapabilities(
   application: ApplicationDetailViewModel,
   actor: CurrentSessionUser | null,
 ): ApplicationCapabilities {
   const isApplicant =
-    actor !== null && actor.email.toLowerCase() === application.applicantEmail?.toLowerCase();
-  const isInReview = application.status === APPLICATION_STATUSES.inReview;
+    actor !== null &&
+    actor.email.toLowerCase() === application.applicantEmail?.toLowerCase();
+  const canReview = canActOnReview(application, actor);
+  const canReturn =
+    canReview && application.currentStepCanReturn === true;
 
   return {
     canEditApplication:
@@ -31,8 +62,8 @@ export function getApplicationCapabilities(
         application.status === APPLICATION_STATUSES.published),
     canResubmitApplication:
       isApplicant && application.status === APPLICATION_STATUSES.returned,
-    canApproveApplication: isInReview,
-    canRejectApplication: isInReview,
-    canReturnApplication: isInReview && application.currentStepCanReturn === true,
+    canApproveApplication: canReview,
+    canRejectApplication: canReview,
+    canReturnApplication: canReturn,
   };
 }

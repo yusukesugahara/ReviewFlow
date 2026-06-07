@@ -7,9 +7,9 @@ import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { NestFactory } from '@nestjs/core';
 import { SwaggerModule } from '@nestjs/swagger';
-import { AppModule } from '../app/app.module';
 import { buildOpenApiBaseConfig } from '../app/swagger-document.config';
 import { ErrorResponseDto } from '../common/dto/error-response.dto';
+import { OpenApiEmitterModule } from './openapi-emitter.module';
 
 async function emit(): Promise<void> {
   process.env.DB_HOST ??= '127.0.0.1';
@@ -21,7 +21,7 @@ async function emit(): Promise<void> {
   process.env.FRONTEND_BASE_URL ??= 'http://localhost:3001';
   process.env.MAIL_ENABLED ??= '0';
 
-  const app = await NestFactory.create(AppModule, { logger: false });
+  const app = await NestFactory.create(OpenApiEmitterModule, { logger: false });
   try {
     const config = buildOpenApiBaseConfig();
     const document = SwaggerModule.createDocument(app, config, {

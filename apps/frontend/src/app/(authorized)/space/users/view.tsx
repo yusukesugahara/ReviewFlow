@@ -57,9 +57,9 @@ export function SpaceUsersView({
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
             <div>
-              <CardTitle>スペースユーザー一覧</CardTitle>
+              <CardTitle>スペースユーザ一覧</CardTitle>
               <CardDescription>
-                {members.length}名のユーザーが参加しています
+                {members.length}名のユーザが参加しています
               </CardDescription>
             </div>
             {isTenantAdmin ? (
@@ -70,13 +70,13 @@ export function SpaceUsersView({
                       type="button"
                       variant="outline"
                       size="icon"
-                      aria-label="ユーザーをスペースに追加"
+                      aria-label="ユーザをスペースに追加"
                       onClick={() => setIsAddMemberOpen(true)}
                     >
                       <UserRoundPlus aria-hidden="true" />
                     </Button>
                   </TooltipTrigger>
-                  <TooltipContent>ユーザーをスペースに追加</TooltipContent>
+                  <TooltipContent>ユーザをスペースに追加</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
             ) : null}
@@ -85,7 +85,7 @@ export function SpaceUsersView({
         <CardContent>
           {members.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              ユーザーが見つかりません
+              ユーザが見つかりません
             </p>
           ) : (
             <SpaceUsersTable
@@ -108,10 +108,10 @@ export function SpaceUsersView({
         >
           <DialogHeader>
             <DialogTitle id="space-user-add-title">
-              ユーザーをスペースに追加
+              ユーザをスペースに追加
             </DialogTitle>
             <DialogDescription id="space-user-add-description">
-              同一テナント内の既存ユーザーを選択して、このスペースへ追加します
+              同一テナント内の既存ユーザを選択して、このスペースへ追加します
             </DialogDescription>
           </DialogHeader>
           <form
@@ -119,14 +119,14 @@ export function SpaceUsersView({
             className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto]"
           >
             <div className="space-y-1">
-              <Label htmlFor="space-user-add-user">ユーザー</Label>
+              <Label htmlFor="space-user-add-user">ユーザ</Label>
               <Select name="userId" required disabled={!hasAvailableUsers}>
                 <SelectTrigger id="space-user-add-user" className="bg-background">
                   <SelectValue
                     placeholder={
                       hasAvailableUsers
-                        ? "追加するユーザーを選択"
-                        : "追加できるユーザーがいません"
+                        ? "追加するユーザを選択"
+                        : "追加できるユーザがいません"
                     }
                   />
                 </SelectTrigger>
@@ -176,7 +176,7 @@ export function SpaceUsersErrorView({ status }: SpaceUsersErrorViewProps) {
     <Card>
       <CardContent className="pt-6">
         <p className="text-destructive">
-          ユーザー一覧の取得に失敗しました
+          ユーザ一覧の取得に失敗しました
           {status ? `（status: ${status}）` : ""}
         </p>
       </CardContent>

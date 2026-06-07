@@ -89,7 +89,7 @@ export class AuthController {
 
   @AuthApi()
   @Post('me')
-  @ApiOperation({ summary: '現在のユーザー（X-API-Key + Nest JWT）' })
+  @ApiOperation({ summary: '現在のユーザ（X-API-Key + Nest JWT）' })
   @ApiSuccessResponse(AuthMeResponseDto)
   me(@CurrentUser() user: AuthUserPayload): SuccessResponse<AuthMeResponseDto> {
     return successResponse({

@@ -73,7 +73,7 @@ describe('InvitationsService', () => {
 
   describe('create', () => {
     /**
-     * テナント内に既存ユーザーがいる場合にエラーを返すこと
+     * テナント内に既存ユーザがいる場合にエラーを返すこと
      */
     it('throws when user already exists in tenant', async () => {
       usersService.findByTenantAndEmail.mockResolvedValue({ id: 'u1' });
@@ -182,7 +182,7 @@ describe('InvitationsService', () => {
     });
 
     /**
-     * 招待を受け入れ、ユーザーを作成し、トークンを返すこと
+     * 招待を受け入れ、ユーザを作成し、トークンを返すこと
      */
     it('creates user and returns tokens', async () => {
       let capturedPasswordHash = '';

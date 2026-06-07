@@ -79,7 +79,11 @@ export function ApplicationDetailView({
           ) : null}
 
           {showCorrectionHistory ? (
-            <CorrectionHistory corrections={corrections} />
+            <CorrectionHistory
+              corrections={corrections}
+              fields={fields}
+              values={application.values}
+            />
           ) : null}
         </div>
 
@@ -87,7 +91,6 @@ export function ApplicationDetailView({
           <ApplicationSideSummary
             application={application}
             currentStepName={currentStep?.stepName}
-            formDetailHref={formDetailHref}
             submittedAt={submittedAt}
           />
           {actions ? <ActionPanel>{actions}</ActionPanel> : null}

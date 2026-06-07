@@ -19,7 +19,6 @@ import { AuditLogDateFilterPicker } from "./audit-log-date-filter-picker";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
 import {
   enrichAuditRow,
-  shortId,
   textValue,
   type RiskLevel,
 } from "./audit-log-helpers";
@@ -49,13 +48,31 @@ export function AdminAuditLogsView({
   const highRiskCount = enrichedRows.filter((item) => item.risk === "high").length;
   const mediumRiskCount = enrichedRows.filter((item) => item.risk === "medium").length;
   const failedCount = enrichedRows.filter((item) => item.metadata.success === false).length;
+  const highRiskHref = buildAuditLogsHref({
+    createdFrom,
+    createdTo,
+    outcome,
+    query,
+    risk: "high",
+  });
+  const isHighRiskFilterActive = risk === "high";
 
   return (
     <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">監査ログ</h1>
+        <p className="text-sm text-slate-600">
+          誰が、いつ、どんな操作をしたかを確認できます。
+        </p>
+      </div>
+
       <div className="grid gap-3 md:grid-cols-3">
         <AuditSummaryCard
+          active={isHighRiskFilterActive}
+          href={highRiskHref}
           icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
           label="高リスク"
+          linkLabel={`高リスクの操作履歴を表示（${highRiskCount}件）`}
           tone="red"
           value={highRiskCount}
         />
@@ -75,9 +92,15 @@ export function AdminAuditLogsView({
 
       <Card>
         <CardHeader>
-          <CardTitle>監査ログ</CardTitle>
+          <CardTitle>操作履歴</CardTitle>
           <CardDescription>
-            {hasSearch ? `「${query}」に一致する最新200件の操作履歴` : "最新200件の操作履歴"}
+            {isHighRiskFilterActive
+              ? hasSearch
+                ? `高リスクの操作のうち「${query}」に一致する最新200件`
+                : "高リスクの操作履歴のみを表示しています"
+              : hasSearch
+                ? `「${query}」に一致する最新200件`
+                : "最新200件を新しい順に表示しています"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
@@ -94,7 +117,7 @@ export function AdminAuditLogsView({
                     id="audit-query"
                     name="q"
                     defaultValue={query}
-                    placeholder="操作、対象、ID、操作者メールで検索"
+                    placeholder="操作者メール、対象ID、操作内容で検索"
                     className="bg-white pl-9"
                   />
                 </div>
@@ -130,7 +153,7 @@ export function AdminAuditLogsView({
             <div className="flex flex-wrap items-end justify-between gap-4">
               <div className="grid flex-1 gap-4 sm:grid-cols-2 lg:max-w-md">
                 <div className="space-y-2">
-                  <Label htmlFor="createdFrom">作成日 From</Label>
+                  <Label htmlFor="createdFrom">期間 From</Label>
                   <AuditLogDateFilterPicker
                     id="createdFrom"
                     name="createdFrom"
@@ -138,7 +161,7 @@ export function AdminAuditLogsView({
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="createdTo">作成日 To</Label>
+                  <Label htmlFor="createdTo">期間 To</Label>
                   <AuditLogDateFilterPicker
                     id="createdTo"
                     name="createdTo"
@@ -157,73 +180,79 @@ export function AdminAuditLogsView({
             </div>
           </form>
           {filteredRows.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
+            <p className="py-8 text-center text-muted-foreground">
               {hasSearch || risk !== "all" || outcome !== "all" || createdFrom || createdTo
                 ? "条件に一致する監査ログはありません"
                 : "監査ログはまだありません"}
             </p>
           ) : (
             <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>日時</TableHead>
-                  <TableHead>リスク</TableHead>
-                  <TableHead>操作</TableHead>
-                  <TableHead>結果</TableHead>
-                  <TableHead>対象</TableHead>
-                  <TableHead>対象ID</TableHead>
-                  <TableHead>操作者</TableHead>
-                  <TableHead>接続元</TableHead>
-                  <TableHead>確認ポイント</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredRows.map(({ metadata, reasons, risk, row }) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="text-muted-foreground">
-                      {formatDateTimeJa(row.createdAt)}
-                    </TableCell>
-                    <TableCell>
-                      <RiskBadge risk={risk} />
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{row.actionType}</Badge>
-                    </TableCell>
-                    <TableCell>
-                      {metadata.success === false ? (
-                        <Badge variant="destructive">{textValue(metadata.errorCode) || "失敗"}</Badge>
-                      ) : (
-                        <Badge variant="secondary">成功</Badge>
-                      )}
-                    </TableCell>
-                    <TableCell className="font-medium">{row.targetType}</TableCell>
-                    <TableCell className="font-mono text-xs">
-                      {shortId(row.targetId)}
-                    </TableCell>
-                    <TableCell className="text-xs">
-                      {row.actorEmail ?? shortId(row.actorUserId)}
-                    </TableCell>
-                    <TableCell className="min-w-40 text-xs text-muted-foreground">
-                      <div>{textValue(metadata.ip) || "-"}</div>
-                      <div className="mt-1 max-w-48 truncate" title={textValue(metadata.userAgent)}>
-                        {textValue(metadata.userAgent) || "-"}
-                      </div>
-                    </TableCell>
-                    <TableCell className="min-w-64 text-xs">
-                      <div className="space-y-1">
-                        {reasons.map((reason) => (
-                          <div key={reason}>{reason}</div>
-                        ))}
-                        <div className="text-muted-foreground">
-                          {textValue(metadata.path) || "-"} / {textValue(metadata.statusCode) || "-"} / {textValue(metadata.durationMs) || "-"}ms
-                        </div>
-                      </div>
-                    </TableCell>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-36">日時</TableHead>
+                    <TableHead className="min-w-44">操作者</TableHead>
+                    <TableHead className="min-w-72">操作内容</TableHead>
+                    <TableHead className="min-w-24">結果</TableHead>
+                    <TableHead className="min-w-28">詳細</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {filteredRows.map(({ display, metadata, reasons, risk: rowRisk, row }) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="align-top text-sm text-slate-700">
+                        {formatDateTimeJa(row.createdAt)}
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-slate-950">{display.actorLabel}</p>
+                          {display.actorDetail ? (
+                            <p className="text-xs text-muted-foreground">{display.actorDetail}</p>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <div className="space-y-2">
+                          <p className="text-sm font-medium leading-6 text-slate-950">
+                            {display.actionLabel}
+                          </p>
+                          <p className="text-sm text-slate-600">対象: {display.targetLabel}</p>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <RiskBadge risk={rowRisk} />
+                            <Badge variant="outline" className="font-normal">
+                              {row.actionType}
+                            </Badge>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell className="align-top">
+                        {display.isSuccess ? (
+                          <Badge variant="secondary">{display.resultLabel}</Badge>
+                        ) : (
+                          <Badge variant="destructive">{display.resultLabel}</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell className="align-top">
+                        <details className="text-xs text-muted-foreground">
+                          <summary className="cursor-pointer text-slate-700 hover:text-slate-950">
+                            技術情報
+                          </summary>
+                          <div className="mt-2 space-y-1 rounded-md border border-slate-200 bg-slate-50 p-3">
+                            <p>API: {textValue(metadata.path) || "-"}</p>
+                            <p>HTTP: {textValue(metadata.statusCode) || "-"}</p>
+                            <p>処理時間: {textValue(metadata.durationMs) || "-"}ms</p>
+                            <p>IP: {textValue(metadata.ip) || "-"}</p>
+                            <p className="break-all">
+                              UA: {textValue(metadata.userAgent) || "-"}
+                            </p>
+                            <p>分類: {reasons.join(" / ")}</p>
+                          </div>
+                        </details>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           )}
         </CardContent>
@@ -233,13 +262,19 @@ export function AdminAuditLogsView({
 }
 
 function AuditSummaryCard({
+  active = false,
+  href,
   icon,
   label,
+  linkLabel,
   tone,
   value,
 }: {
+  active?: boolean;
+  href?: string;
   icon: ReactNode;
   label: string;
+  linkLabel?: string;
   tone: "amber" | "red" | "slate";
   value: number;
 }) {
@@ -249,26 +284,91 @@ function AuditSummaryCard({
       : tone === "amber"
         ? "border-amber-200 bg-amber-50 text-amber-900"
         : "border-slate-200 bg-slate-50 text-slate-900";
-
-  return (
-    <div className={`rounded-lg border px-4 py-3 ${toneClassName}`}>
+  const activeClassName =
+    tone === "red"
+      ? "ring-2 ring-red-400 ring-offset-2"
+      : tone === "amber"
+        ? "ring-2 ring-amber-400 ring-offset-2"
+        : "ring-2 ring-slate-400 ring-offset-2";
+  const className = [
+    "block rounded-lg border px-4 py-3",
+    toneClassName,
+    href ? "cursor-pointer transition hover:shadow-sm hover:brightness-[0.98]" : "",
+    active ? activeClassName : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const content = (
+    <>
       <div className="flex items-center gap-2 text-sm font-medium">
         {icon}
         {label}
       </div>
       <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={className}
+        aria-current={active ? "page" : undefined}
+        aria-label={linkLabel ?? label}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
+}
+
+function buildAuditLogsHref({
+  createdFrom,
+  createdTo,
+  outcome,
+  query,
+  risk,
+}: {
+  createdFrom: string;
+  createdTo: string;
+  outcome: string;
+  query: string;
+  risk: string;
+}): string {
+  const params = new URLSearchParams();
+  if (query) {
+    params.set("q", query);
+  }
+  if (createdFrom) {
+    params.set("createdFrom", createdFrom);
+  }
+  if (createdTo) {
+    params.set("createdTo", createdTo);
+  }
+  if (outcome !== "all") {
+    params.set("outcome", outcome);
+  }
+  if (risk !== "all") {
+    params.set("risk", risk);
+  }
+  const search = params.toString();
+  return search ? `/admin/audit-logs?${search}` : "/admin/audit-logs";
 }
 
 function RiskBadge({ risk }: { risk: RiskLevel }) {
   if (risk === "high") {
-    return <Badge variant="destructive">高</Badge>;
+    return <Badge variant="destructive">高リスク</Badge>;
   }
   if (risk === "medium") {
-    return <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">中</Badge>;
+    return (
+      <Badge variant="outline" className="border-amber-300 bg-amber-50 text-amber-800">
+        要確認
+      </Badge>
+    );
   }
-  return <Badge variant="secondary">低</Badge>;
+  return <Badge variant="secondary">通常</Badge>;
 }
 
 export function AdminAuditLogsErrorView({ status }: AdminAuditLogsErrorViewProps) {

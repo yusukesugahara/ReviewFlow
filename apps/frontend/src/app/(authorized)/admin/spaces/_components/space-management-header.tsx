@@ -38,6 +38,8 @@ export function SpaceManagementHeader({
         {canCreateSpace ? (
           <Button
             type="button"
+            variant="outline"
+            className="bg-white"
             onClick={() => setIsCreateOpen((open) => !open)}
           >
             スペースを作成

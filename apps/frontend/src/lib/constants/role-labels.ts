@@ -5,7 +5,7 @@ export function userRoleLabel(role: string): string {
     case TENANT_ROLES.admin:
       return "テナント管理者";
     case TENANT_ROLES.user:
-      return "テナントユーザー";
+      return "テナントユーザ";
     default:
       return role;
   }
@@ -16,7 +16,7 @@ export function spaceRoleLabel(role: string): string {
     case SPACE_ROLES.admin:
       return "スペース管理者";
     case SPACE_ROLES.user:
-      return "スペースユーザー";
+      return "スペースユーザ";
     default:
       return role;
   }

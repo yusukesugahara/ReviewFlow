@@ -35,6 +35,7 @@ const application = {
   applicationName: "経費申請",
   status: APPLICATION_STATUSES.submitted,
   applicantEmail: "member@example.com",
+  currentStepAssigneeUserIds: ["user-1"],
   createdAt: "2026-06-06T00:00:00.000Z",
   updatedAt: "2026-06-06T00:00:00.000Z",
 };
@@ -45,6 +46,7 @@ describe("SpaceSubmissionsPageContent", () => {
     render(
       <SpaceSubmissionsPageContent
         applications={[]}
+        currentUserId={null}
         fetchErrorStatus={500}
         filters={baseFilters}
         latestExportJob={null}
@@ -74,16 +76,22 @@ describe("SpaceSubmissionsPageContent", () => {
             status: APPLICATION_STATUSES.published,
           },
         ]}
+        currentUserId="user-1"
         filters={baseFilters}
         latestExportJob={null}
         spaceId="space-1"
       />,
     );
 
-    expect(screen.getByRole("link", { name: /対応が必要/ })).toHaveAttribute(
+    expect(screen.getByRole("link", { name: /あなたの対応が必要/ })).toHaveAttribute(
       "href",
-      "/space/space-1/submissions?summary=needsAction",
+      "/space/space-1/submissions?summary=myNeedsAction",
     );
+    expect(screen.getByRole("link", { name: /スペース内で対応が必要/ })).toHaveAttribute(
+      "href",
+      "/space/space-1/submissions?summary=spaceNeedsAction",
+    );
+    expect(screen.getByRole("link", { name: /差し戻し後、再申請待ち/ })).toBeInTheDocument();
     expect(screen.getByRole("link", { name: /直近7日間に対応/ })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "すべての申請" })).toBeInTheDocument();
     expect(screen.getByLabelText("申請者")).toHaveAttribute(
@@ -110,6 +118,7 @@ describe("SpaceSubmissionsPageContent", () => {
     render(
       <SpaceSubmissionsPageContent
         applications={[application]}
+        currentUserId={null}
         filters={{ ...baseFilters, applicant: "missing@example.com" }}
         latestExportJob={null}
         spaceId="space-1"
@@ -121,5 +130,25 @@ describe("SpaceSubmissionsPageContent", () => {
       "href",
       "/space/space-1/submissions",
     );
+  });
+
+  // テスト内容: 自分の担当申請が0件でも「あなたの対応が必要」が表示されることを確認する
+  it("renders my needs action summary even when the count is zero", () => {
+    render(
+      <SpaceSubmissionsPageContent
+        applications={[application]}
+        currentUserId="user-2"
+        filters={baseFilters}
+        latestExportJob={null}
+        spaceId="space-1"
+      />,
+    );
+
+    const card = screen.getByRole("link", { name: /あなたの対応が必要/ });
+    expect(card).toHaveAttribute(
+      "href",
+      "/space/space-1/submissions?summary=myNeedsAction",
+    );
+    expect(within(card).getByText("0")).toBeInTheDocument();
   });
 });

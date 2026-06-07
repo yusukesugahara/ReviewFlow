@@ -1,18 +1,28 @@
 "use client";
 
 import Link from "next/link";
+import {
+  AlertCircle,
+  CheckCircle2,
+  Clock3,
+  FileText,
+  ListChecks,
+  RotateCcw,
+  Users,
+} from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { MetricCard } from "@/components/space/metric-card";
-import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
-import type { AdminDashboardViewProps } from "./types";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { formatDateTimeJa } from "@/lib/date-format";
+import type {
+  AdminDashboardViewProps,
+  SpaceDashboardSummary,
+} from "./types";
 
 export function AdminDashboardView({
-  avgReturns,
   fetchErrorStatus,
-  resubmitCount,
-  spaceId,
-  totalApplications,
+  selectedSpaceId,
+  spaces,
 }: AdminDashboardViewProps) {
   if (fetchErrorStatus !== undefined) {
     return (
@@ -25,87 +35,195 @@ export function AdminDashboardView({
     );
   }
 
+  const selectedSpace =
+    spaces.find((space) => space.id === selectedSpaceId) ?? spaces[0] ?? null;
+  const totals = buildDashboardTotals(spaces);
+
   return (
-    <div className="space-y-10">
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        <Button asChild size="sm">
-          <Link href={buildSpaceApplicationNewHref(spaceId)}>新規申請</Link>
-        </Button>
-        <Button asChild size="sm" variant="outline">
-          <Link href={`/space/applications?spaceId=${encodeURIComponent(spaceId)}`}>
-            申請フォーム一覧を見る
-          </Link>
-        </Button>
+    <div className="space-y-6">
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+          スペース概要
+        </h1>
+        <p className="text-sm text-slate-600">
+          所属スペースごとの申請状況、フォーム、メンバー構成を確認できます。
+        </p>
       </div>
 
-      <div className="grid gap-5 md:grid-cols-3">
-        <MetricCard
-          title="申請件数"
-          value={totalApplications}
-          description="全ての申請数"
-          toneClassName="bg-violet-100"
-          iconClassName="text-violet-600"
-          icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-full w-full"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-            </svg>
-          }
-        />
-        <MetricCard
-          title="平均差し戻し数"
-          value={avgReturns}
-          description="1申請あたりの平均"
-          toneClassName="bg-indigo-100"
-          iconClassName="text-indigo-600"
-          icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-full w-full"
-            >
-              <rect width="20" height="14" x="2" y="5" rx="2" />
-              <path d="M2 10h20" />
-            </svg>
-          }
-        />
-        <MetricCard
-          title="再提出件数"
-          value={resubmitCount}
-          description="差し戻し後レビュー中"
-          toneClassName="bg-sky-100"
-          iconClassName="text-sky-700"
-          icon={
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              className="h-full w-full"
-            >
-              <path d="M22 12h-4l-3 9L9 3l-3 9H2" />
-            </svg>
-          }
-        />
+      <div className="grid gap-3 md:grid-cols-4">
+        <OverviewStat label="スペース" value={spaces.length} icon={Users} />
+        <OverviewStat label="申請" value={totals.totalApplications} icon={FileText} />
+        <OverviewStat label="対応が必要" value={totals.needsActionCount} icon={Clock3} />
+        <OverviewStat label="差し戻し中" value={totals.returnedCount} icon={RotateCcw} />
       </div>
+
+      <div className="grid gap-4 xl:grid-cols-2">
+        {spaces.map((space) => (
+          <SpaceSummaryCard
+            key={space.id}
+            isSelected={space.id === selectedSpace?.id}
+            space={space}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function buildDashboardTotals(spaces: SpaceDashboardSummary[]) {
+  return spaces.reduce(
+    (totals, space) => ({
+      totalApplications: totals.totalApplications + space.totalApplications,
+      needsActionCount: totals.needsActionCount + space.needsActionCount,
+      returnedCount: totals.returnedCount + space.returnedCount,
+    }),
+    { totalApplications: 0, needsActionCount: 0, returnedCount: 0 },
+  );
+}
+
+function OverviewStat({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Users;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="rounded-lg border border-slate-200 bg-white px-4 py-3">
+      <div className="flex items-center justify-between gap-3">
+        <p className="text-sm font-medium text-slate-600">{label}</p>
+        <Icon className="size-4 text-slate-500" aria-hidden="true" />
+      </div>
+      <p className="mt-2 text-2xl font-semibold tabular-nums text-slate-950">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function SpaceSummaryCard({
+  isSelected,
+  space,
+}: {
+  isSelected: boolean;
+  space: SpaceDashboardSummary;
+}) {
+  return (
+    <Card
+      className={`border-slate-200 bg-white shadow-sm ${
+        isSelected ? "ring-2 ring-slate-300 ring-offset-2" : ""
+      }`}
+    >
+      <CardHeader className="space-y-3 border-b border-slate-200">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 space-y-1">
+            <CardTitle className="break-words text-lg text-slate-950">
+              {space.name}
+            </CardTitle>
+            <p className="text-sm leading-6 text-slate-600">
+              {space.description ?? "説明は未設定です。"}
+            </p>
+          </div>
+          <span className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
+            {space.currentUserRole === "admin" ? "管理者" : "メンバー"}
+          </span>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-5 pt-5">
+        <div className="grid gap-3 sm:grid-cols-3">
+          <CompactMetric label="メンバー" value={`${space.memberCount}名`} />
+          <CompactMetric
+            label="公開フォーム"
+            value={`${space.publishedFormCount}/${space.formCount}`}
+          />
+          <CompactMetric label="平均差し戻し" value={space.avgReturns} />
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-4">
+          <StatusMetric
+            icon={Clock3}
+            label="対応が必要"
+            value={space.needsActionCount}
+          />
+          <StatusMetric
+            icon={RotateCcw}
+            label="再申請待ち"
+            value={space.returnedCount}
+          />
+          <StatusMetric
+            icon={CheckCircle2}
+            label="承認済み"
+            value={space.approvedCount}
+          />
+          <StatusMetric
+            icon={AlertCircle}
+            label="却下"
+            value={space.rejectedCount}
+          />
+        </div>
+
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p className="text-sm font-medium text-slate-900">直近の動き</p>
+              <p className="mt-1 text-sm text-slate-600">
+                {space.latestApplicationAt
+                  ? formatDateTimeJa(space.latestApplicationAt)
+                  : "まだ申請はありません"}
+              </p>
+            </div>
+            <div className="text-right text-sm text-slate-600">
+              <p>申請 {space.totalApplications}件</p>
+              <p>差し戻し履歴 {space.correctionCount}件</p>
+              <p>再提出レビュー中 {space.resubmitCount}件</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-2">
+          <Button asChild size="sm" variant="outline" className="bg-white">
+            <Link href={`/space/${encodeURIComponent(space.id)}/applications`}>
+              <ListChecks className="size-4" aria-hidden="true" />
+              フォーム
+            </Link>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function CompactMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-lg border border-slate-200 px-3 py-3">
+      <p className="text-xs font-medium text-slate-500">{label}</p>
+      <p className="mt-1 text-lg font-semibold tabular-nums text-slate-950">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+function StatusMetric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Clock3;
+  label: string;
+  value: number;
+}) {
+  return (
+    <div className="min-w-0 rounded-lg border border-slate-200 px-3 py-3">
+      <div className="flex items-center gap-2 text-slate-600">
+        <Icon className="size-4 shrink-0" aria-hidden="true" />
+        <p className="truncate text-xs font-medium">{label}</p>
+      </div>
+      <p className="mt-2 text-xl font-semibold tabular-nums text-slate-950">
+        {value}
+      </p>
     </div>
   );
 }

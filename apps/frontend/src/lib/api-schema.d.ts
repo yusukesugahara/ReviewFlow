@@ -11,7 +11,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** テナント内ユーザー一覧（system admin） */
+        /** テナント内ユーザ一覧（system admin） */
         get: operations["UsersController_list"];
         put?: never;
         post?: never;
@@ -34,7 +34,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** テナント内ユーザーのロール変更（system admin） */
+        /** テナント内ユーザのロール変更（system admin） */
         patch: operations["UsersController_updateRole"];
         trace?: never;
     };
@@ -51,7 +51,7 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** テナント内ユーザーの復活（tenant_admin） */
+        /** テナント内ユーザの復活（tenant_admin） */
         patch: operations["UsersController_restore"];
         trace?: never;
     };
@@ -65,7 +65,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** テナント内ユーザーの削除（tenant_admin） */
+        /** テナント内ユーザの削除（tenant_admin） */
         delete: operations["UsersController_remove"];
         options?: never;
         head?: never;
@@ -149,7 +149,7 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 現在のユーザー（X-API-Key + Nest JWT） */
+        /** 現在のユーザ（X-API-Key + Nest JWT） */
         post: operations["AuthController_me"];
         delete?: never;
         options?: never;
@@ -475,7 +475,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ） */
+        /** スペース一覧（tenant_admin は全件、通常ユーザは参加中のみ） */
         get: operations["GroupsController_list"];
         put?: never;
         /** スペース作成（tenant_admin） */
@@ -513,7 +513,7 @@ export interface paths {
         /** スペースメンバー一覧（tenant_admin / space admin） */
         get: operations["GroupsController_listMembers"];
         put?: never;
-        /** スペースへユーザー追加（tenant_admin） */
+        /** スペースへユーザ追加（tenant_admin） */
         post: operations["GroupsController_addMember"];
         delete?: never;
         options?: never;
@@ -528,7 +528,7 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** スペース追加候補ユーザー一覧（tenant_admin / space admin） */
+        /** スペース追加候補ユーザ一覧（tenant_admin / space admin） */
         get: operations["GroupsController_listAvailableUsers"];
         put?: never;
         post?: never;
@@ -565,7 +565,7 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        /** スペースから退出（参加中ユーザー） */
+        /** スペースから退出（参加中ユーザ） */
         delete: operations["GroupsController_leave"];
         options?: never;
         head?: never;
@@ -1156,10 +1156,10 @@ export interface components {
             stepName: string;
             /**
              * Format: uuid
-             * @description このステップを承認するテナント内ユーザーID
+             * @description このステップを承認するテナント内ユーザID
              */
             assigneeUserId?: string;
-            /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
+            /** @description このステップを承認できるテナント内ユーザID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
             assigneeUserIds?: unknown[][];
             /** @example true */
             canReturn: boolean;
@@ -1182,7 +1182,7 @@ export interface components {
             createdAt: string;
             updatedAt: string;
             /**
-             * @description ログインユーザーのこのスペースでのロール。未参加の tenant_admin は null。
+             * @description ログインユーザのこのスペースでのロール。未参加の tenant_admin は null。
              * @enum {string|null}
              */
             currentUserRole?: "admin" | "user" | null;
@@ -1229,7 +1229,7 @@ export interface components {
             users: components["schemas"]["GroupAvailableUserSummaryDto"][];
         };
         AddGroupMemberDto: {
-            /** @description スペースに追加するテナント内ユーザーID */
+            /** @description スペースに追加するテナント内ユーザID */
             userId: string;
             /**
              * @example user
@@ -1461,7 +1461,7 @@ export interface components {
              */
             statusCode: number;
             /**
-             * @description ユーザー向けメッセージ（バリデーション時は文字列の配列になり得る）
+             * @description ユーザ向けメッセージ（バリデーション時は文字列の配列になり得る）
              * @example Invalid email or password
              */
             message: string | string[];

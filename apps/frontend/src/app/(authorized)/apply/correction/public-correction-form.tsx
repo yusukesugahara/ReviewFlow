@@ -1,8 +1,11 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import {
+  ApplicationFormSubmitButton,
+  type ApplicationFormClientValidationState,
+} from "@/components/applications/application-form-submit-button";
 import {
   DynamicFieldInput,
   DynamicFieldsTable,
@@ -23,6 +26,7 @@ type PublicCorrectionFormProps = {
 };
 
 const initialState: PublicCorrectionSubmitState = {};
+const FORM_ID = "public-correction-form";
 
 export function PublicCorrectionForm({
   applicationId,
@@ -35,13 +39,21 @@ export function PublicCorrectionForm({
     submitPublicCorrectionAction,
     initialFormError ? { formError: initialFormError } : initialState,
   );
+  const [clientValidation, setClientValidation] =
+    useState<ApplicationFormClientValidationState>({});
   const targetByFieldKey = new Map(fields.map((field) => [field.fieldKey, field]));
   const values = Object.fromEntries(
     fields.map((field) => [field.fieldKey, field.currentValue]),
   );
+  const formError = state.formError ?? clientValidation.formError;
+  const fieldErrors = {
+    ...clientValidation.fieldErrors,
+    ...state.fieldErrors,
+  };
+  const missingFieldLabels = state.missingFieldLabels ?? clientValidation.missingFieldLabels;
 
   return (
-    <form action={formAction} className="space-y-6" noValidate>
+    <form id={FORM_ID} action={formAction} className="space-y-6" noValidate>
       <input type="hidden" name="applicationId" value={applicationId} />
       <input type="hidden" name="fieldsJson" value={JSON.stringify(formFields)} />
 
@@ -62,12 +74,12 @@ export function PublicCorrectionForm({
         ))}
       </div>
 
-      {state.formError ? (
+      {formError ? (
         <div className="rounded-lg border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700">
-          <p className="font-medium text-red-800">{state.formError}</p>
-          {state.missingFieldLabels?.length ? (
+          <p className="font-medium text-red-800">{formError}</p>
+          {missingFieldLabels?.length ? (
             <ul className="mt-2 list-disc space-y-1 pl-5 text-red-700">
-              {state.missingFieldLabels.map((label) => (
+              {missingFieldLabels.map((label) => (
                 <li key={label} className="text-red-700 marker:text-red-700">
                   {label}
                 </li>
@@ -80,7 +92,7 @@ export function PublicCorrectionForm({
       <DynamicFieldsTable
         fields={formFields}
         values={values}
-        getFieldError={(field) => state.fieldErrors?.[field.fieldKey]}
+        getFieldError={(field) => fieldErrors[field.fieldKey]}
         renderValue={(field, value) => {
           const target = targetByFieldKey.get(field.fieldKey);
           return (
@@ -94,9 +106,9 @@ export function PublicCorrectionForm({
                 field={field}
                 value={value}
                 afterInput={
-                  state.fieldErrors?.[field.fieldKey] ? (
+                  fieldErrors[field.fieldKey] ? (
                     <p className="text-sm font-medium text-red-700">
-                      {state.fieldErrors[field.fieldKey]}
+                      {fieldErrors[field.fieldKey]}
                     </p>
                   ) : null
                 }
@@ -107,9 +119,19 @@ export function PublicCorrectionForm({
         }}
       />
 
-      <Button type="submit" className="w-full" disabled={isPending}>
-        {isPending ? "送信中..." : "修正して再提出"}
-      </Button>
+      <ApplicationFormSubmitButton
+        formId={FORM_ID}
+        fields={formFields}
+        submitLabel="修正して再提出"
+        pendingLabel="送信中..."
+        confirmTitle="修正内容の確認"
+        confirmDescription="修正内容を確認し、問題なければ再提出してください。"
+        confirmButtonLabel="再提出する"
+        isPending={isPending}
+        editableFieldKeys={new Set(formFields.map((field) => field.fieldKey))}
+        onClientValidationChange={setClientValidation}
+        submitForm={formAction}
+      />
     </form>
   );
 }

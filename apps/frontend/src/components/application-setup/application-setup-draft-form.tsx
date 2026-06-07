@@ -69,7 +69,6 @@ export function ApplicationSetupDraftForm({
       fieldKey: normalizeFieldKey(field, index, usedKeys),
     }));
   }, [fields]);
-  const hasFields = fields.length > 0;
   const updateField = (id: string, patch: Partial<DraftField>) => {
     setFields((prev) => prev.map((field) => (field.id === id ? { ...field, ...patch } : field)));
   };
@@ -164,19 +163,13 @@ export function ApplicationSetupDraftForm({
                 className="bg-white"
               />
             </div>
-            <div className="flex shrink-0 flex-col items-stretch gap-3 sm:items-end">
-              <div className="flex flex-wrap justify-end gap-2">
-                <Badge variant={hasFields ? "default" : "outline"}>申請項目 {hasFields ? "OK" : "未完了"}</Badge>
-                <Badge variant="default">承認フロー OK</Badge>
-              </div>
-              <div className="flex items-center justify-end gap-2">
-                <Button type="submit" name="intent" value="draft" variant="secondary">
-                  下書き保存
-                </Button>
-                <Button type="submit" name="intent" value="publish">
-                  公開
-                </Button>
-              </div>
+            <div className="flex shrink-0 items-center justify-end gap-2">
+              <Button type="submit" name="intent" value="draft" variant="secondary">
+                下書き保存
+              </Button>
+              <Button type="submit" name="intent" value="publish">
+                公開
+              </Button>
             </div>
           </div>
         </CardHeader>

@@ -56,7 +56,7 @@ export function PublishedApplicationUrlModal({
           申請URLを発行しました
         </DialogTitle>
         <DialogDescription id="published-application-url-description">
-          このURLをユーザーに共有すると、メールアドレス入力後に申請フォームの案内を送れます。
+          このURLをユーザに共有すると、メールアドレス入力後に申請フォームの案内を送れます。
         </DialogDescription>
       </DialogHeader>
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">

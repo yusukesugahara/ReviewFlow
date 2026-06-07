@@ -7,7 +7,7 @@ export function buildOpenApiBaseConfig() {
     .setTitle('ReviewFlow API')
     .setDescription(
       [
-        'ReviewFlow のバックエンド API。申請フォーム、申請、承認、スペース、ユーザー、CSV 出力、監査ログを扱う。',
+        'ReviewFlow のバックエンド API。申請フォーム、申請、承認、スペース、ユーザ、CSV 出力、監査ログを扱う。',
         '',
         'UI 上の「スペース」は、後方互換のため API path と request/response property では `groups` / `groupId` として公開する。',
         '',

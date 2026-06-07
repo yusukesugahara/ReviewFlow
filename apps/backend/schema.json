@@ -41,7 +41,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザー一覧（system admin）",
+        "summary": "テナント内ユーザ一覧（system admin）",
         "tags": [
           "users"
         ]
@@ -106,7 +106,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザーのロール変更（system admin）",
+        "summary": "テナント内ユーザのロール変更（system admin）",
         "tags": [
           "users"
         ]
@@ -161,7 +161,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザーの復活（tenant_admin）",
+        "summary": "テナント内ユーザの復活（tenant_admin）",
         "tags": [
           "users"
         ]
@@ -193,7 +193,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "テナント内ユーザーの削除（tenant_admin）",
+        "summary": "テナント内ユーザの削除（tenant_admin）",
         "tags": [
           "users"
         ]
@@ -451,7 +451,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "現在のユーザー（X-API-Key + Nest JWT）",
+        "summary": "現在のユーザ（X-API-Key + Nest JWT）",
         "tags": [
           "auth"
         ]
@@ -1688,7 +1688,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ）",
+        "summary": "スペース一覧（tenant_admin は全件、通常ユーザは参加中のみ）",
         "tags": [
           "spaces"
         ]
@@ -1892,7 +1892,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペースへユーザー追加（tenant_admin）",
+        "summary": "スペースへユーザ追加（tenant_admin）",
         "tags": [
           "spaces"
         ]
@@ -1947,7 +1947,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペース追加候補ユーザー一覧（tenant_admin / space admin）",
+        "summary": "スペース追加候補ユーザ一覧（tenant_admin / space admin）",
         "tags": [
           "spaces"
         ]
@@ -2052,7 +2052,7 @@
             "nest-jwt": []
           }
         ],
-        "summary": "スペースから退出（参加中ユーザー）",
+        "summary": "スペースから退出（参加中ユーザ）",
         "tags": [
           "spaces"
         ]
@@ -3092,7 +3092,7 @@
   },
   "info": {
     "title": "ReviewFlow API",
-    "description": "ReviewFlow のバックエンド API。申請フォーム、申請、承認、スペース、ユーザー、CSV 出力、監査ログを扱う。\n\nUI 上の「スペース」は、後方互換のため API path と request/response property では `groups` / `groupId` として公開する。\n\nエラー: コントローラーで個別のエラーレスポンスは宣言しない。`throw new Error()` や `BaseError` / `HttpException` は `GlobalExceptionFilter` が JSON（`components.schemas.ErrorResponseDto` の最小形: statusCode, message）に正規化する。",
+    "description": "ReviewFlow のバックエンド API。申請フォーム、申請、承認、スペース、ユーザ、CSV 出力、監査ログを扱う。\n\nUI 上の「スペース」は、後方互換のため API path と request/response property では `groups` / `groupId` として公開する。\n\nエラー: コントローラーで個別のエラーレスポンスは宣言しない。`throw new Error()` や `BaseError` / `HttpException` は `GlobalExceptionFilter` が JSON（`components.schemas.ErrorResponseDto` の最小形: statusCode, message）に正規化する。",
     "version": "1.0",
     "contact": {}
   },
@@ -3881,10 +3881,10 @@
           "assigneeUserId": {
             "type": "string",
             "format": "uuid",
-            "description": "このステップを承認するテナント内ユーザーID"
+            "description": "このステップを承認するテナント内ユーザID"
           },
           "assigneeUserIds": {
-            "description": "このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。",
+            "description": "このステップを承認できるテナント内ユーザID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。",
             "type": "array",
             "items": {
               "type": "array",
@@ -3953,7 +3953,7 @@
           },
           "currentUserRole": {
             "type": "string",
-            "description": "ログインユーザーのこのスペースでのロール。未参加の tenant_admin は null。",
+            "description": "ログインユーザのこのスペースでのロール。未参加の tenant_admin は null。",
             "enum": [
               "admin",
               "user"
@@ -4107,7 +4107,7 @@
         "properties": {
           "userId": {
             "type": "string",
-            "description": "スペースに追加するテナント内ユーザーID"
+            "description": "スペースに追加するテナント内ユーザID"
           },
           "role": {
             "type": "string",
@@ -4174,6 +4174,13 @@
             "type": "object",
             "nullable": true
           },
+          "currentStepAssigneeUserIds": {
+            "description": "現在の承認ステップ担当者のユーザID一覧。現在ステップが無い場合は空配列。",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "submittedAt": {
             "type": "object",
             "nullable": true
@@ -4194,6 +4201,7 @@
           "formDefinitionName",
           "applicationName",
           "applicantEmail",
+          "currentStepAssigneeUserIds",
           "createdAt",
           "updatedAt"
         ]
@@ -4394,6 +4402,13 @@
             "type": "object",
             "nullable": true
           },
+          "currentStepAssigneeUserIds": {
+            "description": "現在の承認ステップ担当者のユーザID一覧。現在ステップが無い場合は空配列。",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
           "submittedAt": {
             "type": "object",
             "nullable": true
@@ -4430,6 +4445,7 @@
           "formDefinitionName",
           "applicationName",
           "applicantEmail",
+          "currentStepAssigneeUserIds",
           "createdAt",
           "updatedAt",
           "approvalProgress",
@@ -4787,7 +4803,7 @@
               }
             ],
             "example": "Invalid email or password",
-            "description": "ユーザー向けメッセージ（バリデーション時は文字列の配列になり得る）"
+            "description": "ユーザ向けメッセージ（バリデーション時は文字列の配列になり得る）"
           }
         },
         "required": [

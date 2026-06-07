@@ -55,7 +55,7 @@ export class UsersController {
   @Get()
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'テナント内ユーザー一覧（system admin）' })
+  @ApiOperation({ summary: 'テナント内ユーザ一覧（system admin）' })
   @ApiSuccessResponse(TenantUsersListResponseDto)
   async list(
     @CurrentUser() actor: AuthUserPayload,
@@ -71,7 +71,7 @@ export class UsersController {
   @Patch(':id/role')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'テナント内ユーザーのロール変更（system admin）' })
+  @ApiOperation({ summary: 'テナント内ユーザのロール変更（system admin）' })
   @ApiSuccessResponse(TenantUserSummaryDto)
   async updateRole(
     @Param('id', ParseUUIDPipe) id: string,
@@ -92,7 +92,7 @@ export class UsersController {
   @Patch(':id/restore')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'テナント内ユーザーの復活（tenant_admin）' })
+  @ApiOperation({ summary: 'テナント内ユーザの復活（tenant_admin）' })
   @ApiSuccessResponse(TenantUserSummaryDto)
   async restore(
     @Param('id', ParseUUIDPipe) id: string,
@@ -110,7 +110,7 @@ export class UsersController {
   @Delete(':id')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
-  @ApiOperation({ summary: 'テナント内ユーザーの削除（tenant_admin）' })
+  @ApiOperation({ summary: 'テナント内ユーザの削除（tenant_admin）' })
   async remove(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: AuthUserPayload,

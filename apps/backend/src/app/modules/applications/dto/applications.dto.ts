@@ -350,6 +350,13 @@ export class ApplicationSummaryDto {
   @ApiPropertyOptional({ nullable: true })
   currentStepOrder!: number | null;
 
+  @ApiProperty({
+    type: [String],
+    description:
+      '現在の承認ステップ担当者のユーザID一覧。現在ステップが無い場合は空配列。',
+  })
+  currentStepAssigneeUserIds!: string[];
+
   @ApiPropertyOptional({ nullable: true })
   submittedAt!: string | null;
 

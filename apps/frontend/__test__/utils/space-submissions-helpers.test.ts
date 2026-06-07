@@ -2,8 +2,11 @@ import {
   buildExportFormOptions,
   buildSubmissionsPageHref,
   filterApplications,
+  isAssignedToCurrentUser,
   isFormSetupApplication,
   isPendingApplication,
+  isReturnedApplication,
+  isSpaceNeedsActionApplication,
 } from "@/app/(authorized)/space/[spaceId]/submissions/_components/space-submissions.helpers";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
@@ -15,6 +18,7 @@ const row = {
   applicationName: "経費申請",
   status: APPLICATION_STATUSES.submitted,
   applicantEmail: "member@example.com",
+  currentStepAssigneeUserIds: ["user-1"],
   createdAt: "2026-06-06T00:00:00.000Z",
   updatedAt: "2026-06-06T00:00:00.000Z",
 };
@@ -55,17 +59,21 @@ describe("space submissions helpers", () => {
     expect(
       buildSubmissionsPageHref(
         "space 1",
-        { ...filters, applicant: "member@example.com", summary: "needsAction" },
+        { ...filters, applicant: "member@example.com", summary: "spaceNeedsAction" },
         2,
       ),
     ).toBe(
-      "/space/space%201/submissions?applicant=member%40example.com&summary=needsAction&page=2",
+      "/space/space%201/submissions?applicant=member%40example.com&summary=spaceNeedsAction&page=2",
     );
   });
 
   // テスト内容: セットアップ用申請と対応が必要な申請を判定できることを確認する
-  it("detects setup and pending application rows", () => {
+  it("detects setup, action-needed, returned, and assigned application rows", () => {
     expect(isFormSetupApplication({ ...row, status: APPLICATION_STATUSES.published })).toBe(true);
     expect(isPendingApplication(row)).toBe(true);
+    expect(isSpaceNeedsActionApplication(row)).toBe(true);
+    expect(isReturnedApplication({ ...row, status: APPLICATION_STATUSES.returned })).toBe(true);
+    expect(isAssignedToCurrentUser(row, "user-1")).toBe(true);
+    expect(isAssignedToCurrentUser(row, "user-2")).toBe(false);
   });
 });

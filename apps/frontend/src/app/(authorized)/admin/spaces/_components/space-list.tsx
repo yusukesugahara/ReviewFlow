@@ -288,7 +288,7 @@ export function SpaceList({
                         メンバーを追加
                       </DialogTitle>
                       <DialogDescription id={`member-add-description-${group.id}`}>
-                        {group.name} に既存ユーザーを追加、またはメールで招待します。
+                        {group.name} に既存ユーザを追加、またはメールで招待します。
                       </DialogDescription>
                     </DialogHeader>
                     <div className="grid items-stretch gap-3 xl:grid-cols-2">
@@ -299,12 +299,12 @@ export function SpaceList({
                         >
                           <div className="space-y-1 md:col-span-3">
                             <p className="text-sm font-medium">
-                              既存ユーザーを追加
+                              既存ユーザを追加
                             </p>
                           </div>
                           <div className="space-y-1">
                             <Label htmlFor={`add-user-${group.id}`}>
-                              ユーザー
+                              ユーザ
                             </Label>
                             <Select
                               name="userId"
@@ -318,8 +318,8 @@ export function SpaceList({
                                 <SelectValue
                                   placeholder={
                                     hasAddableUsers
-                                      ? "追加するユーザーを選択"
-                                      : "追加できるユーザーがいません"
+                                      ? "追加するユーザを選択"
+                                      : "追加できるユーザがいません"
                                   }
                                 />
                               </SelectTrigger>
