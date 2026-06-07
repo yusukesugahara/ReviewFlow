@@ -1,4 +1,6 @@
 import {
+  buildAuditDisplay,
+  describeActionLabel,
   enrichAuditRow,
   shortId,
   textValue,
@@ -14,20 +16,30 @@ describe("audit log helpers", () => {
   it("enriches high-risk failed audit rows", () => {
     const row: AuditLogItem = {
       id: "audit-1",
-      actionType: "DELETE:/users/:id",
+      actionType: "DELETE:users",
       targetType: "users",
       targetId: "target-1",
+      actorEmail: "admin@example.com",
       metadataJson: metadata({
         success: false,
         errorCode: "FORBIDDEN",
         statusCode: 403,
         durationMs: 3000,
+        path: "/users/target-1",
+        method: "DELETE",
+        role: "tenant_admin",
       }),
       createdAt: "2026-06-06T00:00:00.000Z",
     };
 
     expect(enrichAuditRow(row)).toMatchObject({
       risk: "high",
+      display: {
+        actorLabel: "admin@example.com",
+        actionLabel: "ユーザを削除しました",
+        targetLabel: "ユーザ target-1...",
+        isSuccess: false,
+      },
       reasons: [
         "失敗: FORBIDDEN",
         "認証・ユーザ管理",
@@ -38,14 +50,152 @@ describe("audit log helpers", () => {
     });
   });
 
+  // テスト内容: 申請承認の操作内容が日本語で説明されることを確認する
+  it("describes application approval actions in Japanese", () => {
+    const row: AuditLogItem = {
+      id: "audit-approve",
+      actionType: "POST:applications",
+      targetType: "applications",
+      targetId: "app-12345678",
+      actorEmail: "reviewer@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/applications/app-12345678/approve",
+        method: "POST",
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+
+    expect(describeActionLabel("POST", "/applications/app-12345678/approve", row)).toBe(
+      "申請を承認しました",
+    );
+    expect(buildAuditDisplay(row).summary).toBe(
+      "reviewer@example.comが申請を承認しました（申請 app-1234...）",
+    );
+  });
+
+  // テスト内容: ユーザ権限変更が高リスクとして分類されることを確認する
+  it("classifies tenant user role changes as high risk", () => {
+    const row: AuditLogItem = {
+      id: "audit-role",
+      actionType: "PATCH:users",
+      targetType: "users",
+      targetId: "user-12345678",
+      actorEmail: "admin@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/users/user-12345678/role",
+        method: "PATCH",
+        statusCode: 200,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+
+    expect(enrichAuditRow(row)).toMatchObject({
+      risk: "high",
+      display: {
+        actionLabel: "ユーザの権限を変更しました",
+      },
+      reasons: expect.arrayContaining(["権限変更", "認証・ユーザ管理", "変更・削除操作"]),
+    });
+  });
+
+  // テスト内容: スペースメンバー権限変更が高リスクとして分類されることを確認する
+  it("classifies group member role changes as high risk", () => {
+    const row: AuditLogItem = {
+      id: "audit-member-role",
+      actionType: "PATCH:groups",
+      targetType: "groups",
+      targetId: "group-12345678",
+      actorEmail: "admin@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/groups/group-12345678/members/user-12345678/role",
+        method: "PATCH",
+        statusCode: 200,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+
+    expect(enrichAuditRow(row)).toMatchObject({
+      risk: "high",
+      display: {
+        actionLabel: "スペースメンバーの権限を変更しました",
+      },
+      reasons: expect.arrayContaining(["権限変更", "変更・削除操作"]),
+    });
+  });
+
+  // テスト内容: 申請フォーム変更が高リスクとして分類されることを確認する
+  it("classifies form definition mutations as high risk", () => {
+    const publishRow: AuditLogItem = {
+      id: "audit-publish",
+      actionType: "POST:form-definitions",
+      targetType: "form-definitions",
+      targetId: "form-12345678",
+      actorEmail: "editor@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/form-definitions/form-12345678/publish",
+        method: "POST",
+        statusCode: 200,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+    const createRow: AuditLogItem = {
+      id: "audit-create-form",
+      actionType: "POST:form-definitions",
+      targetType: "form-definitions",
+      targetId: null,
+      actorEmail: "editor@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/form-definitions",
+        method: "POST",
+        statusCode: 201,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+
+    expect(enrichAuditRow(publishRow)).toMatchObject({
+      risk: "high",
+      display: { actionLabel: "申請フォームを公開しました" },
+      reasons: expect.arrayContaining(["申請フォーム変更"]),
+    });
+    expect(enrichAuditRow(createRow)).toMatchObject({
+      risk: "high",
+      display: { actionLabel: "申請フォームを作成しました" },
+      reasons: expect.arrayContaining(["申請フォーム変更"]),
+    });
+  });
+
+  // テスト内容: 申請フォーム参照は高リスクにしないことを確認する
+  it("keeps form definition reads as low risk", () => {
+    expect(
+      enrichAuditRow({
+        id: "audit-read-form",
+        actionType: "GET:form-definitions",
+        targetType: "form-definitions",
+        targetId: "form-12345678",
+        metadataJson: metadata({
+          success: true,
+          path: "/form-definitions/form-12345678",
+          method: "GET",
+          statusCode: 200,
+        }),
+        createdAt: "2026-06-06T00:00:00.000Z",
+      }).risk,
+    ).toBe("low");
+  });
+
   // テスト内容: 通常操作の監査ログに低リスクと通常操作理由が付くことを確認する
   it("enriches normal audit rows as low risk", () => {
     expect(
       enrichAuditRow({
         id: "audit-2",
-        actionType: "GET:/applications",
+        actionType: "GET:applications",
         targetType: "applications",
-        metadataJson: metadata({ success: true, statusCode: 200 }),
+        metadataJson: metadata({ success: true, statusCode: 200, path: "/applications", method: "GET" }),
         createdAt: "2026-06-06T00:00:00.000Z",
       }).risk,
     ).toBe("low");
