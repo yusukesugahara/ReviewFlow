@@ -12,8 +12,8 @@ function metadata(value: Record<string, unknown>): Record<string, never> {
 }
 
 describe("audit log helpers", () => {
-  // テスト内容: 監査ログ行から高リスク理由が組み立てられることを確認する
-  it("enriches high-risk failed audit rows", () => {
+  // テスト内容: 高リスク対象外の失敗操作は要確認として分類されることを確認する
+  it("classifies failed user deletion as medium risk", () => {
     const row: AuditLogItem = {
       id: "audit-1",
       actionType: "DELETE:users",
@@ -33,7 +33,7 @@ describe("audit log helpers", () => {
     };
 
     expect(enrichAuditRow(row)).toMatchObject({
-      risk: "high",
+      risk: "medium",
       display: {
         actorLabel: "admin@example.com",
         actionLabel: "ユーザを削除しました",
@@ -74,7 +74,7 @@ describe("audit log helpers", () => {
     );
   });
 
-  // テスト内容: ユーザ権限変更が高リスクとして分類されることを確認する
+  // テスト内容: テナント管理のユーザ権限変更が高リスクとして分類されることを確認する
   it("classifies tenant user role changes as high risk", () => {
     const row: AuditLogItem = {
       id: "audit-role",
@@ -96,12 +96,42 @@ describe("audit log helpers", () => {
       display: {
         actionLabel: "ユーザの権限を変更しました",
       },
-      reasons: expect.arrayContaining(["権限変更", "認証・ユーザ管理", "変更・削除操作"]),
+      reasons: expect.arrayContaining([
+        "テナントユーザ権限変更",
+        "認証・ユーザ管理",
+        "変更・削除操作",
+      ]),
     });
   });
 
-  // テスト内容: スペースメンバー権限変更が高リスクとして分類されることを確認する
-  it("classifies group member role changes as high risk", () => {
+  // テスト内容: テナント管理のユーザ招待が高リスクとして分類されることを確認する
+  it("classifies tenant user invitations as high risk", () => {
+    const row: AuditLogItem = {
+      id: "audit-invite",
+      actionType: "POST:invitations",
+      targetType: "invitations",
+      targetId: null,
+      actorEmail: "admin@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/invitations",
+        method: "POST",
+        statusCode: 201,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+
+    expect(enrichAuditRow(row)).toMatchObject({
+      risk: "high",
+      display: {
+        actionLabel: "ユーザを招待しました",
+      },
+      reasons: expect.arrayContaining(["ユーザ招待", "認証・ユーザ管理"]),
+    });
+  });
+
+  // テスト内容: スペースメンバー権限変更は高リスクにしないことを確認する
+  it("does not classify group member role changes as high risk", () => {
     const row: AuditLogItem = {
       id: "audit-member-role",
       actionType: "PATCH:groups",
@@ -118,16 +148,16 @@ describe("audit log helpers", () => {
     };
 
     expect(enrichAuditRow(row)).toMatchObject({
-      risk: "high",
+      risk: "medium",
       display: {
         actionLabel: "スペースメンバーの権限を変更しました",
       },
-      reasons: expect.arrayContaining(["権限変更", "変更・削除操作"]),
+      reasons: expect.arrayContaining(["変更・削除操作"]),
     });
   });
 
-  // テスト内容: 申請フォーム変更が高リスクとして分類されることを確認する
-  it("classifies form definition mutations as high risk", () => {
+  // テスト内容: 申請フォームの作成と編集が高リスクとして分類されることを確認する
+  it("classifies form definition create and edit as high risk", () => {
     const publishRow: AuditLogItem = {
       id: "audit-publish",
       actionType: "POST:form-definitions",
@@ -160,12 +190,12 @@ describe("audit log helpers", () => {
     expect(enrichAuditRow(publishRow)).toMatchObject({
       risk: "high",
       display: { actionLabel: "申請フォームを公開しました" },
-      reasons: expect.arrayContaining(["申請フォーム変更"]),
+      reasons: expect.arrayContaining(["申請フォーム編集"]),
     });
     expect(enrichAuditRow(createRow)).toMatchObject({
       risk: "high",
       display: { actionLabel: "申請フォームを作成しました" },
-      reasons: expect.arrayContaining(["申請フォーム変更"]),
+      reasons: expect.arrayContaining(["申請フォーム作成"]),
     });
   });
 

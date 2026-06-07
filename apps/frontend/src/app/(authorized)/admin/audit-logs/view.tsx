@@ -48,6 +48,14 @@ export function AdminAuditLogsView({
   const highRiskCount = enrichedRows.filter((item) => item.risk === "high").length;
   const mediumRiskCount = enrichedRows.filter((item) => item.risk === "medium").length;
   const failedCount = enrichedRows.filter((item) => item.metadata.success === false).length;
+  const highRiskHref = buildAuditLogsHref({
+    createdFrom,
+    createdTo,
+    outcome,
+    query,
+    risk: "high",
+  });
+  const isHighRiskFilterActive = risk === "high";
 
   return (
     <div className="space-y-6">
@@ -60,8 +68,11 @@ export function AdminAuditLogsView({
 
       <div className="grid gap-3 md:grid-cols-3">
         <AuditSummaryCard
+          active={isHighRiskFilterActive}
+          href={highRiskHref}
           icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
           label="高リスク"
+          linkLabel={`高リスクの操作履歴を表示（${highRiskCount}件）`}
           tone="red"
           value={highRiskCount}
         />
@@ -83,9 +94,13 @@ export function AdminAuditLogsView({
         <CardHeader>
           <CardTitle>操作履歴</CardTitle>
           <CardDescription>
-            {hasSearch
-              ? `「${query}」に一致する最新200件`
-              : "最新200件を新しい順に表示しています"}
+            {isHighRiskFilterActive
+              ? hasSearch
+                ? `高リスクの操作のうち「${query}」に一致する最新200件`
+                : "高リスクの操作履歴のみを表示しています"
+              : hasSearch
+                ? `「${query}」に一致する最新200件`
+                : "最新200件を新しい順に表示しています"}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
@@ -247,13 +262,19 @@ export function AdminAuditLogsView({
 }
 
 function AuditSummaryCard({
+  active = false,
+  href,
   icon,
   label,
+  linkLabel,
   tone,
   value,
 }: {
+  active?: boolean;
+  href?: string;
   icon: ReactNode;
   label: string;
+  linkLabel?: string;
   tone: "amber" | "red" | "slate";
   value: number;
 }) {
@@ -263,16 +284,77 @@ function AuditSummaryCard({
       : tone === "amber"
         ? "border-amber-200 bg-amber-50 text-amber-900"
         : "border-slate-200 bg-slate-50 text-slate-900";
-
-  return (
-    <div className={`rounded-lg border px-4 py-3 ${toneClassName}`}>
+  const activeClassName =
+    tone === "red"
+      ? "ring-2 ring-red-400 ring-offset-2"
+      : tone === "amber"
+        ? "ring-2 ring-amber-400 ring-offset-2"
+        : "ring-2 ring-slate-400 ring-offset-2";
+  const className = [
+    "block rounded-lg border px-4 py-3",
+    toneClassName,
+    href ? "cursor-pointer transition hover:shadow-sm hover:brightness-[0.98]" : "",
+    active ? activeClassName : "",
+  ]
+    .filter(Boolean)
+    .join(" ");
+  const content = (
+    <>
       <div className="flex items-center gap-2 text-sm font-medium">
         {icon}
         {label}
       </div>
       <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <Link
+        href={href}
+        className={className}
+        aria-current={active ? "page" : undefined}
+        aria-label={linkLabel ?? label}
+      >
+        {content}
+      </Link>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
+}
+
+function buildAuditLogsHref({
+  createdFrom,
+  createdTo,
+  outcome,
+  query,
+  risk,
+}: {
+  createdFrom: string;
+  createdTo: string;
+  outcome: string;
+  query: string;
+  risk: string;
+}): string {
+  const params = new URLSearchParams();
+  if (query) {
+    params.set("q", query);
+  }
+  if (createdFrom) {
+    params.set("createdFrom", createdFrom);
+  }
+  if (createdTo) {
+    params.set("createdTo", createdTo);
+  }
+  if (outcome !== "all") {
+    params.set("outcome", outcome);
+  }
+  if (risk !== "all") {
+    params.set("risk", risk);
+  }
+  const search = params.toString();
+  return search ? `/admin/audit-logs?${search}` : "/admin/audit-logs";
 }
 
 function RiskBadge({ risk }: { risk: RiskLevel }) {

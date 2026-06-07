@@ -102,6 +102,9 @@ export function describeActionLabel(
   if (cleanPath.includes("/auth/password-reset/request")) return "パスワード再設定を要求しました";
   if (cleanPath.includes("/auth/password-reset/confirm")) return "パスワードを再設定しました";
   if (cleanPath.includes("/auth/me")) return "ログイン状態を確認しました";
+  if (cleanPath === "/invitations" && normalizedMethod === "POST") {
+    return "ユーザを招待しました";
+  }
   if (cleanPath.includes("/invitations/accept")) return "招待を受諾しました";
   if (cleanPath.includes("/approve")) return "申請を承認しました";
   if (cleanPath.includes("/reject")) return "申請を却下しました";
@@ -232,11 +235,17 @@ function buildReasons(
   if (metadata.success === false) {
     reasons.push(`失敗: ${textValue(metadata.errorCode) || "原因不明"}`);
   }
-  if (isPermissionChangeOperation(path, method)) {
-    reasons.push("権限変更");
+  if (isTenantUserPermissionChange(path, method)) {
+    reasons.push("テナントユーザ権限変更");
   }
-  if (isFormDefinitionMutation(path, method)) {
-    reasons.push("申請フォーム変更");
+  if (isTenantUserInvitation(path, method)) {
+    reasons.push("ユーザ招待");
+  }
+  if (isFormDefinitionCreate(path, method)) {
+    reasons.push("申請フォーム作成");
+  }
+  if (isFormDefinitionEdit(path, method)) {
+    reasons.push("申請フォーム編集");
   }
   if (["users", "invitations", "auth"].includes(targetType)) {
     reasons.push("認証・ユーザ管理");
@@ -266,16 +275,11 @@ function classifyRisk(row: AdminAuditLogsViewProps["rows"][number], metadata: Au
   const method = (textValue(metadata.method) || row.actionType.split(":")[0] || "").toUpperCase();
   const statusCode = numberValue(metadata.statusCode);
 
-  if (
-    metadata.success === false ||
-    targetType === "auth" ||
-    isPermissionChangeOperation(path, method) ||
-    isFormDefinitionMutation(path, method) ||
-    (["users", "invitations"].includes(targetType) && ["POST", "PATCH", "DELETE"].includes(method))
-  ) {
+  if (isHighRiskOperation(path, method)) {
     return "high";
   }
   if (
+    metadata.success === false ||
     targetType === "export-jobs" ||
     ["DELETE", "PATCH"].includes(method) ||
     (statusCode !== null && statusCode >= 300)
@@ -285,24 +289,37 @@ function classifyRisk(row: AdminAuditLogsViewProps["rows"][number], metadata: Au
   return "low";
 }
 
-function isPermissionChangeOperation(path: string, method: string): boolean {
-  const cleanPath = path.split("?")[0] ?? "";
-  if (method.toUpperCase() !== "PATCH") {
-    return false;
-  }
+function isHighRiskOperation(path: string, method: string): boolean {
   return (
-    /\/users\/[^/]+\/role$/.test(cleanPath) ||
-    /\/groups\/[^/]+\/members\/[^/]+\/role$/.test(cleanPath)
+    isTenantUserPermissionChange(path, method) ||
+    isTenantUserInvitation(path, method) ||
+    isFormDefinitionCreate(path, method) ||
+    isFormDefinitionEdit(path, method)
   );
 }
 
-function isFormDefinitionMutation(path: string, method: string): boolean {
+function isTenantUserPermissionChange(path: string, method: string): boolean {
+  const cleanPath = path.split("?")[0] ?? "";
+  return method.toUpperCase() === "PATCH" && /\/users\/[^/]+\/role$/.test(cleanPath);
+}
+
+function isTenantUserInvitation(path: string, method: string): boolean {
+  const cleanPath = path.split("?")[0] ?? "";
+  return method.toUpperCase() === "POST" && cleanPath === "/invitations";
+}
+
+function isFormDefinitionCreate(path: string, method: string): boolean {
+  const cleanPath = path.split("?")[0] ?? "";
+  return method.toUpperCase() === "POST" && cleanPath === "/form-definitions";
+}
+
+function isFormDefinitionEdit(path: string, method: string): boolean {
   const cleanPath = path.split("?")[0] ?? "";
   const normalizedMethod = method.toUpperCase();
   if (!["POST", "PATCH"].includes(normalizedMethod)) {
     return false;
   }
-  if (!cleanPath.startsWith("/form-definitions")) {
+  if (!/^\/form-definitions\/[^/]+/.test(cleanPath)) {
     return false;
   }
   return !cleanPath.includes("/request-access");
