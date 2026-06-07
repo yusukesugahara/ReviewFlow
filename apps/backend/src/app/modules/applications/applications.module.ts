@@ -13,6 +13,7 @@ import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationAccessPolicy } from './application-access.policy';
+import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationProgressService } from './application-progress.service';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
@@ -41,6 +42,7 @@ import { PublicApplicationsController } from './public-applications.controller';
     ApplicationsService,
     ApplicantAccessGuard,
     ApplicationAccessPolicy,
+    ApplicationFieldValuePatchService,
     ApplicationFormValueValidator,
     ApplicationProgressService,
     ApplicationTransitionPolicy,
