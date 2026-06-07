@@ -37,14 +37,12 @@ describe("AdminDashboardView", () => {
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getAllByText("対応が必要").length).toBeGreaterThan(0);
     expect(screen.getByText("再提出レビュー中 2件")).toBeInTheDocument();
-    expect(screen.getAllByRole("link", { name: "新規申請" })[0]).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "フォーム" })).toHaveAttribute(
       "href",
-      "/space/space-1/applications/new",
+      "/space/space-1/applications",
     );
-    expect(screen.getAllByRole("link", { name: "申請一覧" })[0]).toHaveAttribute(
-      "href",
-      "/space/space-1/submissions",
-    );
+    expect(screen.queryByRole("link", { name: "新規申請" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("link", { name: "申請一覧" })).not.toBeInTheDocument();
   });
 
   // テスト内容: 取得エラーが表示されることを確認する

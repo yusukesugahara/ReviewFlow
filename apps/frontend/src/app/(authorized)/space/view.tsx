@@ -7,14 +7,12 @@ import {
   Clock3,
   FileText,
   ListChecks,
-  Plus,
   RotateCcw,
   Users,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
 import { formatDateTimeJa } from "@/lib/date-format";
 import type {
   AdminDashboardViewProps,
@@ -43,30 +41,13 @@ export function AdminDashboardView({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="space-y-1">
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
-            スペース概要
-          </h1>
-          <p className="text-sm text-slate-600">
-            所属スペースごとの申請状況、フォーム、メンバー構成を確認できます。
-          </p>
-        </div>
-        {selectedSpace ? (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button asChild size="sm">
-              <Link href={buildSpaceApplicationNewHref(selectedSpace.id)}>
-                <Plus className="size-4" aria-hidden="true" />
-                新規申請
-              </Link>
-            </Button>
-            <Button asChild size="sm" variant="outline">
-              <Link href={`/space/${encodeURIComponent(selectedSpace.id)}/submissions`}>
-                申請一覧
-              </Link>
-            </Button>
-          </div>
-        ) : null}
+      <div className="space-y-1">
+        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
+          スペース概要
+        </h1>
+        <p className="text-sm text-slate-600">
+          所属スペースごとの申請状況、フォーム、メンバー構成を確認できます。
+        </p>
       </div>
 
       <div className="grid gap-3 md:grid-cols-4">
@@ -202,19 +183,11 @@ function SpaceSummaryCard({
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button asChild size="sm" variant="outline">
+          <Button asChild size="sm" variant="outline" className="bg-white">
             <Link href={`/space/${encodeURIComponent(space.id)}/applications`}>
               <ListChecks className="size-4" aria-hidden="true" />
               フォーム
             </Link>
-          </Button>
-          <Button asChild size="sm" variant="outline">
-            <Link href={`/space/${encodeURIComponent(space.id)}/submissions`}>
-              申請一覧
-            </Link>
-          </Button>
-          <Button asChild size="sm">
-            <Link href={buildSpaceApplicationNewHref(space.id)}>新規申請</Link>
           </Button>
         </div>
       </CardContent>
