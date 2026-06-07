@@ -413,6 +413,10 @@ function getSpaceSwitcherHref(
     return params.size > 0 ? `${nextPathname}?${params.toString()}` : nextPathname;
   }
 
+  if (pathname.startsWith("/admin")) {
+    return `/space/${encodeURIComponent(spaceId)}/submissions`;
+  }
+
   params.set("spaceId", spaceId);
   return `${pathname}?${params.toString()}`;
 }
