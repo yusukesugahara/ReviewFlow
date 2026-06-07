@@ -89,12 +89,18 @@ export function buildAuditDisplay(
   };
 }
 
+function normalizeAuditPath(path: string): string {
+  const withoutQuery = path.split("?")[0] ?? "";
+  const trimmed = withoutQuery.replace(/\/+$/, "");
+  return trimmed.length > 0 ? trimmed : "/";
+}
+
 export function describeActionLabel(
   method: string,
   path: string,
   row: AdminAuditLogsViewProps["rows"][number],
 ): string {
-  const cleanPath = path.split("?")[0] ?? "";
+  const cleanPath = normalizeAuditPath(path);
   const normalizedMethod = method.toUpperCase();
 
   if (cleanPath.includes("/auth/login")) return "ログインしました";
@@ -177,7 +183,7 @@ export function describeTargetLabel(
   row: AdminAuditLogsViewProps["rows"][number],
   path: string,
 ): string {
-  const cleanPath = path.split("?")[0] ?? "";
+  const cleanPath = normalizeAuditPath(path);
   const segments = cleanPath.split("/").filter(Boolean);
   const resourceId = segments[1] && !isActionSegment(segments[1]) ? segments[1] : row.targetId;
 
@@ -299,22 +305,22 @@ function isHighRiskOperation(path: string, method: string): boolean {
 }
 
 function isTenantUserPermissionChange(path: string, method: string): boolean {
-  const cleanPath = path.split("?")[0] ?? "";
+  const cleanPath = normalizeAuditPath(path);
   return method.toUpperCase() === "PATCH" && /\/users\/[^/]+\/role$/.test(cleanPath);
 }
 
 function isTenantUserInvitation(path: string, method: string): boolean {
-  const cleanPath = path.split("?")[0] ?? "";
+  const cleanPath = normalizeAuditPath(path);
   return method.toUpperCase() === "POST" && cleanPath === "/invitations";
 }
 
 function isFormDefinitionCreate(path: string, method: string): boolean {
-  const cleanPath = path.split("?")[0] ?? "";
+  const cleanPath = normalizeAuditPath(path);
   return method.toUpperCase() === "POST" && cleanPath === "/form-definitions";
 }
 
 function isFormDefinitionEdit(path: string, method: string): boolean {
-  const cleanPath = path.split("?")[0] ?? "";
+  const cleanPath = normalizeAuditPath(path);
   const normalizedMethod = method.toUpperCase();
   if (!["POST", "PATCH"].includes(normalizedMethod)) {
     return false;
@@ -327,7 +333,7 @@ function isFormDefinitionEdit(path: string, method: string): boolean {
 
 function resolveResourceLabel(path: string, targetType: string): string {
   if (path.startsWith("/public/applications")) {
-    return TARGET_TYPE_LABELS.public;
+    return TARGET_TYPE_LABELS["public"] ?? "公開申請";
   }
   const firstSegment = path.split("/").filter(Boolean)[0] ?? targetType;
   return TARGET_TYPE_LABELS[firstSegment] ?? TARGET_TYPE_LABELS[targetType] ?? targetType;

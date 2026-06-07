@@ -218,6 +218,77 @@ describe("audit log helpers", () => {
     ).toBe("low");
   });
 
+  // テスト内容: 失敗した権限変更も高リスクとして分類されることを確認する
+  it("classifies failed role changes as high risk", () => {
+    expect(
+      enrichAuditRow({
+        id: "audit-role-failed",
+        actionType: "PATCH:users",
+        targetType: "users",
+        targetId: "user-12345678",
+        actorEmail: "admin@example.com",
+        metadataJson: metadata({
+          success: false,
+          errorCode: "FORBIDDEN",
+          path: "/users/user-12345678/role",
+          method: "PATCH",
+          statusCode: 403,
+        }),
+        createdAt: "2026-06-06T00:00:00.000Z",
+      }).risk,
+    ).toBe("high");
+  });
+
+  // テスト内容: 招待受諾と公開申請アクセス要求は高リスクにしないことを確認する
+  it("does not classify invitation accept or request-access as high risk", () => {
+    expect(
+      enrichAuditRow({
+        id: "audit-accept",
+        actionType: "POST:invitations",
+        targetType: "invitations",
+        metadataJson: metadata({
+          success: true,
+          path: "/invitations/accept",
+          method: "POST",
+          statusCode: 200,
+        }),
+        createdAt: "2026-06-06T00:00:00.000Z",
+      }).risk,
+    ).toBe("low");
+    expect(
+      enrichAuditRow({
+        id: "audit-request-access",
+        actionType: "POST:form-definitions",
+        targetType: "form-definitions",
+        metadataJson: metadata({
+          success: true,
+          path: "/form-definitions/groups/group-12345678/request-access",
+          method: "POST",
+          statusCode: 200,
+        }),
+        createdAt: "2026-06-06T00:00:00.000Z",
+      }).risk,
+    ).toBe("low");
+  });
+
+  // テスト内容: 末尾スラッシュ付きの申請フォーム作成も高リスクとして分類されることを確認する
+  it("classifies form creation with trailing slash as high risk", () => {
+    expect(
+      enrichAuditRow({
+        id: "audit-create-form-slash",
+        actionType: "POST:form-definitions",
+        targetType: "form-definitions",
+        metadataJson: metadata({
+          success: true,
+          path: "/form-definitions/",
+          method: "POST",
+          statusCode: 201,
+        }),
+        createdAt: "2026-06-06T00:00:00.000Z",
+      }).risk,
+    ).toBe("high");
+  });
+
   // テスト内容: 通常操作の監査ログに低リスクと通常操作理由が付くことを確認する
   it("enriches normal audit rows as low risk", () => {
     expect(
