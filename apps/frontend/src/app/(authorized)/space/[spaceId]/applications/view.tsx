@@ -1,7 +1,7 @@
-import { SpaceApplicationsPageContent } from "@/app/(authorized)/space/_components/space-applications-page-content";
 import type {
   SpaceApplicationsPageContentProps,
-} from "@/app/(authorized)/space/_components/space-applications.types";
+} from "@/components/space/space-applications.types";
+import { SpaceApplicationsPageContent } from "./_components/space-applications-page-content";
 
 export function SpaceApplicationsView(props: SpaceApplicationsPageContentProps) {
   return <SpaceApplicationsPageContent {...props} />;

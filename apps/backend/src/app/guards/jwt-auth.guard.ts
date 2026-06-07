@@ -8,6 +8,12 @@ import {
   clientError,
 } from '../../common/errors';
 
+/**
+ * JWT 認証ガード
+ *
+ * @param context ExecutionContext
+ * @returns boolean
+ */
 @Injectable()
 export class JwtAuthGuard extends AuthGuard('jwt') {
   constructor(private readonly reflector: Reflector) {

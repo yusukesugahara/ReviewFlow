@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { Button } from "@/components/ui/button";
-import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
+import { DynamicFieldsTable } from "@/components/applications/dynamic-fields";
 import { submitPublicApplicationAction } from "./actions";
 import type { PublicApplicationFormDefinition, PublicApplicationSubmitState } from "./types";
 

@@ -1,23 +1,29 @@
 "use server";
 
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { client } from "@/lib/server/backend-fetch";
-import type { AuthRegisterSuccessJson, RegisterRequestBody } from "@/lib/schema";
+import { errorMessageFromBody } from "@/lib/server/api-failure";
+import { parseAuthRegisterSuccess } from "@/lib/server/auth-response-schema";
+import type { RegisterRequestBody } from "@/lib/schema";
 import { persistAccessTokenCookie } from "../login/actions";
 
 export type SignupSchema = AuthCredentials & { next?: string };
 
+const signupFormSchema = z.object({
+  email: z.string().catch(""),
+  password: z.string().catch(""),
+  next: z.string().optional(),
+});
+
 function authCredentialsFromFormData(formData: FormData): SignupSchema {
-  const email = formData.get("email");
-  const password = formData.get("password");
-  const next = formData.get("next");
-  return {
-    email: typeof email === "string" ? email : "",
-    password: typeof password === "string" ? password : "",
-    ...(typeof next === "string" ? { next } : {}),
-  };
+  return signupFormSchema.parse({
+    email: formData.get("email"),
+    password: formData.get("password"),
+    next: formData.get("next") || undefined,
+  });
 }
 
 /**
@@ -26,34 +32,7 @@ function authCredentialsFromFormData(formData: FormData): SignupSchema {
  * @returns 認証エラーメッセージ
  */
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
-  return errorMessageFromBody(result.body);
-}
-
-function errorMessageFromBody(body: unknown): string {
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
-    if (Array.isArray(message)) {
-      return message.filter((item): item is string => typeof item === "string").join(", ");
-    }
-  }
-  return "登録に失敗しました";
-}
-
-function isAuthIssueTokensSuccessJson(json: unknown): json is AuthRegisterSuccessJson {
-  if (!json || typeof json !== "object") {
-    return false;
-  }
-  const root = json as Record<string, unknown>;
-  const data = root.data;
-  return (
-    (root.status === 200 || root.status === 201) &&
-    !!data &&
-    typeof data === "object" &&
-    typeof (data as { access_token?: unknown }).access_token === "string"
-  );
+  return errorMessageFromBody(result.body, "登録に失敗しました");
 }
 
 async function postAuthRegister(
@@ -63,14 +42,15 @@ async function postAuthRegister(
   | { ok: false; status: number; body: unknown }
 > {
   const response = await client.POST("/auth/register", { body });
-  if (!response.response.ok || !isAuthIssueTokensSuccessJson(response.data)) {
+  const data = parseAuthRegisterSuccess(response.data);
+  if (!response.response.ok || !data) {
     return {
       ok: false,
       status: response.response.status,
       body: response.error ?? response.data,
     };
   }
-  return { ok: true, accessToken: response.data.data.access_token };
+  return { ok: true, accessToken: data.data.access_token };
 }
 
 /**

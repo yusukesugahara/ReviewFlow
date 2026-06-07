@@ -1,6 +1,6 @@
-import { SpaceSubmissionsPageContent } from "@/app/(authorized)/space/_components/space-submissions-page-content";
-import type { ApplicationRow } from "@/app/(authorized)/space/_components/space-applications.types";
+import type { ApplicationRow } from "@/components/space/space-applications.types";
 import type { ExportJobResponse } from "@/lib/schema";
+import { SpaceSubmissionsPageContent } from "./_components/space-submissions-page-content";
 
 type SpaceSubmissionsViewProps = {
   applications: ApplicationRow[];

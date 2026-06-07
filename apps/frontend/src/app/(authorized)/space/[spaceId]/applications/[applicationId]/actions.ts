@@ -2,39 +2,31 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { z } from "zod";
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
-import type { ApplicationDetailViewModel } from "@/app/_components/applications/application-detail.types";
-import { buildSpaceSubmissionDetailHref } from "@/app/_components/applications/application-routes";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
+import type { ApplicationDetailViewModel } from "@/components/applications/application-detail.types";
+import { buildSpaceSubmissionDetailHref } from "@/components/applications/application-routes";
 
-type ApiFailure = { status: number; body: unknown };
+const optionalStringFormValueSchema = z.string().optional().catch(undefined);
+const optionalNonEmptyStringFormValueSchema = z
+  .string()
+  .trim()
+  .min(1)
+  .optional()
+  .catch(undefined);
 
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
+function readOptionalString(formData: FormData, key: string): string | undefined {
+  return optionalStringFormValueSchema.parse(formData.get(key) || undefined);
 }
 
-function isApiFailure(error: unknown): error is ApiFailure {
-  return (
-    !!error &&
-    typeof error === "object" &&
-    typeof (error as ApiFailure).status === "number" &&
-    "body" in error
-  );
-}
-
-function errorMessageFromBody(body: unknown): string {
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
-  }
-  return "申請の操作に失敗しました";
+function readOptionalNonEmptyString(
+  formData: FormData,
+  key: string,
+): string | undefined {
+  return optionalNonEmptyStringFormValueSchema.parse(formData.get(key) || undefined);
 }
 
 async function postApplicationAction(
@@ -84,11 +76,11 @@ export async function approveAction(
   applicationId: string,
   formData: FormData,
 ): Promise<void> {
-  const comment = formData.get("comment");
+  const comment = readOptionalString(formData, "comment");
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postApplicationAction("/applications/{id}/approve", applicationId, {
-      comment: typeof comment === "string" ? comment : undefined,
+      comment,
     });
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
@@ -101,11 +93,11 @@ export async function rejectAction(
   applicationId: string,
   formData: FormData,
 ): Promise<void> {
-  const comment = formData.get("comment");
+  const comment = readOptionalString(formData, "comment");
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postApplicationAction("/applications/{id}/reject", applicationId, {
-      comment: typeof comment === "string" ? comment : undefined,
+      comment,
     });
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
@@ -119,17 +111,16 @@ export async function returnAction(
   fieldMap: Array<{ id: string; key: string }>,
   formData: FormData,
 ): Promise<void> {
-  const overallComment = formData.get("overallComment");
+  const overallComment = readOptionalNonEmptyString(formData, "overallComment");
   const fields: Array<{ fieldId: string; comment?: string }> = [];
   for (const field of fieldMap) {
     const selected = formData.get(`return:${field.id}`) === "on";
     if (!selected) {
       continue;
     }
-    const comment = formData.get(`comment:${field.id}`);
     fields.push({
       fieldId: field.id,
-      comment: typeof comment === "string" && comment.trim().length > 0 ? comment : undefined,
+      comment: readOptionalNonEmptyString(formData, `comment:${field.id}`),
     });
   }
 
@@ -145,9 +136,7 @@ export async function returnAction(
   try {
     updated = await postApplicationAction("/applications/{id}/return", applicationId, {
       overallComment:
-        typeof overallComment === "string" && overallComment.trim().length > 0
-          ? overallComment
-          : undefined,
+        overallComment,
       fields,
     });
   } catch (error) {
@@ -179,12 +168,12 @@ export async function updateDescriptionAction(
   definitionId: string,
   formData: FormData,
 ): Promise<void> {
-  const description = formData.get("description");
+  const description = readOptionalString(formData, "description");
   const detailHref = buildFormDetailHref(spaceId, applicationId, definitionId);
   const response = await client.PATCH("/form-definitions/{id}/description", {
     params: { path: { id: definitionId } },
     body: {
-      description: typeof description === "string" ? description : undefined,
+      description,
     },
     headers: await authHeadersOrRedirect(),
   });
@@ -315,5 +304,5 @@ function applicationActionErrorMessage(error: unknown): string {
     return "未解決の差し戻し依頼がないため、メールを再送できません。";
   }
 
-  return `${errorMessageFromBody(error.body)}（status: ${error.status}）`;
+  return `${errorMessageFromBody(error.body, "申請の操作に失敗しました")}（status: ${error.status}）`;
 }

@@ -3,7 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { isApiFailure } from "@/lib/server/api-failure";
 import {
   addGroupMemberSchema,
   updateGroupMemberRoleSchema,
@@ -12,20 +13,6 @@ import type {
   AddGroupMemberBody,
   UpdateGroupMemberRoleBody,
 } from "@/lib/schema";
-
-type ApiFailure = { status: number };
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is ApiFailure {
-  return !!error && typeof error === "object" && typeof (error as ApiFailure).status === "number";
-}
 
 function spaceUsersErrorMessage(error: unknown, fallback: string) {
   if (!isApiFailure(error)) {

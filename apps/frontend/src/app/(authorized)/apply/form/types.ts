@@ -1,4 +1,4 @@
-import type { DynamicFormField } from "@/app/_components/applications/dynamic-fields";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields";
 import type { FormDefinitionResponse } from "@/lib/schema";
 
 export type PublicApplicationFormPageProps = {

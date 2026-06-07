@@ -1,8 +1,4 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
-import { PageHeader } from "@/app/_components/enterprise/page-header";
-import { buildSpaceApplicationsHref } from "@/app/_components/applications/application-routes";
-import { ApplicationSetupDraftForm } from "@/app/(authorized)/space/_components/application-setup-draft-form";
+import { ApplicationSetupDraftForm } from "@/components/application-setup/application-setup-draft-form";
 import { submitApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
@@ -44,17 +40,6 @@ export function SpaceNewApplicationView({
 }: SpaceNewApplicationViewProps) {
   return (
     <div className="space-y-6">
-      <PageHeader
-        eyebrow="Form builder"
-        title="申請フォーム作成"
-        description="申請項目と承認ステップを設定し、新しい申請フォームを作成します。"
-        actions={
-          <Button asChild variant="outline">
-            <Link href={buildSpaceApplicationsHref(spaceId)}>申請フォーム一覧へ戻る</Link>
-          </Button>
-        }
-      />
-
       {canManageSpace ? (
         <div className="space-y-4">
           <ApplicationSetupDraftForm

@@ -1,3 +1,7 @@
+"use client";
+
+import { useState } from "react";
+import { UserRoundPlus } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -6,6 +10,26 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { SPACE_ROLE_OPTIONS, SPACE_ROLES } from "@/lib/constants/roles";
 import { formatDateJa } from "@/lib/date-format";
 import { addSpaceMemberAction } from "./actions";
@@ -20,77 +44,43 @@ export function SpaceUsersView({
   isTenantAdmin,
   members,
   spaceId,
-  spaceName,
 }: SpaceUsersViewProps) {
+  const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
+  const hasAvailableUsers = availableUsers.length > 0;
+
   return (
     <div className="space-y-6">
-      <div>
-        <h2 className="text-3xl font-bold tracking-tight">メンバー</h2>
-        <p className="text-muted-foreground">
-          {spaceName} のユーザーとスペースロールを確認できます
-        </p>
-      </div>
-
       {error ? <SpaceUsersMessage message={error} /> : null}
       {formError ? <SpaceUsersMessage message={formError} /> : null}
 
-      {isTenantAdmin ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>ユーザーをスペースに追加</CardTitle>
-            <CardDescription>
-              同一テナント内の既存ユーザーを選択して、このスペースへ追加します
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form
-              action={addSpaceMemberAction.bind(null, spaceId)}
-              className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto]"
-            >
-              <select
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                name="userId"
-                required
-                disabled={availableUsers.length === 0}
-              >
-                <option value="">追加するユーザーを選択</option>
-                {availableUsers.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.name ?? user.email} / {user.email}
-                  </option>
-                ))}
-              </select>
-              <select
-                className="h-10 rounded-md border border-input bg-background px-3 text-sm"
-                name="role"
-                defaultValue={SPACE_ROLES.user}
-                disabled={availableUsers.length === 0}
-              >
-                {SPACE_ROLE_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-              <Button type="submit" disabled={availableUsers.length === 0}>
-                追加
-              </Button>
-            </form>
-            {availableUsers.length === 0 ? (
-              <p className="mt-3 text-sm text-muted-foreground">
-                追加できるユーザーはいません。
-              </p>
-            ) : null}
-          </CardContent>
-        </Card>
-      ) : null}
-
       <Card>
         <CardHeader>
-          <CardTitle>スペースユーザー一覧</CardTitle>
-          <CardDescription>
-            {members.length}名のユーザーが参加しています
-          </CardDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <CardTitle>スペースユーザー一覧</CardTitle>
+              <CardDescription>
+                {members.length}名のユーザーが参加しています
+              </CardDescription>
+            </div>
+            {isTenantAdmin ? (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      aria-label="ユーザーをスペースに追加"
+                      onClick={() => setIsAddMemberOpen(true)}
+                    >
+                      <UserRoundPlus aria-hidden="true" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>ユーザーをスペースに追加</TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            ) : null}
+          </div>
         </CardHeader>
         <CardContent>
           {members.length === 0 ? (
@@ -109,6 +99,74 @@ export function SpaceUsersView({
           )}
         </CardContent>
       </Card>
+
+      {isAddMemberOpen ? (
+        <DialogContent
+          titleId="space-user-add-title"
+          descriptionId="space-user-add-description"
+          onClose={() => setIsAddMemberOpen(false)}
+        >
+          <DialogHeader>
+            <DialogTitle id="space-user-add-title">
+              ユーザーをスペースに追加
+            </DialogTitle>
+            <DialogDescription id="space-user-add-description">
+              同一テナント内の既存ユーザーを選択して、このスペースへ追加します
+            </DialogDescription>
+          </DialogHeader>
+          <form
+            action={addSpaceMemberAction.bind(null, spaceId)}
+            className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto]"
+          >
+            <div className="space-y-1">
+              <Label htmlFor="space-user-add-user">ユーザー</Label>
+              <Select name="userId" required disabled={!hasAvailableUsers}>
+                <SelectTrigger id="space-user-add-user" className="bg-background">
+                  <SelectValue
+                    placeholder={
+                      hasAvailableUsers
+                        ? "追加するユーザーを選択"
+                        : "追加できるユーザーがいません"
+                    }
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  {availableUsers.map((user) => (
+                    <SelectItem key={user.id} value={user.id}>
+                      {user.name ?? user.email} / {user.email}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label htmlFor="space-user-add-role">スペースロール</Label>
+              <Select
+                name="role"
+                defaultValue={SPACE_ROLES.user}
+                disabled={!hasAvailableUsers}
+              >
+                <SelectTrigger id="space-user-add-role" className="bg-background">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {SPACE_ROLE_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <span className="block h-5" aria-hidden="true" />
+              <Button type="submit" disabled={!hasAvailableUsers}>
+                追加
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      ) : null}
     </div>
   );
 }

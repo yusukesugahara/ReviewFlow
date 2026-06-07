@@ -1,5 +1,5 @@
 import { SignupView } from "./view";
-import { getServerApiBaseUrl } from "@/lib/env";
+import { getServerApiBaseUrl } from "@/lib/server/env";
 
 async function fetchApiOriginReachable(): Promise<boolean> {
   try {

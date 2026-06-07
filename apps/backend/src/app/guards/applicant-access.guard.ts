@@ -3,13 +3,21 @@ import { ClientErrorCodes, clientError } from '../../common/errors';
 import {
   AuthService,
   type ApplicantAccessTokenPayload,
-} from '../modules/auth/auth.service';
+} from '../modules/auth/services/auth.service';
 
 type RequestWithApplicantSession = {
   applicantSession?: ApplicantAccessTokenPayload;
   headers: { [key: string]: string | string[] | undefined };
 };
 
+/**
+ * Applicant Access Guard
+ *
+ * 申請者がアクセスできるかどうかを判断する。
+ *
+ * @param context ExecutionContext
+ * @returns boolean
+ */
 @Injectable()
 export class ApplicantAccessGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}

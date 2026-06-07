@@ -1,14 +1,15 @@
-import type { DraftField } from "@/app/(authorized)/space/_components/application-setup-draft-form";
-import type { ApprovalStepItem } from "@/app/(authorized)/space/_components/approval-steps-builder";
+import type { DraftField } from "@/components/application-setup/application-setup-draft-form";
+import type { ApprovalStepItem } from "@/components/application-setup/approval-steps-builder";
 import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
-import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { isApiFailure } from "@/lib/server/api-failure";
+import { normalizeFieldOptions } from "@/components/applications/field-options";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   type ApplicationSetupError,
 } from "@/lib/constants/application-setup";
-import { FIELD_TYPES, type FieldType } from "@/lib/constants/form-fields";
+import { FIELD_TYPES, isFieldType, type FieldType } from "@/lib/constants/form-fields";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { updateReturnedApplicationAction } from "./actions";
 import type {
@@ -18,7 +19,6 @@ import type {
   EditableFormDefinition,
   EditableFormField,
   EditableGroupMember,
-  SpaceApplicationEditApiFailure,
   SpaceApplicationEditPageProps,
 } from "./types";
 import {
@@ -35,49 +35,13 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as { data: T }).data;
 }
 
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is SpaceApplicationEditApiFailure {
-  return !!error && typeof error === "object" && typeof (error as SpaceApplicationEditApiFailure).status === "number";
-}
-
 function asFieldType(value: string): FieldType {
-  return value === FIELD_TYPES.textarea ||
-    value === FIELD_TYPES.number ||
-    value === FIELD_TYPES.date ||
-    value === FIELD_TYPES.select ||
-    value === FIELD_TYPES.radio ||
-    value === FIELD_TYPES.checkbox
-    ? value
-    : FIELD_TYPES.text;
+  return isFieldType(value) ? value : FIELD_TYPES.text;
 }
 
 function optionsToText(options: unknown[] | null | undefined): string {
-  if (!Array.isArray(options)) {
-    return "";
-  }
-  return options
-    .map((option) => {
-      if (typeof option === "string") {
-        return option;
-      }
-      if (option && typeof option === "object") {
-        const raw = option as Record<string, unknown>;
-        if (typeof raw.label === "string") {
-          return raw.label;
-        }
-        if (typeof raw.value === "string") {
-          return raw.value;
-        }
-      }
-      return "";
-    })
+  return normalizeFieldOptions(options)
+    .map((option) => option.label || option.value)
     .filter((option) => option.length > 0)
     .join("\n");
 }

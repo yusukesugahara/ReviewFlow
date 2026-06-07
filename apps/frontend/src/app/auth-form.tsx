@@ -245,7 +245,7 @@ export function AuthForm({
                 ) : null}
               </div>
 
-              <Button type="submit" className="h-11 w-full" disabled={disabled} aria-busy={state.loading}>
+              <Button type="submit" className="w-full" disabled={disabled} aria-busy={state.loading}>
                 {state.loading ? submittingLabel : submitLabel}
               </Button>
             </form>

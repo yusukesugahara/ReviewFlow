@@ -1,7 +1,21 @@
 "use client";
 
 import { useState } from "react";
+import { Edit3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 
@@ -18,48 +32,57 @@ export function DescriptionEditModal({
 
   return (
     <>
-      <Button type="button" variant="outline" size="sm" onClick={() => setIsOpen(true)}>
-        編集
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => setIsOpen(true)}
+              aria-label="説明欄を編集"
+            >
+              <Edit3 aria-hidden="true" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>説明欄を編集</TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
       {isOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-          <button
-            type="button"
-            aria-label="説明編集モーダルを閉じる"
-            className="absolute inset-0 bg-slate-950/40"
-            onClick={() => setIsOpen(false)}
-          />
-          <div className="relative w-full max-w-lg rounded-lg border border-slate-200 bg-white p-6 shadow-xl">
-            <div>
-              <h3 className="text-lg font-semibold text-slate-950">説明欄を編集</h3>
-              <p className="mt-1 text-sm text-slate-500">
-                利用者に表示するフォーム説明を更新します。
-              </p>
+        <DialogContent
+          titleId="description-edit-title"
+          descriptionId="description-edit-description"
+          onClose={() => setIsOpen(false)}
+        >
+          <DialogHeader>
+            <DialogTitle id="description-edit-title">説明欄を編集</DialogTitle>
+            <DialogDescription id="description-edit-description">
+              利用者に表示するフォーム説明を更新します。
+            </DialogDescription>
+          </DialogHeader>
+          <form action={action} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="form-description">説明</Label>
+              <Textarea
+                id="form-description"
+                name="description"
+                defaultValue={initialDescription}
+                rows={8}
+                placeholder="申請前に伝えたい内容を入力してください"
+              />
             </div>
-            <form action={action} className="mt-5 space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="form-description">説明</Label>
-                <Textarea
-                  id="form-description"
-                  name="description"
-                  defaultValue={initialDescription}
-                  rows={8}
-                  placeholder="申請前に伝えたい内容を入力してください"
-                />
-              </div>
-              <div className="flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setIsOpen(false)}
-                >
-                  キャンセル
-                </Button>
-                <Button type="submit">保存</Button>
-              </div>
-            </form>
-          </div>
-        </div>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsOpen(false)}
+              >
+                キャンセル
+              </Button>
+              <Button type="submit">保存</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
       ) : null}
     </>
   );

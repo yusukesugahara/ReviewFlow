@@ -1,30 +1,22 @@
-import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { TENANT_ROLES } from "@/lib/constants/roles";
-import { SpaceEmptyState } from "@/app/(authorized)/space/_components/space-empty-state";
+import { SpaceEmptyState } from "@/components/space/space-empty-state";
 import type {
   GroupAvailableUsersSuccessJson,
   GroupMembersListSuccessJson,
   GroupsListSuccessJson,
 } from "@/lib/schema";
 import type {
-  SpaceUsersApiFailure,
   SpaceUsersAvailableUser,
   SpaceUsersGroup,
   SpaceUsersMember,
   SpaceUsersPageProps,
 } from "./types";
 import { SpaceUsersErrorView, SpaceUsersView } from "./view";
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
 
 async function listSpaces(headers: { Authorization: string }): Promise<SpaceUsersGroup[]> {
   const response = await client.GET("/groups", { headers });
@@ -85,7 +77,6 @@ export default async function SpaceUsersPage({ searchParams }: SpaceUsersPagePro
     }
 
     const isTenantAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
-    const currentSpace = spaces.find((space) => space.id === spaceId);
     const [members, availableUsers] = await Promise.all([
       listSpaceMembers(spaceId, authHeaders),
       isTenantAdmin ? listAvailableUsers(spaceId, authHeaders) : Promise.resolve([]),
@@ -100,17 +91,12 @@ export default async function SpaceUsersPage({ searchParams }: SpaceUsersPagePro
         isTenantAdmin={isTenantAdmin}
         members={members}
         spaceId={spaceId}
-        spaceName={currentSpace?.name ?? "選択中スペース"}
       />
     );
   } catch (error) {
     return (
       <SpaceUsersErrorView
-        status={
-          error && typeof error === "object" && typeof (error as SpaceUsersApiFailure).status === "number"
-            ? (error as SpaceUsersApiFailure).status
-            : undefined
-        }
+        status={isApiFailure(error) ? error.status : undefined}
       />
     );
   }

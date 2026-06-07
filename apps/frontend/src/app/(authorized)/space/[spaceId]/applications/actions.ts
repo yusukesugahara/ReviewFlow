@@ -3,15 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 
 function applicationsPath(spaceId: string, archived = false): string {
   const base = `/space/${encodeURIComponent(spaceId)}/applications`;

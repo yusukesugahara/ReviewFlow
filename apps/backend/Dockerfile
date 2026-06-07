@@ -30,9 +30,12 @@ COPY apps/backend/package.json ./apps/backend/package.json
 RUN npm ci --omit=dev -w backend && npm cache clean --force
 
 COPY --from=builder /app/apps/backend/dist ./apps/backend/dist
+COPY apps/backend/scripts/docker-entrypoint.sh ./apps/backend/scripts/docker-entrypoint.sh
+RUN chmod +x ./apps/backend/scripts/docker-entrypoint.sh
 
 ENV PORT=3000
 EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
   CMD node -e "require('http').get('http://127.0.0.1:'+process.env.PORT+'/health',(r)=>process.exit(r.statusCode===200?0:1)).on('error',()=>process.exit(1))"
+ENTRYPOINT ["./apps/backend/scripts/docker-entrypoint.sh"]
 CMD ["node", "apps/backend/dist/main.js"]

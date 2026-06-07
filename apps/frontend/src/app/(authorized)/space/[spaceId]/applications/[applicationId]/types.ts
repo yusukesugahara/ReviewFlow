@@ -1,7 +1,7 @@
 import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
-} from "@/app/_components/applications/application-detail.types";
+} from "@/components/applications/application-detail.types";
 
 export type SpaceApplicationDetailPageProps = {
   params: Promise<{ spaceId: string; applicationId: string }>;

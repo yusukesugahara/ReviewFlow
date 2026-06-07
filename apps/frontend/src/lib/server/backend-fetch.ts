@@ -2,7 +2,7 @@ import "server-only";
 
 import createClient from "openapi-fetch";
 import type { ApiPaths } from "@/lib/schema";
-import { getServerApiBaseUrl, getServerAuthEnv } from "@/lib/env";
+import { getServerApiBaseUrl, getServerAuthEnv } from "@/lib/server/env";
 
 export const client = createClient<ApiPaths>({
   baseUrl: getServerApiBaseUrl(),

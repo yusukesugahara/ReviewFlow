@@ -1,4 +1,4 @@
-import { getServerApiBaseUrl } from "@/lib/env";
+import { getServerApiBaseUrl } from "@/lib/server/env";
 import { LogoutView } from "./view";
 
 async function fetchApiOriginReachable(): Promise<boolean> {

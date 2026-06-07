@@ -1,6 +1,12 @@
 import Link from "next/link";
 import { ArrowLeft, CalendarClock, ClipboardList, Edit3 } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Card,
@@ -9,26 +15,27 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ApplicantApplicationActions } from "@/app/_components/applications/applicant-application-actions";
-import { ApplicationStatusBadge } from "@/app/_components/applications/application-status-badge";
-import { PublicApplicationUrlCard } from "@/app/_components/applications/public-application-url-card";
-import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
+import { ApplicantApplicationActions } from "@/components/applications/applicant-application-actions";
+import { ApplicationStatusBadge } from "@/components/applications/application-status-badge";
+import { PublicApplicationUrlCopyButton } from "@/components/applications/public-application-url-card";
+import { DynamicFieldsTable } from "@/components/applications/dynamic-fields";
 import {
   ApplicationDetailView,
   ApprovalProgressDiagram,
-} from "@/app/_components/applications/application-detail-view";
-import { ReviewerApplicationActions } from "@/app/_components/applications/reviewer-application-actions";
-import { buildSpaceApplicationEditHrefByIds } from "@/app/_components/applications/application-routes";
+} from "@/components/applications/application-detail-view";
+import { ReviewerApplicationActions } from "@/components/applications/reviewer-application-actions";
+import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/application-routes";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { formatDateTimeJa } from "@/lib/date-format";
+import { cn } from "@/lib/utils";
 import { DescriptionEditModal } from "./description-edit-modal";
 import type {
   ApplicationCorrection,
   ApplicationCorrectionTargetItem,
   ApplicationDetailViewModel,
   ApplicationFormField,
-} from "@/app/_components/applications/application-detail.types";
-import type { ApplicationCapabilities } from "@/app/_components/applications/application-capabilities";
+} from "@/components/applications/application-detail.types";
+import type { ApplicationCapabilities } from "@/components/applications/application-capabilities";
 import type { FormDetailViewProps } from "./types";
 
 type ApplicationDetailScreenProps = {
@@ -87,12 +94,6 @@ export function FormDetailView({
             利用者に公開する申請フォームの内容と受付状況を確認できます
           </p>
         </div>
-        <Button asChild className="shrink-0">
-          <Link href={editHref}>
-            <Edit3 aria-hidden="true" />
-            編集
-          </Link>
-        </Button>
       </div>
 
       <Card className="overflow-hidden">
@@ -123,6 +124,7 @@ export function FormDetailView({
                 action={descriptionAction}
                 initialDescription={definition?.description ?? ""}
               />
+              <PublicApplicationUrlCopyButton path={publicApplicationUrlPath} />
             </div>
           </div>
         </CardHeader>
@@ -152,8 +154,6 @@ export function FormDetailView({
         <InfoPanel label="確認待ち件数" value={waitingCount} tone="slate" />
       </div>
 
-      <PublicApplicationUrlCard path={publicApplicationUrlPath} />
-
       <Card className="overflow-hidden">
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
@@ -163,12 +163,20 @@ export function FormDetailView({
                 利用者が申請時に見る入力フォームです
               </CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
-              <Link href={editHref}>
-                <Edit3 aria-hidden="true" />
-                編集
-              </Link>
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link
+                    href={editHref}
+                    className={cn(buttonVariants({ variant: "outline", size: "icon" }))}
+                    aria-label="フォームの内容を編集"
+                  >
+                    <Edit3 aria-hidden="true" />
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent>フォームの内容を編集</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </CardHeader>
         <CardContent>

@@ -3,19 +3,24 @@
 ## 認証系
 - /login
 - /signup
+- /forgot-password
+- /password-reset
 - /invitations/accept
-- /apply/access
+- /logout
+- /apply/[groupId] … 公開申請アクセス要求
+- /apply/access … 申請者トークンを HttpOnly クッキーに設定
 - /apply/form
 - /apply/correction
 
 ## tenant_admin
-- /admin … /admin/spaces へリダイレクトする管理エントリポイント
-- /admin/spaces
-- /admin/invitations
-- /admin/audit-logs
+- /admin … `/admin/spaces` へリダイレクトする管理エントリポイント
+- /admin/spaces … スペース CRUD・メンバー管理
+- /admin/invitations … テナントユーザー招待・ロール変更
+- /admin/audit-logs … 監査ログ一覧
+- /admin/export-jobs … `/admin/spaces` へリダイレクト（CSV は submissions 側へ移行）
 
-## tenant_user
-- /space
+## tenant_user / tenant_admin 共通
+- /space … **使用状況ダッシュボード**（申請件数・平均差し戻し数・再提出件数）
 - /space/[spaceId]/applications
 - /space/[spaceId]/applications/new
 - /space/[spaceId]/applications/[applicationId]
@@ -27,11 +32,15 @@
 
 CSV出力はテナント管理ではなく、スペース配下の申請一覧 `/space/[spaceId]/submissions` の「すべての申請」右上にあるCSV出力ボタンから実行する。ボタン押下後のモーダルで申請フォームを選択し、CSV作成を開始する。
 
-申請一覧のサマリーカードは一覧フィルタとして動作する。「対応が必要」は `submitted` / `in_review` / `returned` の申請を表示し、「直近7日間に対応」は `approved` / `rejected` かつ更新日時が直近7日以内の申請を表示する。
+申請一覧のサマリーカードは一覧フィルタとして動作する。「対応が必要」は `in_review` / `returned` の申請を表示し、「直近7日間に対応」は `approved` / `rejected` かつ更新日時が直近7日以内の申請を表示する。
 
 `/space/application-setup` は申請フォーム定義と承認フロー定義を作成する入口として扱う。申請者が提出する個別申請の作成は `/space/[spaceId]/applications/new` に寄せる。
 
 ## UI方針
+ビジュアルデザイン、shadcn/ui の使い方、Tailwind のトークン、ボタン・テーブル・状態表示・アクセシビリティの詳細ルールは [UIデザインルール](14_ui_design_rules.md) に集約する。
+
+この文書では、画面構成と業務フローに関わる UI 方針だけを扱う。
+
 - フォームは FormField 定義に従って動的描画する
 - returned 状態の申請編集画面では、修正対象項目のみ活性化する
 - 差し戻しメールから開く `/apply/correction` は、申請時と同じ動的フォームUIで修正対象項目のみ表示する
@@ -65,6 +74,7 @@ field_type ごとにコンポーネントを分ける。
 ```ts
 const editable =
   application.status === "draft" ||
+  application.status === "published" ||
   (application.status === "returned" && correctionFieldIds.includes(field.id));
 ```
 

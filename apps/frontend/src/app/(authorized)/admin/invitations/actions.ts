@@ -5,30 +5,12 @@ import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { createInvitationSchema } from "@/lib/auth-schema";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import type {
   CreateInvitationBody,
   CreateInvitationSuccessJson,
 } from "@/lib/schema";
-
-type ApiFailure = { status: number; body: unknown };
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is ApiFailure {
-  return (
-    !!error &&
-    typeof error === "object" &&
-    typeof (error as { status?: unknown }).status === "number" &&
-    "body" in error
-  );
-}
 
 function invitationErrorMessage(error: unknown) {
   if (!isApiFailure(error)) {
@@ -46,11 +28,9 @@ function invitationErrorMessage(error: unknown) {
     }
   }
 
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
+  const message = errorMessageFromBody(body, "");
+  if (message) {
+    return message;
   }
 
   if (error.status === 403) {
@@ -67,12 +47,9 @@ function userDeleteErrorMessage(error: unknown) {
     return "ユーザーの削除に失敗しました";
   }
 
-  const body = error.body;
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
+  const message = errorMessageFromBody(error.body, "");
+  if (message) {
+    return message;
   }
 
   if (error.status === 403) {
@@ -92,12 +69,9 @@ function userRestoreErrorMessage(error: unknown) {
     return "ユーザーの復活に失敗しました";
   }
 
-  const body = error.body;
-  if (body && typeof body === "object" && "message" in body) {
-    const message = (body as { message?: unknown }).message;
-    if (typeof message === "string" && message.length > 0) {
-      return message;
-    }
+  const message = errorMessageFromBody(error.body, "");
+  if (message) {
+    return message;
   }
 
   if (error.status === 403) {

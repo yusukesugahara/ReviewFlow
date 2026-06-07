@@ -2,7 +2,7 @@ import { defineConfig, devices } from "@playwright/test";
 import {
   getInheritedProcessEnv,
   getPlaywrightConfigEnv,
-} from "./src/lib/env";
+} from "./src/lib/e2e-env";
 
 const p = getPlaywrightConfigEnv();
 

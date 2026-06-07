@@ -1,52 +1,25 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import {
-  readDynamicValuesFromFormData,
-  type DynamicFormField,
-} from "@/app/_components/applications/dynamic-fields";
+import { z } from "zod";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields";
+import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-field-form-data";
+import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-field-schema";
+import { validateRequiredDynamicFields } from "@/components/applications/dynamic-field-validation";
 import { client } from "@/lib/server/backend-fetch";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import type {
   CreatePublicApplicationBody,
   CreatePublicApplicationSuccessJson,
 } from "@/lib/schema";
-import { errorMessageFromBody, isApiFailure, isDynamicFormField } from "./helpers";
 import { applicantHeaders } from "./server";
 import type { PublicApplicationSubmitState } from "./types";
 
-function valuePresent(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return false;
-  }
-  if (typeof value === "string") {
-    return value.trim().length > 0;
-  }
-  if (typeof value === "number") {
-    return Number.isFinite(value);
-  }
-  if (typeof value === "boolean") {
-    return true;
-  }
-  if (Array.isArray(value)) {
-    return value.length > 0;
-  }
-  return true;
-}
-
-function validateRequiredFields(
-  fields: DynamicFormField[],
-  values: Record<string, unknown>,
-): { fieldErrors: Record<string, string>; missingFieldLabels: string[] } {
-  const errors: Record<string, string> = {};
-  const missingFieldLabels: string[] = [];
-  for (const field of fields) {
-    if (field.required && !valuePresent(values[field.fieldKey])) {
-      errors[field.fieldKey] = "必須項目です";
-      missingFieldLabels.push(field.label);
-    }
-  }
-  return { fieldErrors: errors, missingFieldLabels };
-}
+const publicApplicationFormSchema = z.object({
+  groupId: z.string().min(1),
+  formDefinitionId: z.string().min(1),
+  fieldsJson: z.string().min(1),
+});
 
 export async function submitPublicApplicationAction(
   _previousState: PublicApplicationSubmitState,
@@ -56,30 +29,28 @@ export async function submitPublicApplicationAction(
   const formDefinitionId = formData.get("formDefinitionId");
   const fieldsJson = formData.get("fieldsJson");
 
-  if (
-    typeof groupId !== "string" ||
-    typeof formDefinitionId !== "string" ||
-    typeof fieldsJson !== "string"
-  ) {
+  const parsedForm = publicApplicationFormSchema.safeParse({
+    groupId,
+    formDefinitionId,
+    fieldsJson,
+  });
+  if (!parsedForm.success) {
     redirect("/apply/form?formError=入力内容を確認してください");
   }
 
   let fields: DynamicFormField[] = [];
   try {
-    const parsed: unknown = JSON.parse(fieldsJson);
-    if (Array.isArray(parsed)) {
-      fields = parsed.filter(isDynamicFormField);
-    }
+    fields = parseDynamicFormFieldsJson(parsedForm.data.fieldsJson);
   } catch {
     redirect("/apply/form?formError=入力内容を確認してください");
   }
 
   const body: CreatePublicApplicationBody = {
-    groupId,
-    formDefinitionId,
+    groupId: parsedForm.data.groupId,
+    formDefinitionId: parsedForm.data.formDefinitionId,
     values: readDynamicValuesFromFormData(fields, formData),
   };
-  const { fieldErrors, missingFieldLabels } = validateRequiredFields(
+  const { fieldErrors, missingFieldLabels } = validateRequiredDynamicFields(
     fields,
     body.values ?? {},
   );
@@ -102,7 +73,7 @@ export async function submitPublicApplicationAction(
     }
   } catch (error) {
     const message = isApiFailure(error)
-      ? errorMessageFromBody(error.body)
+      ? errorMessageFromBody(error.body, "submit_failed")
       : "submit_failed";
     return {
       formError:

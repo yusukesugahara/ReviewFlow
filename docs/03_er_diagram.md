@@ -258,7 +258,7 @@ erDiagram
 - `PK` は主キー、`FK` は外部キー、`UK` は一意キーを示す。
 - `tenant_id` はテナント所有データの分離境界であり、業務テーブルの検索・更新では認証済みユーザーのテナントで必ず絞り込む。
 - `group_id` はスペース境界であり、フォーム、承認フロー、申請、CSV出力などの業務データをスペース単位で分離する。
-- `*_json` は MySQL では JSON 型、SQLite テスト環境では TypeORM の互換表現で保持する想定。
+- `*_json` は PostgreSQL では `json` 型、一部カラムは TypeORM の `simple-json` で保持する。
 - `created_at` / `updated_at` は TypeORM の自動日時カラムで、業務イベントの発生時刻を明示したい場合は `acted_at` や `submitted_at` などの専用カラムを使う。
 
 ## tenants
@@ -390,7 +390,7 @@ erDiagram
 - form_definition_id: string (FK -> form_definitions.id)
 - approval_flow_id: string (FK -> approval_flows.id)
 - current_step_order: int nullable
-- status: enum(draft, published, submitted, in_review, returned, approved, rejected)
+- status: enum(draft, published, submitted, in_review, returned, approved, rejected) — `submitted` は DB 互換用。実行時の提出・再提出は `in_review` に直接遷移する
 - submitted_at: datetime nullable
 - created_at: datetime
 - updated_at: datetime

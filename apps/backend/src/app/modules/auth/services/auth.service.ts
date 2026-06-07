@@ -1,0 +1,183 @@
+import { Injectable } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+import { randomBytes } from 'node:crypto';
+import * as bcrypt from 'bcrypt';
+import { ClientErrorCodes, clientError } from '../../../../common/errors';
+import { User } from '../../../../models/entities/user.entity';
+import { AuthRepository } from '../../../../models/repositories/auth.repository';
+import type { AccessTokenPayload } from '../../../../strategies/jwt.strategy';
+import { UsersService } from '../../users/services/users.service';
+import { MailService } from '../../mail/services/mail.service';
+import type {
+  ConfirmPasswordResetDto,
+  LoginDto,
+  RegisterDto,
+  RequestPasswordResetDto,
+} from '../dto/auth.dto';
+
+const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
+
+export type ApplicantAccessTokenPayload = {
+  kind: 'applicant_access';
+  tenantId: string;
+  email: string;
+  groupId: string;
+  formDefinitionId?: string;
+  applicationId?: string;
+};
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private readonly authRepository: AuthRepository,
+    private readonly usersService: UsersService,
+    private readonly mailService: MailService,
+    private readonly jwtService: JwtService,
+  ) {}
+
+  async register(dto: RegisterDto) {
+    const email = dto.email.toLowerCase();
+    const taken = await this.usersService.findAllByEmail(email);
+    if (taken.length > 0) {
+      throw clientError(ClientErrorCodes.AUTH_EMAIL_TAKEN);
+    }
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const tenantName = dto.organizationName?.trim() || 'My workspace';
+
+    const user = await this.authRepository.createTenantAdmin({
+      email,
+      passwordHash,
+      tenantName,
+    });
+
+    return this.issueTokens(user);
+  }
+
+  async requestPasswordReset(dto: RequestPasswordResetDto) {
+    const email = dto.email.toLowerCase();
+    const users = (await this.usersService.findAllByEmail(email)).filter(
+      (user) => user.isActive,
+    );
+
+    for (const user of users) {
+      const token = randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + PASSWORD_RESET_TTL_MS);
+      const saved = await this.authRepository.createPasswordResetToken({
+        tenantId: user.tenantId,
+        userId: user.id,
+        email: user.email,
+        token,
+        expiresAt,
+      });
+
+      await this.mailService.sendPasswordResetEmail({
+        to: user.email,
+        resetToken: saved.token,
+        expiresAtIso: saved.expiresAt.toISOString(),
+      });
+    }
+
+    return { ok: true };
+  }
+
+  async confirmPasswordReset(dto: ConfirmPasswordResetDto) {
+    const row = await this.authRepository.findPasswordResetToken(dto.token);
+    if (!row || row.usedAt || new Date() > row.expiresAt) {
+      throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, 10);
+    await this.authRepository.updatePasswordAndMarkResetTokenUsed({
+      tokenRow: row,
+      passwordHash,
+    });
+
+    return { ok: true };
+  }
+
+  async login(dto: LoginDto) {
+    const email = dto.email.toLowerCase();
+    let candidates = await this.usersService.findAllByEmail(email);
+    if (candidates.length === 0) {
+      throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
+    }
+    if (dto.tenantId) {
+      candidates = candidates.filter((u) => u.tenantId === dto.tenantId);
+    }
+    if (candidates.length === 0) {
+      throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
+    }
+
+    const passwordMatches: User[] = [];
+    for (const u of candidates) {
+      if (await bcrypt.compare(dto.password, u.passwordHash)) {
+        passwordMatches.push(u);
+      }
+    }
+    if (passwordMatches.length === 0) {
+      throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
+    }
+    if (passwordMatches.length > 1) {
+      throw clientError(ClientErrorCodes.AUTH_TENANT_REQUIRED);
+    }
+    const user = passwordMatches[0];
+    if (!user.isActive) {
+      throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
+    }
+    return this.issueTokens(user);
+  }
+
+  /** 招待受諾後など、既存ユーザーに対してログイン相当のトークンを返す */
+  issueTokensForUser(user: User) {
+    return this.issueTokens(user);
+  }
+
+  issueApplicantAccessToken(input: {
+    tenantId: string;
+    email: string;
+    groupId: string;
+    formDefinitionId?: string;
+    applicationId?: string;
+  }): string {
+    const payload: ApplicantAccessTokenPayload = {
+      kind: 'applicant_access',
+      tenantId: input.tenantId,
+      email: input.email,
+      groupId: input.groupId,
+      formDefinitionId: input.formDefinitionId,
+      applicationId: input.applicationId,
+    };
+    return this.jwtService.sign(payload);
+  }
+
+  verifyApplicantAccessToken(token: string): ApplicantAccessTokenPayload {
+    const payload = this.jwtService.verify<ApplicantAccessTokenPayload>(token);
+    if (
+      payload.kind !== 'applicant_access' ||
+      !payload.tenantId ||
+      !payload.email ||
+      !payload.groupId
+    ) {
+      throw clientError(ClientErrorCodes.AUTH_JWT_UNAUTHORIZED);
+    }
+    return payload;
+  }
+
+  private issueTokens(user: User) {
+    const payload: AccessTokenPayload = {
+      sub: user.id,
+      email: user.email,
+      tenantId: user.tenantId,
+      role: user.role,
+    };
+    return {
+      access_token: this.jwtService.sign(payload),
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.role,
+        tenantId: user.tenantId,
+      },
+    };
+  }
+}
