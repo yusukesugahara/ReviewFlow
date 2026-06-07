@@ -22,7 +22,7 @@
 - fetchはserverコンポーネントで行う
 - typeは基本、schema.tsから、インポートして使う
 - typeはtypes fileに書く
-- useEffectは使わない
+- `useEffect` は原則避ける。ポーリングやブラウザ API 連携など、Server Component で代替できない場合のみ使用する（例: CSV エクスポートのジョブ状態監視）
 - 保守性を意識して書く
 - 可読性を意識して書く
 

@@ -11,6 +11,11 @@
 
 ## Auth
 
+すべての認証 API は `X-API-Key` ヘッダーが必要。成功レスポンスは `{ "status": 200, "data": ... }` 形式のラッパーで返す。
+
+### POST /auth/register
+新規テナントと初回 `tenant_admin` ユーザーを同時作成する。
+
 ### POST /auth/login
 request:
 ```json
@@ -19,44 +24,49 @@ request:
   "password": "password"
 }
 ```
-response:
+response（`data` 内）:
 ```json
 {
-  "accessToken": "jwt",
+  "access_token": "jwt",
   "user": {
     "id": "user_1",
     "tenantId": "tenant_1",
     "role": "tenant_admin",
-    "name": "Admin User",
     "email": "user@example.com"
   }
 }
 ```
 
-### GET /auth/me
-response:
+### POST /auth/me
+JWT 必須。response（`data` 内）:
 ```json
 {
   "id": "user_1",
   "tenantId": "tenant_1",
-  "role": "tenant_admin",
-  "name": "Admin User",
+  "roles": ["tenant_admin"],
   "email": "user@example.com"
 }
 ```
 
+### POST /auth/password-reset/request
+### POST /auth/password-reset/confirm
+### GET /auth/admin/ping
+`tenant_admin` 専用の疎通確認。
+
 ## Invitations
 
 ### POST /invitations
-権限: tenant_admin
+権限: tenant_admin（スペース指定時は space admin も可）
 request:
 ```json
 {
   "email": "member@example.com",
-  "role": "tenant_user"
+  "role": "tenant_user",
+  "groupId": "group_1",
+  "groupRole": "user"
 }
 ```
-招待作成時に受諾 URL を含む招待メールを送信する。レスポンスには受諾 token を返さない。
+`groupId` / `groupRole` は任意。招待作成時に受諾 URL を含む招待メールを送信する（`MAIL_ENABLED=0` で無効化可）。レスポンスには受諾 token を返さない。
 
 ### POST /invitations/accept
 request:
@@ -221,12 +231,11 @@ request:
 query: `groupId` 必須。指定 group 内の承認フロー一覧（`steps` を `step_order` 昇順で含む）。
 
 ### POST /approval-flows
-権限: tenant_admin, tenant_user（group admin）。参照する `formDefinitionId` のフォーム定義は同一テナント・同一 group に存在すること。`steps[].assigneeUserIds` は同一 group 所属ユーザーの配列で、1ステップに複数人を登録できる。後方互換のため `steps[].assigneeUserId` も受け付けるが、`assigneeUserIds` 指定時はこちらを優先する。`steps[].stepOrder` は **1 からの連番**で重複不可。
+権限: tenant_admin, tenant_user（group admin）。承認フローは **スペース（`groupId`）単位** で作成する。`formDefinitionId` は不要。`steps[].assigneeUserIds` は同一テナント内ユーザーの配列で、1 ステップに複数人を登録できる。後方互換のため `steps[].assigneeUserId` も受け付けるが、`assigneeUserIds` 指定時はこちらを優先する。`steps[].stepOrder` は **1 からの連番**で重複不可。
 request:
 ```json
 {
   "groupId": "group_1",
-  "formDefinitionId": "form_1",
   "name": "経費申請フロー",
   "steps": [
     {
@@ -337,7 +346,7 @@ request:
 
 ### POST /applications/:id/resubmit
 権限: tenant_user  
-`returned` かつ **open** の `correction_request` があるときのみ。修正対象フィールドと必須項目を再検証後、`returned` → `submitted` に戻し、correction は `resolved`。その後の承認処理開始で `in_review` に進む。
+`returned` かつ **open** の `correction_request` があるときのみ。修正対象フィールドと必須項目を再検証後、`returned` → `in_review` に遷移し（`current_step_order = 1`）、correction は `resolved`。
 
 ### GET /applications/:id/corrections
 権限: tenant_admin, group admin, 申請者, 現在または過去に担当した承認者  

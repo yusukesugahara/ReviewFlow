@@ -12,7 +12,7 @@ The goal is to build a clean, consistent, modern B2B SaaS-style interface using:
 - React
 - TypeScript
 - Tailwind CSS
-- shadcn/ui
+- shadcn/ui-compatible components (Radix UI + CVA + Tailwind; official shadcn CLI is not used)
 
 The UI should demonstrate not only visual quality, but also an understanding of business workflows, maintainable frontend architecture, permissions, status management, and usability.
 
@@ -340,10 +340,10 @@ Status labels must be short, clear, and business-friendly.
 Examples:
 
 ```tsx
-<Badge variant="secondary">Draft</Badge>
-<Badge>Submitted</Badge>
-<Badge variant="outline">Pending</Badge>
-<Badge variant="destructive">Rejected</Badge>
+<Badge variant="secondary">下書き</Badge>
+<Badge>レビュー中</Badge>
+<Badge variant="outline">差し戻し</Badge>
+<Badge variant="destructive">却下</Badge>
 ```
 
 Rules:
@@ -353,14 +353,14 @@ Rules:
 - Keep labels short.
 - Use consistent wording across the app.
 
-Recommended status labels:
+Recommended status labels (aligned with `APPLICATION_STATUS_LABELS` in the frontend):
 
-- `Draft`
-- `Submitted`
-- `Pending`
-- `Approved`
-- `Rejected`
-- `Returned`
+- `下書き` (`draft`)
+- `公開済み` (`published`)
+- `レビュー中` (`in_review`)
+- `差し戻し` (`returned`)
+- `承認` (`approved`)
+- `却下` (`rejected`)
 
 ---
 

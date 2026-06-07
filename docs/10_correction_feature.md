@@ -31,7 +31,7 @@
 ### POST /applications/:id/resubmit
 - 必須修正項目を満たしていれば再提出
 - correction_request.status = resolved
-- application.status = submitted
+- application.status = in_review（`current_step_order = 1` に戻す）
 
 ## UI要件
 共通の見た目、コンポーネント、状態表示、アクセシビリティのルールは [UIデザインルール](14_ui_design_rules.md) に従う。
