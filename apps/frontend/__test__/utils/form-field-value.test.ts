@@ -40,5 +40,6 @@ describe("form-field-value", () => {
     expect(renderFieldValue({ fieldType: "consent" }, false)).toBe("未同意");
     expect(renderFieldValue({ fieldType: "description" }, "ignored")).toBe("-");
     expect(renderFieldValue({ fieldType: "text" }, null)).toBe("-");
+    expect(renderFieldValue({ fieldType: "date" }, "2026-06-07")).toMatch(/2026/);
   });
 });

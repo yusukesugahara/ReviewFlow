@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { normalizeFieldOptions } from "@/components/applications/field-options";
+import { formatIsoDateDisplay } from "@/lib/iso-date";
 
 export type FieldOption = { value: string; label: string };
 
@@ -36,6 +37,9 @@ export function renderFieldValue(field: DisplayableFormField, value: unknown): s
   }
   const scalarValue = scalarDisplayValueSchema.safeParse(value);
   if (scalarValue.success) {
+    if (field.fieldType === "date" && typeof scalarValue.data === "string") {
+      return formatIsoDateDisplay(scalarValue.data) || scalarValue.data;
+    }
     const opts = normalizeFieldOptions(field.options);
     if (
       opts.length > 0 &&

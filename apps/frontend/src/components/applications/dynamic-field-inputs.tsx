@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { DynamicDateFieldInput } from "./dynamic-date-field-input";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -283,13 +284,11 @@ export function SectionFieldDisplay(props: DynamicFieldRendererProps) {
 
 export function ScalarFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, variant } = props;
+  if (field.fieldType === "date") {
+    return <DynamicDateFieldInput {...props} />;
+  }
   const isReadonlyNumber = readOnly && field.fieldType === "number";
-  const inputType =
-    field.fieldType === "number" && !isReadonlyNumber
-      ? "number"
-      : field.fieldType === "date"
-        ? "date"
-        : "text";
+  const inputType = field.fieldType === "number" && !isReadonlyNumber ? "number" : "text";
   const displayValue = isReadonlyNumber
     ? formatNumberDisplayValue(stringValue)
     : stringValue;
@@ -310,7 +309,6 @@ export function ScalarFieldInput(props: DynamicFieldRendererProps) {
             ? cn(
                 "rounded-none border-slate-300 bg-white shadow-none focus-visible:border-slate-900 focus-visible:ring-0",
                 field.fieldType === "number" && "text-right tabular-nums",
-                field.fieldType === "date" && "font-mono",
               )
             : undefined,
           readOnly && "bg-slate-50 font-medium text-slate-950",
