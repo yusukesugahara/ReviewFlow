@@ -81,7 +81,7 @@ export class ApplicationsRepository {
   ): Promise<Application[]> {
     return this.apps.find({
       where: { tenantId, groupId },
-      relations: ['formDefinition'],
+      relations: ['approvalFlow', 'approvalFlow.steps', 'formDefinition'],
       order: { createdAt: 'DESC' },
     });
   }

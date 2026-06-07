@@ -71,7 +71,7 @@ describe("SpaceNewApplicationView", () => {
     );
 
     expect(
-      screen.getByText("新規申請を作成するにはスペース管理者権限が必要です。"),
+      screen.getByText("申請フォームを作成するにはスペース管理者権限が必要です。"),
     ).toBeInTheDocument();
     expect(screen.queryByTestId("application-setup-draft-form")).not.toBeInTheDocument();
   });

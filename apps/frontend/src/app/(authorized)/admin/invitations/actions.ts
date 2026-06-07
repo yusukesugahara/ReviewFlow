@@ -21,7 +21,7 @@ function invitationErrorMessage(error: unknown) {
   if (body && typeof body === "object" && "errorCode" in body) {
     const errorCode = (body as { errorCode?: unknown }).errorCode;
     if (errorCode === "INVITATION_MEMBER_EXISTS") {
-      return "このメールアドレスのユーザーは既に登録されています";
+      return "このメールアドレスのユーザは既に登録されています";
     }
     if (errorCode === "INVITATION_PENDING_EXISTS") {
       return "このメールアドレスには既に保留中の招待があります";
@@ -37,14 +37,14 @@ function invitationErrorMessage(error: unknown) {
     return "招待を作成する権限がありません";
   }
   if (error.status === 409) {
-    return "既存ユーザーまたは保留中の招待と重複しています";
+    return "既存ユーザまたは保留中の招待と重複しています";
   }
   return `招待の作成に失敗しました（status: ${error.status}）`;
 }
 
 function userDeleteErrorMessage(error: unknown) {
   if (!isApiFailure(error)) {
-    return "ユーザーの削除に失敗しました";
+    return "ユーザの削除に失敗しました";
   }
 
   const message = errorMessageFromBody(error.body, "");
@@ -53,20 +53,20 @@ function userDeleteErrorMessage(error: unknown) {
   }
 
   if (error.status === 403) {
-    return "このユーザーを削除する権限がありません";
+    return "このユーザを削除する権限がありません";
   }
   if (error.status === 404) {
-    return "削除対象のユーザーが見つかりません";
+    return "削除対象のユーザが見つかりません";
   }
   if (error.status === 409) {
     return "最後のテナント管理者は削除できません";
   }
-  return `ユーザーの削除に失敗しました（status: ${error.status}）`;
+  return `ユーザの削除に失敗しました（status: ${error.status}）`;
 }
 
 function userRestoreErrorMessage(error: unknown) {
   if (!isApiFailure(error)) {
-    return "ユーザーの復活に失敗しました";
+    return "ユーザの復活に失敗しました";
   }
 
   const message = errorMessageFromBody(error.body, "");
@@ -75,12 +75,12 @@ function userRestoreErrorMessage(error: unknown) {
   }
 
   if (error.status === 403) {
-    return "このユーザーを復活する権限がありません";
+    return "このユーザを復活する権限がありません";
   }
   if (error.status === 404) {
-    return "復活対象のユーザーが見つかりません";
+    return "復活対象のユーザが見つかりません";
   }
-  return `ユーザーの復活に失敗しました（status: ${error.status}）`;
+  return `ユーザの復活に失敗しました（status: ${error.status}）`;
 }
 
 export async function createInvitationAction(
@@ -144,7 +144,7 @@ export async function deleteUserAction(userId: string): Promise<void> {
   }
 
   revalidatePath("/admin/invitations");
-  redirect("/admin/invitations?toast=success&message=ユーザーを削除しました");
+  redirect("/admin/invitations?toast=success&message=ユーザを削除しました");
 }
 
 export async function restoreUserAction(userId: string): Promise<void> {
@@ -165,5 +165,5 @@ export async function restoreUserAction(userId: string): Promise<void> {
   }
 
   revalidatePath("/admin/invitations");
-  redirect("/admin/invitations?toast=success&message=ユーザーを復活しました");
+  redirect("/admin/invitations?toast=success&message=ユーザを復活しました");
 }

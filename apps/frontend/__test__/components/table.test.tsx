@@ -15,7 +15,7 @@ describe("Table", () => {
   it("renders semantic table elements with shared table styling", () => {
     render(
       <Table>
-        <TableCaption>ユーザー一覧</TableCaption>
+        <TableCaption>ユーザ一覧</TableCaption>
         <TableHeader>
           <TableRow>
             <TableHead>メール</TableHead>
@@ -36,7 +36,7 @@ describe("Table", () => {
       </Table>,
     );
 
-    const table = screen.getByRole("table", { name: "ユーザー一覧" });
+    const table = screen.getByRole("table", { name: "ユーザ一覧" });
     expect(table).toHaveClass("w-full", "bg-white", "text-sm");
     expect(within(table).getByRole("columnheader", { name: "メール" })).toHaveClass(
       "h-11",

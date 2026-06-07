@@ -44,8 +44,8 @@ export default async function AdminInvitationsPage({
   } catch (error) {
     const message =
       typeof error === "number"
-        ? `ユーザー一覧の取得に失敗しました（status: ${error}）`
-        : "ユーザー一覧の取得に失敗しました";
+        ? `ユーザ一覧の取得に失敗しました（status: ${error}）`
+        : "ユーザ一覧の取得に失敗しました";
     return (
       <AdminInvitationsView
         {...params}

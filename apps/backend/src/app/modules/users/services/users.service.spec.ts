@@ -93,7 +93,7 @@ describe('UsersService', () => {
     });
 
     /**
-     * テナント内にユーザーがいない場合にエラーを返すこと
+     * テナント内にユーザがいない場合にエラーを返すこと
      */
     it('throws when user not in tenant', async () => {
       usersRepository.findByIdAndTenant.mockResolvedValue(null);
@@ -161,7 +161,7 @@ describe('UsersService', () => {
     });
 
     /**
-     * 他のユーザーをテナント管理者に昇格できること
+     * 他のユーザをテナント管理者に昇格できること
      */
     it('allows promoting another user to tenant_admin', async () => {
       const approver = {
@@ -201,7 +201,7 @@ describe('UsersService', () => {
     });
 
     /**
-     * テナント内にユーザーがいない場合にエラーを返すこと
+     * テナント内にユーザがいない場合にエラーを返すこと
      */
     it('throws when user not in tenant', async () => {
       usersRepository.findByIdAndTenant.mockResolvedValue(null);
@@ -232,7 +232,7 @@ describe('UsersService', () => {
     });
 
     /**
-     * 他のユーザーを削除できること
+     * 他のユーザを削除できること
      */
     it('deactivates another user when allowed', async () => {
       const target = {
@@ -253,7 +253,7 @@ describe('UsersService', () => {
 
   describe('restoreInTenant', () => {
     /**
-     * テナント内にユーザーがいない場合にエラーを返すこと
+     * テナント内にユーザがいない場合にエラーを返すこと
      */
     it('throws when user not in tenant', async () => {
       usersRepository.findByIdAndTenant.mockResolvedValue(null);
@@ -265,7 +265,7 @@ describe('UsersService', () => {
     });
 
     /**
-     * ユーザーを復活できること
+     * ユーザを復活できること
      */
     it('reactivates a user', async () => {
       const target = {

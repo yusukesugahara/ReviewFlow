@@ -17,6 +17,7 @@ export function mapApplicationToSummary(
   row: Application,
 ): ApplicationSummaryDto {
   const applicationName = row.formDefinition?.name ?? '';
+  const currentStepAssigneeUserIds = getCurrentStepAssigneeUserIds(row);
   return {
     id: row.id,
     groupId: row.groupId,
@@ -28,10 +29,26 @@ export function mapApplicationToSummary(
     applicantEmail: row.applicantEmail,
     applicantUserId: row.applicantUserId,
     currentStepOrder: row.currentStepOrder,
+    currentStepAssigneeUserIds,
     submittedAt: row.submittedAt ? row.submittedAt.toISOString() : null,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
+}
+
+function getCurrentStepAssigneeUserIds(row: Application): string[] {
+  if (row.currentStepOrder == null) {
+    return [];
+  }
+  const step = (row.approvalFlow?.steps ?? []).find(
+    (s) => s.stepOrder === row.currentStepOrder,
+  );
+  if (!step) {
+    return [];
+  }
+  return step.assigneeUserIds && step.assigneeUserIds.length > 0
+    ? step.assigneeUserIds
+    : [step.assigneeUserId];
 }
 
 export function mapApplicationToDetail(

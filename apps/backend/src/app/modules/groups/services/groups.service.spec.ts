@@ -86,7 +86,7 @@ describe('GroupsService', () => {
   });
 
   /**
-   * 現在のユーザーのスペースロールをグループごとに独立して返すこと
+   * 現在のユーザのスペースロールをグループごとに独立して返すこと
    */
   it('returns current user space roles independently per group', async () => {
     groupsRepository.findMembershipsWithGroupsByTenantAndUser.mockResolvedValue(

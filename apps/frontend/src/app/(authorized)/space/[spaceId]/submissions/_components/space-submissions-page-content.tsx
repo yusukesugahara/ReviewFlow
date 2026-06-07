@@ -28,13 +28,16 @@ import {
   buildSummaryFilterHref,
   filterApplications,
   isFormSetupApplication,
-  isPendingApplication,
+  isAssignedToCurrentUser,
   isRecentlyProcessedApplication,
+  isReturnedApplication,
+  isSpaceNeedsActionApplication,
   type SubmissionFilters,
 } from "./space-submissions.helpers";
 
 type SpaceSubmissionsPageContentProps = {
   applications: ApplicationRow[];
+  currentUserId: string | null;
   fetchErrorStatus?: number;
   filters: SubmissionFilters;
   latestExportJob: ExportJobResponse | null;
@@ -43,6 +46,7 @@ type SpaceSubmissionsPageContentProps = {
 
 export function SpaceSubmissionsPageContent({
   applications,
+  currentUserId,
   fetchErrorStatus,
   filters,
   latestExportJob,
@@ -59,11 +63,21 @@ export function SpaceSubmissionsPageContent({
 
   const submittedApplications = applications.filter((row) => !isFormSetupApplication(row));
   const exportFormOptions = buildExportFormOptions(submittedApplications);
-  const needsActionApplications = submittedApplications.filter(isPendingApplication);
+  const myNeedsActionApplications = submittedApplications.filter((row) =>
+    isAssignedToCurrentUser(row, currentUserId),
+  );
+  const spaceNeedsActionApplications = submittedApplications.filter(
+    isSpaceNeedsActionApplication,
+  );
+  const returnedApplications = submittedApplications.filter(isReturnedApplication);
   const recentProcessedApplications = submittedApplications.filter(
     isRecentlyProcessedApplication,
   );
-  const filteredApplications = filterApplications(submittedApplications, filters);
+  const filteredApplications = filterApplications(
+    submittedApplications,
+    filters,
+    currentUserId,
+  );
   const hasFilters =
     filters.applicant.length > 0 ||
     filters.createdFrom.length > 0 ||
@@ -80,13 +94,27 @@ export function SpaceSubmissionsPageContent({
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <SummaryCard
-          href={buildSummaryFilterHref(spaceId, "needsAction")}
-          isActive={filters.summary === "needsAction"}
-          label="対応が必要"
-          value={needsActionApplications.length}
+          href={buildSummaryFilterHref(spaceId, "myNeedsAction")}
+          isActive={filters.summary === "myNeedsAction"}
+          label="あなたの対応が必要"
+          value={myNeedsActionApplications.length}
+          tone="blue"
+        />
+        <SummaryCard
+          href={buildSummaryFilterHref(spaceId, "spaceNeedsAction")}
+          isActive={filters.summary === "spaceNeedsAction"}
+          label="スペース内で対応が必要"
+          value={spaceNeedsActionApplications.length}
           tone="amber"
+        />
+        <SummaryCard
+          href={buildSummaryFilterHref(spaceId, "returned")}
+          isActive={filters.summary === "returned"}
+          label="差し戻し後、再申請待ち"
+          value={returnedApplications.length}
+          tone="rose"
         />
         <SummaryCard
           href={buildSummaryFilterHref(spaceId, "recentProcessed")}
@@ -289,12 +317,14 @@ function SummaryCard({
   isActive: boolean;
   label: string;
   value: number;
-  tone: "amber" | "emerald";
+  tone: "amber" | "blue" | "emerald" | "rose";
 }) {
-  const toneClassName =
-    tone === "amber"
-      ? "border-amber-200 bg-amber-50 text-amber-900"
-      : "border-emerald-200 bg-emerald-50 text-emerald-900";
+  const toneClassName = {
+    amber: "border-amber-200 bg-amber-50 text-amber-900",
+    blue: "border-blue-200 bg-blue-50 text-blue-900",
+    emerald: "border-emerald-200 bg-emerald-50 text-emerald-900",
+    rose: "border-rose-200 bg-rose-50 text-rose-900",
+  }[tone];
   const activeClassName = isActive
     ? "ring-2 ring-offset-2 ring-slate-400"
     : "hover:border-slate-300 hover:bg-white";

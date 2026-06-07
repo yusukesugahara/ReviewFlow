@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CalendarClock, ClipboardList, Mail, Route } from "lucide-react";
+import { CalendarClock, ClipboardList, Route, UserRound } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -13,8 +13,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeJa } from "@/lib/date-format";
+import { renderFieldValue } from "@/lib/form-field-value";
 import { ApplicationStatusBadge } from "./application-status-badge";
-import { DynamicFieldInput, DynamicFieldsTable } from "./dynamic-fields";
+import { DynamicFieldsTable } from "./dynamic-fields";
 import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
 import type {
   ApplicationCorrection,
@@ -38,6 +39,49 @@ function formatDateTime(value?: string | null): string {
   return value ? formatDateTimeJa(value) : "-";
 }
 
+function formatFieldKeyLabel(fieldKey: string): string {
+  return fieldKey
+    .split("_")
+    .filter(Boolean)
+    .map((word) => {
+      const dictionary: Record<string, string> = {
+        applicant: "申請者",
+        procedure: "手続き",
+        type: "種別",
+        email: "メール",
+        name: "氏名",
+        address: "住所",
+        phone: "電話番号",
+        reason: "理由",
+        date: "日付",
+        content: "内容",
+      };
+      return dictionary[word] ?? word;
+    })
+    .join("");
+}
+
+function getCorrectionItemLabel(
+  item: Pick<ApplicationCorrection["items"][number], "formFieldId" | "fieldKey">,
+  fields: ApplicationFormField[],
+): string {
+  const field = fields.find(
+    (candidate) =>
+      candidate.id === item.formFieldId || candidate.fieldKey === item.fieldKey,
+  );
+  return field?.label ?? formatFieldKeyLabel(item.fieldKey);
+}
+
+function getCorrectionItemField(
+  item: Pick<ApplicationCorrection["items"][number], "formFieldId" | "fieldKey">,
+  fields: ApplicationFormField[],
+): ApplicationFormField | undefined {
+  return fields.find(
+    (candidate) =>
+      candidate.id === item.formFieldId || candidate.fieldKey === item.fieldKey,
+  );
+}
+
 export function ApplicationBasicInfo({
   application,
   formDetailHref,
@@ -50,7 +94,7 @@ export function ApplicationBasicInfo({
 }) {
   const currentStep = getCurrentStep(application);
   const applicationStatus = currentStep
-    ? `${application.status} / STEP ${currentStep.stepOrder}: ${currentStep.stepName}`
+    ? `STEP ${currentStep.stepOrder}: ${currentStep.stepName}`
     : application.status;
 
   return (
@@ -59,28 +103,35 @@ export function ApplicationBasicInfo({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>基本情報</CardTitle>
-            <CardDescription>申請の対象フォーム、申請者、現在の状態です</CardDescription>
+            <CardDescription>申請の対象フォームと管理上の状態です</CardDescription>
           </div>
           <ApplicationStatusBadge status={application.status} />
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <InfoTile
+        <div className="grid gap-x-6 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryRow
+            icon={<ClipboardList className="size-4" aria-hidden="true" />}
             label="申請フォーム"
             value={application.formDefinitionName ?? application.applicationName ?? "-"}
             href={formDetailHref}
             className="md:col-span-2 xl:col-span-1"
           />
-          <InfoTile
-            label="申請者メール"
-            value={application.applicantEmail ?? "-"}
-            mono
-            className="md:col-span-2 xl:col-span-1"
+          <SummaryRow
+            icon={<Route className="size-4" aria-hidden="true" />}
+            label="ステータス"
+            value={applicationStatus}
           />
-          <InfoTile label="ステータス" value={applicationStatus} />
-          <InfoTile label="作成日時" value={formatDateTime(application.createdAt)} />
-          <InfoTile label="更新日時" value={formatDateTime(application.updatedAt)} />
+          <SummaryRow
+            icon={<CalendarClock className="size-4" aria-hidden="true" />}
+            label="作成日時"
+            value={formatDateTime(application.createdAt)}
+          />
+          <SummaryRow
+            icon={<CalendarClock className="size-4" aria-hidden="true" />}
+            label="更新日時"
+            value={formatDateTime(application.updatedAt)}
+          />
         </div>
       </CardContent>
     </Card>
@@ -90,29 +141,20 @@ export function ApplicationBasicInfo({
 export function ApplicationSideSummary({
   application,
   currentStepName,
-  formDetailHref,
   submittedAt,
 }: {
   application: ApplicationDetailViewModel;
   currentStepName?: string;
-  formDetailHref?: string | null;
   submittedAt?: string | null;
 }) {
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
         <CardTitle className="text-base">申請サマリー</CardTitle>
-        <CardDescription>ID: {application.id.slice(0, 12)}...</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
         <SummaryRow
-          icon={<ClipboardList className="size-4" aria-hidden="true" />}
-          label="フォーム"
-          value={application.formDefinitionName ?? application.applicationName ?? "-"}
-          href={formDetailHref}
-        />
-        <SummaryRow
-          icon={<Mail className="size-4" aria-hidden="true" />}
+          icon={<UserRound className="size-4" aria-hidden="true" />}
           label="申請者"
           value={application.applicantEmail ?? "-"}
           mono
@@ -138,12 +180,14 @@ function SummaryRow({
   value,
   href,
   mono = false,
+  className,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   href?: string | null;
   mono?: boolean;
+  className?: string;
 }) {
   const text = (
     <span
@@ -156,7 +200,7 @@ function SummaryRow({
   );
 
   return (
-    <div className="flex gap-3">
+    <div className={`flex min-w-0 gap-3 ${className ?? ""}`}>
       <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
         {icon}
       </span>
@@ -188,51 +232,6 @@ export function ActionPanel({ children }: { children: ReactNode }) {
       </CardHeader>
       <CardContent className="pt-5">{children}</CardContent>
     </Card>
-  );
-}
-
-function InfoTile({
-  label,
-  value,
-  mono = false,
-  className,
-  href,
-}: {
-  label: string;
-  value: ReactNode;
-  mono?: boolean;
-  className?: string;
-  href?: string | null;
-}) {
-  const content = (
-    <>
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p
-        className={`mt-1 truncate text-sm font-semibold text-slate-900 ${
-          mono ? "font-mono" : ""
-        } ${href ? "text-blue-700 underline-offset-2 group-hover:underline" : ""}`}
-        title={typeof value === "string" ? value : undefined}
-      >
-        {value}
-      </p>
-    </>
-  );
-
-  return (
-    <div className={`min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 ${className ?? ""}`}>
-      {href ? (
-        <Link
-          href={href}
-          className="group block min-w-0"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {content}
-        </Link>
-      ) : (
-        content
-      )}
-    </div>
   );
 }
 
@@ -278,13 +277,9 @@ export function ApplicationFieldsCard({
           correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey);
         return (
           <div className="space-y-3">
-            <DynamicFieldInput
-              field={field}
-              value={value}
-              disabled
-              readOnly
-              variant="table"
-            />
+            <p className="whitespace-pre-wrap break-words text-sm font-medium leading-6 text-slate-950">
+              {renderFieldValue(field, value)}
+            </p>
             {isCorrectionTarget ? (
               <p className="text-xs font-medium text-amber-700">
                 差し戻し対象項目です
@@ -382,9 +377,6 @@ export function OpenCorrectionSummary({
               className="flex items-center gap-2 border-l-2 border-amber-400 p-2 pl-3"
             >
               <Badge variant="outline">{item.label}</Badge>
-              <span className="font-mono text-xs text-muted-foreground">
-                ({item.fieldKey})
-              </span>
             </li>
           ))}
         </ul>
@@ -395,8 +387,12 @@ export function OpenCorrectionSummary({
 
 export function CorrectionHistory({
   corrections,
+  fields,
+  values,
 }: {
   corrections: ApplicationCorrection[];
+  fields: ApplicationFormField[];
+  values: Record<string, unknown>;
 }) {
   return (
     <Card>
@@ -437,15 +433,12 @@ export function CorrectionHistory({
                     <p className="mb-2 text-sm font-medium">個別コメント</p>
                     <ul className="space-y-1">
                       {correction.items.map((item) => (
-                        <li
+                        <CorrectionHistoryItem
                           key={`${correction.id}-${item.fieldKey}`}
-                          className="border-l-2 border-amber-400 pl-4 text-sm"
-                        >
-                          <span className="font-mono text-xs text-muted-foreground">
-                            {item.fieldKey}:
-                          </span>{" "}
-                          {item.comment || "（コメントなし）"}
-                        </li>
+                          fields={fields}
+                          item={item}
+                          values={values}
+                        />
                       ))}
                     </ul>
                   </div>
@@ -456,5 +449,41 @@ export function CorrectionHistory({
         )}
       </CardContent>
     </Card>
+  );
+}
+
+function CorrectionHistoryItem({
+  fields,
+  item,
+  values,
+}: {
+  fields: ApplicationFormField[];
+  item: ApplicationCorrection["items"][number];
+  values: Record<string, unknown>;
+}) {
+  const field = getCorrectionItemField(item, fields);
+  const label = getCorrectionItemLabel(item, fields);
+  const submittedValue = field
+    ? renderFieldValue(field, values[field.fieldKey])
+    : renderFieldValue(
+        {
+          fieldType: "text",
+        },
+        values[item.fieldKey],
+      );
+
+  return (
+    <li className="space-y-2 border-l-2 border-amber-400 pl-4 text-sm">
+      <p>
+        <span className="font-medium text-slate-900">{label}:</span>{" "}
+        {item.comment || "（コメントなし）"}
+      </p>
+      <div className="rounded-md bg-slate-50 px-3 py-2">
+        <p className="text-xs font-medium text-slate-500">申請内容</p>
+        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
+          {submittedValue}
+        </p>
+      </div>
+    </li>
   );
 }

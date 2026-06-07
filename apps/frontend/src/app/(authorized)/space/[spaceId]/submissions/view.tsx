@@ -4,6 +4,7 @@ import { SpaceSubmissionsPageContent } from "./_components/space-submissions-pag
 
 type SpaceSubmissionsViewProps = {
   applications: ApplicationRow[];
+  currentUserId: string | null;
   fetchErrorStatus?: number;
   filters: {
     applicant: string;
@@ -12,7 +13,12 @@ type SpaceSubmissionsViewProps = {
     form: string;
     page: number;
     status: string;
-    summary: "" | "needsAction" | "recentProcessed";
+    summary:
+      | ""
+      | "myNeedsAction"
+      | "spaceNeedsAction"
+      | "returned"
+      | "recentProcessed";
   };
   latestExportJob: ExportJobResponse | null;
   spaceId: string;

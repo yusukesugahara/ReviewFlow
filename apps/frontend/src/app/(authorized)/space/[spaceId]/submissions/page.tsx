@@ -5,6 +5,7 @@ import { unwrapData } from "@/lib/server/api-envelope";
 import type { ApplicationRow } from "@/components/space/space-applications.types";
 import type {
   ApplicationsListSuccessJson,
+  AuthMeSuccessJson,
   ExportJobResponse,
   GetExportJobSuccessJson,
 } from "@/lib/schema";
@@ -30,7 +31,7 @@ export default async function SpaceSubmissionsPage({
   const authHeaders = await authHeadersOrRedirect();
 
   try {
-    const [applicationsRaw, jobRaw] = await Promise.all([
+    const [applicationsRaw, jobRaw, meRaw] = await Promise.all([
       client.GET("/applications", {
         params: { query: { groupId: spaceId } },
         headers: authHeaders,
@@ -41,6 +42,7 @@ export default async function SpaceSubmissionsPage({
             headers: authHeaders,
           })
         : Promise.resolve(null),
+      client.POST("/auth/me", { headers: authHeaders }),
     ]);
     const applicationsData: ApplicationsListSuccessJson | undefined = applicationsRaw.data;
     if (!applicationsRaw.response.ok || !applicationsData) {
@@ -52,6 +54,10 @@ export default async function SpaceSubmissionsPage({
             jobRaw.data as GetExportJobSuccessJson,
           )
         : null;
+    const currentUserId =
+      meRaw.response.ok && meRaw.data
+        ? unwrapData<AuthMeSuccessJson["data"]>(meRaw.data).id
+        : null;
 
     return (
       <SpaceSubmissionsView
@@ -61,6 +67,7 @@ export default async function SpaceSubmissionsPage({
         }
         filters={filters}
         latestExportJob={latestExportJob}
+        currentUserId={currentUserId}
         spaceId={spaceId}
       />
     );
@@ -71,6 +78,7 @@ export default async function SpaceSubmissionsPage({
         fetchErrorStatus={isApiFailure(error) ? error.status : 500}
         filters={filters}
         latestExportJob={null}
+        currentUserId={null}
         spaceId={spaceId}
       />
     );
@@ -86,8 +94,15 @@ function normalizePage(value?: string): number {
   return Number.isInteger(page) && page > 0 ? page : 1;
 }
 
-function normalizeSummaryFilter(value?: string): "" | "needsAction" | "recentProcessed" {
-  if (value === "needsAction" || value === "recentProcessed") {
+function normalizeSummaryFilter(
+  value?: string,
+): "" | "myNeedsAction" | "spaceNeedsAction" | "returned" | "recentProcessed" {
+  if (
+    value === "myNeedsAction" ||
+    value === "spaceNeedsAction" ||
+    value === "returned" ||
+    value === "recentProcessed"
+  ) {
     return value;
   }
   return "";

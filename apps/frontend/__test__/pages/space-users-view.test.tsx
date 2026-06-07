@@ -47,15 +47,15 @@ describe("SpaceUsersView", () => {
       />,
     );
 
-    expect(screen.getByText("1名のユーザーが参加しています")).toBeInTheDocument();
+    expect(screen.getByText("1名のユーザが参加しています")).toBeInTheDocument();
     expect(screen.getByText("member@example.com")).toBeInTheDocument();
 
-    await user.click(screen.getByRole("button", { name: "ユーザーをスペースに追加" }));
+    await user.click(screen.getByRole("button", { name: "ユーザをスペースに追加" }));
 
     expect(
-      screen.getByRole("heading", { name: "ユーザーをスペースに追加" }),
+      screen.getByRole("heading", { name: "ユーザをスペースに追加" }),
     ).toBeInTheDocument();
-    expect(screen.getByText("追加するユーザーを選択")).toBeInTheDocument();
+    expect(screen.getByText("追加するユーザを選択")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "追加" })).toBeEnabled();
   });
 
@@ -71,11 +71,11 @@ describe("SpaceUsersView", () => {
       />,
     );
 
-    expect(screen.queryByRole("button", { name: "ユーザーをスペースに追加" })).not.toBeInTheDocument();
-    expect(screen.getByText("ユーザーが見つかりません")).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "ユーザをスペースに追加" })).not.toBeInTheDocument();
+    expect(screen.getByText("ユーザが見つかりません")).toBeInTheDocument();
   });
 
-  // テスト内容: 追加可能ユーザーがない場合に追加操作が無効化されることを確認する
+  // テスト内容: 追加可能ユーザがない場合に追加操作が無効化されることを確認する
   it("disables add controls when no users are available", async () => {
     const user = userEvent.setup();
     render(
@@ -88,9 +88,9 @@ describe("SpaceUsersView", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "ユーザーをスペースに追加" }));
+    await user.click(screen.getByRole("button", { name: "ユーザをスペースに追加" }));
 
-    expect(screen.getByText("追加できるユーザーがいません")).toBeInTheDocument();
+    expect(screen.getByText("追加できるユーザがいません")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "追加" })).toBeDisabled();
   });
 });
@@ -100,7 +100,7 @@ describe("SpaceUsersErrorView", () => {
   it("renders optional status", () => {
     render(<SpaceUsersErrorView status={404} />);
 
-    expect(screen.getByText(/ユーザー一覧の取得に失敗しました/)).toBeInTheDocument();
+    expect(screen.getByText(/ユーザ一覧の取得に失敗しました/)).toBeInTheDocument();
     expect(screen.getByText(/status: 404/)).toBeInTheDocument();
   });
 });

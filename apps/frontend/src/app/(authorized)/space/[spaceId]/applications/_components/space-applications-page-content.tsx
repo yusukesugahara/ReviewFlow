@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useId, useState } from "react";
 import {
-  Archive,
   ArrowRight,
   Copy,
   FilePlusCorner,
@@ -107,7 +106,6 @@ export function SpaceApplicationsPageContent({
             申請フォーム
           </TabsTrigger>
           <TabsTrigger href={archivedHref} active={showArchived}>
-            <Archive aria-hidden="true" />
             削除済み
           </TabsTrigger>
         </TabsList>

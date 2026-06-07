@@ -187,7 +187,7 @@ describe('AuthService', () => {
 
   describe('password reset', () => {
     /**
-     * アクティブなユーザーに対してリセットトークンを作成し、メールを送信すること
+     * アクティブなユーザに対してリセットトークンを作成し、メールを送信すること
      */
     it('creates reset token and sends mail for active users', async () => {
       users.findAllByEmail.mockResolvedValue([

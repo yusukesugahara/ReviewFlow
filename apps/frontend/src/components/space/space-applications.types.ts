@@ -13,6 +13,7 @@ export type ApplicationRow = Pick<
   | "updatedAt"
 > & {
   applicantUserId?: string | null;
+  currentStepAssigneeUserIds?: string[];
 };
 
 export type FormDefinitionRow = Omit<

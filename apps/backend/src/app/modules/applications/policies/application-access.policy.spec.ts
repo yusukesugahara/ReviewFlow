@@ -116,7 +116,7 @@ describe('ApplicationAccessPolicy', () => {
   });
 
   /**
-   * 関係のないユーザーが申請を読み込めないこと
+   * 関係のないユーザが申請を読み込めないこと
    */
   it('denies unrelated users', async () => {
     await expect(

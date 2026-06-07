@@ -20,6 +20,8 @@ services:
     build:
       context: .
       dockerfile: apps/backend/Dockerfile
+    # 開発時は .:/workspace をマウントするため、本番用 ENTRYPOINT は使わない
+    entrypoint: []
     ports:
       - "${BACKEND_HOST_PORT:-3002}:3000"
     environment:

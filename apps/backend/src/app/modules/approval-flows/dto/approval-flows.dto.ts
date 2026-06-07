@@ -30,7 +30,7 @@ export class CreateApprovalFlowStepDto {
   @ApiProperty({
     format: 'uuid',
     required: false,
-    description: 'このステップを承認するテナント内ユーザーID',
+    description: 'このステップを承認するテナント内ユーザID',
   })
   @ValidateIf(
     (step: CreateApprovalFlowStepDto) =>
@@ -44,7 +44,7 @@ export class CreateApprovalFlowStepDto {
     isArray: true,
     required: false,
     description:
-      'このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。',
+      'このステップを承認できるテナント内ユーザID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。',
   })
   @IsOptional()
   @IsArray()

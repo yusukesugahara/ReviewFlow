@@ -6,8 +6,8 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import {
   ClipboardList,
-  FileText,
   Inbox,
+  FilePlusCorner,
   type LucideIcon,
   Menu,
   ShieldCheck,
@@ -57,8 +57,8 @@ const spaceNavItems: SidebarNavItem[] = [
   },
   {
     href: "/space/applications/new",
-    label: "新規申請",
-    icon: FileText,
+    label: "申請フォーム作成",
+    icon: FilePlusCorner,
     spacePath: "applicationsNew",
   },
   { href: "/space/users", label: "メンバー", icon: Users, spaceAdminOnly: true },
@@ -66,7 +66,7 @@ const spaceNavItems: SidebarNavItem[] = [
 
 const tenantAdminNavItems: SidebarNavItem[] = [
   { href: "/admin/spaces", label: "スペース", icon: ShieldCheck },
-  { href: "/admin/invitations", label: "ユーザー", icon: Users },
+  { href: "/admin/invitations", label: "ユーザ", icon: Users },
   { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
 ];
 
@@ -79,8 +79,8 @@ const applicantNavItems: SidebarNavItem[] = [
   },
   {
     href: "/space/applications/new",
-    label: "新規申請",
-    icon: FileText,
+    label: "申請フォーム作成",
+    icon: FilePlusCorner,
     spacePath: "applicationsNew",
   },
 ];
@@ -244,7 +244,7 @@ function SidebarContent({
         </section>
       ) : null}
       <section className="mt-auto border-t border-slate-200 pt-4">
-        <SectionLabel>ユーザー</SectionLabel>
+        <SectionLabel>ユーザ</SectionLabel>
         <div className="mb-3 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-600">
           <Users className="size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0">
@@ -411,6 +411,10 @@ function getSpaceSwitcherHref(
       `/space/${encodeURIComponent(spaceId)}/`,
     );
     return params.size > 0 ? `${nextPathname}?${params.toString()}` : nextPathname;
+  }
+
+  if (pathname.startsWith("/admin")) {
+    return `/space/${encodeURIComponent(spaceId)}/submissions`;
   }
 
   params.set("spaceId", spaceId);
