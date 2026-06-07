@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { CalendarClock, ClipboardList, Mail, Route } from "lucide-react";
+import { CalendarClock, ClipboardList, Route, UserRound } from "lucide-react";
 import {
   Card,
   CardContent,
@@ -51,7 +51,7 @@ export function ApplicationBasicInfo({
 }) {
   const currentStep = getCurrentStep(application);
   const applicationStatus = currentStep
-    ? `${application.status} / STEP ${currentStep.stepOrder}: ${currentStep.stepName}`
+    ? `STEP ${currentStep.stepOrder}: ${currentStep.stepName}`
     : application.status;
 
   return (
@@ -60,28 +60,35 @@ export function ApplicationBasicInfo({
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <CardTitle>基本情報</CardTitle>
-            <CardDescription>申請の対象フォーム、申請者、現在の状態です</CardDescription>
+            <CardDescription>申請の対象フォームと管理上の状態です</CardDescription>
           </div>
           <ApplicationStatusBadge status={application.status} />
         </div>
       </CardHeader>
       <CardContent className="pt-6">
-        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
-          <InfoTile
+        <div className="grid gap-x-6 gap-y-4 md:grid-cols-2 xl:grid-cols-4">
+          <SummaryRow
+            icon={<ClipboardList className="size-4" aria-hidden="true" />}
             label="申請フォーム"
             value={application.formDefinitionName ?? application.applicationName ?? "-"}
             href={formDetailHref}
             className="md:col-span-2 xl:col-span-1"
           />
-          <InfoTile
-            label="申請者メール"
-            value={application.applicantEmail ?? "-"}
-            mono
-            className="md:col-span-2 xl:col-span-1"
+          <SummaryRow
+            icon={<Route className="size-4" aria-hidden="true" />}
+            label="ステータス"
+            value={applicationStatus}
           />
-          <InfoTile label="ステータス" value={applicationStatus} />
-          <InfoTile label="作成日時" value={formatDateTime(application.createdAt)} />
-          <InfoTile label="更新日時" value={formatDateTime(application.updatedAt)} />
+          <SummaryRow
+            icon={<CalendarClock className="size-4" aria-hidden="true" />}
+            label="作成日時"
+            value={formatDateTime(application.createdAt)}
+          />
+          <SummaryRow
+            icon={<CalendarClock className="size-4" aria-hidden="true" />}
+            label="更新日時"
+            value={formatDateTime(application.updatedAt)}
+          />
         </div>
       </CardContent>
     </Card>
@@ -91,29 +98,20 @@ export function ApplicationBasicInfo({
 export function ApplicationSideSummary({
   application,
   currentStepName,
-  formDetailHref,
   submittedAt,
 }: {
   application: ApplicationDetailViewModel;
   currentStepName?: string;
-  formDetailHref?: string | null;
   submittedAt?: string | null;
 }) {
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
         <CardTitle className="text-base">申請サマリー</CardTitle>
-        <CardDescription>ID: {application.id.slice(0, 12)}...</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
         <SummaryRow
-          icon={<ClipboardList className="size-4" aria-hidden="true" />}
-          label="フォーム"
-          value={application.formDefinitionName ?? application.applicationName ?? "-"}
-          href={formDetailHref}
-        />
-        <SummaryRow
-          icon={<Mail className="size-4" aria-hidden="true" />}
+          icon={<UserRound className="size-4" aria-hidden="true" />}
           label="申請者"
           value={application.applicantEmail ?? "-"}
           mono
@@ -139,12 +137,14 @@ function SummaryRow({
   value,
   href,
   mono = false,
+  className,
 }: {
   icon: ReactNode;
   label: string;
   value: string;
   href?: string | null;
   mono?: boolean;
+  className?: string;
 }) {
   const text = (
     <span
@@ -157,7 +157,7 @@ function SummaryRow({
   );
 
   return (
-    <div className="flex gap-3">
+    <div className={`flex min-w-0 gap-3 ${className ?? ""}`}>
       <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-500">
         {icon}
       </span>
@@ -189,51 +189,6 @@ export function ActionPanel({ children }: { children: ReactNode }) {
       </CardHeader>
       <CardContent className="pt-5">{children}</CardContent>
     </Card>
-  );
-}
-
-function InfoTile({
-  label,
-  value,
-  mono = false,
-  className,
-  href,
-}: {
-  label: string;
-  value: ReactNode;
-  mono?: boolean;
-  className?: string;
-  href?: string | null;
-}) {
-  const content = (
-    <>
-      <p className="text-xs font-medium text-slate-500">{label}</p>
-      <p
-        className={`mt-1 truncate text-sm font-semibold text-slate-900 ${
-          mono ? "font-mono" : ""
-        } ${href ? "text-blue-700 underline-offset-2 group-hover:underline" : ""}`}
-        title={typeof value === "string" ? value : undefined}
-      >
-        {value}
-      </p>
-    </>
-  );
-
-  return (
-    <div className={`min-w-0 rounded-lg border border-slate-200 bg-slate-50 px-3 py-3 ${className ?? ""}`}>
-      {href ? (
-        <Link
-          href={href}
-          className="group block min-w-0"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          {content}
-        </Link>
-      ) : (
-        content
-      )}
-    </div>
   );
 }
 

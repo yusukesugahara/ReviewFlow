@@ -87,7 +87,6 @@ export function ApplicationDetailView({
           <ApplicationSideSummary
             application={application}
             currentStepName={currentStep?.stepName}
-            formDetailHref={formDetailHref}
             submittedAt={submittedAt}
           />
           {actions ? <ActionPanel>{actions}</ActionPanel> : null}
