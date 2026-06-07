@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   DynamicFieldInput,
   DynamicFieldsTable,
-} from "@/app/_components/applications/dynamic-fields";
+} from "@/components/applications/dynamic-fields";
 import { submitPublicCorrectionAction } from "./actions";
 import type {
   PublicCorrectionResponse,

@@ -1,3 +1,6 @@
+import { z } from "zod";
+import { normalizeFieldOptions } from "@/components/applications/field-options";
+
 export type FieldOption = { value: string; label: string };
 
 export type DisplayableFormField = {
@@ -5,44 +8,25 @@ export type DisplayableFormField = {
   options?: unknown[] | null;
 };
 
-export function normalizeFieldOptions(
-  options: unknown[] | null | undefined,
-): FieldOption[] {
-  if (!Array.isArray(options)) {
-    return [];
-  }
-  return options
-    .map((opt) => {
-      if (typeof opt === "string") {
-        return { value: opt, label: opt };
-      }
-      if (opt && typeof opt === "object") {
-        const rec = opt as Record<string, unknown>;
-        const value = rec.value;
-        const label = rec.label;
-        if (typeof value === "string" && typeof label === "string") {
-          return { value, label };
-        }
-      }
-      return null;
-    })
-    .filter((v): v is FieldOption => v !== null);
-}
+export { normalizeFieldOptions };
+
+const stringArraySchema = z.array(z.string());
+const scalarDisplayValueSchema = z.union([z.string(), z.number()]);
 
 export function renderFieldValue(field: DisplayableFormField, value: unknown): string {
   if (value === null || value === undefined) {
     return "-";
   }
   if (field.fieldType === "checkbox") {
-    if (!Array.isArray(value)) {
+    const values = stringArraySchema.safeParse(value);
+    if (!values.success) {
       return "-";
     }
     const opts = normalizeFieldOptions(field.options);
-    const asStrings = value.filter((v): v is string => typeof v === "string");
     if (opts.length === 0) {
-      return asStrings.join(", ");
+      return values.data.join(", ");
     }
-    return asStrings.map((v) => opts.find((o) => o.value === v)?.label ?? v).join(", ");
+    return values.data.map((v) => opts.find((o) => o.value === v)?.label ?? v).join(", ");
   }
   if (field.fieldType === "consent") {
     return value === true ? "同意済み" : "未同意";
@@ -50,16 +34,17 @@ export function renderFieldValue(field: DisplayableFormField, value: unknown): s
   if (field.fieldType === "description" || field.fieldType === "section") {
     return "-";
   }
-  if (typeof value === "string" || typeof value === "number") {
+  const scalarValue = scalarDisplayValueSchema.safeParse(value);
+  if (scalarValue.success) {
     const opts = normalizeFieldOptions(field.options);
     if (
       opts.length > 0 &&
       (field.fieldType === "select" || field.fieldType === "radio") &&
-      typeof value === "string"
+      typeof scalarValue.data === "string"
     ) {
-      return opts.find((o) => o.value === value)?.label ?? value;
+      return opts.find((o) => o.value === scalarValue.data)?.label ?? scalarValue.data;
     }
-    return String(value);
+    return String(scalarValue.data);
   }
   return JSON.stringify(value);
 }

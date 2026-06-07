@@ -1,4 +1,4 @@
-import { ApplicationSetupDraftForm } from "@/app/(authorized)/space/_components/application-setup-draft-form";
+import { ApplicationSetupDraftForm } from "@/components/application-setup/application-setup-draft-form";
 import { submitApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,

@@ -52,6 +52,10 @@ import type {
   GroupMemberSummary,
   GroupSummary,
 } from "../types";
+import {
+  MemberActionMenu,
+  type MemberActionMenuState,
+} from "./member-action-menu";
 
 type SpaceListItem = {
   group: GroupSummary;
@@ -77,13 +81,6 @@ type SpaceListProps = {
   removeMemberAction: (groupId: string, userId: string) => Promise<void>;
   leaveSpaceAction: (groupId: string) => Promise<void>;
   removeSpaceAction: (groupId: string) => Promise<void>;
-};
-
-type MemberActionMenuState = {
-  groupId: string;
-  member: GroupMemberSummary;
-  left: number;
-  top: number;
 };
 
 export function SpaceList({
@@ -449,84 +446,16 @@ export function SpaceList({
                   </DialogContent>
                 ) : null}
                 {memberActionMenu?.groupId === group.id ? (
-                  <>
-                    <button
-                      type="button"
-                      aria-label="メニューを閉じる"
-                      className="fixed inset-0 z-40 cursor-default bg-transparent"
-                      onClick={closeMemberActionMenu}
-                    />
-                    <div
-                      className="fixed z-50 w-48 rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg"
-                      role="menu"
-                      style={{
-                        left: memberActionMenu.left,
-                        top: memberActionMenu.top,
-                      }}
-                      tabIndex={-1}
-                      onKeyDown={(event) => {
-                        if (event.key === "Escape") {
-                          closeMemberActionMenu();
-                        }
-                      }}
-                    >
-                      {canManageSpace ? (
-                        <form
-                          action={updateMemberRoleAction.bind(
-                            null,
-                            group.id,
-                            memberActionMenu.member.userId,
-                          )}
-                        >
-                          <input
-                            type="hidden"
-                            name="role"
-                            value={
-                              memberActionMenu.member.role === SPACE_ROLES.admin
-                                ? SPACE_ROLES.user
-                                : SPACE_ROLES.admin
-                            }
-                          />
-                          <button
-                            type="submit"
-                            className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none"
-                            role="menuitem"
-                          >
-                            {memberActionMenu.member.role === SPACE_ROLES.admin
-                              ? "メンバーに変更"
-                              : "管理者に変更"}
-                          </button>
-                        </form>
-                      ) : null}
-                      {memberActionMenu.member.userId === currentUserId ? (
-                        <form action={leaveSpaceAction.bind(null, group.id)}>
-                          <button
-                            type="submit"
-                            className="block w-full rounded px-3 py-2 text-left text-sm text-destructive hover:bg-rose-50 focus-visible:bg-rose-50 focus-visible:outline-none"
-                            role="menuitem"
-                          >
-                            退出
-                          </button>
-                        </form>
-                      ) : canManageSpace ? (
-                        <form
-                          action={removeMemberAction.bind(
-                            null,
-                            group.id,
-                            memberActionMenu.member.userId,
-                          )}
-                        >
-                          <button
-                            type="submit"
-                            className="block w-full rounded px-3 py-2 text-left text-sm text-destructive hover:bg-rose-50 focus-visible:bg-rose-50 focus-visible:outline-none"
-                            role="menuitem"
-                          >
-                            外す
-                          </button>
-                        </form>
-                      ) : null}
-                    </div>
-                  </>
+                  <MemberActionMenu
+                    canManageSpace={canManageSpace}
+                    currentUserId={currentUserId}
+                    groupId={group.id}
+                    leaveSpaceAction={leaveSpaceAction}
+                    menu={memberActionMenu}
+                    onClose={closeMemberActionMenu}
+                    removeMemberAction={removeMemberAction}
+                    updateMemberRoleAction={updateMemberRoleAction}
+                  />
                 ) : null}
               </>
             ) : null}

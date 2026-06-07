@@ -1,9 +1,9 @@
-import type { ApprovalAssigneeOption } from "@/app/(authorized)/space/_components/application-setup-draft-form";
-import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
+import type { ApprovalAssigneeOption } from "@/components/application-setup/application-setup-draft-form";
+import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import { unwrapData } from "@/lib/server/api-envelope";
 import type { GroupMembersListSuccessJson, GroupsListSuccessJson } from "@/lib/schema";
@@ -13,14 +13,6 @@ import type {
   SpaceNewApplicationPageProps,
 } from "./types";
 import { SpaceNewApplicationView } from "./view";
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
 
 export default async function SpaceNewApplicationPage({
   params,

@@ -15,16 +15,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ApplicantApplicationActions } from "@/app/_components/applications/applicant-application-actions";
-import { ApplicationStatusBadge } from "@/app/_components/applications/application-status-badge";
-import { PublicApplicationUrlCopyButton } from "@/app/_components/applications/public-application-url-card";
-import { DynamicFieldsTable } from "@/app/_components/applications/dynamic-fields";
+import { ApplicantApplicationActions } from "@/components/applications/applicant-application-actions";
+import { ApplicationStatusBadge } from "@/components/applications/application-status-badge";
+import { PublicApplicationUrlCopyButton } from "@/components/applications/public-application-url-card";
+import { DynamicFieldsTable } from "@/components/applications/dynamic-fields";
 import {
   ApplicationDetailView,
   ApprovalProgressDiagram,
-} from "@/app/_components/applications/application-detail-view";
-import { ReviewerApplicationActions } from "@/app/_components/applications/reviewer-application-actions";
-import { buildSpaceApplicationEditHrefByIds } from "@/app/_components/applications/application-routes";
+} from "@/components/applications/application-detail-view";
+import { ReviewerApplicationActions } from "@/components/applications/reviewer-application-actions";
+import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/application-routes";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { formatDateTimeJa } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
@@ -34,8 +34,8 @@ import type {
   ApplicationCorrectionTargetItem,
   ApplicationDetailViewModel,
   ApplicationFormField,
-} from "@/app/_components/applications/application-detail.types";
-import type { ApplicationCapabilities } from "@/app/_components/applications/application-capabilities";
+} from "@/components/applications/application-detail.types";
+import type { ApplicationCapabilities } from "@/components/applications/application-capabilities";
 import type { FormDetailViewProps } from "./types";
 
 type ApplicationDetailScreenProps = {

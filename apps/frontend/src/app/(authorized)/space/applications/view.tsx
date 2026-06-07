@@ -1,4 +1,4 @@
-import { SpaceEmptyState } from "@/app/(authorized)/space/_components/space-empty-state";
+import { SpaceEmptyState } from "@/components/space/space-empty-state";
 
 export function LegacySpaceApplicationsEmptyView({
   userRoles,

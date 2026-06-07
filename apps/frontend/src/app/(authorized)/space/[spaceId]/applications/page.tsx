@@ -1,26 +1,14 @@
-import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { unwrapData } from "@/lib/server/api-envelope";
-import type { ApplicationRow, FormDefinitionRow } from "@/app/(authorized)/space/_components/space-applications.types";
+import type { ApplicationRow, FormDefinitionRow } from "@/components/space/space-applications.types";
 import type {
   ApplicationsListSuccessJson,
   FormDefinitionsListSuccessJson,
 } from "@/lib/schema";
-import type { SpaceApplicationsApiFailure, SpaceApplicationsPageProps } from "./types";
+import type { SpaceApplicationsPageProps } from "./types";
 import { SpaceApplicationsView } from "./view";
-
-async function authHeadersOrRedirect(): Promise<{ Authorization: string }> {
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  return { Authorization: `Bearer ${accessToken}` };
-}
-
-function isApiFailure(error: unknown): error is SpaceApplicationsApiFailure {
-  return !!error && typeof error === "object" && typeof (error as SpaceApplicationsApiFailure).status === "number";
-}
 
 export default async function SpaceApplicationsPage({
   params,

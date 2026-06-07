@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { buildSpaceApplicationNewHref } from "@/app/_components/applications/application-routes";
+import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";

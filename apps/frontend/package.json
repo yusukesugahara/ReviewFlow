@@ -8,6 +8,7 @@
     "lint": "eslint . --max-warnings 0",
     "build": "next build",
     "typecheck": "tsc --noEmit",
+    "test": "jest --config jest.config.cjs",
     "start": "next start",
     "generate:api-types": "openapi-typescript ../backend/schema.json -o ./src/lib/api-schema.d.ts",
     "test:e2e": "playwright test",
@@ -33,16 +34,23 @@
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.2.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.2",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "25.5.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "autoprefixer": "^10.5.0",
     "eslint": "^9.39.4",
     "eslint-config-next": "^16.2.4",
+    "jest": "^30.4.2",
+    "jest-environment-jsdom": "^30.4.1",
     "openapi-typescript": "^7.13.0",
     "postcss": "^8.5.10",
     "tailwindcss": "^4.2.2",
     "tailwindcss-animate": "^1.0.7",
+    "ts-jest": "^29.4.11",
     "typescript": "^5.9.3"
   }
 }

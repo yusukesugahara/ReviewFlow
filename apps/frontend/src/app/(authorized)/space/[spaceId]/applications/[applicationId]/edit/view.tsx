@@ -5,11 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   DynamicFieldInput,
   DynamicFieldsTable,
-} from "@/app/_components/applications/dynamic-fields";
+} from "@/components/applications/dynamic-fields";
 import {
   ApplicationSetupDraftForm,
   type ApprovalAssigneeOption,
-} from "@/app/(authorized)/space/_components/application-setup-draft-form";
+} from "@/components/application-setup/application-setup-draft-form";
 import type {
   CorrectionTargetItem,
   EditableApplicationInitialState,
