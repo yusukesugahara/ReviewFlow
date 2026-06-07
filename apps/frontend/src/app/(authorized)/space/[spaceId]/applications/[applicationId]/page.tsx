@@ -73,10 +73,13 @@ export default async function SpaceApplicationDetailPage({
 
   try {
     const authHeaders = await authHeadersOrRedirect();
-    const appRaw = await client.GET("/applications/{id}", {
-      params: { path: { id: applicationId } },
-      headers: authHeaders,
-    });
+    const [appRaw, actor] = await Promise.all([
+      client.GET("/applications/{id}", {
+        params: { path: { id: applicationId } },
+        headers: authHeaders,
+      }),
+      getCurrentSessionUser(),
+    ]);
     if (!appRaw.response.ok || !appRaw.data) {
       throw { status: appRaw.response.status, body: appRaw.error };
     }
@@ -123,7 +126,6 @@ export default async function SpaceApplicationDetailPage({
       unwrapData<{
         openCorrection?: { items?: ApplicationCorrectionTargetItem[] } | null;
       }>(correctionTargetsRaw.data).openCorrection?.items ?? [];
-    const actor = await getCurrentSessionUser();
     const capabilities = getApplicationCapabilities(app, actor);
     const fieldMap = fields.map((field) => ({ id: field.id, key: field.fieldKey }));
     const missingRequiredFields = getMissingRequiredFields(fields, app.values);

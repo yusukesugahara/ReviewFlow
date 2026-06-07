@@ -11,6 +11,7 @@ export type ApplicationDetailViewModel = {
   updatedAt?: string;
   applicantEmail?: string;
   currentStepOrder?: number | null;
+  currentStepAssigneeUserIds?: string[];
   currentStepCanReturn?: boolean | null;
   submittedAt?: string | null;
   approvalProgress?: ApplicationProgressStep[];
