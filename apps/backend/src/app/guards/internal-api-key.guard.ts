@@ -11,7 +11,10 @@ import { SKIP_INTERNAL_API_KEY } from '../../common/constants';
 import { ClientErrorCodes, clientError } from '../../common/errors';
 
 /**
- * Next.js などサーバー間連携用。ブラウザに INTERNAL_API_KEY を出さないこと。
+ * サーバー間連携用。ブラウザに INTERNAL_API_KEY を出さない。
+ *
+ * @param context ExecutionContext
+ * @returns boolean
  */
 @Injectable()
 export class InternalApiKeyGuard implements CanActivate {
