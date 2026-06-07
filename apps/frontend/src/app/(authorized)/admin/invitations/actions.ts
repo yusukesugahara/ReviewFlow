@@ -6,7 +6,7 @@ import { client } from "@/lib/server/backend-fetch";
 import { createInvitationSchema } from "@/lib/auth-schema";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import type {
   CreateInvitationBody,
   CreateInvitationSuccessJson,

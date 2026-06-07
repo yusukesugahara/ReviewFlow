@@ -1,7 +1,7 @@
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { isApiFailure } from "@/lib/server/api-error";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getApplicationCapabilities } from "@/components/applications/application-capabilities";

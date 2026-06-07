@@ -3,7 +3,7 @@ import type { ApprovalStepItem } from "@/components/application-setup/approval-s
 import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { isApiFailure } from "@/lib/server/api-error";
+import { isApiFailure } from "@/lib/server/api-failure";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   type ApplicationSetupError,

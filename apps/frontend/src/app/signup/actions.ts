@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { client } from "@/lib/server/backend-fetch";
-import { errorMessageFromBody } from "@/lib/server/api-error";
+import { errorMessageFromBody } from "@/lib/server/api-failure";
 import type { AuthRegisterSuccessJson, RegisterRequestBody } from "@/lib/schema";
 import { persistAccessTokenCookie } from "../login/actions";
 

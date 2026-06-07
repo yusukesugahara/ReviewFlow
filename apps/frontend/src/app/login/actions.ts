@@ -7,7 +7,7 @@ import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
 import { client } from "@/lib/server/backend-fetch";
-import { errorMessageFromBody } from "@/lib/server/api-error";
+import { errorMessageFromBody } from "@/lib/server/api-failure";
 import type { AuthLoginSuccessJson, LoginRequestBody } from "@/lib/schema";
 
 export type LoginSchema = AuthCredentials & { next?: string };

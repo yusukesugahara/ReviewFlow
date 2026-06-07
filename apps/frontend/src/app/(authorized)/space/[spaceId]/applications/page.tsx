@@ -1,6 +1,6 @@
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { isApiFailure } from "@/lib/server/api-error";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { unwrapData } from "@/lib/server/api-envelope";
 import type { ApplicationRow, FormDefinitionRow } from "@/components/space/space-applications.types";
 import type {

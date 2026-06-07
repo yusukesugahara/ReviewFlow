@@ -1,6 +1,6 @@
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
-import { isApiFailure } from "@/lib/server/api-error";
+import { isApiFailure } from "@/lib/server/api-failure";
 import type { PublicCurrentFormDefinitionSuccessJson } from "@/lib/schema";
 import { applicantHeaders } from "../form/server";
 import type {

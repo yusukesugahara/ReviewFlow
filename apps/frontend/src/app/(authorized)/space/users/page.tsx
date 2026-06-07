@@ -1,7 +1,7 @@
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { isApiFailure } from "@/lib/server/api-error";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import { SpaceEmptyState } from "@/components/space/space-empty-state";

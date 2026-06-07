@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import { unwrapData } from "@/lib/server/api-envelope";
 import {
   APPLICATION_SETUP_ERRORS,

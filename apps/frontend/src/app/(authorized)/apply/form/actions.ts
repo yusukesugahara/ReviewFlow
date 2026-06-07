@@ -6,7 +6,7 @@ import {
   type DynamicFormField,
 } from "@/components/applications/dynamic-fields";
 import { client } from "@/lib/server/backend-fetch";
-import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import type {
   CreatePublicApplicationBody,
   CreatePublicApplicationSuccessJson,

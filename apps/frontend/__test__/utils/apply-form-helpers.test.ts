@@ -1,5 +1,5 @@
 import { isDynamicFormField } from "@/app/(authorized)/apply/form/helpers";
-import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-error";
+import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 
 describe("apply form helpers", () => {
   // テスト内容: 通信失敗オブジェクトの形を判定できることを確認する

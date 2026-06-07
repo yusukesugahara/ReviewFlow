@@ -8,7 +8,7 @@ import {
   errorMessageFromBody,
   isApiFailure,
   throwIfApiResponseFailed,
-} from "@/lib/server/api-error";
+} from "@/lib/server/api-failure";
 import {
   addGroupMemberSchema,
   createSpaceSchema,
