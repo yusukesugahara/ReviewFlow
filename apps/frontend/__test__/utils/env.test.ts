@@ -14,7 +14,7 @@ describe("env helpers", () => {
   it("returns e2e defaults and trims configured API URL", async () => {
     delete process.env.E2E_API_URL;
     delete process.env.E2E_INTERNAL_API_KEY;
-    const { getE2eEnv } = await import("@/lib/env");
+    const { getE2eEnv } = await import("@/lib/e2e-env");
 
     expect(getE2eEnv()).toEqual({
       apiBase: "http://127.0.0.1:3000",
@@ -37,7 +37,7 @@ describe("env helpers", () => {
     process.env.PLAYWRIGHT_BASE_URL = "http://frontend.local";
     process.env.E2E_API_URL = "http://backend.local/";
     process.env.E2E_INTERNAL_API_KEY = "secret";
-    const { getPlaywrightConfigEnv } = await import("@/lib/env");
+    const { getPlaywrightConfigEnv } = await import("@/lib/e2e-env");
 
     expect(getPlaywrightConfigEnv()).toEqual({
       baseURL: "http://frontend.local",

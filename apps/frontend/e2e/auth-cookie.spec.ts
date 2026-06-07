@@ -1,5 +1,5 @@
 import { test, expect } from "@playwright/test";
-import { getE2eEnv } from "../src/lib/env";
+import { getE2eEnv } from "../src/lib/e2e-env";
 
 const COOKIE_NAME = "access_token";
 

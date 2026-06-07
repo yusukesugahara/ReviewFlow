@@ -1,5 +1,5 @@
 import { LoginView } from "./view";
-import { getServerApiBaseUrl } from "@/lib/env";
+import { getServerApiBaseUrl } from "@/lib/server/env";
 import type { LoginPageProps } from "./types";
 
 async function fetchApiOriginReachable(): Promise<boolean> {

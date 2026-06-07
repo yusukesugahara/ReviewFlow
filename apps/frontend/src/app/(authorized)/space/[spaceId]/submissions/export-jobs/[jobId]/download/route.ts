@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { getServerApiBaseUrl, getServerAuthEnv } from "@/lib/env";
+import { getServerApiBaseUrl, getServerAuthEnv } from "@/lib/server/env";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 
 type DownloadRouteContext = {
