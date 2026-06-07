@@ -29,7 +29,14 @@ const DEMO_TENANT_NAME = 'みどり市 申請受付デモ';
 const DEMO_PASSWORD = 'Password123!';
 const RESET_DEMO_TENANT_NAMES = [DEMO_TENANT_NAME, 'ReviewFlow Demo'];
 
-type DemoUserKey = 'admin' | 'manager' | 'finance' | 'applicant';
+type DemoUserKey =
+  | 'admin'
+  | 'citizenApprover'
+  | 'citizenOperator'
+  | 'citizenReviewer'
+  | 'roadApprover'
+  | 'roadInspector'
+  | 'roadReviewer';
 
 type DemoFormDefinition = {
   description: string;
@@ -46,7 +53,6 @@ type DemoFormDefinition = {
 };
 
 type DemoApplication = {
-  applicant: DemoUserKey | null;
   applicantEmail: string;
   createdAt: Date;
   currentStepOrder: number | null;
@@ -57,6 +63,388 @@ type DemoApplication = {
   updatedAt: Date;
   values: Record<string, unknown>;
 };
+
+type DemoSpace = {
+  applications: DemoApplication[];
+  approverUserKey: DemoUserKey;
+  description: string;
+  flowName: string;
+  formDefinitions: DemoFormDefinition[];
+  memberUserKeys: DemoUserKey[];
+  name: string;
+  reviewerUserKey: DemoUserKey;
+  stepNames: [string, string];
+};
+
+const DEMO_SPACES: DemoSpace[] = [
+  {
+    name: '市民課',
+    approverUserKey: 'citizenApprover',
+    description:
+      '住民票、戸籍、マイナンバー、窓口相談など市民向け手続きを扱うデモスペース',
+    flowName: '市民課 受付確認・係長決裁フロー',
+    stepNames: ['窓口担当確認', '係長決裁'],
+    formDefinitions: [
+      {
+        name: '住民票写し交付申請',
+        description: '住民票の写しや記載事項証明書の交付を受け付けます。',
+        fields: [
+          {
+            fieldKey: 'applicant_name',
+            label: '申請者氏名',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+            placeholder: '例: 佐藤 一郎',
+          },
+          {
+            fieldKey: 'certificate_type',
+            label: '証明書種別',
+            fieldType: FormFieldType.SELECT,
+            required: true,
+            optionsJson: [
+              { label: '住民票の写し', value: '住民票の写し' },
+              { label: '住民票記載事項証明書', value: '住民票記載事項証明書' },
+              { label: '除票の写し', value: '除票の写し' },
+            ],
+          },
+          {
+            fieldKey: 'copies',
+            label: '必要通数',
+            fieldType: FormFieldType.NUMBER,
+            required: true,
+            placeholder: '例: 2',
+          },
+          {
+            fieldKey: 'purpose',
+            label: '使用目的',
+            fieldType: FormFieldType.TEXTAREA,
+            required: true,
+          },
+          {
+            fieldKey: 'pickup_date',
+            label: '受取希望日',
+            fieldType: FormFieldType.DATE,
+            required: true,
+          },
+        ],
+      },
+      {
+        name: 'マイナンバーカード窓口予約',
+        description: 'カード交付、電子証明書更新、暗証番号再設定の予約です。',
+        fields: [
+          {
+            fieldKey: 'resident_name',
+            label: '予約者氏名',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+          },
+          {
+            fieldKey: 'procedure_type',
+            label: '手続き内容',
+            fieldType: FormFieldType.SELECT,
+            required: true,
+            optionsJson: [
+              { label: 'カード交付', value: 'カード交付' },
+              { label: '電子証明書更新', value: '電子証明書更新' },
+              { label: '暗証番号再設定', value: '暗証番号再設定' },
+            ],
+          },
+          {
+            fieldKey: 'preferred_date',
+            label: '来庁希望日',
+            fieldType: FormFieldType.DATE,
+            required: true,
+          },
+          {
+            fieldKey: 'contact_email',
+            label: '連絡先メールアドレス',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+          },
+          {
+            fieldKey: 'notes',
+            label: '連絡事項',
+            fieldType: FormFieldType.TEXTAREA,
+            required: false,
+          },
+        ],
+      },
+    ],
+    memberUserKeys: ['citizenReviewer', 'citizenApprover', 'citizenOperator'],
+    reviewerUserKey: 'citizenReviewer',
+    applications: [
+      {
+        applicantEmail: 'sato@example.com',
+        formName: '住民票写し交付申請',
+        status: ApplicationStatus.SUBMITTED,
+        currentStepOrder: 1,
+        submittedAt: daysAgo(1),
+        createdAt: daysAgo(1),
+        updatedAt: daysAgo(1),
+        values: {
+          applicant_name: '佐藤 一郎',
+          certificate_type: '住民票の写し',
+          copies: 2,
+          purpose: '勤務先への住所確認書類として提出するため。',
+          pickup_date: formatDate(daysFromNow(3)),
+        },
+      },
+      {
+        applicantEmail: 'yamada@example.com',
+        formName: 'マイナンバーカード窓口予約',
+        status: ApplicationStatus.RETURNED,
+        currentStepOrder: 1,
+        submittedAt: daysAgo(5),
+        createdAt: daysAgo(5),
+        updatedAt: daysAgo(4),
+        targetFieldKey: 'procedure_type',
+        values: {
+          resident_name: '山田 花子',
+          procedure_type: 'カード交付',
+          preferred_date: formatDate(daysFromNow(6)),
+          contact_email: 'yamada@example.com',
+          notes: '本人確認書類について確認したいです。',
+        },
+      },
+      {
+        applicantEmail: 'takahashi@example.com',
+        formName: '住民票写し交付申請',
+        status: ApplicationStatus.APPROVED,
+        currentStepOrder: null,
+        submittedAt: daysAgo(10),
+        createdAt: daysAgo(10),
+        updatedAt: daysAgo(8),
+        values: {
+          applicant_name: '高橋 翔太',
+          certificate_type: '住民票記載事項証明書',
+          copies: 1,
+          purpose: '資格登録の添付書類として使用。',
+          pickup_date: formatDate(daysAgo(7)),
+        },
+      },
+      {
+        applicantEmail: 'kato@example.com',
+        formName: 'マイナンバーカード窓口予約',
+        status: ApplicationStatus.IN_REVIEW,
+        currentStepOrder: 2,
+        submittedAt: daysAgo(3),
+        createdAt: daysAgo(3),
+        updatedAt: daysAgo(2),
+        values: {
+          resident_name: '加藤 真由',
+          procedure_type: '電子証明書更新',
+          preferred_date: formatDate(daysFromNow(5)),
+          contact_email: 'kato@example.com',
+          notes: '仕事の都合で午前中の予約を希望します。',
+        },
+      },
+      {
+        applicantEmail: 'ito@example.com',
+        formName: '住民票写し交付申請',
+        status: ApplicationStatus.REJECTED,
+        currentStepOrder: null,
+        submittedAt: daysAgo(14),
+        createdAt: daysAgo(14),
+        updatedAt: daysAgo(12),
+        values: {
+          applicant_name: '伊藤 直樹',
+          certificate_type: '除票の写し',
+          copies: 1,
+          purpose: '第三者請求の疎明資料が不足している状態で申請。',
+          pickup_date: formatDate(daysAgo(10)),
+        },
+      },
+    ],
+  },
+  {
+    name: '道路公園課',
+    approverUserKey: 'roadApprover',
+    description:
+      '道路占用、公園利用、街路樹・公園設備に関する申請を扱うデモスペース',
+    flowName: '道路公園課 現地確認・課長決裁フロー',
+    stepNames: ['担当者現地確認', '課長決裁'],
+    formDefinitions: [
+      {
+        name: '道路占用許可申請',
+        description: '工事、足場、看板など道路区域の一時占用を申請します。',
+        fields: [
+          {
+            fieldKey: 'contractor_name',
+            label: '申請者・施工業者名',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+          },
+          {
+            fieldKey: 'location',
+            label: '占用場所',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+            placeholder: '例: みどり市中央1-2先 市道12号線',
+          },
+          {
+            fieldKey: 'occupation_type',
+            label: '占用種別',
+            fieldType: FormFieldType.SELECT,
+            required: true,
+            optionsJson: [
+              { label: '足場設置', value: '足場設置' },
+              { label: '工事車両停車', value: '工事車両停車' },
+              { label: '仮設看板', value: '仮設看板' },
+            ],
+          },
+          {
+            fieldKey: 'start_date',
+            label: '開始日',
+            fieldType: FormFieldType.DATE,
+            required: true,
+          },
+          {
+            fieldKey: 'end_date',
+            label: '終了日',
+            fieldType: FormFieldType.DATE,
+            required: true,
+          },
+          {
+            fieldKey: 'traffic_safety_plan',
+            label: '交通安全対策',
+            fieldType: FormFieldType.TEXTAREA,
+            required: true,
+          },
+        ],
+      },
+      {
+        name: '公園利用届',
+        description: '地域行事、清掃活動、撮影など公園利用の届出です。',
+        fields: [
+          {
+            fieldKey: 'organizer_name',
+            label: '団体名・代表者名',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+          },
+          {
+            fieldKey: 'park_name',
+            label: '利用公園',
+            fieldType: FormFieldType.SELECT,
+            required: true,
+            optionsJson: [
+              { label: '中央公園', value: '中央公園' },
+              { label: '桜川公園', value: '桜川公園' },
+              { label: '駅前広場', value: '駅前広場' },
+            ],
+          },
+          {
+            fieldKey: 'use_date',
+            label: '利用日',
+            fieldType: FormFieldType.DATE,
+            required: true,
+          },
+          {
+            fieldKey: 'participants',
+            label: '参加予定人数',
+            fieldType: FormFieldType.NUMBER,
+            required: true,
+          },
+          {
+            fieldKey: 'activity_detail',
+            label: '利用内容',
+            fieldType: FormFieldType.TEXTAREA,
+            required: true,
+          },
+        ],
+      },
+    ],
+    memberUserKeys: ['roadReviewer', 'roadApprover', 'roadInspector'],
+    reviewerUserKey: 'roadReviewer',
+    applications: [
+      {
+        applicantEmail: 'green-setsubi@example.com',
+        formName: '道路占用許可申請',
+        status: ApplicationStatus.IN_REVIEW,
+        currentStepOrder: 2,
+        submittedAt: daysAgo(4),
+        createdAt: daysAgo(4),
+        updatedAt: daysAgo(2),
+        values: {
+          contractor_name: '株式会社グリーン設備',
+          location: 'みどり市中央2-4先 市道8号線',
+          occupation_type: '足場設置',
+          start_date: formatDate(daysFromNow(14)),
+          end_date: formatDate(daysFromNow(21)),
+          traffic_safety_plan:
+            '歩行者通路を1.5m以上確保し、誘導員を午前8時から午後6時まで配置します。',
+        },
+      },
+      {
+        applicantEmail: 'aoba-jichikai@example.com',
+        formName: '公園利用届',
+        status: ApplicationStatus.APPROVED,
+        currentStepOrder: null,
+        submittedAt: daysAgo(12),
+        createdAt: daysAgo(12),
+        updatedAt: daysAgo(9),
+        values: {
+          organizer_name: '青葉町自治会',
+          park_name: '中央公園',
+          use_date: formatDate(daysFromNow(10)),
+          participants: 45,
+          activity_detail: '地域清掃活動と花壇の植え替えを実施します。',
+        },
+      },
+      {
+        applicantEmail: 'event@example.com',
+        formName: '公園利用届',
+        status: ApplicationStatus.REJECTED,
+        currentStepOrder: null,
+        submittedAt: daysAgo(15),
+        createdAt: daysAgo(15),
+        updatedAt: daysAgo(13),
+        values: {
+          organizer_name: '駅前マルシェ実行委員会',
+          park_name: '駅前広場',
+          use_date: formatDate(daysFromNow(20)),
+          participants: 300,
+          activity_detail:
+            '物販を含む大規模イベントを予定。搬入車両の動線は未定です。',
+        },
+      },
+      {
+        applicantEmail: 'koji@example.com',
+        formName: '道路占用許可申請',
+        status: ApplicationStatus.RETURNED,
+        currentStepOrder: 1,
+        submittedAt: daysAgo(6),
+        createdAt: daysAgo(6),
+        updatedAt: daysAgo(5),
+        targetFieldKey: 'traffic_safety_plan',
+        values: {
+          contractor_name: 'みどり建設株式会社',
+          location: 'みどり市本町3-1先',
+          occupation_type: '工事車両停車',
+          start_date: formatDate(daysFromNow(9)),
+          end_date: formatDate(daysFromNow(11)),
+          traffic_safety_plan: 'カラーコーンを設置します。',
+        },
+      },
+      {
+        applicantEmail: 'sakura-clean@example.com',
+        formName: '公園利用届',
+        status: ApplicationStatus.SUBMITTED,
+        currentStepOrder: 1,
+        submittedAt: daysAgo(1),
+        createdAt: daysAgo(1),
+        updatedAt: daysAgo(1),
+        values: {
+          organizer_name: '桜川清掃ボランティア',
+          park_name: '桜川公園',
+          use_date: formatDate(daysFromNow(12)),
+          participants: 28,
+          activity_detail: '公園内の清掃と落ち葉回収を実施します。',
+        },
+      },
+    ],
+  },
+];
 
 async function main() {
   const config = new ConfigService(process.env);
@@ -87,54 +475,84 @@ async function main() {
 
       const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
       const users = await createUsers(manager, tenant.id, passwordHash);
-      const group = await createGroup(manager, tenant.id, users);
-      await createGroupMembers(manager, tenant.id, group.id, users);
-      const approvalFlow = await createApprovalFlow(
-        manager,
-        tenant.id,
-        group.id,
-        users,
-      );
-      const formDefinitions = await createFormDefinitions(
-        manager,
-        tenant.id,
-        group.id,
-        users.admin.id,
-      );
+      const spaceIds: Array<{ id: string; name: string }> = [];
 
-      for (const formDefinition of formDefinitions) {
-        await createFormSetupApplication(manager, {
-          approvalFlowId: approvalFlow.id,
-          createdByUserId: users.admin.id,
-          formDefinition,
+      for (const demoSpace of DEMO_SPACES) {
+        const group = await createGroup(manager, tenant.id, users, demoSpace);
+        spaceIds.push({ id: group.id, name: group.name });
+        await createGroupMembers(
+          manager,
+          tenant.id,
+          group.id,
+          users,
+          demoSpace,
+        );
+        const approvalFlow = await createApprovalFlow(
+          manager,
+          tenant.id,
+          group.id,
+          users,
+          demoSpace,
+        );
+        const formDefinitions = await createFormDefinitions(
+          manager,
+          tenant.id,
+          group.id,
+          users.admin.id,
+          demoSpace.formDefinitions,
+        );
+
+        for (const formDefinition of formDefinitions) {
+          await createFormSetupApplication(manager, {
+            approvalFlowId: approvalFlow.id,
+            createdByUserId: users.admin.id,
+            formDefinition,
+            groupId: group.id,
+            tenantId: tenant.id,
+          });
+        }
+
+        await createPublicProcedureApplications(manager, {
+          applications: demoSpace.applications,
+          approvalFlow,
+          financeUserId: users[demoSpace.approverUserKey].id,
+          formDefinitions,
           groupId: group.id,
+          managerUserId: users[demoSpace.reviewerUserKey].id,
           tenantId: tenant.id,
         });
       }
 
-      await createPublicProcedureApplications(manager, {
-        approvalFlow,
-        applicantUserId: users.applicant.id,
-        financeUserId: users.finance.id,
-        formDefinitions,
-        groupId: group.id,
-        managerUserId: users.manager.id,
-        tenantId: tenant.id,
-      });
-
       return {
+        spaceIds,
         tenantId: tenant.id,
-        spaceId: group.id,
       };
     });
 
     console.log('Demo seed completed.');
     console.log(`Tenant: ${DEMO_TENANT_NAME} (${result.tenantId})`);
-    console.log(`Space ID: ${result.spaceId}`);
+    for (const space of result.spaceIds) {
+      console.log(`Space: ${space.name} (${space.id})`);
+    }
     console.log(`Admin: admin@reviewflow.demo / ${DEMO_PASSWORD}`);
-    console.log(`Reviewer: reviewer@reviewflow.demo / ${DEMO_PASSWORD}`);
-    console.log(`Finance: finance@reviewflow.demo / ${DEMO_PASSWORD}`);
-    console.log(`Applicant: applicant@reviewflow.demo / ${DEMO_PASSWORD}`);
+    console.log(
+      `Citizen reviewer: citizen-reviewer@reviewflow.demo / ${DEMO_PASSWORD}`,
+    );
+    console.log(
+      `Citizen approver: citizen-approver@reviewflow.demo / ${DEMO_PASSWORD}`,
+    );
+    console.log(
+      `Citizen operator: citizen-operator@reviewflow.demo / ${DEMO_PASSWORD}`,
+    );
+    console.log(
+      `Road reviewer: road-reviewer@reviewflow.demo / ${DEMO_PASSWORD}`,
+    );
+    console.log(
+      `Road approver: road-approver@reviewflow.demo / ${DEMO_PASSWORD}`,
+    );
+    console.log(
+      `Road inspector: road-inspector@reviewflow.demo / ${DEMO_PASSWORD}`,
+    );
   } finally {
     await dataSource.destroy();
   }
@@ -155,26 +573,50 @@ async function createUsers(
       role: UserRole.TENANT_ADMIN,
       isActive: true,
     }),
-    manager: userRepo.create({
+    citizenReviewer: userRepo.create({
       tenantId,
-      name: '市民協働課 田中 健',
-      email: 'reviewer@reviewflow.demo',
+      name: '市民課 窓口担当 田中 健',
+      email: 'citizen-reviewer@reviewflow.demo',
       passwordHash,
       role: UserRole.TENANT_USER,
       isActive: true,
     }),
-    finance: userRepo.create({
+    citizenApprover: userRepo.create({
       tenantId,
-      name: '財政課 山本 美咲',
-      email: 'finance@reviewflow.demo',
+      name: '市民課 係長 山本 美咲',
+      email: 'citizen-approver@reviewflow.demo',
       passwordHash,
       role: UserRole.TENANT_USER,
       isActive: true,
     }),
-    applicant: userRepo.create({
+    citizenOperator: userRepo.create({
       tenantId,
-      name: 'みどり商店会 高橋 翔太',
-      email: 'applicant@reviewflow.demo',
+      name: '市民課 窓口担当 鈴木 花',
+      email: 'citizen-operator@reviewflow.demo',
+      passwordHash,
+      role: UserRole.TENANT_USER,
+      isActive: true,
+    }),
+    roadReviewer: userRepo.create({
+      tenantId,
+      name: '道路公園課 担当者 佐々木 真',
+      email: 'road-reviewer@reviewflow.demo',
+      passwordHash,
+      role: UserRole.TENANT_USER,
+      isActive: true,
+    }),
+    roadApprover: userRepo.create({
+      tenantId,
+      name: '道路公園課 課長 伊藤 直子',
+      email: 'road-approver@reviewflow.demo',
+      passwordHash,
+      role: UserRole.TENANT_USER,
+      isActive: true,
+    }),
+    roadInspector: userRepo.create({
+      tenantId,
+      name: '道路公園課 現地確認担当 渡辺 誠',
+      email: 'road-inspector@reviewflow.demo',
       passwordHash,
       role: UserRole.TENANT_USER,
       isActive: true,
@@ -183,9 +625,12 @@ async function createUsers(
 
   return {
     admin: await userRepo.save(rows.admin),
-    manager: await userRepo.save(rows.manager),
-    finance: await userRepo.save(rows.finance),
-    applicant: await userRepo.save(rows.applicant),
+    citizenApprover: await userRepo.save(rows.citizenApprover),
+    citizenOperator: await userRepo.save(rows.citizenOperator),
+    citizenReviewer: await userRepo.save(rows.citizenReviewer),
+    roadApprover: await userRepo.save(rows.roadApprover),
+    roadInspector: await userRepo.save(rows.roadInspector),
+    roadReviewer: await userRepo.save(rows.roadReviewer),
   };
 }
 
@@ -193,14 +638,14 @@ async function createGroup(
   manager: EntityManager,
   tenantId: string,
   users: Record<DemoUserKey, User>,
+  demoSpace: DemoSpace,
 ): Promise<Group> {
   const groupRepo = manager.getRepository(Group);
   return groupRepo.save(
     groupRepo.create({
       tenantId,
-      name: '公共申請受付',
-      description:
-        '補助金、施設利用、イベント開催などの公的申請を扱うデモスペース',
+      name: demoSpace.name,
+      description: demoSpace.description,
       createdByUserId: users.admin.id,
     }),
   );
@@ -211,6 +656,7 @@ async function createGroupMembers(
   tenantId: string,
   groupId: string,
   users: Record<DemoUserKey, User>,
+  demoSpace: DemoSpace,
 ) {
   const memberRepo = manager.getRepository(GroupMember);
   await memberRepo.save([
@@ -221,27 +667,15 @@ async function createGroupMembers(
       role: GroupMemberRole.ADMIN,
       invitedByUserId: users.admin.id,
     }),
-    memberRepo.create({
-      tenantId,
-      groupId,
-      userId: users.manager.id,
-      role: GroupMemberRole.USER,
-      invitedByUserId: users.admin.id,
-    }),
-    memberRepo.create({
-      tenantId,
-      groupId,
-      userId: users.finance.id,
-      role: GroupMemberRole.USER,
-      invitedByUserId: users.admin.id,
-    }),
-    memberRepo.create({
-      tenantId,
-      groupId,
-      userId: users.applicant.id,
-      role: GroupMemberRole.USER,
-      invitedByUserId: users.admin.id,
-    }),
+    ...demoSpace.memberUserKeys.map((userKey) =>
+      memberRepo.create({
+        tenantId,
+        groupId,
+        userId: users[userKey].id,
+        role: GroupMemberRole.USER,
+        invitedByUserId: users.admin.id,
+      }),
+    ),
   ]);
 }
 
@@ -250,6 +684,7 @@ async function createApprovalFlow(
   tenantId: string,
   groupId: string,
   users: Record<DemoUserKey, User>,
+  demoSpace: DemoSpace,
 ): Promise<ApprovalFlow> {
   const flowRepo = manager.getRepository(ApprovalFlow);
   const stepRepo = manager.getRepository(ApprovalStep);
@@ -257,7 +692,7 @@ async function createApprovalFlow(
     flowRepo.create({
       tenantId,
       groupId,
-      name: '担当課確認・財政確認フロー',
+      name: demoSpace.flowName,
       isActive: true,
     }),
   );
@@ -267,9 +702,9 @@ async function createApprovalFlow(
       groupId,
       approvalFlowId: flow.id,
       stepOrder: 1,
-      stepName: '担当課確認',
-      assigneeUserId: users.manager.id,
-      assigneeUserIds: [users.manager.id],
+      stepName: demoSpace.stepNames[0],
+      assigneeUserId: users[demoSpace.reviewerUserKey].id,
+      assigneeUserIds: [users[demoSpace.reviewerUserKey].id],
       canReturn: true,
     }),
     stepRepo.create({
@@ -277,9 +712,9 @@ async function createApprovalFlow(
       groupId,
       approvalFlowId: flow.id,
       stepOrder: 2,
-      stepName: '財政確認',
-      assigneeUserId: users.finance.id,
-      assigneeUserIds: [users.finance.id],
+      stepName: demoSpace.stepNames[1],
+      assigneeUserId: users[demoSpace.approverUserKey].id,
+      assigneeUserIds: [users[demoSpace.approverUserKey].id],
       canReturn: false,
     }),
   ]);
@@ -291,287 +726,8 @@ async function createFormDefinitions(
   tenantId: string,
   groupId: string,
   createdByUserId: string,
+  definitions: DemoFormDefinition[],
 ): Promise<FormDefinition[]> {
-  const definitions: DemoFormDefinition[] = [
-    {
-      name: '補助金申請',
-      description:
-        '事業者・住民団体が地域活動や設備導入に関する補助金を申請します。',
-      fields: [
-        {
-          fieldKey: 'applicant_name',
-          label: '申請者・団体名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-          placeholder: '例: みどり商店会',
-        },
-        {
-          fieldKey: 'subsidy_program',
-          label: '補助金種別',
-          fieldType: FormFieldType.SELECT,
-          required: true,
-          optionsJson: [
-            { label: '地域活動支援', value: '地域活動支援' },
-            { label: '商店街活性化', value: '商店街活性化' },
-            { label: '省エネ設備導入', value: '省エネ設備導入' },
-            { label: 'その他', value: 'その他' },
-          ],
-        },
-        {
-          fieldKey: 'project_name',
-          label: '事業名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-          placeholder: '例: 中央通り夜市活性化事業',
-        },
-        {
-          fieldKey: 'requested_amount',
-          label: '申請金額',
-          fieldType: FormFieldType.NUMBER,
-          required: true,
-          placeholder: '例: 450000',
-        },
-        {
-          fieldKey: 'project_start_date',
-          label: '事業開始予定日',
-          fieldType: FormFieldType.DATE,
-          required: true,
-        },
-        {
-          fieldKey: 'project_plan',
-          label: '事業計画・必要性',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-          helpText: '目的、実施内容、期待効果が分かるように記載してください。',
-        },
-        {
-          fieldKey: 'attachment_check',
-          label: '添付書類確認',
-          fieldType: FormFieldType.SELECT,
-          required: true,
-          optionsJson: [
-            { label: '見積書・収支計画を添付済み', value: '添付済み' },
-            { label: '一部未添付', value: '一部未添付' },
-          ],
-        },
-      ],
-    },
-    {
-      name: '施設利用申請',
-      description: '公民館、体育館、会議室などの公共施設利用を申請します。',
-      fields: [
-        {
-          fieldKey: 'applicant_name',
-          label: '申請者・団体名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'facility_name',
-          label: '利用施設',
-          fieldType: FormFieldType.SELECT,
-          required: true,
-          optionsJson: [
-            { label: '中央公民館 ホール', value: '中央公民館 ホール' },
-            { label: '市民体育館', value: '市民体育館' },
-            { label: '駅前会議室', value: '駅前会議室' },
-          ],
-        },
-        {
-          fieldKey: 'use_date',
-          label: '利用日',
-          fieldType: FormFieldType.DATE,
-          required: true,
-        },
-        {
-          fieldKey: 'participants',
-          label: '利用予定人数',
-          fieldType: FormFieldType.NUMBER,
-          required: true,
-        },
-        {
-          fieldKey: 'purpose',
-          label: '利用目的',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-        },
-      ],
-    },
-    {
-      name: 'イベント開催申請',
-      description:
-        '道路使用、公共施設利用、地域イベントなど複数部署確認が必要な申請です。',
-      fields: [
-        {
-          fieldKey: 'organizer_name',
-          label: '主催者名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'event_name',
-          label: 'イベント名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'event_date',
-          label: '開催日',
-          fieldType: FormFieldType.DATE,
-          required: true,
-        },
-        {
-          fieldKey: 'venue',
-          label: '会場・使用場所',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'expected_visitors',
-          label: '想定来場者数',
-          fieldType: FormFieldType.NUMBER,
-          required: true,
-        },
-        {
-          fieldKey: 'safety_plan',
-          label: '安全対策・運営計画',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-        },
-      ],
-    },
-    {
-      name: '事業者登録申請',
-      description: '指定業者、委託先、取引先として登録するための確認申請です。',
-      fields: [
-        {
-          fieldKey: 'business_name',
-          label: '事業者名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'representative_name',
-          label: '代表者名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'business_category',
-          label: '業種',
-          fieldType: FormFieldType.SELECT,
-          required: true,
-          optionsJson: [
-            { label: '建設・設備', value: '建設・設備' },
-            { label: '物品販売', value: '物品販売' },
-            { label: '業務委託', value: '業務委託' },
-            { label: 'その他', value: 'その他' },
-          ],
-        },
-        {
-          fieldKey: 'registration_reason',
-          label: '登録希望理由',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-        },
-        {
-          fieldKey: 'documents_status',
-          label: '添付書類',
-          fieldType: FormFieldType.SELECT,
-          required: true,
-          optionsJson: [
-            { label: '登記簿・納税証明を添付済み', value: '添付済み' },
-            { label: '一部未添付', value: '一部未添付' },
-          ],
-        },
-      ],
-    },
-    {
-      name: '各種減免申請',
-      description:
-        '施設使用料、保育料、税関連などの減免について判断根拠を確認します。',
-      fields: [
-        {
-          fieldKey: 'applicant_name',
-          label: '申請者名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'exemption_type',
-          label: '減免種別',
-          fieldType: FormFieldType.SELECT,
-          required: true,
-          optionsJson: [
-            { label: '施設使用料', value: '施設使用料' },
-            { label: '保育料', value: '保育料' },
-            { label: '税関連', value: '税関連' },
-          ],
-        },
-        {
-          fieldKey: 'target_amount',
-          label: '対象金額',
-          fieldType: FormFieldType.NUMBER,
-          required: true,
-        },
-        {
-          fieldKey: 'reason',
-          label: '減免を希望する理由',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-        },
-        {
-          fieldKey: 'evidence_summary',
-          label: '判断根拠・証明書類',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-        },
-      ],
-    },
-    {
-      name: '住民向け手続き',
-      description:
-        '相談予約、申請受付、証明書関連依頼など住民向け手続きを受け付けます。',
-      fields: [
-        {
-          fieldKey: 'resident_name',
-          label: '氏名',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'procedure_type',
-          label: '手続き種別',
-          fieldType: FormFieldType.SELECT,
-          required: true,
-          optionsJson: [
-            { label: '相談予約', value: '相談予約' },
-            { label: '証明書関連依頼', value: '証明書関連依頼' },
-            { label: '申請受付相談', value: '申請受付相談' },
-          ],
-        },
-        {
-          fieldKey: 'preferred_date',
-          label: '希望日',
-          fieldType: FormFieldType.DATE,
-          required: true,
-        },
-        {
-          fieldKey: 'contact_email',
-          label: '連絡先メールアドレス',
-          fieldType: FormFieldType.TEXT,
-          required: true,
-        },
-        {
-          fieldKey: 'request_detail',
-          label: '相談・依頼内容',
-          fieldType: FormFieldType.TEXTAREA,
-          required: true,
-        },
-      ],
-    },
-  ];
-
   const formRepo = manager.getRepository(FormDefinition);
   const fieldRepo = manager.getRepository(FormField);
   const savedDefinitions: FormDefinition[] = [];
@@ -639,8 +795,8 @@ async function createFormSetupApplication(
 async function createPublicProcedureApplications(
   manager: EntityManager,
   input: {
+    applications: DemoApplication[];
     approvalFlow: ApprovalFlow;
-    applicantUserId: string;
     financeUserId: string;
     formDefinitions: FormDefinition[];
     groupId: string;
@@ -670,120 +826,7 @@ async function createPublicProcedureApplications(
     order: { stepOrder: 'ASC' },
   });
 
-  const applications: DemoApplication[] = [
-    {
-      applicant: 'applicant',
-      applicantEmail: 'applicant@reviewflow.demo',
-      formName: '補助金申請',
-      status: ApplicationStatus.SUBMITTED,
-      currentStepOrder: 1,
-      submittedAt: daysAgo(1),
-      createdAt: daysAgo(1),
-      updatedAt: daysAgo(1),
-      values: {
-        applicant_name: 'みどり商店会',
-        subsidy_program: '商店街活性化',
-        project_name: '中央通り夜市活性化事業',
-        requested_amount: 450000,
-        project_start_date: formatDate(daysFromNow(30)),
-        project_plan:
-          '夏季の歩行者回遊を増やすため、夜市の出店管理と広報を実施します。',
-        attachment_check: '添付済み',
-      },
-    },
-    {
-      applicant: 'applicant',
-      applicantEmail: 'applicant@reviewflow.demo',
-      formName: '施設利用申請',
-      status: ApplicationStatus.IN_REVIEW,
-      currentStepOrder: 2,
-      submittedAt: daysAgo(4),
-      createdAt: daysAgo(4),
-      updatedAt: daysAgo(2),
-      values: {
-        applicant_name: '青葉町自治会',
-        facility_name: '中央公民館 ホール',
-        use_date: formatDate(daysFromNow(18)),
-        participants: 80,
-        purpose: '防災講習会と地域交流会を同日開催します。',
-      },
-    },
-    {
-      applicant: 'applicant',
-      applicantEmail: 'applicant@reviewflow.demo',
-      formName: 'イベント開催申請',
-      status: ApplicationStatus.RETURNED,
-      currentStepOrder: 1,
-      submittedAt: daysAgo(7),
-      createdAt: daysAgo(7),
-      updatedAt: daysAgo(6),
-      targetFieldKey: 'safety_plan',
-      values: {
-        organizer_name: 'みどり駅前実行委員会',
-        event_name: '駅前ストリートフェスタ',
-        event_date: formatDate(daysFromNow(45)),
-        venue: 'みどり駅前広場・中央通り歩道',
-        expected_visitors: 1200,
-        safety_plan: '警備担当を配置し、混雑時はスタッフが歩行者を誘導します。',
-      },
-    },
-    {
-      applicant: 'applicant',
-      applicantEmail: 'applicant@reviewflow.demo',
-      formName: '事業者登録申請',
-      status: ApplicationStatus.APPROVED,
-      currentStepOrder: null,
-      submittedAt: daysAgo(12),
-      createdAt: daysAgo(12),
-      updatedAt: daysAgo(9),
-      values: {
-        business_name: '株式会社グリーン設備',
-        representative_name: '森下 一郎',
-        business_category: '建設・設備',
-        registration_reason:
-          '公共施設の省エネ改修案件に対応する指定業者として登録を希望します。',
-        documents_status: '添付済み',
-      },
-    },
-    {
-      applicant: null,
-      applicantEmail: 'resident@example.com',
-      status: ApplicationStatus.REJECTED,
-      currentStepOrder: null,
-      submittedAt: daysAgo(18),
-      createdAt: daysAgo(18),
-      updatedAt: daysAgo(16),
-      formName: '各種減免申請',
-      values: {
-        applicant_name: '鈴木 花子',
-        exemption_type: '施設使用料',
-        target_amount: 32000,
-        reason: '地域活動に関する利用のため全額減免を希望します。',
-        evidence_summary:
-          '団体活動の実績資料が未提出で、減免対象要件の確認ができません。',
-      },
-    },
-    {
-      applicant: null,
-      applicantEmail: 'resident-consultation@example.com',
-      formName: '住民向け手続き',
-      status: ApplicationStatus.SUBMITTED,
-      currentStepOrder: 1,
-      submittedAt: daysAgo(2),
-      createdAt: daysAgo(2),
-      updatedAt: daysAgo(2),
-      values: {
-        resident_name: '中村 大輔',
-        procedure_type: '相談予約',
-        preferred_date: formatDate(daysFromNow(7)),
-        contact_email: 'resident-consultation@example.com',
-        request_detail:
-          '地域活動支援金の対象経費と申請前相談の日程を確認したいです。',
-      },
-    },
-  ];
-
-  for (const demoApplication of applications) {
+  for (const demoApplication of input.applications) {
     const formDefinition = formDefinitionByName.get(demoApplication.formName);
     const fieldByKey = fieldsByFormName.get(demoApplication.formName);
     if (!formDefinition || !fieldByKey) {
@@ -827,7 +870,6 @@ async function saveApplication(
   manager: EntityManager,
   input: {
     approvalFlow: ApprovalFlow;
-    applicantUserId: string;
     formDefinition: FormDefinition;
     groupId: string;
     tenantId: string;
@@ -839,8 +881,7 @@ async function saveApplication(
     applicationRepo.create({
       tenantId: input.tenantId,
       groupId: input.groupId,
-      applicantUserId:
-        demoApplication.applicant === null ? null : input.applicantUserId,
+      applicantUserId: null,
       applicantEmail: demoApplication.applicantEmail,
       formDefinitionId: input.formDefinition.id,
       approvalFlowId: input.approvalFlow.id,
@@ -909,7 +950,20 @@ async function saveApprovalHistory(
         approvalStepId: managerStep.id,
         actedByUserId: input.managerUserId,
         action: ApplicationApprovalAction.APPROVED,
-        comment: '申請内容と必要項目を確認しました。',
+        comment: '申請内容、本人確認、必要項目を確認しました。',
+      }),
+    );
+  }
+
+  if (input.status === ApplicationStatus.RETURNED) {
+    rows.push(
+      approvalRepo.create({
+        tenantId: input.tenantId,
+        applicationId: input.application.id,
+        approvalStepId: managerStep.id,
+        actedByUserId: input.managerUserId,
+        action: ApplicationApprovalAction.RETURNED,
+        comment: '確認に必要な情報が不足しているため差し戻します。',
       }),
     );
   }
@@ -922,7 +976,7 @@ async function saveApprovalHistory(
         approvalStepId: financeStep.id,
         actedByUserId: input.financeUserId,
         action: ApplicationApprovalAction.APPROVED,
-        comment: '予算・添付書類を確認し、承認します。',
+        comment: '担当確認結果と添付情報を確認し、承認します。',
       }),
     );
   }
@@ -935,7 +989,7 @@ async function saveApprovalHistory(
         approvalStepId: financeStep.id,
         actedByUserId: input.financeUserId,
         action: ApplicationApprovalAction.REJECTED,
-        comment: '判断根拠が不足しているため却下します。',
+        comment: '利用条件と安全管理の確認が不足しているため却下します。',
       }),
     );
   }
