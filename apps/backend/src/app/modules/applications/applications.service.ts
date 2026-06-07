@@ -1,13 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import type { AuthUserPayload } from '../../../decorators/current-user.decorator';
 import {
   AuthService,
   type ApplicantAccessTokenPayload,
 } from '../auth/auth.service';
 import { ClientErrorCodes, clientError } from '../../../common/errors';
-import { ApplicationApprovalAction } from '../../../models/constants/application-approval-action';
 import { ApplicationStatus } from '../../../models/constants/application-status';
 import { CorrectionRequestStatus } from '../../../models/constants/correction-request-status';
 import { FormDefinitionStatus } from '../../../models/constants/form-definition-status';
@@ -16,7 +15,6 @@ import { ApplicationApproval } from '../../../models/entities/application-approv
 import { ApplicationFieldValue } from '../../../models/entities/application-field-value.entity';
 import { Application } from '../../../models/entities/application.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
-import { CorrectionRequestItem } from '../../../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { SpaceAccessService } from '../groups/space-access.service';
@@ -39,16 +37,11 @@ import { ApplicationAccessPolicy } from './application-access.policy';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationProgressService } from './application-progress.service';
+import { ApplicationReviewActionService } from './application-review-action.service';
+import { ApplicationSubmissionService } from './application-submission.service';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
-type SubmittableApplicationContext = {
-  app: Application;
-  template: FormDefinition;
-};
-type ResubmittableApplicationContext = SubmittableApplicationContext & {
-  openCorrection: CorrectionRequest;
-};
 
 function isSetupApplication(app: Application): boolean {
   return (
@@ -70,8 +63,6 @@ export class ApplicationsService {
     private readonly approvals: Repository<ApplicationApproval>,
     @InjectRepository(CorrectionRequest)
     private readonly correctionRequests: Repository<CorrectionRequest>,
-    @InjectRepository(CorrectionRequestItem)
-    private readonly correctionItems: Repository<CorrectionRequestItem>,
     @InjectRepository(FormDefinition)
     private readonly templates: Repository<FormDefinition>,
     @InjectRepository(ApprovalFlow)
@@ -83,6 +74,8 @@ export class ApplicationsService {
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
     private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly progressService: ApplicationProgressService,
+    private readonly reviewActionService: ApplicationReviewActionService,
+    private readonly submissionService: ApplicationSubmissionService,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
@@ -375,12 +368,7 @@ export class ApplicationsService {
         status: ApplicationStatus.DRAFT,
       },
     );
-    const context = await this.loadSubmittableApplicationContext(
-      actor.tenantId,
-      created,
-    );
-    this.validateApplicationReadyToSubmit(context);
-    await this.applySubmitTransition(context);
+    await this.submissionService.submit(actor.tenantId, created);
     const submitted = await this.loadApplicationOrThrow(
       actor.tenantId,
       created.id,
@@ -441,104 +429,10 @@ export class ApplicationsService {
     return this.getOneForActor(actor, id);
   }
 
-  private async loadSubmittableApplicationContext(
-    tenantId: string,
-    app: Application,
-  ): Promise<SubmittableApplicationContext> {
-    this.transitionPolicy.assertDraft(app);
-
-    const template = await this.templates.findOne({
-      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-
-    return { app, template };
-  }
-
-  private validateApplicationReadyToSubmit(
-    context: SubmittableApplicationContext,
-  ): void {
-    this.formValueValidator.assertApplicationValuesSubmittable(
-      context.app,
-      context.template.fields ?? [],
-    );
-  }
-
-  private async saveSubmittedApplication(app: Application): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
-      await em.getRepository(Application).save(app);
-    });
-  }
-
-  private async applySubmitTransition(
-    context: SubmittableApplicationContext,
-  ): Promise<void> {
-    this.transitionPolicy.startReview(context.app);
-    await this.saveSubmittedApplication(context.app);
-  }
-
-  private async loadResubmittableApplicationContext(
-    tenantId: string,
-    app: Application,
-  ): Promise<ResubmittableApplicationContext> {
-    this.transitionPolicy.assertReturned(app);
-
-    const openCorrection = await this.correctionRequests.findOne({
-      where: {
-        applicationId: app.id,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items'],
-    });
-    if (!openCorrection) {
-      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
-    }
-
-    const template = await this.templates.findOne({
-      where: { id: app.formDefinitionId, tenantId, groupId: app.groupId },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-
-    return { app, template, openCorrection };
-  }
-
-  private async applyResubmitTransition(
-    context: ResubmittableApplicationContext,
-  ): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
-      const corrRepo = em.getRepository(CorrectionRequest);
-      const itemRepo = em.getRepository(CorrectionRequestItem);
-      const appRepo = em.getRepository(Application);
-
-      context.openCorrection.status = CorrectionRequestStatus.RESOLVED;
-      context.openCorrection.resolvedAt = new Date();
-      await corrRepo.save(context.openCorrection);
-
-      for (const it of context.openCorrection.items ?? []) {
-        it.isResolved = true;
-        await itemRepo.save(it);
-      }
-
-      this.transitionPolicy.applyResubmit(context.app);
-      await appRepo.save(context.app);
-    });
-  }
-
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const context = await this.loadSubmittableApplicationContext(
-      actor.tenantId,
-      app,
-    );
-    this.validateApplicationReadyToSubmit(context);
-    await this.applySubmitTransition(context);
+    await this.submissionService.submit(actor.tenantId, app);
     return this.getOneForActor(actor, id);
   }
 
@@ -558,28 +452,7 @@ export class ApplicationsService {
     if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
-    const cur = this.transitionPolicy.getCurrentStep(app);
-    const next = this.transitionPolicy.getNextStep(app, cur);
-
-    const comment = dto.comment?.trim().length ? dto.comment.trim() : null;
-
-    await this.apps.manager.transaction(async (em) => {
-      const approvalRepo = em.getRepository(ApplicationApproval);
-      const appRepo = em.getRepository(Application);
-      await approvalRepo.save(
-        approvalRepo.create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          approvalStepId: cur.id,
-          actedByUserId: actor.id,
-          action: ApplicationApprovalAction.APPROVED,
-          comment,
-        }),
-      );
-      this.transitionPolicy.applyApproval(app, next);
-      await appRepo.save(app);
-    });
-
+    await this.reviewActionService.approve(app, actor.id, dto);
     return this.getOneForActor(actor, id);
   }
 
@@ -599,25 +472,7 @@ export class ApplicationsService {
     if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
-    const cur = this.transitionPolicy.getCurrentStep(app);
-
-    const comment = dto.comment?.trim().length ? dto.comment.trim() : null;
-
-    await this.apps.manager.transaction(async (em) => {
-      await em.getRepository(ApplicationApproval).save(
-        em.getRepository(ApplicationApproval).create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          approvalStepId: cur.id,
-          actedByUserId: actor.id,
-          action: ApplicationApprovalAction.REJECTED,
-          comment,
-        }),
-      );
-      this.transitionPolicy.applyReject(app);
-      await em.getRepository(Application).save(app);
-    });
-
+    await this.reviewActionService.reject(app, actor.id, dto);
     return this.getOneForActor(actor, id);
   }
 
@@ -637,83 +492,11 @@ export class ApplicationsService {
     if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
-    const cur = this.transitionPolicy.getCurrentStep(app);
-    this.transitionPolicy.assertStepCanReturn(cur);
-
-    const existingOpen = await this.findOpenCorrection(app.id);
-    if (existingOpen) {
-      throw clientError(ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN);
-    }
-
-    const template = await this.templates.findOne({
-      where: {
-        id: app.formDefinitionId,
-        tenantId: actor.tenantId,
-        groupId: app.groupId,
-      },
-      relations: ['fields'],
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-    const fieldIdsOnTemplate = new Set(
-      (template.fields ?? []).map((f) => f.id),
+    const template = await this.reviewActionService.returnForCorrection(
+      app,
+      actor.id,
+      dto,
     );
-
-    for (const f of dto.fields) {
-      if (!fieldIdsOnTemplate.has(f.fieldId)) {
-        throw clientError(ClientErrorCodes.APPLICATION_RETURN_FIELDS_INVALID);
-      }
-    }
-
-    const overall = dto.overallComment?.trim().length
-      ? dto.overallComment.trim()
-      : null;
-
-    await this.apps.manager.transaction(async (em) => {
-      const approvalRepo = em.getRepository(ApplicationApproval);
-      const corrRepo = em.getRepository(CorrectionRequest);
-      const itemRepo = em.getRepository(CorrectionRequestItem);
-      const appRepo = em.getRepository(Application);
-
-      await approvalRepo.save(
-        approvalRepo.create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          approvalStepId: cur.id,
-          actedByUserId: actor.id,
-          action: ApplicationApprovalAction.RETURNED,
-          comment: overall,
-        }),
-      );
-
-      const cr = await corrRepo.save(
-        corrRepo.create({
-          tenantId: app.tenantId,
-          applicationId: app.id,
-          requestedByUserId: actor.id,
-          status: CorrectionRequestStatus.OPEN,
-          overallComment: overall,
-          resolvedAt: null,
-        }),
-      );
-
-      for (const row of dto.fields) {
-        await itemRepo.save(
-          itemRepo.create({
-            tenantId: app.tenantId,
-            correctionRequestId: cr.id,
-            formFieldId: row.fieldId,
-            comment: row.comment?.trim().length ? row.comment.trim() : null,
-            isResolved: false,
-          }),
-        );
-      }
-
-      this.transitionPolicy.applyReturn(app);
-      await appRepo.save(app);
-    });
-
     await this.notifyApplicantOfReturn(app, template, dto);
 
     return this.getOneForActor(actor, id);
@@ -800,12 +583,7 @@ export class ApplicationsService {
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const context = await this.loadResubmittableApplicationContext(
-      actor.tenantId,
-      app,
-    );
-    this.validateApplicationReadyToSubmit(context);
-    await this.applyResubmitTransition(context);
+    await this.submissionService.resubmit(actor.tenantId, app);
     return this.getOneForActor(actor, id);
   }
 
@@ -861,12 +639,7 @@ export class ApplicationsService {
     if (app.groupId !== actor.groupId) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
-    const context = await this.loadResubmittableApplicationContext(
-      actor.tenantId,
-      app,
-    );
-    this.validateApplicationReadyToSubmit(context);
-    await this.applyResubmitTransition(context);
+    await this.submissionService.resubmit(actor.tenantId, app);
     const updated = await this.loadApplicantEditableApplication(actor, id);
     return this.progressService.hydrate(updated);
   }

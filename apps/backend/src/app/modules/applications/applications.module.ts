@@ -16,6 +16,8 @@ import { ApplicationAccessPolicy } from './application-access.policy';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
 import { ApplicationProgressService } from './application-progress.service';
+import { ApplicationReviewActionService } from './application-review-action.service';
+import { ApplicationSubmissionService } from './application-submission.service';
 import { ApplicationTransitionPolicy } from './application-transition.policy';
 import { ApplicationsController } from './applications.controller';
 import { ApplicationsService } from './applications.service';
@@ -45,6 +47,8 @@ import { PublicApplicationsController } from './public-applications.controller';
     ApplicationFieldValuePatchService,
     ApplicationFormValueValidator,
     ApplicationProgressService,
+    ApplicationReviewActionService,
+    ApplicationSubmissionService,
     ApplicationTransitionPolicy,
   ],
 })
