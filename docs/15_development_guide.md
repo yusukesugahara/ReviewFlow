@@ -1,286 +1,127 @@
-# ReviewFlow
+# 開発ガイド
 
-[![CI](https://github.com/yusukesugahara/ReviewFlow/actions/workflows/ci.yml/badge.svg)](https://github.com/yusukesugahara/ReviewFlow/actions/workflows/ci.yml)
+ReviewFlow のローカル開発・テスト・型生成の手順をまとめる。環境変数の詳細は [バックエンド README](../apps/backend/README.md) も参照すること。
 
-ReviewFlow is a portfolio-grade full-stack workflow application for creating application forms, submitting requests, approving or returning them, managing spaces and users, exporting CSV data, and reviewing audit logs.
+## 前提
 
-This repository is intended to show practical engineering quality, not only a working demo:
+- Node.js LTS（CI では 22.x）
+- npm
+- Docker / Docker Compose（コンテナ起動時）
 
-- Next.js App Router frontend
-- NestJS backend with modular domain boundaries
-- Tenant-aware authentication and authorization
-- OpenAPI-based API type generation
-- TypeORM entities and migrations
-- Structured logging with pino
-- Backend unit, integration, and E2E tests
-- Frontend Playwright E2E foundation
-
-## Features
-
-- Email/password authentication with HttpOnly cookie session handling on the frontend
-- System management console for spaces, invitations, and audit logs
-- Space management console for form setup, applications, and users
-- Dynamic form definition creation
-- Approval flow setup with approval and return handling
-- Applicant-facing application flow
-- Per-form CSV export from the submissions list
-- Request/audit logging with request IDs
-
-## Repository Structure
-
-Current structure:
-
-```text
-.
-├── apps/
-│   ├── frontend/        # Next.js App Router application
-│   └── backend/         # NestJS API server
-├── docs/                # Domain, architecture, API, auth, workflow docs
-├── docker-compose.yml   # Local full-stack development stack
-├── AGENTS.md            # Coding-agent rules for this repository
-├── package.json         # Root workspace scripts
-└── README.md
-```
-
-There is currently no `packages/shared`, `packages/ui`, `infra`, or `turbo.json`.
-If shared packages or infrastructure directories are added later, update this README, `AGENTS.md`, and the relevant docs in the same change.
-
-## Tech Stack
-
-Frontend:
-
-- Next.js
-- React
-- TypeScript
-- Tailwind CSS
-- Zod
-- Playwright
-- OpenAPI-generated API types
-
-Backend:
-
-- NestJS
-- TypeScript
-- TypeORM
-- class-validator / class-transformer
-- Passport JWT
-- pino / nestjs-pino
-- Swagger / OpenAPI
-- Jest / Supertest
-
-Database:
-
-- MySQL is the target production database.
-- SQLite via `better-sqlite3` is supported for local development and tests.
-
-## Architecture Notes
-
-- The backend is the source of truth for business rules, authorization, validation, and persistence.
-- The frontend may hide unavailable UI actions, but backend authorization remains mandatory.
-- Backend APIs use an internal `X-API-Key` for server-to-server access and JWT for user identity.
-- Tenant-owned data must be scoped by the authenticated user's `tenantId`.
-- Workflow business data is scoped by both tenant and space (`group_id` on backend business tables). Tenant admins can manage all spaces in their tenant, space admins can manage their own space, and space users can create/view their own applications and act on assigned approvals in their space.
-- Current space-scoped APIs keep the existing paths and require `groupId` in query or body. A later API cleanup can move these resources under nested paths such as `/groups/:groupId/applications`.
-- Frontend API types are generated from the backend OpenAPI schema.
-- There is no shared package yet; current type sharing is OpenAPI schema → generated frontend types.
-
-See also:
-
-- [Architecture](docs/05_architecture.md)
-- [Domain model](docs/02_domain_model.md)
-- [ER diagram](docs/03_er_diagram.md)
-- [API spec](docs/04_api_spec.md)
-- [Auth and multitenancy](docs/08_auth_and_multitenant.md)
-- [Workflow and approval](docs/09_workflow_and_approval.md)
-- [Coding rules](docs/11_coding_rules.md)
-- [Agent rules](AGENTS.md)
-
-## Documentation
-
-The `docs/` directory is the engineering reference for the product. GitHub renders Markdown tables and Mermaid diagrams directly, so architecture, ER, and workflow documents can be reviewed as structured tables and diagrams without a separate viewer.
-
-| Document | Purpose |
-| --- | --- |
-| [Overview](docs/00_overview.md) | Product scope, core capabilities, and documentation index. |
-| [Domain model](docs/02_domain_model.md) | Business concepts and relationships. |
-| [ER diagram](docs/03_er_diagram.md) | Table definitions, indexes, and Mermaid ER overview. |
-| [API spec](docs/04_api_spec.md) | API behavior and contract notes. |
-| [Architecture](docs/05_architecture.md) | Frontend/backend/database responsibility boundaries. |
-| [Auth and multitenancy](docs/08_auth_and_multitenant.md) | Tenant, role, and space authorization rules. |
-| [Workflow and approval](docs/09_workflow_and_approval.md) | Application status transitions and approval rules. |
-| [UI design rules](docs/14_ui_design_rules.md) | Frontend UI design principles, component usage, and SaaS dashboard consistency rules. |
-
-Mermaid is installed at the repository root for documentation tooling and future rendering/validation scripts:
+リポジトリは npm workspaces を使用する。依存関係のインストールと lockfile 更新は **ルート** で行う。
 
 ```bash
 npm install
 ```
 
-## Prerequisites
-
-- Node.js LTS
-- npm
-- Docker and Docker Compose, when using the containerized stack
-
-The repository uses npm workspaces for root-level commands:
-
-```json
-{
-  "workspaces": ["apps/frontend", "apps/backend"]
-}
-```
-
-## Environment Setup
-
-Backend:
+## 環境変数の準備
 
 ```bash
 cp apps/backend/.env.example apps/backend/.env.dev
-```
-
-Frontend:
-
-```bash
 cp apps/frontend/.env.example apps/frontend/.env
 ```
 
-The default local values are aligned for:
+ローカル開発の既定値:
 
-- Backend API: `http://127.0.0.1:3000`
-- Frontend: `http://127.0.0.1:3001`
-- Shared local `INTERNAL_API_KEY`: `dev-internal-key-change-me`
+| 項目 | 値 |
+| --- | --- |
+| バックエンド API | `http://127.0.0.1:3000` |
+| フロントエンド | `http://127.0.0.1:3001` |
+| `INTERNAL_API_KEY` | バックエンド・フロントエンドで同一値 |
 
-Important environment variables:
+主要な環境変数:
 
-| App | Variable | Purpose |
+| アプリ | 変数 | 用途 |
 | --- | --- | --- |
-| backend | `INTERNAL_API_KEY` | Required server-to-server API key. Must match frontend. |
-| backend | `JWT_SECRET` | JWT signing secret. Use a long random value outside local dev. |
-| backend | `DB_PATH` | SQLite DB path for local development. |
-| backend | `DB_DRIVER` | `sqlite`, `mysql`, or `mariadb`. |
-| backend | `DATABASE_URL` / `DB_*` | MySQL/MariaDB connection settings. |
-| backend | `CORS_ORIGIN` | Browser origin allowed to call the backend directly. |
-| backend | `FRONTEND_BASE_URL` | Base URL used in invitation/application emails. |
-| frontend | `NEXT_PUBLIC_API_URL` | Browser-visible backend API origin. |
-| frontend | `INTERNAL_API_KEY` | Server-only key used by Next.js server code. |
-| frontend | `INTERNAL_API_ORIGIN` | Optional server-only backend origin, useful in Docker. |
+| backend | `INTERNAL_API_KEY` | サーバー間 API キー（必須） |
+| backend | `JWT_SECRET` | JWT 署名（32 文字以上推奨） |
+| backend | `DATABASE_URL` または `DB_HOST` 等 | PostgreSQL 接続 |
+| backend | `MAIL_ENABLED` | `0` でメール送信スキップ |
+| backend | `FRONTEND_BASE_URL` | 招待・申請案内メールの URL 生成 |
+| frontend | `NEXT_PUBLIC_API_URL` | ブラウザから参照する API 起点 |
+| frontend | `INTERNAL_API_KEY` | Next.js サーバーからの API 呼び出し用 |
+| frontend | `INTERNAL_API_ORIGIN` | Docker 内からバックエンドへ接続する場合 |
 
-Do not commit `.env`, `.env.dev`, `.env.local`, real API keys, real mail credentials, local DB files, `.next`, `dist`, or `node_modules`.
+`.env`、`.env.dev`、`.env.local`、実際の API キー、メール認証情報はコミットしない。
 
-## Local Development
+## ローカル起動
 
-This monorepo uses npm workspaces. Keep dependency installation and lockfile updates at the repository root, using the single root `package-lock.json`.
+### Docker Compose（推奨）
+
+PostgreSQL + バックエンド + フロントエンドを一括起動する。
 
 ```bash
-npm install
+docker compose up --build
 ```
 
-Do not create app-local lockfiles such as `apps/frontend/package-lock.json` or `apps/backend/package-lock.json`; they make package-manager ownership ambiguous and can confuse framework workspace-root detection.
+- バックエンド: `http://localhost:3002`（`BACKEND_HOST_PORT` で変更可）
+- フロントエンド: `http://localhost:3001`
+- PostgreSQL: `localhost:5432`（ユーザー/パスワード/DB: `app` / `app` / `app_dev`）
 
-Run the backend:
+### 個別起動
 
 ```bash
+# PostgreSQL のみ
+docker compose up postgres -d
+
+# バックエンド
 npm run dev:backend
-```
 
-Run the frontend:
-
-```bash
+# フロントエンド
 npm run dev:frontend
 ```
 
-Run the full Docker-based local stack:
+バックエンド単体起動時は `.env.dev` に PostgreSQL 接続情報を設定する。
+
+## テスト
+
+### バックエンド
+
+統合テスト・E2E テストは **PostgreSQL** が必要。
 
 ```bash
-npm run dev
+docker compose up postgres -d
+docker compose exec -T postgres psql -U app -d app_dev -c "CREATE DATABASE app_test;" 2>/dev/null || true
+TEST_DATABASE_URL=postgres://app:app@127.0.0.1:5432/app_test npm run test -w backend
 ```
 
-Docker Compose starts:
-
-- backend on `http://localhost:3000`
-- frontend on `http://localhost:3001`
-- SQLite volume for backend data by default
-- optional MySQL service with `--profile mysql`
-
-To include MySQL:
+- ユニットテストと統合テストは Jest projects で分離している
+- 統合テストは `--runInBand` で直列実行（DB 競合防止）
 
 ```bash
-docker compose --profile mysql up --build
-```
-
-When using MySQL, configure the backend with `DB_DRIVER=mysql` and the matching `DB_HOST`, `DB_PORT`, `DB_USERNAME`, `DB_PASSWORD`, and `DB_NAME` values.
-
-## Root Commands
-
-Run from repository root:
-
-```bash
-npm run dev            # Docker Compose full stack
-npm run dev:frontend   # Next.js dev server on port 3001
-npm run dev:backend    # NestJS dev server on port 3000
-npm run lint           # Frontend and backend lint checks
-npm run typecheck      # Frontend and backend TypeScript checks
-npm run test           # Backend Jest tests
-npm run build          # Backend and frontend production builds
-npm run check          # lint + typecheck + test + build
-```
-
-If backend build fails with `EACCES` under `apps/backend/dist`, the generated `dist` directory was likely written by a container user. Restore local ownership before rerunning checks:
-
-```bash
-docker compose exec -u root backend chown -R "$(id -u):$(id -g)" /workspace/apps/backend/dist
-```
-
-Current limitation:
-
-- Frontend E2E is intentionally separate because it requires a reachable backend test environment.
-- Backend E2E is currently local-only. Some scenarios still need to be realigned with the current role/authorization contract before they are stable enough for CI.
-- MySQL is not started in the default CI job. Current automated tests do not require it.
-
-Frontend E2E:
-
-```bash
-cd apps/frontend
-npm run test:e2e
-```
-
-Backend E2E:
-
-```bash
-cd apps/backend
-npm run test:e2e
-```
-
-## API Type Generation
-
-The backend OpenAPI schema is committed as `apps/backend/schema.json`.
-Frontend generated types live in `apps/frontend/src/lib/api-schema.d.ts`.
-
-After backend API contract changes:
-
-```bash
-npm run openapi:emit
-npm run generate:api-types
-npm run typecheck
-```
-
-## Verification Before PR
-
-For repository hygiene and portfolio quality, run:
-
-```bash
-npm run check
-```
-
-This is the same local gate as the GitHub Actions CI job: frontend/backend lint, frontend/backend typecheck, backend unit tests, and frontend/backend builds.
-
-Backend E2E is available as a local, focused command while those scenarios are being stabilized:
-
-```bash
+# バックエンド E2E
 npm run test:e2e -w backend
 ```
 
-For API contract changes:
+### フロントエンド
+
+```bash
+npm run test -w frontend
+npm run test:e2e -w frontend
+```
+
+Playwright E2E はビルド済みフロントエンドの起動を前提とする。現状は認証クッキー検証など最小構成。
+
+### CI
+
+GitHub Actions（`.github/workflows/ci.yml`）では PostgreSQL サービスと `TEST_DATABASE_URL` を設定し、`npm run check` を実行する。
+
+## ルートコマンド
+
+| コマンド | 内容 |
+| --- | --- |
+| `npm run dev` | Docker Compose フルスタック起動 |
+| `npm run dev:frontend` | フロントエンドのみ |
+| `npm run dev:backend` | バックエンドのみ |
+| `npm run lint` | フロント・バックエンド lint |
+| `npm run typecheck` | TypeScript 型チェック |
+| `npm run test` | バックエンドテスト |
+| `npm run build` | 本番ビルド |
+| `npm run check` | lint + typecheck + test + build |
+
+## OpenAPI 型生成
+
+バックエンド API 変更後:
 
 ```bash
 npm run openapi:emit
@@ -288,45 +129,33 @@ npm run generate:api-types
 npm run typecheck
 ```
 
-For frontend user-flow changes:
+- スキーマ: `apps/backend/schema.json`
+- 生成型: `apps/frontend/src/lib/api-schema.d.ts`（手編集禁止）
+- ドメイン型の再エクスポート: `apps/frontend/src/lib/schema.ts`
+
+## マイグレーション
+
+本番（`NODE_ENV=production`）では `synchronize` を使わず、起動時に未実行マイグレーションのみ適用する。マイグレーション定義は `apps/backend/src/migrations/` にある。
+
+## トラブルシューティング
+
+### `apps/backend/dist` の権限エラー
+
+Docker 実行で `dist` が root 所有になることがある。
 
 ```bash
-cd apps/frontend
-npm run test:e2e
+docker run --rm -v "$(pwd):/workspace" alpine chown -R "$(id -u):$(id -g)" /workspace/apps/backend/dist
 ```
 
-If a command cannot be run because a service, browser, database, or credential is missing, document that in the PR or final task summary.
+### Git オブジェクト破損
 
-## Documentation
+`.git/objects` が空ファイルになると `git log` が失敗する。reflog から最後の正常コミットへ `git update-ref` で戻す。
 
-Documentation is part of the deliverable. Update docs when changing domain behavior, API contracts, authorization, DB schema, setup, or commands.
+## 関連ドキュメント
 
-Key documents:
-
-- `docs/00_overview.md`: Product overview
-- `docs/01_business_requirements.md`: Business requirements
-- `docs/02_domain_model.md`: Domain model
-- `docs/03_er_diagram.md`: ER diagram
-- `docs/04_api_spec.md`: API specification
-- `docs/05_architecture.md`: Architecture
-- `docs/06_backend_design.md`: Backend design
-- `docs/07_frontend_design.md`: Frontend design
-- `docs/08_auth_and_multitenant.md`: Authentication and multitenancy
-- `docs/09_workflow_and_approval.md`: Workflow and approval
-- `docs/10_correction_feature.md`: Return/correction feature
-- `docs/11_coding_rules.md`: Coding rules
-- `docs/12_tasks.md`: Task notes
-- `docs/13_codex_prompt_examples.md`: Codex prompt examples
-- `docs/14_ui_design_rules.md`: UI design rules
-
-## Portfolio Review Notes
-
-This repository is strongest when it clearly communicates:
-
-- Why the domain is modeled this way
-- How tenant isolation and authorization are enforced
-- How API contracts stay type-safe across frontend and backend
-- How tests protect critical workflows
-- How a reviewer can run and verify the system quickly
-
-Keep implementation, README, docs, and `AGENTS.md` aligned.
+- [概要](00_overview.md)
+- [API 仕様](04_api_spec.md)
+- [全体構成](05_architecture.md)
+- [認証とマルチテナント](08_auth_and_multitenant.md)
+- [コーディングルール](11_coding_rules.md)
+- [ルート README](../README.md)

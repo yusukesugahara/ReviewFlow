@@ -1,0 +1,409 @@
+# ReviewFlow
+
+マルチテナント対応の申請ワークフロー管理アプリです。申請フォームの作成、申請・承認・差し戻し・再提出、CSV 出力、監査ログ確認までを一連の業務フローとして扱います。
+
+本ドキュメントは、転職活動・技術紹介向けのポートフォリオ説明と、リポジトリの概要・開発手順をまとめたものです。業務要件・API 仕様・状態遷移などの設計詳細は [docs/](docs/00_overview.md) を参照してください。
+
+---
+
+## 1. アプリ概要
+
+ReviewFlow は、組織ごとに申請フォーム・承認フロー・申請データ・監査ログを管理できる、**マルチテナント対応の申請ワークフロー管理アプリ**です。
+
+単にフォームを送受信するだけでなく、申請の作成・提出・承認・却下・差し戻し・再提出・CSV 出力・操作履歴の確認までを一連の業務フローとして扱います。メールや Excel、紙、Google フォームなどに分散しがちな申請業務を、ひとつの画面とデータモデルに集約することを目的に開発しました。
+
+想定しているのは、社内稟議や経費精算、備品購入申請のように、複数人の確認と承認が必要な手続きです。差し戻しが発生した場合も、修正対象の項目とコメントを申請データとして保持し、再提出まで追跡できる構成にしています。
+
+---
+
+## 2. 開発背景・解決したい課題
+
+実務の申請業務では、次のような課題が起きやすいと考え、このアプリの設計に反映しました。
+
+- **申請手段が分散する**  
+  メール、Excel、紙、Google フォームなど、入力方法と承認方法がバラバラになり、情報が散在しやすい。
+
+- **承認者が分かりにくい**  
+  誰が次に対応すべきか、現在どの承認ステップにあるかが共有されにくい。
+
+- **差し戻し時の修正指示が曖昧**  
+  「どの項目を直すべきか」が文章や口頭で補完され、修正漏れや再提出の手戻りが起きやすい。
+
+- **操作履歴の追跡が難しい**  
+  誰がいつ承認・差し戻し・却下したかを後から確認しづらく、問い合わせ対応が属人化しやすい。
+
+- **運用管理が属人化する**  
+  CSV 出力や監査ログがなく、集計や内部確認のたびに個別対応が必要になりやすい。
+
+これらをまとめて扱うため、申請フォーム定義、承認フロー定義、申請状態、差し戻し情報、監査ログを同一システム上で管理する構成を採用しました。
+
+---
+
+## 3. 想定ユーザー・利用シーン
+
+### 想定ユーザー
+
+| 役割 | 主な利用者 | 主な操作 |
+| --- | --- | --- |
+| **管理者** | テナント管理者（`tenant_admin`） | スペース管理、ユーザー招待、監査ログ確認、`/space` ダッシュボードでの使用状況把握 |
+| **申請者** | 社内ユーザー、またはメールリンクからアクセスする外部申請者 | 申請入力、提出、差し戻し内容の確認、修正後の再提出 |
+| **承認者** | テナント管理者、または承認ステップに割り当てられたユーザー | 申請内容の確認、承認、却下、差し戻し |
+
+承認者は専用ロール名を持たず、申請の状態と承認フロー上の担当者設定に応じて操作権限が変わる設計です。申請者のうち、ログインせずにメール URL から申請する利用者向けには、申請者アクセストークンによる別ルートを用意しています。
+
+### 利用シーンの例
+
+- 社内稟議
+- 経費精算
+- 備品購入申請
+- 自治体の補助金申請
+- 施設利用申請
+- その他、複数人で確認・承認が必要な手続き
+
+いずれも「フォーム定義 → 申請提出 → 多段承認 → 必要に応じた差し戻し・再提出 → 集計・履歴確認」という共通パターンで扱えることを想定しています。
+
+---
+
+## 4. 主な機能
+
+実装を確認したうえで、役割ごとに整理しています。
+
+### 管理者向け
+
+- **申請フォーム作成**  
+  スペース単位で申請フォーム定義を作成し、フィールド追加・並べ替え・公開・アーカイブが可能です。
+- **承認フロー設定**  
+  スペース単位で承認ステップ、担当者、差し戻し可否を設定できます（申請フォーム作成画面と合わせて構成）。
+- **使用状況ダッシュボード**  
+  `/space` で申請件数、平均差し戻し数、再提出件数などを確認できます。
+- **申請一覧確認**  
+  スペース内の提出済み申請を、ステータスや日付などで確認できます。
+- **CSV 出力**  
+  申請データの CSV エクスポートジョブを作成し、完了後にダウンロードできます。
+- **監査ログ確認**  
+  テナント管理者向けに、操作履歴の一覧とフィルタ表示を提供しています。
+- **スペース・ユーザー管理**  
+  スペースの作成・削除、メンバー追加、テナントユーザー招待、ロール変更に対応しています。
+
+### 申請者向け
+
+- **申請フォーム入力**  
+  動的フィールドに応じた入力画面を表示します。
+- **申請提出**  
+  `draft` / `published` の申請を提出し、最初の承認ステップ（`in_review`）へ進めます。
+- **差し戻し内容の確認**  
+  差し戻し対象項目、項目別コメント、全体コメント、差し戻し履歴を確認できます。
+- **修正後の再提出**  
+  差し戻し後の修正内容を反映し、再提出で `in_review` に戻します。
+- **申請案内メールの利用**  
+  公開申請 URL の案内メール送信に対応しています（メール送信は環境変数で無効化可能）。
+
+### 承認者向け
+
+- **申請内容確認**  
+  申請値、承認進捗、過去の差し戻し履歴を確認できます。
+- **承認**  
+  現在の承認ステップの担当者、またはテナント管理者が承認できます。
+- **却下**  
+  審査中の申請を却下できます。
+- **差し戻し**  
+  フィールド単位で差し戻し対象を選び、コメント付きで差し戻せます。
+- **修正依頼内容の確認**  
+  差し戻し時に指定した項目とコメントを、申請詳細画面で確認できます。
+
+---
+
+## 5. 技術スタック
+
+リポジトリ上で確認できた技術のみを記載しています。
+
+### Frontend
+
+| 区分 | 採用技術 |
+| --- | --- |
+| フレームワーク | Next.js 16（App Router）、React 19 |
+| 言語 | TypeScript |
+| スタイリング | Tailwind CSS v4 |
+| UI コンポーネント | Radix UI、`class-variance-authority`、`tailwind-merge` による shadcn/ui 互換の手動実装 |
+| API クライアント | `openapi-fetch` |
+| 型生成 | `openapi-typescript` |
+| バリデーション | Zod |
+| 単体テスト | Jest、Testing Library |
+| E2E テスト | Playwright（最小構成） |
+
+### Backend
+
+| 区分 | 採用技術 |
+| --- | --- |
+| フレームワーク | NestJS 11 |
+| 言語 | TypeScript |
+| ORM | TypeORM |
+| データベース | PostgreSQL |
+| API 仕様 | OpenAPI / Swagger（`@nestjs/swagger`） |
+| 認証 | JWT（Passport）、内部 API キー、申請者アクセストークン |
+| ログ | Pino（`nestjs-pino`） |
+| メール | Nodemailer |
+| 単体・結合テスト | Jest |
+| E2E テスト | Jest + Supertest |
+
+### Infrastructure / 開発環境
+
+| 区分 | 採用技術 |
+| --- | --- |
+| コンテナ | Docker、Docker Compose |
+| CI | GitHub Actions |
+| モノレポ | npm workspaces |
+
+補足:
+
+- データベースは **MySQL ではなく PostgreSQL** を使用しています。
+- フロントエンドのテストは **Vitest ではなく Jest** です。
+- shadcn/ui の CLI は導入していませんが、同様の UI パターンでコンポーネントを構成しています。
+
+---
+
+## 6. 設計上のアピールポイント
+
+### 6-1. 状態遷移を持つ業務ワークフロー
+
+本アプリは、申請データの単純な CRUD ではなく、業務状態に応じた操作制御を中心に設計しています。
+
+申請は `draft` / `published` / `in_review` / `returned` / `approved` / `rejected` などの状態を持ち、提出・承認・却下・差し戻し・再提出ごとに遷移します。提出と再提出は `submitted` を経由せず **`in_review` に直接遷移**します（`submitted` は DB 互換用のステータス値）。状態遷移のルールは `ApplicationTransitionPolicy` に集約し、サービス層はそのポリシーを通じて状態変更を行う構成にしています。
+
+```58:73:apps/backend/src/app/modules/applications/policies/application-transition.policy.ts
+  startReview(app: Application, submittedAt = new Date()): void {
+    this.assertDraft(app);
+    app.status = ApplicationStatus.IN_REVIEW;
+    app.currentStepOrder = 1;
+    app.submittedAt = submittedAt;
+  }
+
+  applyApproval(app: Application, nextStep: ApprovalStep | null): void {
+    this.assertInReview(app);
+    if (!nextStep) {
+      app.status = ApplicationStatus.APPROVED;
+      app.currentStepOrder = null;
+      return;
+    }
+    app.currentStepOrder = nextStep.stepOrder;
+  }
+```
+
+また、申請が `in_review` のときは `currentStepOrder` を保持し、現在どの承認ステップで止まっているかをデータとして管理しています。これにより、「今誰が対応すべきか」を承認フロー定義と組み合わせて判断できる構成にしています。
+
+### 6-2. 実務を想定した権限管理
+
+ロールはテナント管理者（`tenant_admin`）、テナントユーザー（`tenant_user`）、スペース内管理者・ユーザー（`admin` / `user`）を持ちます。加えて、申請に対する操作可否はロールだけでなく、申請の状態と関係性も見ています。
+
+`ApplicationAccessPolicy` では、次のような条件を組み合わせて閲覧・操作権限を判定しています。
+
+- テナント管理者かどうか
+- 申請者本人かどうか
+- 現在の承認ステップの担当者かどうか
+- 過去に承認操作へ関与したかどうか
+
+```35:43:apps/backend/src/app/modules/applications/policies/application-access.policy.ts
+  canActOnReview(actor: AuthUserPayload, app: Application): boolean {
+    if (app.status !== ApplicationStatus.IN_REVIEW) {
+      return false;
+    }
+    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
+      return true;
+    }
+    return this.actorIsAssignedToCurrentStep(actor, app);
+  }
+```
+
+承認操作は、審査中かつ現在ステップの担当者（またはテナント管理者）に限定するなど、**業務状態に応じた認可**を意識した設計です。フロントエンドではボタン表示を制御していますが、最終的な判定はバックエンド側で行う構成にしています。
+
+スペース単位の利用権限については `SpaceAccessService` で、スペースの参照・管理可否を判定しています。API ガードは `InternalApiKeyGuard`、`JwtAuthGuard`、`RolesGuard`、`ApplicantAccessGuard` を組み合わせて構成しています。
+
+### 6-3. SaaS を想定したマルチテナント設計
+
+複数組織が同一アプリケーションを利用する前提で、データをテナント単位で分離しています。サインアップ時にテナントと初期 `tenant_admin` を同時に作成し、JWT ペイロードにも `tenantId` を含めています。1 テナントに複数スペース（API 上は `groups`）を持てます。
+
+業務データは主に次の単位で管理します。
+
+- **テナント（`tenantId`）**  
+  ユーザー、監査ログ、テナント全体設定の境界
+- **スペース（API 上は `groupId`）**  
+  申請フォーム、承認フロー、申請、スペースメンバーの境界
+
+UI 上の「スペース」は、後方互換のため API のパスやプロパティ名では `groups` / `groupId` として公開しています。ドメイン上は同じ概念を指します。
+
+申請、フォーム定義、承認フロー、監査ログなどは、テナントおよび必要に応じてスペース単位でスコープされるよう設計しています。
+
+### 6-4. 監査ログによる操作履歴の管理
+
+業務システムでは、「誰が・いつ・何をしたか」を後から確認できることが重要です。ReviewFlow では、HTTP リクエストの構造化ログ（Pino）に加え、認証済み操作を `audit_logs` テーブルへ永続化しています。
+
+`AuditLogInterceptor` がリクエスト完了時に監査ログを記録し、管理者向け API で一覧取得できます。記録内容には、操作種別、対象種別、対象 ID、スペース ID、HTTP メタデータ、実行者ロールなどを含めています。
+
+申請・承認・差し戻し・却下など、主要な業務操作は API 経由で行われるため、操作履歴として追跡しやすい構成にしています。問い合わせ対応や内部確認を想定し、成功・失敗の区別も保持できるようにしています。
+
+### 6-5. OpenAPI による型安全な API 連携
+
+バックエンドでは NestJS の Swagger 連携により OpenAPI スキーマを生成し、`/docs` と `schema.json` として公開しています。CI やローカルでは `openapi:emit` により、サーバー起動なしでもスキーマを出力できます。
+
+フロントエンドでは `openapi-typescript` で TypeScript 型を生成し、`openapi-fetch` のクライアントに適用しています。Server Component や Server Actions から API を呼ぶ際に、パスやレスポンス型のズレをコンパイル時に検出しやすい構成にしています。
+
+```typescript
+// フロントエンドでの型生成（package.json）
+openapi-typescript ../backend/schema.json -o ./src/lib/api-schema.d.ts
+```
+
+ドメインごとの型は `schema.ts` で再エクスポートし、画面実装側で扱いやすい形に整理しています。フロントエンドとバックエンドの契約を OpenAPI に寄せることで、連携ミスを減らすことを目指しています。
+
+### 6-6. バックエンドの責務分離
+
+Controller や Service に業務ルールを詰め込みすぎないよう、責務ごとにモジュールを分けています。申請領域では、次のような役割分担を意識しました。
+
+| クラス / モジュール | 役割 |
+| --- | --- |
+| `ApplicationAccessPolicy` | 申請の閲覧・レビュー操作が許可されるかを判定 |
+| `ApplicationTransitionPolicy` | 申請状態の前提チェックと状態遷移 |
+| `ApplicationFormValueValidator` | フォーム入力値が定義どおりかを検証 |
+| `ApplicationSubmissionService` | 提出・再提出のオーケストレーション |
+| `ApplicationReviewActionService` | 承認・却下・差し戻しのオーケストレーション |
+| `ApplicationCorrectionService` | 差し戻し対象や修正関連の処理 |
+| `InvitationsRepository` など | 永続化処理 |
+
+この分離により、仕様変更時に「権限」「状態遷移」「入力検証」「永続化」のどこを直すべきかを把握しやすくすることを目指しています。リポジトリ層を独立させ、サービス層から DB 操作の詳細を切り離している点も、変更影響を限定しやすい構成です。
+
+---
+
+## 7. 開発で意識したこと
+
+- **画面実装だけでなく、業務運用を想定したこと**  
+  差し戻し対象の項目単位管理、再提出、CSV 出力、監査ログなど、実際の運用で必要になりやすい機能を先に整理しました。
+
+- **権限、状態遷移、監査ログ、データ分離を重視したこと**  
+  単一ロール判定に頼らず、申請状態と担当者関係を含めた認可設計にしました。テナント・スペース単位のデータ分離も一貫して意識しています。
+
+- **バックエンドでは責務分離を意識したこと**  
+  Policy、Validator、Service、Repository を分け、業務ルールの置き場所を明確にしました。
+
+- **フロントエンドではコンポーネント配置を整理したこと**  
+  再利用する UI は `src/components/` に、画面固有の部品は各ルートの `_components/` に配置する方針を取っています。申請表示、フォームビルダー、承認フロービルダーなど、ドメイン単位でコンポーネントを分けています。
+
+- **OpenAPI を利用してフロントエンドとバックエンドの整合性を保とうとしたこと**  
+  API 仕様を単一のソースとして管理し、型生成による連携を行いました。
+
+- **テスト可能な単位を確保したこと**  
+  状態遷移や認可ルールは Policy の単体テストで検証し、主要 API はバックエンド E2E テストでも確認できるようにしています。
+
+---
+
+## 8. 今後の改善予定
+
+実装状況を確認したうえで、未実装または十分ではない領域を整理しています。
+
+### 機能面
+
+- **ファイル添付**  
+  申請フォームにファイル型フィールドやアップロード API は未実装です。現状はテキスト中心のフィールド構成です。
+- **承認フローの分岐条件**  
+  現状は直線的な多段承認が中心で、金額や項目値に応じた分岐条件は未対応です。
+- **既存承認フローの再利用 UI**  
+  `ApprovalFlowSelector` コンポーネントは存在しますが、画面への統合は未完了です。
+- **メール通知の運用強化**  
+  招待・申請案内・差し戻しなどのメール送信機能は実装済みですが、本番向け SMTP 設定や通知テンプレートの拡充、送信失敗時の運用設計は今後の課題です。
+
+### 品質・テスト
+
+- **フロントエンド E2E テストの拡充**  
+  Playwright は導入済みですが、現状は認証クッキー検証など最小限のシナリオです。申請〜承認〜差し戻しまでの E2E は今後追加予定です。
+- **権限管理ロジックのさらなる共通化**  
+  Policy / Service への分離は進めていますが、ロール判定の重複整理は継続的な改善項目です。
+
+### 運用・プロダクト
+
+- **本番環境へのデプロイ**  
+  Docker Compose によるローカル開発環境と CI は整備していますが、本番デプロイ構成はこれから整備する予定です。
+- **UI/UX 改善**  
+  業務フローは一通り実装していますが、一覧画面の操作性やモバイル表示など、実利用を想定した改善余地があります。
+- **操作ログ・監査ログの検索性向上**  
+  監査ログの一覧とフィルタは実装済みですが、詳細検索やエクスポートなど、運用向けの分析機能は今後の拡張候補です。
+
+---
+
+## 9. 開発・セットアップ
+
+### 前提
+
+- Node.js LTS、npm、Docker / Docker Compose
+- 依存関係のインストールはリポジトリルートで `npm install`
+
+```bash
+cp apps/backend/.env.example apps/backend/.env.dev
+cp apps/frontend/.env.example apps/frontend/.env
+```
+
+### ローカル起動
+
+```bash
+# PostgreSQL + Backend + Frontend を起動
+docker compose up --build
+```
+
+- フロントエンド: `http://localhost:3001`
+- バックエンド: `http://localhost:3002`（`BACKEND_HOST_PORT` で変更可）
+- PostgreSQL: `localhost:5432`（`app` / `app` / `app_dev`）
+
+個別起動: `npm run dev:backend`、`npm run dev:frontend`（PostgreSQL は `docker compose up postgres -d`）
+
+### テスト
+
+```bash
+# PostgreSQL のみ起動
+docker compose up postgres -d
+
+# バックエンドテスト（統合テスト用 DB が必要）
+docker compose exec -T postgres psql -U app -d app_dev -c "CREATE DATABASE app_test;" 2>/dev/null || true
+TEST_DATABASE_URL=postgres://app:app@127.0.0.1:5432/app_test npm run test -w backend
+
+# フロントエンド
+npm run test -w frontend
+npm run test:e2e -w frontend
+```
+
+CI（GitHub Actions）でも PostgreSQL サービスと `TEST_DATABASE_URL` を使用する。
+
+### その他のコマンド
+
+| コマンド | 内容 |
+| --- | --- |
+| `npm run dev` | Docker Compose フルスタック起動 |
+| `npm run dev:frontend` | フロントエンドのみ起動 |
+| `npm run dev:backend` | バックエンドのみ起動 |
+| `npm run check` | lint、型チェック、テスト、ビルド |
+| `npm run openapi:emit` | OpenAPI スキーマ出力 |
+| `npm run generate:api-types` | フロントエンド向け API 型生成 |
+
+API 変更後は `openapi:emit` → `generate:api-types` → `typecheck` を実行する。
+
+詳細は [バックエンド README](apps/backend/README.md) および [開発ガイド](docs/15_development_guide.md) を参照してください。
+
+---
+
+## 参考: 設計ドキュメント
+
+業務要件、API 仕様、状態遷移、認証・マルチテナント設計などは `docs/` に整理しています。
+
+| ドキュメント | 内容 |
+| --- | --- |
+| [概要](docs/00_overview.md) | プロダクトの目的と MVP スコープ |
+| [業務要件](docs/01_business_requirements.md) | 利用者、業務フロー、制約 |
+| [ドメインモデル](docs/02_domain_model.md) | 主要概念と責務 |
+| [ER 図](docs/03_er_diagram.md) | テーブル定義と関係 |
+| [API 仕様](docs/04_api_spec.md) | API 契約と代表エンドポイント |
+| [全体構成](docs/05_architecture.md) | フロントエンド、バックエンド、DB の責務 |
+| [バックエンド設計](docs/06_backend_design.md) | NestJS 側の責務分離 |
+| [フロントエンド設計](docs/07_frontend_design.md) | Next.js 側の責務分離 |
+| [認証とマルチテナント](docs/08_auth_and_multitenant.md) | 認証、認可、テナント分離 |
+| [申請・承認ワークフロー](docs/09_workflow_and_approval.md) | ステータス遷移と承認ルール |
+| [差し戻し機能](docs/10_correction_feature.md) | 修正依頼と再提出 |
+| [コーディングルール](docs/11_coding_rules.md) | 実装時の規約 |
+| [タスク](docs/12_tasks.md) | 実装進捗メモ |
+| [UI デザインルール](docs/14_ui_design_rules.md) | UI 実装ルール |
+| [開発ガイド](docs/15_development_guide.md) | 環境構築と開発手順 |

@@ -13,7 +13,7 @@ ReviewFlow は、組織ごとに独立したワークスペースを持ち、各
 - CSV出力
 - 監査ログ
 - テナントごとのユーザー管理（**テナント管理者によるユーザー招待**を含む）
-- **管理画面**（テナント管理者向けの使用状況）
+- **使用状況ダッシュボード**（`/space`、テナント管理者向け）
 
 ## ドキュメント一覧
 
@@ -36,9 +36,12 @@ GitHub 上では Markdown の表と Mermaid 図がそのまま表示される。
 | 13 | [タスク](12_tasks.md) | 実装タスク管理 | 残タスクと進捗 |
 | 14 | [Codexプロンプト例](13_codex_prompt_examples.md) | エージェント作業例 | 依頼テンプレート |
 | 15 | [UIデザインルール](14_ui_design_rules.md) | UI実装時の設計ルール | shadcn/ui、Tailwind、状態表示、アクセシビリティ |
+| 16 | [開発ガイド](15_development_guide.md) | 環境構築と開発手順 | Docker、テスト、OpenAPI 型生成 |
 
 ## 管理画面（テナント向け）
 契約組織の **テナント管理者（tenant_admin）** が参照する画面。自組織ワークスペース内の利用状況を把握するためのものであり、プラットフォーム運営者専用のコンソールとは別とする。
+
+実装では、申請件数・平均差し戻し数・再提出件数などの指標は **`/space` ダッシュボード** に表示する。`/admin` はスペース管理・ユーザー招待・監査ログへの入口であり、使用状況の集計画面ではない。
 
 表示する指標の例:
 
@@ -66,12 +69,13 @@ GitHub 上では Markdown の表と Mermaid 図がそのまま表示される。
 - 修正依頼付き差し戻し
 - 非同期CSV出力
 - 監査ログ
-- テナント向け管理画面（使用状況の可視化）
+- テナント向けダッシュボード（`/space` で使用状況を可視化）
 
 ## MVPスコープ
-- テナント作成
+- テナント作成（サインアップ時にテナントと初回 `tenant_admin` を同時作成）
 - テナント管理者作成
 - メンバー招待（**テナント管理者（tenant_admin）** が自テナントにユーザーを招待し、承認者・申請者などを追加できる）
+- パスワードリセット
 - ロール管理
 - フォーム定義 / 公開
 - 承認フロー定義
@@ -80,23 +84,32 @@ GitHub 上では Markdown の表と Mermaid 図がそのまま表示される。
 - 修正対象フィールドの指定
 - CSV非同期出力
 - 監査ログ
-- 管理画面（申請件数・平均差し戻し数・再申請数などの使用状況）
+- 使用状況ダッシュボード（`/space` で申請件数・平均差し戻し数・再申請数などを表示）
 
 ## 技術スタック
 ### Frontend
-- Next.js (App Router)
+- Next.js 16 (App Router)
+- React 19
 - TypeScript
-- React Hook Form
+- Tailwind CSS v4
 - Zod
-- shadcn/ui
+- Radix UI ベースの shadcn/ui 互換コンポーネント（手動実装）
+- openapi-fetch / openapi-typescript
+- Jest、Testing Library
+- Playwright（最小構成）
 
 ### Backend
-- NestJS
+- NestJS 11
 - TypeScript
 - TypeORM
-- MySQL
+- PostgreSQL
 - Swagger / OpenAPI
+- Passport JWT
+- Pino（nestjs-pino）
+- Nodemailer
+- Jest（unit / integration / e2e）
 
 ### Infra / Dev
 - Docker Compose
-- 将来的に Terraform を追加可能な構成
+- GitHub Actions
+- npm workspaces

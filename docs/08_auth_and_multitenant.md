@@ -17,10 +17,12 @@
 - ログインユーザーの tenantId を唯一の基準にする
 
 ## APIガード方針
-- JwtAuthGuard
-- RolesGuard
-- TenantScopeGuard 相当の共通処理
-- スペース権限は JWT の `role` だけで判定せず、対象 `groupId` の `group_members.role` を参照する。ユーザーはスペースごとに異なるロールを持てる。
+- `InternalApiKeyGuard`（グローバル、`X-API-Key`。`/health`, `/ready` は除外）
+- `JwtAuthGuard`（グローバル、Passport JWT）
+- `RolesGuard`（`@Roles` デコレータ）
+- `ApplicantAccessGuard`（公開申請者 API、`X-Applicant-Access-Token`）
+- テナントスコープは JWT の `tenantId` と Repository クエリで強制する（専用の `TenantScopeGuard` クラスはない）
+- スペース権限は JWT の `role` だけで判定せず、対象 `groupId` の `group_members.role` を参照する。ユーザーはスペースごとに異なるロールを持てる。`SpaceAccessService` がスペース単位の認可を担当する
 
 ## 権限境界
 | 権限 | 判定元 | 主な許可操作 |
