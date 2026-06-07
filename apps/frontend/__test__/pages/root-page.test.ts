@@ -18,7 +18,7 @@ describe("RootRedirectPage", () => {
     });
   });
 
-  // テスト内容: 未ログインユーザーがログインへリダイレクトされることを確認する
+  // テスト内容: 未ログインユーザがログインへリダイレクトされることを確認する
   it("redirects anonymous users to login", async () => {
     getCurrentSessionUserMock.mockResolvedValue(null);
     const { default: RootRedirectPage } = await import("@/app/page");
@@ -45,7 +45,7 @@ describe("RootRedirectPage", () => {
     expect(redirectMock).toHaveBeenCalledWith("/admin/spaces");
   });
 
-  // テスト内容: 管理者以外のユーザーがスペースへリダイレクトされることを確認する
+  // テスト内容: 管理者以外のユーザがスペースへリダイレクトされることを確認する
   it("redirects non-admin users to spaces", async () => {
     getCurrentSessionUserMock.mockResolvedValue({
       id: "user-1",

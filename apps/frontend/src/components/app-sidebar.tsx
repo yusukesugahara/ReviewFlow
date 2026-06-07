@@ -66,7 +66,7 @@ const spaceNavItems: SidebarNavItem[] = [
 
 const tenantAdminNavItems: SidebarNavItem[] = [
   { href: "/admin/spaces", label: "スペース", icon: ShieldCheck },
-  { href: "/admin/invitations", label: "ユーザー", icon: Users },
+  { href: "/admin/invitations", label: "ユーザ", icon: Users },
   { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
 ];
 
@@ -244,7 +244,7 @@ function SidebarContent({
         </section>
       ) : null}
       <section className="mt-auto border-t border-slate-200 pt-4">
-        <SectionLabel>ユーザー</SectionLabel>
+        <SectionLabel>ユーザ</SectionLabel>
         <div className="mb-3 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-600">
           <Users className="size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0">

@@ -36,7 +36,7 @@ export function enrichAuditRow(row: AdminAuditLogsViewProps["rows"][number]): En
     reasons.push(`失敗: ${textValue(metadata.errorCode) || "原因不明"}`);
   }
   if (["users", "invitations", "auth"].includes(targetType)) {
-    reasons.push("認証・ユーザー管理");
+    reasons.push("認証・ユーザ管理");
   }
   if (targetType === "export-jobs") {
     reasons.push("データ出力");

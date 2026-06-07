@@ -36,7 +36,7 @@ export class CreateGroupDto {
 }
 
 export class AddGroupMemberDto {
-  @ApiProperty({ description: 'スペースに追加するテナント内ユーザーID' })
+  @ApiProperty({ description: 'スペースに追加するテナント内ユーザID' })
   @IsUUID('4')
   userId!: string;
 
@@ -78,7 +78,7 @@ export class GroupSummaryDto {
 
   @ApiPropertyOptional({
     description:
-      'ログインユーザーのこのスペースでのロール。未参加の tenant_admin は null。',
+      'ログインユーザのこのスペースでのロール。未参加の tenant_admin は null。',
     enum: GROUP_MEMBER_ROLES,
     nullable: true,
   })

@@ -1,6 +1,6 @@
 # Backend（NestJS）
 
-モノレポ内の API サーバーです。内部向け **X-API-Key**、ユーザー向け **JWT**（Passport）、**TypeORM**（**PostgreSQL**）、開発時 **Swagger**、**@nestjs/terminus** による readiness を備えています。
+モノレポ内の API サーバーです。内部向け **X-API-Key**、ユーザ向け **JWT**（Passport）、**TypeORM**（**PostgreSQL**）、開発時 **Swagger**、**@nestjs/terminus** による readiness を備えています。
 
 ## 前提
 
@@ -142,7 +142,7 @@ npm run seed:demo -w backend
 1. **ほぼすべての HTTP API**（OPTIONS 除く）に **`X-API-Key: <INTERNAL_API_KEY>`** が必要です。**例外:** **`GET /health`** と **`GET /ready`**（ロードバランサ・Kubernetes 用。API Key / JWT / レート制限の対象外。Swagger には出しません）。
 2. **`/auth/register`・`/auth/login`** は API Key のみ（JWT 不要）。
 3. それ以外の保護ルートは **`Authorization: Bearer <access_token>`** も必要です。
-4. 先頭に登録したユーザーは **`admin`** ロール、2 人目以降は **`user`**。`/auth/admin/ping` は `admin` のみ。
+4. 先頭に登録したユーザは **`admin`** ロール、2 人目以降は **`user`**。`/auth/admin/ping` は `admin` のみ。
 
 ## 成功レスポンスの形
 

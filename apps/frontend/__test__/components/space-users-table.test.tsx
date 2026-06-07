@@ -61,7 +61,7 @@ describe("SpaceUsersTable", () => {
     expect(screen.getByText("other@example.com")).toBeInTheDocument();
     expect(screen.getByText("-")).toBeInTheDocument();
     expect(screen.getByText("スペース管理者")).toBeInTheDocument();
-    expect(screen.getByText("スペースユーザー")).toBeInTheDocument();
+    expect(screen.getByText("スペースユーザ")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "other@example.com の操作" }));
     await user.click(screen.getByRole("menuitem", { name: "スペースロールを変更" }));

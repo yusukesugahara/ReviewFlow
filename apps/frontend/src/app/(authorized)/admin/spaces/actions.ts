@@ -114,7 +114,7 @@ export async function addMemberAction(
   });
 
   if (!parsed.success) {
-    redirectWithSpaceValidationError("追加するユーザーとロールを選択してください");
+    redirectWithSpaceValidationError("追加するユーザとロールを選択してください");
   }
 
   const body: AddGroupMemberBody = parsed.data;

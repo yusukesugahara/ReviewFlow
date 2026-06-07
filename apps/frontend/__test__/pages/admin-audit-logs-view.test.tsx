@@ -79,7 +79,7 @@ describe("AdminAuditLogsView", () => {
     expect(within(failedRow).getByText("target-u...")).toBeInTheDocument();
     expect(within(failedRow).getByText("127.0.0.1")).toBeInTheDocument();
     expect(within(failedRow).getByText("失敗: FORBIDDEN")).toBeInTheDocument();
-    expect(within(failedRow).getByText("認証・ユーザー管理")).toBeInTheDocument();
+    expect(within(failedRow).getByText("認証・ユーザ管理")).toBeInTheDocument();
     expect(within(failedRow).getByText("変更・削除操作")).toBeInTheDocument();
     expect(within(failedRow).getByText("HTTP 403")).toBeInTheDocument();
     expect(within(failedRow).getByText("処理時間が長い")).toBeInTheDocument();

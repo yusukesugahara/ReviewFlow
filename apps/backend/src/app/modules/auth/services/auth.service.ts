@@ -127,7 +127,7 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
-  /** 招待受諾後など、既存ユーザーに対してログイン相当のトークンを返す */
+  /** 招待受諾後など、既存ユーザに対してログイン相当のトークンを返す */
   issueTokensForUser(user: User) {
     return this.issueTokens(user);
   }

@@ -67,7 +67,7 @@ describe("getApplicationCapabilities", () => {
     });
   });
 
-  // テスト内容: 操作ユーザーがない場合に申請者専用操作が拒否されることを確認する
+  // テスト内容: 操作ユーザがない場合に申請者専用操作が拒否されることを確認する
   it("denies applicant-only actions when actor is missing", () => {
     expect(
       getApplicationCapabilities(

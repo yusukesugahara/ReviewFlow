@@ -88,7 +88,7 @@ export class GroupsController {
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'スペース一覧（tenant_admin は全件、通常ユーザーは参加中のみ）',
+    summary: 'スペース一覧（tenant_admin は全件、通常ユーザは参加中のみ）',
   })
   @ApiSuccessResponse(GroupsListResponseDto)
   async list(
@@ -147,7 +147,7 @@ export class GroupsController {
   @Get(':groupId/available-users')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'スペース追加候補ユーザー一覧（tenant_admin / space admin）',
+    summary: 'スペース追加候補ユーザ一覧（tenant_admin / space admin）',
   })
   @ApiSuccessResponse(GroupAvailableUsersResponseDto)
   async listAvailableUsers(
@@ -164,7 +164,7 @@ export class GroupsController {
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
-    summary: 'スペースへユーザー追加（tenant_admin）',
+    summary: 'スペースへユーザ追加（tenant_admin）',
   })
   @ApiSuccessResponseCreated(GroupMemberSummaryDto)
   async addMember(
@@ -204,7 +204,7 @@ export class GroupsController {
   @Delete(':groupId/members/me')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
-    summary: 'スペースから退出（参加中ユーザー）',
+    summary: 'スペースから退出（参加中ユーザ）',
   })
   async leave(
     @Param('groupId', ParseUUIDPipe) groupId: string,

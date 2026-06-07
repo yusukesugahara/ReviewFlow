@@ -30,7 +30,7 @@ describe("audit log helpers", () => {
       risk: "high",
       reasons: [
         "失敗: FORBIDDEN",
-        "認証・ユーザー管理",
+        "認証・ユーザ管理",
         "変更・削除操作",
         "HTTP 403",
         "処理時間が長い",

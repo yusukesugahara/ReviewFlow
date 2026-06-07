@@ -81,7 +81,7 @@ function buildAdminBreadcrumbItems(segments: string[]): BreadcrumbItem[] {
   if (section === "spaces") {
     items.push({ href: "/admin/spaces", label: "スペース" });
   } else if (section === "invitations") {
-    items.push({ href: "/admin/invitations", label: "ユーザー" });
+    items.push({ href: "/admin/invitations", label: "ユーザ" });
   } else if (section === "audit-logs") {
     items.push({ href: "/admin/audit-logs", label: "監査ログ" });
   }

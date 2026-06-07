@@ -141,7 +141,7 @@ export async function addSpaceMemberAction(
   if (!parsed.success) {
     redirectWithSpaceUsersValidationError(
       groupId,
-      "追加するユーザーとロールを選択してください",
+      "追加するユーザとロールを選択してください",
     );
   }
 
