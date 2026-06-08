@@ -177,6 +177,15 @@ ReviewFlow では、従来のフォーム送信だけでは扱いにくい、差
 | アクティブユーザー数 | 管理者、申請者、承認者がそれぞれ継続的に利用しているかを見るため |
 
 
+#### 申請一覧画面
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/6d0d342f-d294-48ec-8145-7f197bdc156c" />
+
+#### 申請詳細画面
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/02282d0a-a4f6-4ad2-aa55-f6a0daa211c1" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/b87faff4-ec17-4082-841b-712b91e19de6" />
+
+
+
 ---
 
 ## 5. 想定ユーザー・利用シーン
