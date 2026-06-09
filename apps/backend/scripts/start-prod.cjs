@@ -27,6 +27,13 @@ function runNode(scriptPath) {
   }
 }
 
+function validateProductionEnv() {
+  const { validateEnv } = require(resolveBackendPath(
+    'dist/app/config/validate-env.js',
+  ));
+  validateEnv({ ...process.env, NODE_ENV: 'production' });
+}
+
 function envEnabled(name) {
   return process.env[name] === 'true' || process.env[name] === '1';
 }
@@ -122,6 +129,8 @@ async function runDemoSeedOncePerDeploy(seedScriptPath) {
 }
 
 async function main() {
+  validateProductionEnv();
+
   const seedScriptPath = resolveBackendPath('dist/scripts/seed-demo.js');
 
   if (envEnabled('SEED_DEMO_ON_DEPLOY')) {
