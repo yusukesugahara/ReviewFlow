@@ -188,7 +188,7 @@ ReviewFlow では、管理者、申請者、承認者の 3 つの利用者を想
 申請者は、ログインアカウントを持っていなくても申請を提出できます。  
 外部ユーザーからの申請受付を想定し、アカウント作成の手間を省ける点を特徴としています。
 
-https://gyazo.com/e91a03ad3a53c2eb5dbb7365af78907e
+[![Image from Gyazo](https://i.gyazo.com/321915af61fd966902a9468eea0534f7.gif)](https://gyazo.com/321915af61fd966902a9468eea0534f7)
 
 #### 申請フォーム入力
 
