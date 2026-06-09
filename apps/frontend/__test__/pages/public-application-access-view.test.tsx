@@ -13,7 +13,9 @@ describe("PublicApplicationAccessView", () => {
         formDefinitionId="definition-1"
         formError="メールアドレスを入力してください"
         groupId="space-1"
+        message="申請フォームを特定できません。申請フォーム一覧から公開URLを開き直してください。"
         sent
+        toast="error"
       />,
     );
 
@@ -22,6 +24,11 @@ describe("PublicApplicationAccessView", () => {
     ).toBeInTheDocument();
     expect(screen.getByText(/案内を送信しました/)).toBeInTheDocument();
     expect(screen.getByText("メールアドレスを入力してください")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "申請フォームを特定できません。申請フォーム一覧から公開URLを開き直してください。",
+      ),
+    ).toBeInTheDocument();
     expect(screen.getByDisplayValue("space-1")).toHaveAttribute("name", "groupId");
     expect(screen.getByDisplayValue("definition-1")).toHaveAttribute(
       "name",

@@ -1,3 +1,6 @@
+"use client";
+
+import { useFormStatus } from "react-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -5,12 +8,26 @@ import { Label } from "@/components/ui/label";
 import { requestAccessAction } from "./actions";
 import type { PublicApplicationAccessViewProps } from "./types";
 
+function RequestAccessSubmitButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <Button type="submit" className="w-full" disabled={pending} aria-busy={pending}>
+      {pending ? "送信中..." : "フォーム案内を送信"}
+    </Button>
+  );
+}
+
 export function PublicApplicationAccessView({
   groupId,
   sent,
   formError,
   formDefinitionId,
+  toast,
+  message,
 }: PublicApplicationAccessViewProps) {
+  const actionError = toast === "error" ? message : undefined;
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
       <Card className="w-full max-w-lg border-slate-200 bg-white shadow-sm">
@@ -33,6 +50,11 @@ export function PublicApplicationAccessView({
               {formError}
             </div>
           ) : null}
+          {actionError ? (
+            <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-3 text-sm text-destructive">
+              {actionError}
+            </div>
+          ) : null}
 
           <form action={requestAccessAction} className="space-y-4">
             <input type="hidden" name="groupId" value={groupId} />
@@ -48,9 +70,7 @@ export function PublicApplicationAccessView({
                 placeholder="user@example.com"
               />
             </div>
-            <Button type="submit" className="w-full">
-              フォーム案内を送信
-            </Button>
+            <RequestAccessSubmitButton />
           </form>
         </CardContent>
       </Card>
