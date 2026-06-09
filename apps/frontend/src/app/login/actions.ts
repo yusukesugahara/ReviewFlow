@@ -14,6 +14,18 @@ import type { LoginRequestBody } from "@/lib/schema";
 
 export type LoginSchema = AuthCredentials & { next?: string };
 
+const LOGIN_FAILED_MESSAGE = "ログインに失敗しました";
+const LOGIN_REQUEST_FAILED_MESSAGE =
+  "ログインに失敗しました。時間をおいて再度お試しください。";
+const INVALID_CREDENTIALS_MESSAGE =
+  "メールアドレスまたはパスワードが正しくありません。";
+const TENANT_REQUIRED_MESSAGE =
+  "同じメールアドレスのアカウントが複数あります。管理者にお問い合わせください。";
+
+const apiErrorCodeSchema = z.object({
+  errorCode: z.string().optional(),
+});
+
 const loginFormSchema = z.object({
   email: z.string().catch(""),
   password: z.string().catch(""),
@@ -38,8 +50,20 @@ function resolveSafeNextPath(next?: string): string {
   return next;
 }
 
+function errorCodeFromBody(body: unknown): string | undefined {
+  const parsed = apiErrorCodeSchema.safeParse(body);
+  return parsed.success ? parsed.data.errorCode : undefined;
+}
+
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
-  return errorMessageFromBody(result.body, "ログインに失敗しました");
+  const errorCode = errorCodeFromBody(result.body);
+  if (errorCode === "AUTH_INVALID_CREDENTIALS") {
+    return INVALID_CREDENTIALS_MESSAGE;
+  }
+  if (errorCode === "AUTH_TENANT_REQUIRED") {
+    return TENANT_REQUIRED_MESSAGE;
+  }
+  return errorMessageFromBody(result.body, LOGIN_FAILED_MESSAGE);
 }
 
 async function postAuthLogin(
@@ -117,7 +141,13 @@ export async function login(formData: FormData): Promise<FormActionResponse<void
     return { fieldErrors: parsed.error.flatten().fieldErrors };
   }
 
-  const auth = await postAuthLogin(parsed.data);
+  let auth: Awaited<ReturnType<typeof postAuthLogin>>;
+  try {
+    auth = await postAuthLogin(parsed.data);
+  } catch {
+    return { error: { message: LOGIN_REQUEST_FAILED_MESSAGE } };
+  }
+
   if (!auth.ok) {
     return { error: { message: authErrorMessage(auth) } };
   }
