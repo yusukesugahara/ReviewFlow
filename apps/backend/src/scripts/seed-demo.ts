@@ -6,7 +6,10 @@ import { buildTypeOrmOptions } from '../app/typeorm-options.factory';
 import { ApplicationApprovalAction } from '../models/constants/application-approval-action';
 import { ApplicationStatus } from '../models/constants/application-status';
 import { CorrectionRequestStatus } from '../models/constants/correction-request-status';
-import { FormDefinitionStatus } from '../models/constants/form-definition-status';
+import {
+  FormDefinitionStatus,
+  type FormDefinitionStatusValue,
+} from '../models/constants/form-definition-status';
 import { FormFieldType } from '../models/constants/form-field-type';
 import { GroupMemberRole } from '../models/constants/group-member-role';
 import { TenantPlan, TenantStatus } from '../models/constants/tenant-enums';
@@ -16,6 +19,7 @@ import { ApplicationFieldValue } from '../models/entities/application-field-valu
 import { Application } from '../models/entities/application.entity';
 import { ApprovalFlow } from '../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../models/entities/approval-step.entity';
+import { AuditLog } from '../models/entities/audit-log.entity';
 import { CorrectionRequestItem } from '../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../models/entities/correction-request.entity';
 import { FormDefinition } from '../models/entities/form-definition.entity';
@@ -39,6 +43,8 @@ type DemoUserKey =
   | 'roadReviewer';
 
 type DemoFormDefinition = {
+  archivedFromStatus?: FormDefinitionStatusValue | null;
+  createSetupApplication?: boolean;
   description: string;
   fields: Array<{
     fieldKey: string;
@@ -50,10 +56,15 @@ type DemoFormDefinition = {
     required: boolean;
   }>;
   name: string;
+  status?: FormDefinitionStatusValue;
 };
 
 type DemoApplication = {
   applicantEmail: string;
+  correction?: {
+    itemComment: string;
+    overallComment: string;
+  };
   createdAt: Date;
   currentStepOrder: number | null;
   formName: string;
@@ -74,6 +85,18 @@ type DemoSpace = {
   name: string;
   reviewerUserKey: DemoUserKey;
   stepNames: [string, string];
+};
+
+type SeededSpace = {
+  applications: Application[];
+  demoSpace: DemoSpace;
+  formDefinitions: FormDefinition[];
+  group: Group;
+};
+
+type SeededFormDefinition = {
+  demoDefinition: DemoFormDefinition;
+  formDefinition: FormDefinition;
 };
 
 const DEMO_SPACES: DemoSpace[] = [
@@ -169,6 +192,33 @@ const DEMO_SPACES: DemoSpace[] = [
           },
         ],
       },
+      {
+        name: '転入届 事前確認（下書き）',
+        description:
+          '転入手続きの事前確認フォーム。公開前の下書きとして編集できます。',
+        status: FormDefinitionStatus.DRAFT,
+        fields: [
+          {
+            fieldKey: 'moving_person_name',
+            label: '転入者氏名',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+            placeholder: '例: 中村 友香',
+          },
+          {
+            fieldKey: 'previous_address',
+            label: '前住所',
+            fieldType: FormFieldType.TEXTAREA,
+            required: true,
+          },
+          {
+            fieldKey: 'moving_date',
+            label: '転入予定日',
+            fieldType: FormFieldType.DATE,
+            required: true,
+          },
+        ],
+      },
     ],
     memberUserKeys: ['citizenReviewer', 'citizenApprover', 'citizenOperator'],
     reviewerUserKey: 'citizenReviewer',
@@ -193,11 +243,17 @@ const DEMO_SPACES: DemoSpace[] = [
         applicantEmail: 'yamada@example.com',
         formName: 'マイナンバーカード窓口予約',
         status: ApplicationStatus.RETURNED,
-        currentStepOrder: 1,
+        currentStepOrder: null,
         submittedAt: daysAgo(5),
         createdAt: daysAgo(5),
         updatedAt: daysAgo(4),
         targetFieldKey: 'procedure_type',
+        correction: {
+          overallComment:
+            '来庁目的と手続き内容を確認できるよう、手続き内容を選び直してください。',
+          itemComment:
+            'カード交付、電子証明書更新、暗証番号再設定のどれに該当するかを確認してください。',
+        },
         values: {
           resident_name: '山田 花子',
           procedure_type: 'カード交付',
@@ -353,6 +409,39 @@ const DEMO_SPACES: DemoSpace[] = [
           },
         ],
       },
+      {
+        name: '緑化活動助成金申請（旧様式）',
+        description:
+          '過年度の助成制度で利用していた旧様式。削除済みフォームの復元確認用です。',
+        status: FormDefinitionStatus.ARCHIVED,
+        archivedFromStatus: FormDefinitionStatus.PUBLISHED,
+        fields: [
+          {
+            fieldKey: 'organization_name',
+            label: '団体名',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+          },
+          {
+            fieldKey: 'activity_area',
+            label: '活動場所',
+            fieldType: FormFieldType.TEXT,
+            required: true,
+          },
+          {
+            fieldKey: 'budget_amount',
+            label: '申請金額',
+            fieldType: FormFieldType.NUMBER,
+            required: true,
+          },
+          {
+            fieldKey: 'activity_plan',
+            label: '活動計画',
+            fieldType: FormFieldType.TEXTAREA,
+            required: true,
+          },
+        ],
+      },
     ],
     memberUserKeys: ['roadReviewer', 'roadApprover', 'roadInspector'],
     reviewerUserKey: 'roadReviewer',
@@ -412,11 +501,17 @@ const DEMO_SPACES: DemoSpace[] = [
         applicantEmail: 'koji@example.com',
         formName: '道路占用許可申請',
         status: ApplicationStatus.RETURNED,
-        currentStepOrder: 1,
+        currentStepOrder: null,
         submittedAt: daysAgo(6),
         createdAt: daysAgo(6),
         updatedAt: daysAgo(5),
         targetFieldKey: 'traffic_safety_plan',
+        correction: {
+          overallComment:
+            '安全対策と関係部署への事前確認状況を追記してください。',
+          itemComment:
+            '来場者誘導、緊急時連絡先、道路使用時の安全管理を補足してください。',
+        },
         values: {
           contractor_name: 'みどり建設株式会社',
           location: 'みどり市本町3-1先',
@@ -476,6 +571,7 @@ async function main() {
       const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
       const users = await createUsers(manager, tenant.id, passwordHash);
       const spaceIds: Array<{ id: string; name: string }> = [];
+      const seededSpaces: SeededSpace[] = [];
 
       for (const demoSpace of DEMO_SPACES) {
         const group = await createGroup(manager, tenant.id, users, demoSpace);
@@ -494,25 +590,34 @@ async function main() {
           users,
           demoSpace,
         );
-        const formDefinitions = await createFormDefinitions(
+        const seededDefinitions = await createFormDefinitions(
           manager,
           tenant.id,
           group.id,
           users.admin.id,
           demoSpace.formDefinitions,
         );
+        const formDefinitions = seededDefinitions.map(
+          (seededDefinition) => seededDefinition.formDefinition,
+        );
 
-        for (const formDefinition of formDefinitions) {
+        for (const seededDefinition of seededDefinitions) {
+          if (
+            seededDefinition.demoDefinition.createSetupApplication === false
+          ) {
+            continue;
+          }
           await createFormSetupApplication(manager, {
             approvalFlowId: approvalFlow.id,
             createdByUserId: users.admin.id,
-            formDefinition,
+            demoDefinition: seededDefinition.demoDefinition,
+            formDefinition: seededDefinition.formDefinition,
             groupId: group.id,
             tenantId: tenant.id,
           });
         }
 
-        await createPublicProcedureApplications(manager, {
+        const applications = await createPublicProcedureApplications(manager, {
           applications: demoSpace.applications,
           approvalFlow,
           financeUserId: users[demoSpace.approverUserKey].id,
@@ -521,7 +626,16 @@ async function main() {
           managerUserId: users[demoSpace.reviewerUserKey].id,
           tenantId: tenant.id,
         });
+
+        seededSpaces.push({
+          applications,
+          demoSpace,
+          formDefinitions,
+          group,
+        });
       }
+
+      await createDemoAuditLogs(manager, tenant.id, users, seededSpaces);
 
       return {
         spaceIds,
@@ -727,10 +841,10 @@ async function createFormDefinitions(
   groupId: string,
   createdByUserId: string,
   definitions: DemoFormDefinition[],
-): Promise<FormDefinition[]> {
+): Promise<SeededFormDefinition[]> {
   const formRepo = manager.getRepository(FormDefinition);
   const fieldRepo = manager.getRepository(FormField);
-  const savedDefinitions: FormDefinition[] = [];
+  const savedDefinitions: SeededFormDefinition[] = [];
 
   for (const definition of definitions) {
     const formDefinition = await formRepo.save(
@@ -739,8 +853,8 @@ async function createFormDefinitions(
         groupId,
         name: definition.name,
         description: definition.description,
-        status: FormDefinitionStatus.PUBLISHED,
-        archivedFromStatus: null,
+        status: definition.status ?? FormDefinitionStatus.PUBLISHED,
+        archivedFromStatus: definition.archivedFromStatus ?? null,
         createdByUserId,
       }),
     );
@@ -760,7 +874,7 @@ async function createFormDefinitions(
         }),
       ),
     );
-    savedDefinitions.push(formDefinition);
+    savedDefinitions.push({ demoDefinition: definition, formDefinition });
   }
 
   return savedDefinitions;
@@ -771,13 +885,14 @@ async function createFormSetupApplication(
   input: {
     approvalFlowId: string;
     createdByUserId: string;
+    demoDefinition: DemoFormDefinition;
     formDefinition: FormDefinition;
     groupId: string;
     tenantId: string;
   },
-) {
+): Promise<Application> {
   const applicationRepo = manager.getRepository(Application);
-  await applicationRepo.save(
+  return applicationRepo.save(
     applicationRepo.create({
       tenantId: input.tenantId,
       groupId: input.groupId,
@@ -786,7 +901,7 @@ async function createFormSetupApplication(
       formDefinitionId: input.formDefinition.id,
       approvalFlowId: input.approvalFlowId,
       currentStepOrder: null,
-      status: ApplicationStatus.PUBLISHED,
+      status: setupApplicationStatus(input.demoDefinition),
       submittedAt: null,
     }),
   );
@@ -803,7 +918,7 @@ async function createPublicProcedureApplications(
     managerUserId: string;
     tenantId: string;
   },
-) {
+): Promise<Application[]> {
   const fieldRepo = manager.getRepository(FormField);
   const formDefinitionByName = new Map(
     input.formDefinitions.map((formDefinition) => [
@@ -825,6 +940,7 @@ async function createPublicProcedureApplications(
     where: { approvalFlowId: input.approvalFlow.id },
     order: { stepOrder: 'ASC' },
   });
+  const savedApplications: Application[] = [];
 
   for (const demoApplication of input.applications) {
     const formDefinition = formDefinitionByName.get(demoApplication.formName);
@@ -858,12 +974,16 @@ async function createPublicProcedureApplications(
     if (demoApplication.status === ApplicationStatus.RETURNED) {
       await saveCorrectionRequest(manager, {
         applicationId: saved.id,
+        itemComment: demoApplication.correction?.itemComment,
+        overallComment: demoApplication.correction?.overallComment,
         requestedByUserId: input.managerUserId,
         tenantId: input.tenantId,
         targetFieldId: fieldByKey.get(demoApplication.targetFieldKey ?? '')?.id,
       });
     }
+    savedApplications.push(saved);
   }
+  return savedApplications;
 }
 
 async function saveApplication(
@@ -1001,6 +1121,8 @@ async function saveCorrectionRequest(
   manager: EntityManager,
   input: {
     applicationId: string;
+    itemComment?: string;
+    overallComment?: string;
     requestedByUserId: string;
     targetFieldId?: string;
     tenantId: string;
@@ -1017,7 +1139,9 @@ async function saveCorrectionRequest(
       applicationId: input.applicationId,
       requestedByUserId: input.requestedByUserId,
       status: CorrectionRequestStatus.OPEN,
-      overallComment: '安全対策と関係部署への事前確認状況を追記してください。',
+      overallComment:
+        input.overallComment ??
+        '確認に必要な情報が不足しているため、内容を補足してください。',
       resolvedAt: null,
     }),
   );
@@ -1027,10 +1151,214 @@ async function saveCorrectionRequest(
       correctionRequestId: request.id,
       formFieldId: input.targetFieldId,
       comment:
-        '来場者誘導、緊急時連絡先、道路使用時の安全管理を補足してください。',
+        input.itemComment ??
+        '確認できなかった内容を追記し、再提出してください。',
       isResolved: false,
     }),
   );
+}
+
+function setupApplicationStatus(
+  definition: DemoFormDefinition,
+): (typeof ApplicationStatus)['DRAFT' | 'PUBLISHED'] {
+  if (
+    definition.status === FormDefinitionStatus.DRAFT ||
+    (definition.status === FormDefinitionStatus.ARCHIVED &&
+      definition.archivedFromStatus === FormDefinitionStatus.DRAFT)
+  ) {
+    return ApplicationStatus.DRAFT;
+  }
+  return ApplicationStatus.PUBLISHED;
+}
+
+async function createDemoAuditLogs(
+  manager: EntityManager,
+  tenantId: string,
+  users: Record<DemoUserKey, User>,
+  spaces: SeededSpace[],
+) {
+  const auditRepo = manager.getRepository(AuditLog);
+  const rows: Array<{
+    actorUserId: string | null;
+    createdAt: Date;
+    groupId: string | null;
+    method: string;
+    path: string;
+    statusCode?: number;
+    targetId: string | null;
+    targetType: string;
+  }> = [
+    {
+      actorUserId: users.admin.id,
+      createdAt: daysAgo(6),
+      groupId: null,
+      method: 'POST',
+      path: '/auth/login',
+      targetId: null,
+      targetType: 'auth',
+    },
+  ];
+
+  for (const space of spaces) {
+    const firstPublishedDefinition = space.formDefinitions.find(
+      (definition) => definition.status === FormDefinitionStatus.PUBLISHED,
+    );
+    const draftDefinition = space.formDefinitions.find(
+      (definition) => definition.status === FormDefinitionStatus.DRAFT,
+    );
+    const archivedDefinition = space.formDefinitions.find(
+      (definition) => definition.status === FormDefinitionStatus.ARCHIVED,
+    );
+    const returnedApplication = space.applications.find(
+      (application) => application.status === ApplicationStatus.RETURNED,
+    );
+    const approvedApplication = space.applications.find(
+      (application) => application.status === ApplicationStatus.APPROVED,
+    );
+    const rejectedApplication = space.applications.find(
+      (application) => application.status === ApplicationStatus.REJECTED,
+    );
+
+    if (firstPublishedDefinition) {
+      rows.push(
+        {
+          actorUserId: users.admin.id,
+          createdAt: daysAgo(5),
+          groupId: space.group.id,
+          method: 'POST',
+          path: '/form-definitions',
+          statusCode: 201,
+          targetId: firstPublishedDefinition.id,
+          targetType: 'form-definitions',
+        },
+        {
+          actorUserId: users.admin.id,
+          createdAt: daysAgo(5),
+          groupId: space.group.id,
+          method: 'POST',
+          path: `/form-definitions/${firstPublishedDefinition.id}/publish`,
+          targetId: firstPublishedDefinition.id,
+          targetType: 'form-definitions',
+        },
+      );
+    }
+
+    if (draftDefinition) {
+      rows.push({
+        actorUserId: users.admin.id,
+        createdAt: daysAgo(4),
+        groupId: space.group.id,
+        method: 'POST',
+        path: `/form-definitions/${draftDefinition.id}/fields`,
+        statusCode: 201,
+        targetId: draftDefinition.id,
+        targetType: 'form-definitions',
+      });
+    }
+
+    if (returnedApplication) {
+      rows.push({
+        actorUserId: users[space.demoSpace.reviewerUserKey].id,
+        createdAt: daysAgo(3),
+        groupId: space.group.id,
+        method: 'POST',
+        path: `/applications/${returnedApplication.id}/return`,
+        targetId: returnedApplication.id,
+        targetType: 'applications',
+      });
+    }
+
+    if (approvedApplication) {
+      rows.push({
+        actorUserId: users[space.demoSpace.approverUserKey].id,
+        createdAt: daysAgo(2),
+        groupId: space.group.id,
+        method: 'POST',
+        path: `/applications/${approvedApplication.id}/approve`,
+        targetId: approvedApplication.id,
+        targetType: 'applications',
+      });
+    }
+
+    if (rejectedApplication) {
+      rows.push({
+        actorUserId: users[space.demoSpace.approverUserKey].id,
+        createdAt: daysAgo(2),
+        groupId: space.group.id,
+        method: 'POST',
+        path: `/applications/${rejectedApplication.id}/reject`,
+        targetId: rejectedApplication.id,
+        targetType: 'applications',
+      });
+    }
+
+    if (archivedDefinition) {
+      rows.push({
+        actorUserId: users.admin.id,
+        createdAt: daysAgo(1),
+        groupId: space.group.id,
+        method: 'POST',
+        path: `/form-definitions/${archivedDefinition.id}/archive`,
+        targetId: archivedDefinition.id,
+        targetType: 'form-definitions',
+      });
+    }
+  }
+
+  rows.push(
+    {
+      actorUserId: users.admin.id,
+      createdAt: daysAgo(1),
+      groupId: null,
+      method: 'PATCH',
+      path: `/users/${users.citizenOperator.id}/role`,
+      targetId: users.citizenOperator.id,
+      targetType: 'users',
+    },
+    {
+      actorUserId: users.admin.id,
+      createdAt: daysAgo(1),
+      groupId: spaces[0]?.group.id ?? null,
+      method: 'GET',
+      path: '/export-jobs/demo/download',
+      statusCode: 404,
+      targetId: 'demo',
+      targetType: 'export-jobs',
+    },
+  );
+
+  for (const [index, row] of rows.entries()) {
+    const statusCode = row.statusCode ?? 200;
+    const saved = await auditRepo.save(
+      auditRepo.create({
+        tenantId,
+        groupId: row.groupId,
+        actorUserId: row.actorUserId,
+        actionType: `${row.method}:${row.targetType}`,
+        targetType: row.targetType,
+        targetId: row.targetId,
+        metadataJson: {
+          method: row.method,
+          path: row.path,
+          statusCode,
+          durationMs: 80 + index * 17,
+          requestId: `demo-seed-${index + 1}`,
+          role:
+            row.actorUserId === users.admin.id
+              ? UserRole.TENANT_ADMIN
+              : UserRole.TENANT_USER,
+          ip: '203.0.113.10',
+          userAgent: 'ReviewFlow Demo Seed',
+          groupId: row.groupId,
+          success: statusCode < 400,
+          ...(statusCode >= 400
+            ? { errorCode: 'DEMO_EXPORT_FILE_MISSING' }
+            : {}),
+        },
+      }),
+    );
+    await auditRepo.update({ id: saved.id }, { createdAt: row.createdAt });
+  }
 }
 
 function daysAgo(days: number): Date {

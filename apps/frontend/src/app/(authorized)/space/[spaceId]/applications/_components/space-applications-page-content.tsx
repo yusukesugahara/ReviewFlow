@@ -419,7 +419,10 @@ function buildApplicationFormListRow(
       `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(setupApplication.id)}`
     : null;
   const formDetailHref = detailHref ? appendQueryParam(detailHref, "view", "form") : null;
-  const setupStatus = setupApplication?.status ?? definition.status;
+  const setupStatus =
+    definition.status === APPLICATION_STATUSES.archived
+      ? definition.status
+      : setupApplication?.status ?? definition.status;
   const isPublished =
     definition.status === APPLICATION_STATUSES.published &&
     setupStatus === APPLICATION_STATUSES.published;
