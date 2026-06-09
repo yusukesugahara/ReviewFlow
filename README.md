@@ -2,7 +2,7 @@
 
 市役所・自治体における補助金申請、施設利用申請、各種届出などの業務を想定し、申請フォームの作成から、申請、承認、差し戻し、再提出、CSV 出力、監査ログ確認までを一貫して管理できるアプリとして開発しています。
 
-本ドキュメントは、転職活動・技術紹介向けのポートフォリオ説明と、リポジトリの概要・開発手順をまとめたものです。  
+本ドキュメントは、転職活動・技術紹介向けのポートフォリオ説明です。
 業務要件・API 仕様・状態遷移などの設計詳細は [docs/](docs/00_overview.md) を参照してください。
 
 ---
@@ -647,124 +647,7 @@ ReviewFlow では、申請フォームを作る機能そのものよりも、「
 
 ---
 
-## 12. 開発・セットアップ
-
-### 前提環境
-
-以下の環境を前提としています。
-
-- Node.js LTS
-- npm
-- Docker / Docker Compose
-
-依存関係は、リポジトリルートでインストールします。
-
-```bash
-npm install
-```
-
-環境変数ファイルを作成します。
-
-```bash
-cp apps/backend/.env.example apps/backend/.env.dev
-cp apps/frontend/.env.example apps/frontend/.env
-```
-
-### ローカル起動
-
-PostgreSQL、バックエンド、フロントエンドをまとめて起動します。
-
-```bash
-docker compose up --build
-```
-
-起動後、以下の URL から確認できます。
-
-| 種別 | URL / 接続先 |
-| --- | --- |
-| フロントエンド | `http://localhost:3001` |
-| バックエンド | `http://localhost:3002` |
-| PostgreSQL | `localhost:5432` |
-
-PostgreSQL のデフォルト接続情報は以下です。
-
-| 項目 | 値 |
-| --- | --- |
-| user | `app` |
-| password | `app` |
-| database | `app_dev` |
-
-バックエンドのポートは、`BACKEND_HOST_PORT` で変更できます。
-
-### 個別起動
-
-PostgreSQL のみ Docker で起動し、フロントエンド・バックエンドを個別に起動することもできます。
-
-```bash
-docker compose up postgres -d
-```
-
-```bash
-npm run dev:backend
-npm run dev:frontend
-```
-
----
-
-### テスト
-
-バックエンドのテストでは、統合テスト用の PostgreSQL データベースを使用します。
-
-```bash
-docker compose up postgres -d
-```
-
-```bash
-docker compose exec -T postgres psql -U app -d app_dev -c "CREATE DATABASE app_test;" 2>/dev/null || true
-```
-
-```bash
-TEST_DATABASE_URL=postgres://app:app@127.0.0.1:5432/app_test npm run test -w backend
-```
-
-フロントエンドのテストは以下で実行します。
-
-```bash
-npm run test -w frontend
-npm run test:e2e -w frontend
-```
-
-CI（GitHub Actions）でも PostgreSQL サービスと `TEST_DATABASE_URL` を使用しています。
-
----
-
-### よく使うコマンド
-
-| コマンド | 内容 |
-| --- | --- |
-| `npm run dev` | Docker Compose でフルスタック起動 |
-| `npm run dev:frontend` | フロントエンドのみ起動 |
-| `npm run dev:backend` | バックエンドのみ起動 |
-| `npm run check` | lint、型チェック、テスト、ビルドを実行 |
-| `npm run openapi:emit` | OpenAPI スキーマを出力 |
-| `npm run generate:api-types` | フロントエンド向け API 型を生成 |
-
-API を変更した場合は、以下の流れで確認します。
-
-```bash
-npm run openapi:emit
-npm run generate:api-types
-npm run check
-```
-
-詳細は、以下のドキュメントを参照してください。
-
-- [バックエンド README](apps/backend/README.md)
-- [開発ガイド](docs/15_development_guide.md)
-
----
-
-## 13. 参考：設計ドキュメント
+## 12. 参考：設計ドキュメント
 
 業務要件、API 仕様、状態遷移、認証・認可、マルチテナント設計などは `docs/` に整理しています。
 
