@@ -40,8 +40,8 @@ export class CreateApprovalFlowStepDto {
   assigneeUserId?: string;
 
   @ApiProperty({
+    type: [String],
     format: 'uuid',
-    isArray: true,
     required: false,
     description:
       'このステップを承認できるテナント内ユーザID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。',
@@ -89,7 +89,7 @@ export class ApprovalStepResponseDto {
   @ApiProperty()
   assigneeUserId!: string;
 
-  @ApiProperty({ isArray: true })
+  @ApiProperty({ type: [String], format: 'uuid' })
   assigneeUserIds!: string[];
 
   @ApiProperty()

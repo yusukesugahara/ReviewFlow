@@ -79,9 +79,7 @@ export class MailService {
   async sendApplicationAccessEmail(
     input: ApplicationAccessMailInput,
   ): Promise<void> {
-    const accessUrl = this.buildFrontendUrl('/apply/access', {
-      token: input.accessToken,
-    });
+    const accessUrl = this.buildApplicationAccessUrl(input.accessToken);
 
     await this.send({
       to: input.to,
@@ -168,32 +166,48 @@ export class MailService {
   }
 
   async send(input: SendMailInput): Promise<void> {
-    if (!this.isMailEnabled()) {
-      this.logger.debug(`mail disabled; skipped delivery to ${input.to}`);
+    if (!this.isMailDeliveryEnabled()) {
+      this.logger.warn(
+        `mail delivery disabled; skipped email to ${input.to} with subject "${input.subject}"`,
+      );
       return;
     }
 
-    const transporter = this.getTransporter();
-    const from = this.getRequired('MAIL_FROM');
-    const replyTo =
-      this.configService.get<string>('MAIL_REPLY_TO') || undefined;
+    try {
+      const transporter = this.getTransporter();
+      const from = this.getRequired('MAIL_FROM');
+      const replyTo =
+        this.configService.get<string>('MAIL_REPLY_TO') || undefined;
 
-    await transporter.sendMail({
-      from,
-      replyTo,
-      to: input.to,
-      subject: input.subject,
-      text: input.text,
-      html: input.html,
-    });
+      await transporter.sendMail({
+        from,
+        replyTo,
+        to: input.to,
+        subject: input.subject,
+        text: input.text,
+        html: input.html,
+      });
+    } catch (error) {
+      this.logger.error(
+        `mail delivery failed to ${input.to} with subject "${input.subject}"`,
+        error instanceof Error ? error.stack : undefined,
+      );
+      throw error;
+    }
   }
 
-  private isMailEnabled(): boolean {
+  private isMailDeliveryEnabled(): boolean {
     const raw = this.configService.get<string>('MAIL_ENABLED');
     if (raw === undefined) {
       return this.configService.get<string>('NODE_ENV') !== 'test';
     }
     return raw === '1' || raw.toLowerCase() === 'true';
+  }
+
+  buildApplicationAccessUrl(accessToken: string): string {
+    return this.buildFrontendUrl('/apply/access', {
+      token: accessToken,
+    });
   }
 
   private getTransporter(): nodemailer.Transporter {

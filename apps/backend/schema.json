@@ -3626,7 +3626,8 @@
           "assigneeUserIds": {
             "type": "array",
             "items": {
-              "type": "array"
+              "type": "string",
+              "format": "uuid"
             }
           },
           "canReturn": {
@@ -3887,7 +3888,7 @@
             "description": "このステップを承認できるテナント内ユーザID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。",
             "type": "array",
             "items": {
-              "type": "array",
+              "type": "string",
               "format": "uuid"
             }
           },

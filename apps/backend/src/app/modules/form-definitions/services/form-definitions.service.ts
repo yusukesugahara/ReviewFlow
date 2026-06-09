@@ -369,7 +369,6 @@ export class FormDefinitionsService {
       groupId: definition.groupId,
       formDefinitionId: definition.id,
     });
-
     try {
       await this.mailService.sendApplicationAccessEmail({
         to: email,
