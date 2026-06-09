@@ -40,6 +40,20 @@ type BackendErrorBody = {
   message?: unknown;
 };
 
+function redirectUrlWithParams(
+  base: string,
+  params: Record<string, string>,
+): string {
+  const [pathWithSearch = "", hash = ""] = base.split("#", 2);
+  const [path, search = ""] = pathWithSearch.split("?", 2);
+  const nextParams = new URLSearchParams(search);
+  for (const [key, value] of Object.entries(params)) {
+    nextParams.set(key, value);
+  }
+  const nextSearch = nextParams.toString();
+  return `${path}${nextSearch ? `?${nextSearch}` : ""}${hash ? `#${hash}` : ""}`;
+}
+
 function setupErrorRedirectUrl(base: string, error: unknown): string {
   const params = new URLSearchParams({
     toast: "error",
@@ -55,7 +69,7 @@ function setupErrorRedirectUrl(base: string, error: unknown): string {
       : `${error.status}: ${message}`;
     params.set("message", `申請フォームの保存に失敗しました（${detail}）`);
   }
-  return `${base}?${params.toString()}`;
+  return redirectUrlWithParams(base, Object.fromEntries(params));
 }
 
 export async function submitApplicationSetupAction(
@@ -70,7 +84,9 @@ export async function submitApplicationSetupAction(
 
   if (!parsedForm.success) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidName,
+      }),
     );
   }
 
@@ -82,12 +98,16 @@ export async function submitApplicationSetupAction(
     fields = readDraftFields(fieldsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
   if (fields.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
 
@@ -96,12 +116,16 @@ export async function submitApplicationSetupAction(
     steps = parseSteps(stepsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
   if (steps.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
 
@@ -206,11 +230,21 @@ export async function updateApplicationSetupAction(
 
   if (!parsedForm.success) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidName,
+      }),
     );
   }
 
-  const { fieldsJson, intent, name, spaceId, stepsJson } = parsedForm.data;
+  const {
+    currentApprovalFlowId,
+    currentFormDefinitionId,
+    fieldsJson,
+    intent,
+    name,
+    spaceId,
+    stepsJson,
+  } = parsedForm.data;
   const applicationStatus = intent === "publish" ? "published" : "draft";
 
   let fields: DraftField[];
@@ -218,12 +252,16 @@ export async function updateApplicationSetupAction(
     fields = readDraftFields(fieldsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
   if (fields.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
 
@@ -232,73 +270,41 @@ export async function updateApplicationSetupAction(
     steps = parseSteps(stepsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
   if (steps.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
 
-  const fieldPayloads = toFieldPayloads(fields);
-  let createdDefinitionId = "";
+  if (!currentFormDefinitionId || !currentApprovalFlowId) {
+    redirect(setupErrorRedirectUrl(redirectBase, null));
+  }
 
   try {
     const authHeaders = await authHeadersOrRedirect();
-    const createdResponse = await client.POST("/form-definitions", {
+    const flowResponse = await client.PATCH("/approval-flows/{id}", {
+      params: { path: { id: currentApprovalFlowId } },
       body: {
-        groupId: spaceId,
-        name: name.trim(),
-        description: `${name.trim()} の申請`,
-      },
-      headers: authHeaders,
-    });
-    if (!createdResponse.response.ok || !createdResponse.data) {
-      throw { status: createdResponse.response.status, body: createdResponse.error };
-    }
-    const created = unwrapData<CreateDefinitionResponse>(createdResponse.data);
-    createdDefinitionId = created.id;
-
-    for (const field of fieldPayloads) {
-      const fieldResponse = await client.POST("/form-definitions/{id}/fields", {
-        params: { path: { id: createdDefinitionId } },
-        body: toFieldRequest(field),
-        headers: authHeaders,
-      });
-      if (!fieldResponse.response.ok) {
-        throw { status: fieldResponse.response.status, body: fieldResponse.error };
-      }
-    }
-
-    const publishResponse = await client.POST("/form-definitions/{id}/publish", {
-      params: { path: { id: createdDefinitionId } },
-      headers: authHeaders,
-    });
-    if (!publishResponse.response.ok) {
-      throw { status: publishResponse.response.status, body: publishResponse.error };
-    }
-
-    const flowResponse = await client.POST("/approval-flows", {
-      body: {
-        groupId: spaceId,
         name: `${name.trim()} 承認フロー`,
         steps: toApprovalStepRequest(steps),
       },
       headers: authHeaders,
     });
-    if (!flowResponse.response.ok || !flowResponse.data) {
+    if (!flowResponse.response.ok) {
       throw { status: flowResponse.response.status, body: flowResponse.error };
     }
-    const flow = unwrapData<CreateApprovalFlowResponse>(flowResponse.data);
 
     const applicationResponse = await client.PATCH("/applications/{id}", {
       params: { path: { id: applicationId } },
       body: {
-        formDefinitionId: createdDefinitionId,
-        approvalFlowId: flow.id,
         status: applicationStatus,
-        values: {},
       },
       headers: authHeaders,
     });
@@ -312,7 +318,7 @@ export async function updateApplicationSetupAction(
   const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(
     applicationId,
   )}?${new URLSearchParams({
-    definitionId: createdDefinitionId,
+    definitionId: currentFormDefinitionId,
     toast: "success",
     message:
       applicationStatus === "published"

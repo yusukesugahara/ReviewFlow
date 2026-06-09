@@ -72,9 +72,11 @@ describe("LoginView", () => {
     await user.type(screen.getByLabelText("パスワード"), "wrongpassword");
     await user.click(screen.getByRole("button", { name: "ログインする" }));
 
-    expect(
-      await screen.findByText("メールアドレスまたはパスワードが違います。"),
-    ).toBeInTheDocument();
+    const errorMessage = await screen.findByText(
+      "メールアドレスまたはパスワードが違います。",
+    );
+    expect(errorMessage).toBeInTheDocument();
+    expect(errorMessage.closest("[role='alert']")).toHaveClass("border-red-200");
   });
 
   // テスト内容: ログイン action が返した項目別バリデーションエラーを日本語で表示することを確認する
@@ -82,17 +84,21 @@ describe("LoginView", () => {
     const user = userEvent.setup();
     jest.mocked(login).mockResolvedValueOnce({
       fieldErrors: {
+        email: ["メールアドレスを入力してください。"],
         password: ["パスワードを入力してください。"],
       },
     });
 
     render(<LoginView apiReachable />);
 
-    await user.type(screen.getByLabelText("メールアドレス"), "user@example.com");
     await user.click(screen.getByRole("button", { name: "ログインする" }));
 
-    expect(
-      await screen.findByText("パスワードを入力してください。"),
-    ).toBeInTheDocument();
+    const emailError = await screen.findByText("メールアドレスを入力してください。");
+    expect(emailError).toBeInTheDocument();
+    expect(emailError).toHaveClass("text-[0.8rem]", "font-medium", "text-red-600");
+
+    const passwordError = await screen.findByText("パスワードを入力してください。");
+    expect(passwordError).toBeInTheDocument();
+    expect(passwordError).toHaveClass("text-[0.8rem]", "font-medium", "text-red-600");
   });
 });

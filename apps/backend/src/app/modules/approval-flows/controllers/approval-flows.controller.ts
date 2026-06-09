@@ -4,7 +4,9 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Param,
   ParseUUIDPipe,
+  Patch,
   Post,
   Query,
 } from '@nestjs/common';
@@ -27,6 +29,7 @@ import {
   ApprovalFlowResponseDto,
   ApprovalFlowsListResponseDto,
   CreateApprovalFlowDto,
+  UpdateApprovalFlowDto,
 } from '../dto/approval-flows.dto';
 import { ApprovalFlowsService } from '../services/approval-flows.service';
 
@@ -68,6 +71,26 @@ export class ApprovalFlowsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApprovalFlowResponseDto>> {
     const row = await this.approvalFlows.create(actor, dto);
+    return successResponse(this.approvalFlows.toDto(row));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Patch(':id')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '承認フロー更新（tenant_admin）',
+    description:
+      '既存の承認フロー名とステップを置き換える。stepOrder は 1 から連番で重複不可。',
+  })
+  @ApiSuccessResponse(ApprovalFlowResponseDto)
+  async update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdateApprovalFlowDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<ApprovalFlowResponseDto>> {
+    const row = await this.approvalFlows.update(actor, id, dto);
     return successResponse(this.approvalFlows.toDto(row));
   }
 }

@@ -468,6 +468,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/approval-flows/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 承認フロー更新（tenant_admin）
+         * @description 既存の承認フロー名とステップを置き換える。stepOrder は 1 から連番で重複不可。
+         */
+        patch: operations["ApprovalFlowsController_update"];
+        trace?: never;
+    };
     "/groups": {
         parameters: {
             query?: never;
@@ -1167,6 +1187,11 @@ export interface components {
         CreateApprovalFlowDto: {
             /** Format: uuid */
             groupId: string;
+            /** @example 経費申請フロー */
+            name: string;
+            steps: components["schemas"]["CreateApprovalFlowStepDto"][];
+        };
+        UpdateApprovalFlowDto: {
             /** @example 経費申請フロー */
             name: string;
             steps: components["schemas"]["CreateApprovalFlowStepDto"][];
@@ -2317,6 +2342,38 @@ export interface operations {
         };
         responses: {
             201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["ApprovalFlowResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    ApprovalFlowsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateApprovalFlowDto"];
+            };
+        };
+        responses: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };

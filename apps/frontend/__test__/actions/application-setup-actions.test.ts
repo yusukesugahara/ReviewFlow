@@ -60,6 +60,28 @@ function createSetupFormData(intent: "draft" | "publish"): FormData {
   );
   formData.set("returnPath", "/space/11111111-1111-1111-1111-111111111111/applications/app-1/edit");
   formData.set("intent", intent);
+  formData.set("currentFormDefinitionId", "definition-current");
+  formData.set("currentApprovalFlowId", "flow-current");
+  return formData;
+}
+
+function createSetupFormDataWithInvalidSteps(): FormData {
+  const formData = createSetupFormData("publish");
+  formData.set(
+    "returnPath",
+    "/space/11111111-1111-1111-1111-111111111111/applications/app-1/edit?definitionId=definition-current",
+  );
+  formData.set(
+    "stepsJson",
+    JSON.stringify([
+      {
+        id: "step-1",
+        stepName: "一次承認",
+        assigneeUserIds: [],
+        canReturn: true,
+      },
+    ]),
+  );
   return formData;
 }
 
@@ -72,44 +94,55 @@ describe("updateApplicationSetupAction", () => {
 
   // テスト内容: 詳細編集画面で公開を押した場合、申請フォーム管理レコードを published に更新することを確認する
   it("sends published status when publishing edited setup", async () => {
-    mockedPost
+    mockedPatch
       .mockResolvedValueOnce({
-        response: { ok: true, status: 201 },
-        data: { data: { id: "definition-next" } },
-      })
-      .mockResolvedValueOnce({
-        response: { ok: true, status: 201 },
-        data: { data: { id: "field-next" } },
+        response: { ok: true, status: 200 },
+        data: { data: { id: "flow-current" } },
       })
       .mockResolvedValueOnce({
         response: { ok: true, status: 200 },
-        data: { data: { ok: true } },
-      })
-      .mockResolvedValueOnce({
-        response: { ok: true, status: 201 },
-        data: { data: { id: "flow-next" } },
+        data: { data: { id: "app-1" } },
       });
-    mockedPatch.mockResolvedValue({
-      response: { ok: true, status: 200 },
-      data: { data: { id: "app-1" } },
-    });
 
     await expect(
       updateApplicationSetupAction("app-1", createSetupFormData("publish")),
     ).rejects.toThrow("NEXT_REDIRECT:");
 
-    expect(mockedPatch).toHaveBeenCalledWith(
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(mockedPatch).toHaveBeenNthCalledWith(
+      1,
+      "/approval-flows/{id}",
+      expect.objectContaining({
+        params: { path: { id: "flow-current" } },
+        body: expect.objectContaining({
+          name: "稟議フォーム 承認フロー",
+        }),
+      }),
+    );
+    expect(mockedPatch).toHaveBeenNthCalledWith(
+      2,
       "/applications/{id}",
       expect.objectContaining({
         body: expect.objectContaining({
-          approvalFlowId: "flow-next",
-          formDefinitionId: "definition-next",
           status: "published",
         }),
       }),
     );
     expect(mockedRedirect.mock.calls.at(-1)?.[0]).toContain(
       "message=%E7%94%B3%E8%AB%8B%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%82%92%E5%85%AC%E9%96%8B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F",
+    );
+  });
+
+  // テスト内容: definitionId 付きの編集画面で承認者が空の場合、既存クエリを壊さず検証エラーを返すことを確認する
+  it("preserves edit query params when redirecting invalid approval steps", async () => {
+    await expect(
+      updateApplicationSetupAction("app-1", createSetupFormDataWithInvalidSteps()),
+    ).rejects.toThrow("NEXT_REDIRECT:");
+
+    expect(mockedPost).not.toHaveBeenCalled();
+    expect(mockedPatch).not.toHaveBeenCalled();
+    expect(mockedRedirect.mock.calls.at(-1)?.[0]).toBe(
+      "/space/11111111-1111-1111-1111-111111111111/applications/app-1/edit?definitionId=definition-current&setupError=invalid_steps",
     );
   });
 });

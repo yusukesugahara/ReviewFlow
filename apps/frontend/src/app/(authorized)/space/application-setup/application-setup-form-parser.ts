@@ -9,6 +9,8 @@ const applicationSetupFormSchema = z.object({
   spaceId: z.string().min(1),
   returnPath: z.string().optional(),
   intent: z.string().optional(),
+  currentFormDefinitionId: z.string().optional(),
+  currentApprovalFlowId: z.string().optional(),
 });
 
 export type ApplicationSetupForm = z.infer<typeof applicationSetupFormSchema>;
@@ -63,6 +65,9 @@ export function readApplicationSetupForm(formData: FormData) {
     spaceId: formData.get("spaceId"),
     returnPath: formData.get("returnPath") || undefined,
     intent: formData.get("intent") || undefined,
+    currentFormDefinitionId:
+      formData.get("currentFormDefinitionId") || undefined,
+    currentApprovalFlowId: formData.get("currentApprovalFlowId") || undefined,
   });
 }
 

@@ -1,6 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { Loader2 } from "lucide-react";
+import { useFormStatus } from "react-dom";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,6 +31,8 @@ type ApplicationSetupDraftFormProps = {
   statusMessage?: string | null;
   publishedGroupId?: string | null;
   publishedFormDefinitionId?: string | null;
+  currentFormDefinitionId?: string | null;
+  currentApprovalFlowId?: string | null;
   assignees: ApprovalAssigneeOption[];
   initialFields?: DraftField[];
   initialName?: string;
@@ -44,6 +48,8 @@ export function ApplicationSetupDraftForm({
   statusMessage,
   publishedGroupId,
   publishedFormDefinitionId,
+  currentFormDefinitionId,
+  currentApprovalFlowId,
   assignees,
   initialFields,
   initialName,
@@ -124,6 +130,12 @@ export function ApplicationSetupDraftForm({
       />
       <input type="hidden" name="fieldsJson" value={fieldsJson} />
       <input type="hidden" name="spaceId" value={spaceId} />
+      {currentFormDefinitionId ? (
+        <input type="hidden" name="currentFormDefinitionId" value={currentFormDefinitionId} />
+      ) : null}
+      {currentApprovalFlowId ? (
+        <input type="hidden" name="currentApprovalFlowId" value={currentApprovalFlowId} />
+      ) : null}
       {returnPath ? (
         <input type="hidden" name="returnPath" value={returnPath} />
       ) : null}
@@ -164,12 +176,12 @@ export function ApplicationSetupDraftForm({
               />
             </div>
             <div className="flex shrink-0 items-center justify-end gap-2">
-              <Button type="submit" name="intent" value="draft" variant="secondary">
+              <ApplicationSetupSubmitButton intent="draft">
                 下書き保存
-              </Button>
-              <Button type="submit" name="intent" value="publish">
+              </ApplicationSetupSubmitButton>
+              <ApplicationSetupSubmitButton intent="publish">
                 公開
-              </Button>
+              </ApplicationSetupSubmitButton>
             </div>
           </div>
         </CardHeader>
@@ -205,5 +217,36 @@ export function ApplicationSetupDraftForm({
       </Card>
 
     </form>
+  );
+}
+
+function ApplicationSetupSubmitButton({
+  children,
+  intent,
+}: {
+  children: string;
+  intent: "draft" | "publish";
+}) {
+  const { pending, data } = useFormStatus();
+  const isPublishing = pending && data?.get("intent") === "publish";
+
+  return (
+    <Button
+      type="submit"
+      name="intent"
+      value={intent}
+      variant={intent === "draft" ? "secondary" : "default"}
+      disabled={pending}
+      aria-busy={intent === "publish" && isPublishing}
+    >
+      {intent === "publish" && isPublishing ? (
+        <>
+          <Loader2 className="animate-spin" aria-hidden="true" />
+          公開中
+        </>
+      ) : (
+        children
+      )}
+    </Button>
   );
 }
