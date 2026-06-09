@@ -14,6 +14,8 @@ export default async function PublicApplicationAccessPage({
       sent={query.sent === "1"}
       formError={query.formError}
       formDefinitionId={query.formDefinitionId ?? ""}
+      toast={query.toast}
+      message={query.message}
     />
   );
 }
