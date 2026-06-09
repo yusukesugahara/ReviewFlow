@@ -296,7 +296,7 @@ response:
 
 ### PATCH /applications/:id
 権限: tenant_user
-- **draft / published** は `values` の field_key 単位更新に加え、`formDefinitionId` / `approvalFlowId` の差し替えが可能。申請編集画面では編集内容から新しい published フォーム定義と有効な承認フローを作成し、既存申請へ紐づけ直す。
+- **draft / published** は `values` の field_key 単位更新に加え、`formDefinitionId` / `approvalFlowId` の差し替えと `status`（`draft` / `published`）の変更が可能。申請編集画面では編集内容から新しい published フォーム定義と有効な承認フローを作成し、既存申請へ紐づけ直す。
 - returned の場合は correction_request_items 対象フィールドのみ更新可能。
 
 ### POST /applications/:id/submit

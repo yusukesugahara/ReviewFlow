@@ -4685,6 +4685,14 @@
             "format": "uuid",
             "description": "差し替える有効な承認フロー。draft / published の申請でのみ指定可能。"
           },
+          "status": {
+            "type": "string",
+            "enum": [
+              "draft",
+              "published"
+            ],
+            "description": "申請フォーム編集用の公開状態。draft / published の申請でのみ指定可能。"
+          },
           "values": {
             "type": "object",
             "additionalProperties": true,

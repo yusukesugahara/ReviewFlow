@@ -102,7 +102,7 @@ export function FormDetailView({
             <div className="min-w-0 space-y-3">
               <div className="flex flex-wrap items-center gap-2">
                 <ApplicationStatusBadge
-                  status={definition?.status ?? application.status}
+                  status={application.status}
                   className="px-3 py-1"
                 />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
@@ -124,7 +124,13 @@ export function FormDetailView({
                 action={descriptionAction}
                 initialDescription={definition?.description ?? ""}
               />
-              <PublicApplicationUrlCopyButton path={publicApplicationUrlPath} />
+              {application.status === APPLICATION_STATUSES.published ? (
+                <PublicApplicationUrlCopyButton path={publicApplicationUrlPath} />
+              ) : (
+                <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-muted-foreground">
+                  未公開
+                </span>
+              )}
             </div>
           </div>
         </CardHeader>

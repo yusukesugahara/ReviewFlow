@@ -1159,7 +1159,7 @@ export interface components {
              * @description このステップを承認するテナント内ユーザID
              */
             assigneeUserId?: string;
-            /** @description このステップを承認できるテナント内ユーザーID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
+            /** @description このステップを承認できるテナント内ユーザID一覧。指定時はこちらを優先し、assigneeUserId は後方互換用の代表者として扱う。 */
             assigneeUserIds?: string[];
             /** @example true */
             canReturn: boolean;
@@ -1255,6 +1255,8 @@ export interface components {
             applicantEmail: string;
             applicantUserId?: Record<string, never> | null;
             currentStepOrder?: Record<string, never> | null;
+            /** @description 現在の承認ステップ担当者のユーザID一覧。現在ステップが無い場合は空配列。 */
+            currentStepAssigneeUserIds: string[];
             submittedAt?: Record<string, never> | null;
             createdAt: string;
             updatedAt: string;
@@ -1327,6 +1329,8 @@ export interface components {
             applicantEmail: string;
             applicantUserId?: Record<string, never> | null;
             currentStepOrder?: Record<string, never> | null;
+            /** @description 現在の承認ステップ担当者のユーザID一覧。現在ステップが無い場合は空配列。 */
+            currentStepAssigneeUserIds: string[];
             submittedAt?: Record<string, never> | null;
             createdAt: string;
             updatedAt: string;
@@ -1410,6 +1414,11 @@ export interface components {
              * @description 差し替える有効な承認フロー。draft / published の申請でのみ指定可能。
              */
             approvalFlowId?: string;
+            /**
+             * @description 申請フォーム編集用の公開状態。draft / published の申請でのみ指定可能。
+             * @enum {string}
+             */
+            status?: "draft" | "published";
             /** @description field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。 */
             values?: {
                 [key: string]: unknown;
