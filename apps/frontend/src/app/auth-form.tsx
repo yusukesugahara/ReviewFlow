@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PasswordInput } from "@/components/ui/password-input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
@@ -176,9 +177,9 @@ export function AuthForm({
               noValidate
             >
               {state.formError ? (
-                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm text-destructive">
-                  {state.formError}
-                </div>
+                <Alert variant="destructive">
+                  <AlertDescription>{state.formError}</AlertDescription>
+                </Alert>
               ) : null}
 
               <div className="space-y-2">
@@ -209,7 +210,11 @@ export function AuthForm({
                   )}
                 />
                 {state.fieldErrors.email ? (
-                  <p id={emailErrorId} className="text-sm text-destructive" role="alert">
+                  <p
+                    id={emailErrorId}
+                    className="text-[0.8rem] font-medium text-red-600"
+                    role="alert"
+                  >
                     {state.fieldErrors.email.join("、")}
                   </p>
                 ) : null}
@@ -261,7 +266,11 @@ export function AuthForm({
                   </div>
                 ) : null}
                 {state.fieldErrors.password ? (
-                  <p id={passwordErrorId} className="text-sm text-destructive" role="alert">
+                  <p
+                    id={passwordErrorId}
+                    className="text-[0.8rem] font-medium text-red-600"
+                    role="alert"
+                  >
                     {state.fieldErrors.password.join("、")}
                   </p>
                 ) : null}
