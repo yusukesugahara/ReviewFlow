@@ -76,6 +76,21 @@ export class CreateApprovalFlowDto {
   steps!: CreateApprovalFlowStepDto[];
 }
 
+export class UpdateApprovalFlowDto {
+  @ApiProperty({ example: '経費申請フロー' })
+  @IsString()
+  @MinLength(1)
+  @MaxLength(255)
+  name!: string;
+
+  @ApiProperty({ type: [CreateApprovalFlowStepDto] })
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => CreateApprovalFlowStepDto)
+  steps!: CreateApprovalFlowStepDto[];
+}
+
 export class ApprovalStepResponseDto {
   @ApiProperty()
   id!: string;

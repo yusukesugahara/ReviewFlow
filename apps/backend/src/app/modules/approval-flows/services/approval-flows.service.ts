@@ -5,7 +5,10 @@ import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
 import { ApprovalFlowsRepository } from '../../../../models/repositories/approval-flows.repository';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
-import type { CreateApprovalFlowDto } from '../dto/approval-flows.dto';
+import type {
+  CreateApprovalFlowDto,
+  UpdateApprovalFlowDto,
+} from '../dto/approval-flows.dto';
 import { mapApprovalFlowToDto } from '../mappers/approval-flows.mapper';
 
 @Injectable()
@@ -97,6 +100,55 @@ export class ApprovalFlowsService {
     });
 
     return this.getOne(actor.tenantId, newFlowId);
+  }
+
+  async update(
+    actor: AuthUserPayload,
+    flowId: string,
+    dto: UpdateApprovalFlowDto,
+  ): Promise<ApprovalFlow> {
+    const current = await this.getOne(actor.tenantId, flowId);
+    await this.spaceAccess.assertCanManageGroup(actor, current.groupId);
+    this.assertStepsValid({ groupId: current.groupId, ...dto });
+
+    const sortedSteps = [...dto.steps].sort(
+      (a, b) => a.stepOrder - b.stepOrder,
+    );
+    const assigneeIds = Array.from(
+      new Set(
+        sortedSteps.flatMap((step) => this.normalizeAssigneeUserIds(step)),
+      ),
+    );
+    const assignees = await this.approvalFlowsRepository.findAssignees(
+      actor.tenantId,
+      assigneeIds,
+    );
+    if (assignees.length !== assigneeIds.length) {
+      throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
+    }
+    const assigneeMemberships =
+      await this.approvalFlowsRepository.findAssigneeMemberships({
+        tenantId: actor.tenantId,
+        groupId: current.groupId,
+        assigneeIds,
+      });
+    if (assigneeMemberships.length !== assigneeIds.length) {
+      throw clientError(ClientErrorCodes.GROUP_MEMBER_NOT_FOUND);
+    }
+
+    await this.approvalFlowsRepository.replaceFlowSteps({
+      tenantId: actor.tenantId,
+      flowId,
+      name: dto.name.trim(),
+      steps: sortedSteps.map((step) => ({
+        stepOrder: step.stepOrder,
+        stepName: step.stepName.trim(),
+        assigneeUserIds: this.normalizeAssigneeUserIds(step),
+        canReturn: step.canReturn,
+      })),
+    });
+
+    return this.getOne(actor.tenantId, flowId);
   }
 
   async getOne(tenantId: string, flowId: string): Promise<ApprovalFlow> {

@@ -1648,6 +1648,72 @@
         ]
       }
     },
+    "/approval-flows/{id}": {
+      "patch": {
+        "description": "既存の承認フロー名とステップを置き換える。stepOrder は 1 から連番で重複不可。",
+        "operationId": "ApprovalFlowsController_update",
+        "parameters": [
+          {
+            "name": "id",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateApprovalFlowDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApprovalFlowResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "承認フロー更新（tenant_admin）",
+        "tags": [
+          "approval-flows"
+        ]
+      }
+    },
     "/groups": {
       "get": {
         "operationId": "GroupsController_list",
@@ -3923,6 +3989,25 @@
         },
         "required": [
           "groupId",
+          "name",
+          "steps"
+        ]
+      },
+      "UpdateApprovalFlowDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "経費申請フロー"
+          },
+          "steps": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/CreateApprovalFlowStepDto"
+            }
+          }
+        },
+        "required": [
           "name",
           "steps"
         ]

@@ -290,7 +290,8 @@ export class FormDefinitionsController {
   @ApiSuccessResponse(RequestFormAccessResponseDto)
   async requestAccess(
     @Param('groupId', ParseUUIDPipe) groupId: string,
-    @Query('formDefinitionId') formDefinitionId: string | undefined,
+    @Query('formDefinitionId', new ParseUUIDPipe({ optional: true }))
+    formDefinitionId: string | undefined,
     @Body() dto: RequestFormAccessDto,
   ): Promise<SuccessResponse<RequestFormAccessResponseDto>> {
     return successResponse(
