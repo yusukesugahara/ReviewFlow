@@ -19,10 +19,17 @@ type AuthFormState = {
   formError: string;
 };
 
+type AuthFormAppGuide = {
+  title: string;
+  description: string;
+  highlights: [string, string, string];
+};
+
 type AuthFormProps = {
   apiReachable: boolean;
   title: string;
   description: string;
+  appGuide?: AuthFormAppGuide;
   submitLabel: string;
   submittingLabel: string;
   passwordAutoComplete: "current-password" | "new-password";
@@ -36,10 +43,22 @@ type AuthFormProps = {
   fallbackErrorMessage: string;
 };
 
+const DEFAULT_APP_GUIDE: AuthFormAppGuide = {
+  title: "申請業務を\nシンプルに管理する",
+  description:
+    "申請作成、承認、監査ログまでを一つのフローに統合。必要な情報をすぐに見つけられる実務向けUIです。",
+  highlights: [
+    "役割ごとの画面で迷わない導線",
+    "入力エラーをリアルタイムに明示",
+    "承認ステータスを即座に可視化",
+  ],
+};
+
 export function AuthForm({
   apiReachable,
   title,
   description,
+  appGuide = DEFAULT_APP_GUIDE,
   submitLabel,
   submittingLabel,
   passwordAutoComplete,
@@ -114,18 +133,21 @@ export function AuthForm({
               ReviewFlow
             </p>
             <h2 className="text-3xl font-semibold leading-tight text-slate-900">
-              申請業務を
-              <br />
-              シンプルに管理する
+              {appGuide.title.split("\n").map((line, index) => (
+                <span key={line}>
+                  {index > 0 ? <br /> : null}
+                  {line}
+                </span>
+              ))}
             </h2>
             <p className="max-w-md text-sm leading-6 text-slate-600">
-              申請作成、承認、監査ログまでを一つのフローに統合。必要な情報をすぐに見つけられる実務向けUIです。
+              {appGuide.description}
             </p>
           </div>
           <ul className="space-y-3 text-sm text-slate-600">
-            <li>・役割ごとの画面で迷わない導線</li>
-            <li>・入力エラーをリアルタイムに明示</li>
-            <li>・承認ステータスを即座に可視化</li>
+            {appGuide.highlights.map((highlight) => (
+              <li key={highlight}>・{highlight}</li>
+            ))}
           </ul>
         </section>
 

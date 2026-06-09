@@ -1,71 +1,119 @@
 import { z } from "zod";
 
+const EMAIL_REQUIRED_MESSAGE = "メールアドレスを入力してください。";
+const EMAIL_FORMAT_MESSAGE = "メールアドレスの形式で入力してください。";
+const PASSWORD_REQUIRED_MESSAGE = "パスワードを入力してください。";
+const PASSWORD_MIN_LENGTH_MESSAGE = "パスワードは8文字以上で入力してください。";
+const TOKEN_REQUIRED_MESSAGE = "トークンが見つかりません。";
+const GROUP_REQUIRED_MESSAGE = "スペースを選択してください。";
+const FORM_DEFINITION_REQUIRED_MESSAGE = "申請フォームを選択してください。";
+const SPACE_NAME_REQUIRED_MESSAGE = "スペース名を入力してください。";
+const SPACE_ADMIN_REQUIRED_MESSAGE = "管理者を1人以上選択してください。";
+const USER_REQUIRED_MESSAGE = "ユーザを選択してください。";
+const ROLE_REQUIRED_MESSAGE = "ロールを選択してください。";
+
+function nonEmptyString(message: string) {
+  return z.string({ error: message }).trim().min(1, message);
+}
+
+function emailSchema() {
+  return z.string({ error: EMAIL_REQUIRED_MESSAGE }).trim().superRefine((value, ctx) => {
+    if (value.length === 0) {
+      ctx.addIssue({ code: "custom", message: EMAIL_REQUIRED_MESSAGE });
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) {
+      ctx.addIssue({ code: "custom", message: EMAIL_FORMAT_MESSAGE });
+    }
+  });
+}
+
+function passwordSchema() {
+  return z.string({ error: PASSWORD_REQUIRED_MESSAGE }).superRefine((value, ctx) => {
+    if (value.length === 0) {
+      ctx.addIssue({ code: "custom", message: PASSWORD_REQUIRED_MESSAGE });
+      return;
+    }
+    if (value.length < 8) {
+      ctx.addIssue({ code: "custom", message: PASSWORD_MIN_LENGTH_MESSAGE });
+    }
+  });
+}
+
 export const authCredentialsSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(8),
+  email: emailSchema(),
+  password: passwordSchema(),
 });
 
 export type AuthCredentials = z.infer<typeof authCredentialsSchema>;
 
 export const requestPasswordResetSchema = z.object({
-  email: z.string().trim().email(),
+  email: emailSchema(),
 });
 
 export type RequestPasswordResetInput = z.infer<typeof requestPasswordResetSchema>;
 
 export const confirmPasswordResetSchema = z.object({
-  token: z.string().min(1),
-  password: z.string().min(8),
+  token: nonEmptyString(TOKEN_REQUIRED_MESSAGE),
+  password: passwordSchema(),
 });
 
 export type ConfirmPasswordResetInput = z.infer<typeof confirmPasswordResetSchema>;
 
 export const acceptInvitationSchema = z.object({
-  token: z.string().min(1),
+  token: nonEmptyString(TOKEN_REQUIRED_MESSAGE),
   name: z.string().trim().optional(),
-  password: z.string().min(8),
+  password: passwordSchema(),
   next: z.string().optional(),
 });
 
 export type AcceptInvitationInput = z.infer<typeof acceptInvitationSchema>;
 
 export const requestFormAccessSchema = z.object({
-  groupId: z.string().min(1),
+  groupId: nonEmptyString(GROUP_REQUIRED_MESSAGE),
   formDefinitionId: z.string().optional(),
-  email: z.string().trim().email(),
+  email: emailSchema(),
 });
 
 export type RequestFormAccessInput = z.infer<typeof requestFormAccessSchema>;
 
 export const createExportJobSchema = z.object({
-  groupId: z.string().min(1),
-  formDefinitionId: z.string().min(1).optional(),
+  groupId: nonEmptyString(GROUP_REQUIRED_MESSAGE),
+  formDefinitionId: nonEmptyString(FORM_DEFINITION_REQUIRED_MESSAGE).optional(),
 });
 
 export type CreateExportJobInput = z.infer<typeof createExportJobSchema>;
 
 export const createSpaceSchema = z.object({
-  name: z.string().trim().min(1),
+  name: nonEmptyString(SPACE_NAME_REQUIRED_MESSAGE),
   description: z.string().trim().optional(),
-  adminUserIds: z.array(z.string().min(1)).min(1),
+  adminUserIds: z
+    .array(nonEmptyString(USER_REQUIRED_MESSAGE), {
+      error: SPACE_ADMIN_REQUIRED_MESSAGE,
+    })
+    .min(1, SPACE_ADMIN_REQUIRED_MESSAGE),
 });
 
 export const addGroupMemberSchema = z.object({
-  userId: z.string().min(1),
-  role: z.enum(["admin", "user"]),
+  userId: nonEmptyString(USER_REQUIRED_MESSAGE),
+  role: z.enum(["admin", "user"], { error: ROLE_REQUIRED_MESSAGE }),
 });
 
 export const inviteSpaceMemberSchema = z.object({
-  email: z.string().trim().email(),
-  tenantRole: z.enum(["tenant_admin", "tenant_user"]),
-  groupRole: z.enum(["admin", "user"]),
+  email: emailSchema(),
+  tenantRole: z.enum(["tenant_admin", "tenant_user"], {
+    error: ROLE_REQUIRED_MESSAGE,
+  }),
+  groupRole: z.enum(["admin", "user"], { error: ROLE_REQUIRED_MESSAGE }),
 });
 
 export const createInvitationSchema = z.object({
-  email: z.string().trim().email(),
-  role: z.enum(["tenant_admin", "tenant_user"]),
+  email: emailSchema(),
+  role: z.enum(["tenant_admin", "tenant_user"], {
+    error: ROLE_REQUIRED_MESSAGE,
+  }),
 });
 
 export const updateGroupMemberRoleSchema = z.object({
-  role: z.enum(["admin", "user"]),
+  role: z.enum(["admin", "user"], { error: ROLE_REQUIRED_MESSAGE }),
 });
