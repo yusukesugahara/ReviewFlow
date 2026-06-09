@@ -25,7 +25,7 @@ export type ApprovalStepRequest = {
   stepOrder: number;
   stepName: string;
   assigneeUserId?: string;
-  assigneeUserIds?: unknown[][];
+  assigneeUserIds?: string[];
   canReturn: boolean;
 };
 
@@ -43,7 +43,7 @@ export function toApprovalStepRequest(
     stepOrder: step.stepOrder,
     stepName: step.stepName,
     assigneeUserId: step.assigneeUserId,
-    assigneeUserIds: step.assigneeUserIds as unknown as unknown[][],
+    assigneeUserIds: step.assigneeUserIds,
     canReturn: step.canReturn,
   }));
 }
