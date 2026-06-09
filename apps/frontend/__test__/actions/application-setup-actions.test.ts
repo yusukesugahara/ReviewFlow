@@ -1,0 +1,115 @@
+jest.mock("server-only", () => ({}));
+
+jest.mock("next/cache", () => ({
+  revalidatePath: jest.fn(),
+}));
+
+jest.mock("next/navigation", () => ({
+  redirect: jest.fn((path: string) => {
+    throw new Error(`NEXT_REDIRECT:${path}`);
+  }),
+}));
+
+jest.mock("@/lib/server/action-auth", () => ({
+  authHeadersOrRedirect: jest.fn(async () => ({ Authorization: "Bearer token" })),
+}));
+
+jest.mock("@/lib/server/backend-fetch", () => ({
+  client: {
+    POST: jest.fn(),
+    PATCH: jest.fn(),
+  },
+}));
+
+import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
+import { client } from "@/lib/server/backend-fetch";
+import { redirect } from "next/navigation";
+
+const mockedPost = client.POST as jest.Mock;
+const mockedPatch = client.PATCH as jest.Mock;
+const mockedRedirect = jest.mocked(redirect);
+
+function createSetupFormData(intent: "draft" | "publish"): FormData {
+  const formData = new FormData();
+  formData.set("name", "稟議フォーム");
+  formData.set("spaceId", "11111111-1111-1111-1111-111111111111");
+  formData.set(
+    "fieldsJson",
+    JSON.stringify([
+      {
+        id: "field-1",
+        label: "件名",
+        fieldType: "text",
+        required: true,
+        placeholder: "",
+        helpText: "",
+        optionsText: "",
+      },
+    ]),
+  );
+  formData.set(
+    "stepsJson",
+    JSON.stringify([
+      {
+        id: "step-1",
+        stepName: "一次承認",
+        assigneeUserIds: ["22222222-2222-2222-2222-222222222222"],
+        canReturn: true,
+      },
+    ]),
+  );
+  formData.set("returnPath", "/space/11111111-1111-1111-1111-111111111111/applications/app-1/edit");
+  formData.set("intent", intent);
+  return formData;
+}
+
+describe("updateApplicationSetupAction", () => {
+  beforeEach(() => {
+    mockedPost.mockReset();
+    mockedPatch.mockReset();
+    mockedRedirect.mockClear();
+  });
+
+  // テスト内容: 詳細編集画面で公開を押した場合、申請フォーム管理レコードを published に更新することを確認する
+  it("sends published status when publishing edited setup", async () => {
+    mockedPost
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 201 },
+        data: { data: { id: "definition-next" } },
+      })
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 201 },
+        data: { data: { id: "field-next" } },
+      })
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 200 },
+        data: { data: { ok: true } },
+      })
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 201 },
+        data: { data: { id: "flow-next" } },
+      });
+    mockedPatch.mockResolvedValue({
+      response: { ok: true, status: 200 },
+      data: { data: { id: "app-1" } },
+    });
+
+    await expect(
+      updateApplicationSetupAction("app-1", createSetupFormData("publish")),
+    ).rejects.toThrow("NEXT_REDIRECT:");
+
+    expect(mockedPatch).toHaveBeenCalledWith(
+      "/applications/{id}",
+      expect.objectContaining({
+        body: expect.objectContaining({
+          approvalFlowId: "flow-next",
+          formDefinitionId: "definition-next",
+          status: "published",
+        }),
+      }),
+    );
+    expect(mockedRedirect.mock.calls.at(-1)?.[0]).toContain(
+      "message=%E7%94%B3%E8%AB%8B%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%82%92%E5%85%AC%E9%96%8B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F",
+    );
+  });
+});

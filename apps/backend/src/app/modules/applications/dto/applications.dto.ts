@@ -102,6 +102,15 @@ export class PatchApplicationDto {
   approvalFlowId?: string;
 
   @ApiPropertyOptional({
+    enum: [ApplicationStatus.DRAFT, ApplicationStatus.PUBLISHED],
+    description:
+      '申請フォーム編集用の公開状態。draft / published の申請でのみ指定可能。',
+  })
+  @IsOptional()
+  @IsIn([ApplicationStatus.DRAFT, ApplicationStatus.PUBLISHED])
+  status?: typeof ApplicationStatus.DRAFT | typeof ApplicationStatus.PUBLISHED;
+
+  @ApiPropertyOptional({
     type: 'object',
     additionalProperties: true,
     description:

@@ -22,6 +22,7 @@ type SpaceApplicationEditViewProps = EditableApplicationInitialState & {
   detailPath: string;
   errorMessage: string;
   initialName?: string;
+  publishedFormDefinitionId?: string;
   returnPath: string;
   spaceId: string;
 };
@@ -34,6 +35,7 @@ export function SpaceApplicationEditView({
   initialFields,
   initialName,
   initialSteps,
+  publishedFormDefinitionId,
   returnPath,
   spaceId,
 }: SpaceApplicationEditViewProps) {
@@ -55,6 +57,7 @@ export function SpaceApplicationEditView({
         initialFields={initialFields}
         initialName={initialName}
         initialSteps={initialSteps}
+        publishedFormDefinitionId={publishedFormDefinitionId}
         returnPath={returnPath}
         spaceId={spaceId}
       />

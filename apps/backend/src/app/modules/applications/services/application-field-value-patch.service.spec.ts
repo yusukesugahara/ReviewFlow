@@ -127,6 +127,24 @@ describe('ApplicationFieldValuePatchService', () => {
   });
 
   /**
+   * draft / published の公開状態だけを更新できること
+   */
+  it('updates draft or published status without field value changes', async () => {
+    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+      template([field()]),
+    );
+    applicationsRepository.findExistingFieldValues.mockResolvedValue([]);
+
+    await service.applyPatch('tenant-1', app(), {
+      status: ApplicationStatus.PUBLISHED,
+    });
+
+    expect(applicationsRepository.saveApplicationPatch).toHaveBeenCalledWith(
+      expect.objectContaining({ status: ApplicationStatus.PUBLISHED }),
+    );
+  });
+
+  /**
    * 差し戻し中は correction 対象外フィールドの更新を拒否すること
    */
   it('rejects returned patches outside correction target fields', async () => {
@@ -147,6 +165,21 @@ describe('ApplicationFieldValuePatchService', () => {
           { values: { title: 'new' } },
         ),
       ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
+    );
+  });
+
+  /**
+   * 差し戻し中は公開状態の変更を拒否すること
+   */
+  it('rejects returned status changes', async () => {
+    await expectErrorCode(
+      () =>
+        service.applyPatch(
+          'tenant-1',
+          app({ status: ApplicationStatus.RETURNED }),
+          { status: ApplicationStatus.PUBLISHED },
+        ),
+      ClientErrorCodes.APPLICATION_NOT_EDITABLE,
     );
   });
 });
