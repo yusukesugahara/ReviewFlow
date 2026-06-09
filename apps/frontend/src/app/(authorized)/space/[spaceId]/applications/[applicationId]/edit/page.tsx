@@ -199,6 +199,8 @@ export default async function SpaceApplicationEditPage({
       <SpaceApplicationEditView
         action={updateApplicationSetupAction.bind(null, applicationId)}
         assignees={assignees}
+        currentApprovalFlowId={app.approvalFlowId}
+        currentFormDefinitionId={definitionId}
         detailPath={detailPath}
         errorMessage={
           [

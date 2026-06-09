@@ -31,6 +31,8 @@ type ApplicationSetupDraftFormProps = {
   statusMessage?: string | null;
   publishedGroupId?: string | null;
   publishedFormDefinitionId?: string | null;
+  currentFormDefinitionId?: string | null;
+  currentApprovalFlowId?: string | null;
   assignees: ApprovalAssigneeOption[];
   initialFields?: DraftField[];
   initialName?: string;
@@ -46,6 +48,8 @@ export function ApplicationSetupDraftForm({
   statusMessage,
   publishedGroupId,
   publishedFormDefinitionId,
+  currentFormDefinitionId,
+  currentApprovalFlowId,
   assignees,
   initialFields,
   initialName,
@@ -126,6 +130,12 @@ export function ApplicationSetupDraftForm({
       />
       <input type="hidden" name="fieldsJson" value={fieldsJson} />
       <input type="hidden" name="spaceId" value={spaceId} />
+      {currentFormDefinitionId ? (
+        <input type="hidden" name="currentFormDefinitionId" value={currentFormDefinitionId} />
+      ) : null}
+      {currentApprovalFlowId ? (
+        <input type="hidden" name="currentApprovalFlowId" value={currentApprovalFlowId} />
+      ) : null}
       {returnPath ? (
         <input type="hidden" name="returnPath" value={returnPath} />
       ) : null}

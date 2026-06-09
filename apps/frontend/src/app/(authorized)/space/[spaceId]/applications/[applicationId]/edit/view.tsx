@@ -21,6 +21,8 @@ type SpaceApplicationEditViewProps = EditableApplicationInitialState & {
   assignees: ApprovalAssigneeOption[];
   detailPath: string;
   errorMessage: string;
+  currentApprovalFlowId?: string | null;
+  currentFormDefinitionId?: string | null;
   initialName?: string;
   publishedFormDefinitionId?: string;
   returnPath: string;
@@ -32,6 +34,8 @@ export function SpaceApplicationEditView({
   assignees,
   detailPath,
   errorMessage,
+  currentApprovalFlowId,
+  currentFormDefinitionId,
   initialFields,
   initialName,
   initialSteps,
@@ -54,6 +58,8 @@ export function SpaceApplicationEditView({
         action={action}
         assignees={assignees}
         errorMessage={errorMessage}
+        currentApprovalFlowId={currentApprovalFlowId}
+        currentFormDefinitionId={currentFormDefinitionId}
         initialFields={initialFields}
         initialName={initialName}
         initialSteps={initialSteps}

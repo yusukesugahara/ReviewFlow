@@ -20,6 +20,7 @@ describe('ApprovalFlowsService', () => {
       | 'findAssignees'
       | 'findAssigneeMemberships'
       | 'createFlowWithSteps'
+      | 'replaceFlowSteps'
       | 'findOneById'
     >
   >;
@@ -40,6 +41,7 @@ describe('ApprovalFlowsService', () => {
         .fn()
         .mockResolvedValue([{ userId: 'user-1' }]),
       createFlowWithSteps: jest.fn().mockResolvedValue('flow-new'),
+      replaceFlowSteps: jest.fn().mockResolvedValue(undefined),
       findOneById: jest.fn(),
     };
     spaceAccess = {
@@ -147,6 +149,77 @@ describe('ApprovalFlowsService', () => {
       steps: [
         {
           assigneeUserIds: ['user-1', 'user-2'],
+        },
+      ],
+    });
+  });
+
+  /**
+   * update は既存の承認フローのステップを置き換えること
+   */
+  it('update replaces steps on an existing approval flow', async () => {
+    approvalFlowsRepository.findAssignees.mockResolvedValue([
+      { id: 'user-1' },
+    ] as User[]);
+    approvalFlowsRepository.findAssigneeMemberships.mockResolvedValue([
+      { userId: 'user-1' },
+    ] as GroupMember[]);
+    approvalFlowsRepository.findOneById
+      .mockResolvedValueOnce({
+        id: 'flow-1',
+        tenantId: 'ten1',
+        groupId: 'g1',
+        name: 'Before',
+        isActive: true,
+        steps: [],
+      } as unknown as ApprovalFlow)
+      .mockResolvedValueOnce({
+        id: 'flow-1',
+        tenantId: 'ten1',
+        groupId: 'g1',
+        name: 'After',
+        isActive: true,
+        steps: [
+          {
+            id: 'step-next',
+            stepOrder: 1,
+            stepName: '更新後承認',
+            assigneeUserId: 'user-1',
+            assigneeUserIds: ['user-1'],
+            canReturn: true,
+          },
+        ],
+      } as ApprovalFlow);
+
+    await expect(
+      service.update(actor, 'flow-1', {
+        name: 'After',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: '更新後承認',
+            assigneeUserId: 'user-1',
+            canReturn: true,
+          },
+        ],
+      }),
+    ).resolves.toMatchObject({
+      id: 'flow-1',
+      name: 'After',
+    });
+
+    expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
+    expect(approvalFlowsRepository.createFlowWithSteps).not.toHaveBeenCalled();
+    expect(approvalFlowsRepository.replaceFlowSteps).toHaveBeenCalledWith({
+      tenantId: 'ten1',
+      flowId: 'flow-1',
+      name: 'After',
+      steps: [
+        {
+          stepOrder: 1,
+          stepName: '更新後承認',
+          assigneeUserIds: ['user-1'],
+          canReturn: true,
         },
       ],
     });

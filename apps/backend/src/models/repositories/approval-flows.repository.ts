@@ -93,6 +93,44 @@ export class ApprovalFlowsRepository {
     return newFlowId;
   }
 
+  async replaceFlowSteps(params: {
+    tenantId: string;
+    flowId: string;
+    name: string;
+    steps: CreateApprovalFlowStepParams[];
+  }): Promise<void> {
+    await this.flows.manager.transaction(async (em) => {
+      const flowRepo = em.getRepository(ApprovalFlow);
+      const stepRepo = em.getRepository(ApprovalStep);
+      const flow = await flowRepo.findOne({
+        where: { id: params.flowId, tenantId: params.tenantId },
+      });
+      if (!flow) {
+        return;
+      }
+      flow.name = params.name;
+      await flowRepo.save(flow);
+      await stepRepo.delete({
+        tenantId: params.tenantId,
+        approvalFlowId: params.flowId,
+      });
+      for (const step of params.steps) {
+        await stepRepo.save(
+          stepRepo.create({
+            tenantId: params.tenantId,
+            groupId: flow.groupId,
+            approvalFlowId: params.flowId,
+            stepOrder: step.stepOrder,
+            stepName: step.stepName,
+            assigneeUserId: step.assigneeUserIds[0],
+            assigneeUserIds: step.assigneeUserIds,
+            canReturn: step.canReturn,
+          }),
+        );
+      }
+    });
+  }
+
   async findOneById(
     tenantId: string,
     flowId: string,
