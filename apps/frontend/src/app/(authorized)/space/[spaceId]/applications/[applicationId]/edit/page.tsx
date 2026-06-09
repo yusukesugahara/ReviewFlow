@@ -211,6 +211,9 @@ export default async function SpaceApplicationEditPage({
         initialFields={toDraftFields(fields)}
         initialName={definition?.name}
         initialSteps={toInitialSteps(currentFlow)}
+        publishedFormDefinitionId={
+          app.status === APPLICATION_STATUSES.published ? definitionId : undefined
+        }
         returnPath={editPath}
         spaceId={spaceId}
       />

@@ -277,11 +277,13 @@ export class ApplicationsRepository {
     app: Application;
     formDefinitionId?: string;
     approvalFlowId?: string;
+    status?: ApplicationStatusValue;
     values: ApplicationFieldValue[];
   }): Promise<void> {
     if (
       !params.formDefinitionId &&
       !params.approvalFlowId &&
+      !params.status &&
       params.values.length === 0
     ) {
       return;
@@ -296,7 +298,10 @@ export class ApplicationsRepository {
       if (params.approvalFlowId) {
         params.app.approvalFlowId = params.approvalFlowId;
       }
-      if (params.formDefinitionId || params.approvalFlowId) {
+      if (params.status) {
+        params.app.status = params.status;
+      }
+      if (params.formDefinitionId || params.approvalFlowId || params.status) {
         await appRepo.save(params.app);
       }
       if (params.values.length > 0) {

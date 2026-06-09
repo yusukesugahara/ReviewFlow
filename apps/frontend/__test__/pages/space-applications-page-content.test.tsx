@@ -91,6 +91,30 @@ describe("SpaceApplicationsPageContent", () => {
     expect(screen.getByText(/稟議フォーム を削除済みに移動します/)).toBeInTheDocument();
   });
 
+  // テスト内容: 管理用申請が下書きの場合は公開URLを出さず、下書きとして表示することを確認する
+  it("uses the setup application status for draft forms", () => {
+    render(
+      <SpaceApplicationsPageContent
+        applications={[
+          {
+            ...setupApplication,
+            status: APPLICATION_STATUSES.draft,
+          },
+        ]}
+        formDefinitions={[definition]}
+        showArchived={false}
+        spaceId="space-1"
+      />,
+    );
+
+    const formRow = screen.getByRole("row", { name: /稟議フォーム/ });
+    expect(within(formRow).getByText("下書き")).toBeInTheDocument();
+    expect(within(formRow).getByText("未公開")).toBeInTheDocument();
+    expect(
+      within(formRow).queryByRole("button", { name: "公開URLをコピー" }),
+    ).not.toBeInTheDocument();
+  });
+
   // テスト内容: 削除済みフォーム一覧が表示され、復元確認ダイアログが開くことを確認する
   it("renders archived forms and opens the restore dialog", async () => {
     const user = userEvent.setup();

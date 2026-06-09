@@ -210,7 +210,8 @@ export async function updateApplicationSetupAction(
     );
   }
 
-  const { fieldsJson, name, spaceId, stepsJson } = parsedForm.data;
+  const { fieldsJson, intent, name, spaceId, stepsJson } = parsedForm.data;
+  const applicationStatus = intent === "publish" ? "published" : "draft";
 
   let fields: DraftField[];
   try {
@@ -296,6 +297,7 @@ export async function updateApplicationSetupAction(
       body: {
         formDefinitionId: createdDefinitionId,
         approvalFlowId: flow.id,
+        status: applicationStatus,
         values: {},
       },
       headers: authHeaders,
@@ -312,7 +314,10 @@ export async function updateApplicationSetupAction(
   )}?${new URLSearchParams({
     definitionId: createdDefinitionId,
     toast: "success",
-    message: "申請フォームを更新しました",
+    message:
+      applicationStatus === "published"
+        ? "申請フォームを公開しました"
+        : "申請フォームを下書き保存しました",
   }).toString()}`;
   revalidatePath(redirectBase);
   revalidatePath(`/space/${encodeURIComponent(spaceId)}/applications`);

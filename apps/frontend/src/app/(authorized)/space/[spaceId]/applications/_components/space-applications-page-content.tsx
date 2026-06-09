@@ -419,7 +419,10 @@ function buildApplicationFormListRow(
       `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(setupApplication.id)}`
     : null;
   const formDetailHref = detailHref ? appendQueryParam(detailHref, "view", "form") : null;
-  const isPublished = definition.status === APPLICATION_STATUSES.published;
+  const setupStatus = setupApplication?.status ?? definition.status;
+  const isPublished =
+    definition.status === APPLICATION_STATUSES.published &&
+    setupStatus === APPLICATION_STATUSES.published;
 
   return {
     definitionId: definition.id,
@@ -429,7 +432,7 @@ function buildApplicationFormListRow(
     publicHref: isPublished
       ? `/apply/${encodeURIComponent(definition.groupId || spaceId)}?formDefinitionId=${encodeURIComponent(definition.id)}`
       : null,
-    status: definition.status,
+    status: setupStatus,
     title: definition.name,
   };
 }

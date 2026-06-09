@@ -46,7 +46,14 @@ export class ApplicationFieldValuePatchService {
   ): void {
     if (
       app.status === ApplicationStatus.RETURNED &&
-      (dto.formDefinitionId || dto.approvalFlowId)
+      (dto.formDefinitionId || dto.approvalFlowId || dto.status)
+    ) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+    }
+    if (
+      dto.status &&
+      app.status !== ApplicationStatus.DRAFT &&
+      app.status !== ApplicationStatus.PUBLISHED
     ) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
@@ -147,13 +154,19 @@ export class ApplicationFieldValuePatchService {
     dto: PatchApplicationDto,
     values: ApplicationFieldValue[],
   ): Promise<void> {
-    if (!dto.formDefinitionId && !dto.approvalFlowId && values.length === 0) {
+    if (
+      !dto.formDefinitionId &&
+      !dto.approvalFlowId &&
+      !dto.status &&
+      values.length === 0
+    ) {
       return;
     }
     await this.applicationsRepository.saveApplicationPatch({
       app,
       formDefinitionId: dto.formDefinitionId,
       approvalFlowId: dto.approvalFlowId,
+      status: dto.status,
       values,
     });
   }

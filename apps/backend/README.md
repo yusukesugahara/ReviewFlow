@@ -32,7 +32,9 @@ cp .env.example .env.dev
 | `DB_SSL` | `true` のとき PostgreSQL 接続に SSL を有効化（マネージド DB 向け） |
 | `DB_SSL_REJECT_UNAUTHORIZED` | `false` のとき SSL でもサーバー証明書の検証を緩める（自己署名検証用。省略時は検証する） |
 | `DB_SYNCHRONIZE` | `false` のときスキーマ自動同期をオフにしマイグレーションを実行（本番は `NODE_ENV=production` で常にこの挙動。ローカルでマイグレーション動作を試すときにも指定可） |
-| `SEED_DEMO_ON_START` | `true` または `1` のとき、Docker 本番起動前にビルド済みのデモ seed を投入する。デモ環境向け。 |
+| `SEED_DEMO_ON_DEPLOY` | `true` または `1` のとき、同一デプロイIDにつき1回だけビルド済みのデモ seed を投入する。デモ環境向け。 |
+| `DEMO_SEED_DEPLOY_KEY` | `SEED_DEMO_ON_DEPLOY` のデプロイIDを明示する場合に設定。未設定時は `RENDER_GIT_COMMIT` / `VERCEL_GIT_COMMIT_SHA` / `RAILWAY_GIT_COMMIT_SHA` などを利用する。 |
+| `SEED_DEMO_ON_START` | `true` または `1` のとき、Docker 本番起動前に毎回ビルド済みのデモ seed を投入する。デモ環境向けの旧設定。 |
 | `THROTTLE_TTL_MS` | グローバルレート制限の窓幅（ミリ秒）。省略時 `60000` |
 | `THROTTLE_LIMIT` | 本番（`NODE_ENV=production`）での上記窓あたりの最大リクエスト数（IP 単位）。省略時 `120` |
 | `THROTTLE_LIMIT_DEV` | 非本番のグローバル上限（省略時 `2000`）。`/auth/register`・`/auth/login` は別途 60 秒あたり 20 回まで |
@@ -87,13 +89,15 @@ DB_NAME=app_dev \
 npm run seed:demo -w backend
 ```
 
-seed は冪等です。既存の `ReviewFlow Demo` テナントがある場合は削除して作り直します。
+seed は冪等です。既存の `みどり市 申請受付デモ` / `ReviewFlow Demo` テナントがある場合は削除して作り直します。
 
-本番起動スクリプトでは、デプロイ環境変数 `SEED_DEMO_ON_START=true` を設定すると、アプリ起動前に `dist/scripts/seed-demo.js` を実行します。デモ環境や検証環境だけで有効化してください。
+本番起動スクリプトでは、デプロイ環境変数 `SEED_DEMO_ON_DEPLOY=true` を設定すると、同一デプロイIDにつき1回だけアプリ起動前に `dist/scripts/seed-demo.js` を実行します。デモ環境や検証環境だけで有効化してください。実行済みデプロイIDは DB の `demo_seed_deployments` テーブルに記録されます。
 
 ```bash
-SEED_DEMO_ON_START=true npm run start:prod -w backend
+SEED_DEMO_ON_DEPLOY=true npm run start:prod -w backend
 ```
+
+Render では `RENDER_GIT_COMMIT` を自動利用します。同じ commit の手動再デプロイでも必ずリセットしたい場合は、デプロイごとに変わる値を `DEMO_SEED_DEPLOY_KEY` に設定してください。`SEED_DEMO_ON_START=true` は起動のたびにリセットするため、スリープ復帰や手動再起動でもデータが初期化されます。
 
 Render の Start Command では `npm run start:prod -w backend` または `node apps/backend/scripts/start-prod.cjs` を使ってください。`node apps/backend/dist/main.js` を直接実行すると seed は通りません。
 
