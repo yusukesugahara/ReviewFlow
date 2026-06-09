@@ -40,6 +40,20 @@ type BackendErrorBody = {
   message?: unknown;
 };
 
+function redirectUrlWithParams(
+  base: string,
+  params: Record<string, string>,
+): string {
+  const [pathWithSearch = "", hash = ""] = base.split("#", 2);
+  const [path, search = ""] = pathWithSearch.split("?", 2);
+  const nextParams = new URLSearchParams(search);
+  for (const [key, value] of Object.entries(params)) {
+    nextParams.set(key, value);
+  }
+  const nextSearch = nextParams.toString();
+  return `${path}${nextSearch ? `?${nextSearch}` : ""}${hash ? `#${hash}` : ""}`;
+}
+
 function setupErrorRedirectUrl(base: string, error: unknown): string {
   const params = new URLSearchParams({
     toast: "error",
@@ -55,7 +69,7 @@ function setupErrorRedirectUrl(base: string, error: unknown): string {
       : `${error.status}: ${message}`;
     params.set("message", `申請フォームの保存に失敗しました（${detail}）`);
   }
-  return `${base}?${params.toString()}`;
+  return redirectUrlWithParams(base, Object.fromEntries(params));
 }
 
 export async function submitApplicationSetupAction(
@@ -70,7 +84,9 @@ export async function submitApplicationSetupAction(
 
   if (!parsedForm.success) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidName,
+      }),
     );
   }
 
@@ -82,12 +98,16 @@ export async function submitApplicationSetupAction(
     fields = readDraftFields(fieldsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
   if (fields.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
 
@@ -96,12 +116,16 @@ export async function submitApplicationSetupAction(
     steps = parseSteps(stepsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
   if (steps.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
 
@@ -206,7 +230,9 @@ export async function updateApplicationSetupAction(
 
   if (!parsedForm.success) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidName}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidName,
+      }),
     );
   }
 
@@ -218,12 +244,16 @@ export async function updateApplicationSetupAction(
     fields = readDraftFields(fieldsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
   if (fields.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidFields}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidFields,
+      }),
     );
   }
 
@@ -232,12 +262,16 @@ export async function updateApplicationSetupAction(
     steps = parseSteps(stepsJson);
   } catch {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
   if (steps.length === 0) {
     redirect(
-      `${redirectBase}?setupError=${APPLICATION_SETUP_ERRORS.invalidSteps}`,
+      redirectUrlWithParams(redirectBase, {
+        setupError: APPLICATION_SETUP_ERRORS.invalidSteps,
+      }),
     );
   }
 
