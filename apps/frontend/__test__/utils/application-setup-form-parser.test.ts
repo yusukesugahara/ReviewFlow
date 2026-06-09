@@ -2,6 +2,7 @@ import {
   parseSteps,
   readDraftFields,
 } from "@/app/(authorized)/space/application-setup/application-setup-form-parser";
+import { toApprovalStepRequest } from "@/app/(authorized)/space/application-setup/application-setup-payload";
 
 describe("application setup form parser", () => {
   // テスト内容: draft field JSON を読み取り、不正項目を除外し、未知 fieldType を text に戻すことを確認する
@@ -81,6 +82,29 @@ describe("application setup form parser", () => {
         assigneeUserId: "user-3",
         assigneeUserIds: ["user-3"],
         canReturn: false,
+      },
+    ]);
+  });
+
+  // テスト内容: 承認者 ID 配列を API DTO と同じ string[] として送ることを確認する
+  it("serializes assignee user ids as a flat string array", () => {
+    expect(
+      toApprovalStepRequest([
+        {
+          stepOrder: 1,
+          stepName: "一次承認",
+          assigneeUserId: "user-1",
+          assigneeUserIds: ["user-1", "user-2"],
+          canReturn: true,
+        },
+      ]),
+    ).toEqual([
+      {
+        stepOrder: 1,
+        stepName: "一次承認",
+        assigneeUserId: "user-1",
+        assigneeUserIds: ["user-1", "user-2"],
+        canReturn: true,
       },
     ]);
   });
