@@ -4,6 +4,8 @@ export type PublicApplicationAccessPageProps = {
     sent?: string;
     formError?: string;
     formDefinitionId?: string;
+    toast?: string;
+    message?: string;
   }>;
 };
 
@@ -12,4 +14,6 @@ export type PublicApplicationAccessViewProps = {
   sent: boolean;
   formError?: string;
   formDefinitionId: string;
+  toast?: string;
+  message?: string;
 };
