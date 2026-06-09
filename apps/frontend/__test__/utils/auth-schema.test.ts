@@ -21,12 +21,24 @@ describe("auth schemas", () => {
         password: "password123",
       }).success,
     ).toBe(true);
-    expect(
-      authCredentialsSchema.safeParse({
-        email: "invalid",
-        password: "short",
-      }).success,
-    ).toBe(false);
+    const invalidAuth = authCredentialsSchema.safeParse({
+      email: "invalid",
+      password: "short",
+    });
+    expect(invalidAuth.success).toBe(false);
+    expect(invalidAuth.error?.flatten().fieldErrors).toEqual({
+      email: ["メールアドレスの形式で入力してください。"],
+      password: ["パスワードは8文字以上で入力してください。"],
+    });
+
+    const emptyPassword = authCredentialsSchema.safeParse({
+      email: "user@example.com",
+      password: "",
+    });
+    expect(emptyPassword.success).toBe(false);
+    expect(emptyPassword.error?.flatten().fieldErrors.password).toEqual([
+      "パスワードを入力してください。",
+    ]);
 
     expect(
       requestPasswordResetSchema.parse({ email: " user@example.com " }),
@@ -66,7 +78,11 @@ describe("auth schemas", () => {
       email: "member@example.com",
     });
     expect(createExportJobSchema.safeParse({ groupId: "space-1" }).success).toBe(true);
-    expect(createExportJobSchema.safeParse({ groupId: "" }).success).toBe(false);
+    const invalidExport = createExportJobSchema.safeParse({ groupId: "" });
+    expect(invalidExport.success).toBe(false);
+    expect(invalidExport.error?.flatten().fieldErrors.groupId).toEqual([
+      "スペースを選択してください。",
+    ]);
   });
 
   // テスト内容: テナント管理とスペース管理入力の検証を確認する
@@ -83,15 +99,23 @@ describe("auth schemas", () => {
       adminUserIds: ["user-1"],
     });
     expect(addGroupMemberSchema.safeParse({ userId: "user-1", role: "admin" }).success).toBe(true);
-    expect(inviteSpaceMemberSchema.safeParse({
-      email: "member@example.com",
-      tenantRole: "tenant_user",
-      groupRole: "user",
-    }).success).toBe(true);
-    expect(createInvitationSchema.safeParse({
-      email: "admin@example.com",
-      role: "tenant_admin",
-    }).success).toBe(true);
-    expect(updateGroupMemberRoleSchema.safeParse({ role: "owner" }).success).toBe(false);
+    expect(
+      inviteSpaceMemberSchema.safeParse({
+        email: "member@example.com",
+        tenantRole: "tenant_user",
+        groupRole: "user",
+      }).success,
+    ).toBe(true);
+    expect(
+      createInvitationSchema.safeParse({
+        email: "admin@example.com",
+        role: "tenant_admin",
+      }).success,
+    ).toBe(true);
+    const invalidRole = updateGroupMemberRoleSchema.safeParse({ role: "owner" });
+    expect(invalidRole.success).toBe(false);
+    expect(invalidRole.error?.flatten().fieldErrors.role).toEqual([
+      "ロールを選択してください。",
+    ]);
   });
 });

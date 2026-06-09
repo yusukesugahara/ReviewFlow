@@ -18,7 +18,7 @@ const LOGIN_FAILED_MESSAGE = "ログインに失敗しました";
 const LOGIN_REQUEST_FAILED_MESSAGE =
   "ログインに失敗しました。時間をおいて再度お試しください。";
 const INVALID_CREDENTIALS_MESSAGE =
-  "メールアドレスまたはパスワードが正しくありません。";
+  "メールアドレスまたはパスワードが違います。";
 const TENANT_REQUIRED_MESSAGE =
   "同じメールアドレスのアカウントが複数あります。管理者にお問い合わせください。";
 

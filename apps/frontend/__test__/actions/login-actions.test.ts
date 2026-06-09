@@ -35,6 +35,16 @@ describe("login action", () => {
     mockedPost.mockReset();
   });
 
+  // テスト内容: パスワード未入力時に Zod の英語メッセージではなく日本語の項目エラーを返すことを確認する
+  it("returns a Japanese field error when password is empty", async () => {
+    await expect(login(createLoginFormData(""))).resolves.toEqual({
+      fieldErrors: {
+        password: ["パスワードを入力してください。"],
+      },
+    });
+    expect(mockedPost).not.toHaveBeenCalled();
+  });
+
   // テスト内容: 認証情報が不正な場合、API の英語メッセージではなく日本語のフォームエラーを返すことを確認する
   it("returns a Japanese form error for invalid credentials", async () => {
     mockedPost.mockResolvedValue({
@@ -48,7 +58,7 @@ describe("login action", () => {
 
     await expect(login(createLoginFormData())).resolves.toEqual({
       error: {
-        message: "メールアドレスまたはパスワードが正しくありません。",
+        message: "メールアドレスまたはパスワードが違います。",
       },
     });
   });

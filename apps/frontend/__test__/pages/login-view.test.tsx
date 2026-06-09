@@ -21,6 +21,16 @@ describe("LoginView", () => {
     render(<LoginView apiReachable next="/space" />);
 
     expect(screen.getByRole("heading", { name: "ログイン" })).toBeInTheDocument();
+    expect(screen.getByText("申請受付から")).toBeInTheDocument();
+    expect(screen.getByText("承認まで一元管理")).toBeInTheDocument();
+    expect(
+      screen.getByText(
+        "ReviewFlow は、公開フォームで受け付けた申請をスペースごとに整理し、確認・差し戻し・承認履歴まで管理できる業務アプリです。",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByText("・公開フォームで申請を受け付け")).toBeInTheDocument();
+    expect(screen.getByText("・担当者ごとの承認ステップを管理")).toBeInTheDocument();
+    expect(screen.getByText("・差し戻しと監査ログを記録")).toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toHaveAttribute("type", "email");
     expect(screen.getByLabelText("パスワード")).toHaveAttribute(
       "autocomplete",
@@ -52,7 +62,7 @@ describe("LoginView", () => {
     const user = userEvent.setup();
     jest.mocked(login).mockResolvedValueOnce({
       error: {
-        message: "メールアドレスまたはパスワードが正しくありません。",
+        message: "メールアドレスまたはパスワードが違います。",
       },
     });
 
@@ -63,7 +73,26 @@ describe("LoginView", () => {
     await user.click(screen.getByRole("button", { name: "ログインする" }));
 
     expect(
-      await screen.findByText("メールアドレスまたはパスワードが正しくありません。"),
+      await screen.findByText("メールアドレスまたはパスワードが違います。"),
+    ).toBeInTheDocument();
+  });
+
+  // テスト内容: ログイン action が返した項目別バリデーションエラーを日本語で表示することを確認する
+  it("renders a Japanese password validation error returned by the action", async () => {
+    const user = userEvent.setup();
+    jest.mocked(login).mockResolvedValueOnce({
+      fieldErrors: {
+        password: ["パスワードを入力してください。"],
+      },
+    });
+
+    render(<LoginView apiReachable />);
+
+    await user.type(screen.getByLabelText("メールアドレス"), "user@example.com");
+    await user.click(screen.getByRole("button", { name: "ログインする" }));
+
+    expect(
+      await screen.findByText("パスワードを入力してください。"),
     ).toBeInTheDocument();
   });
 });
