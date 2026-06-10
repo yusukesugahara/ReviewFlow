@@ -1,7 +1,5 @@
 import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
-import { ClientErrorCodes, clientError } from '../../../../common/errors';
-import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { UserRole } from '../../../../models/constants/user-role';
 import type { Application } from '../../../../models/entities/application.entity';
 import { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
@@ -10,13 +8,7 @@ import type { CorrectionTargetsResponseDto } from '../dto/applications.dto';
 import { ApplicationAccessPolicy } from '../policies/application-access.policy';
 import { ApplicationCorrectionService } from './application-correction.service';
 import { ApplicationProgressService } from './application-progress.service';
-
-function isSetupApplication(app: Application): boolean {
-  return (
-    app.status === ApplicationStatus.DRAFT ||
-    app.status === ApplicationStatus.PUBLISHED
-  );
-}
+import { ApplicationReadAccessService } from './application-read-access.service';
 
 @Injectable()
 export class ApplicationQueryService {
@@ -26,6 +18,7 @@ export class ApplicationQueryService {
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly correctionService: ApplicationCorrectionService,
     private readonly progressService: ApplicationProgressService,
+    private readonly readAccess: ApplicationReadAccessService,
   ) {}
 
   async listForActor(
@@ -49,11 +42,8 @@ export class ApplicationQueryService {
       actor,
       groupId,
     );
-    const visibleRows = rows.filter(
-      (app) =>
-        app.applicantUserId === actor.id ||
-        this.accessPolicy.actorIsAssignedToCurrentStep(actor, app) ||
-        (canManageGroup && isSetupApplication(app)),
+    const visibleRows = rows.filter((app) =>
+      this.accessPolicy.canListForActor(actor, app, canManageGroup),
     );
     return this.hydrateListFormDefinitions(actor.tenantId, visibleRows);
   }
@@ -62,36 +52,17 @@ export class ApplicationQueryService {
     actor: AuthUserPayload,
     id: string,
   ): Promise<Application> {
-    const row = await this.loadApplicationOrThrow(actor.tenantId, id, {
+    const row = await this.readAccess.loadReadable(actor, id, {
       detail: true,
+      allowManagingSetup: true,
     });
-    await this.spaceAccess.assertCanUseGroup(actor, row.groupId);
-    if (
-      isSetupApplication(row) &&
-      (await this.spaceAccess.actorCanManageGroup(actor, row.groupId))
-    ) {
-      return this.progressService.hydrate(row);
-    }
-    await this.accessPolicy.assertCanRead(
-      actor,
-      row,
-      (applicationId, actorId) =>
-        this.countApprovalsByActor(applicationId, actorId),
-    );
     return this.progressService.hydrate(row);
   }
 
   async getCorrectionsForActor(actor: AuthUserPayload, id: string) {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
+    const app = await this.readAccess.loadReadable(actor, id, {
       detail: false,
     });
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    await this.accessPolicy.assertCanRead(
-      actor,
-      app,
-      (applicationId, actorId) =>
-        this.countApprovalsByActor(applicationId, actorId),
-    );
 
     return this.correctionService.listCorrections(actor.tenantId, app);
   }
@@ -100,45 +71,11 @@ export class ApplicationQueryService {
     actor: AuthUserPayload,
     applicationId: string,
   ): Promise<CorrectionTargetsResponseDto> {
-    const app = await this.loadApplicationOrThrow(
-      actor.tenantId,
-      applicationId,
-      {
-        detail: true,
-      },
-    );
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    await this.accessPolicy.assertCanRead(
-      actor,
-      app,
-      (applicationId, actorId) =>
-        this.countApprovalsByActor(applicationId, actorId),
-    );
+    const app = await this.readAccess.loadReadable(actor, applicationId, {
+      detail: true,
+    });
 
     return this.correctionService.buildTargetsResponse(app);
-  }
-
-  private countApprovalsByActor(
-    applicationId: string,
-    actorId: string,
-  ): Promise<number> {
-    return this.queryRepository.countApprovalsByActor(applicationId, actorId);
-  }
-
-  private async loadApplicationOrThrow(
-    tenantId: string,
-    id: string,
-    withRelations: { detail: boolean },
-  ): Promise<Application> {
-    const row = await this.queryRepository.findById({
-      tenantId,
-      id,
-      detail: withRelations.detail,
-    });
-    if (!row) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    return row;
   }
 
   private async hydrateListFormDefinitions(

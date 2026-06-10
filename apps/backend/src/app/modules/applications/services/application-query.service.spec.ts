@@ -8,6 +8,7 @@ import type { ApplicationAccessPolicy } from '../policies/application-access.pol
 import type { ApplicationCorrectionService } from './application-correction.service';
 import type { ApplicationProgressService } from './application-progress.service';
 import { ApplicationQueryService } from './application-query.service';
+import type { ApplicationReadAccessService } from './application-read-access.service';
 
 const actor = (overrides: Partial<AuthUserPayload> = {}): AuthUserPayload => ({
   id: 'user-1',
@@ -50,6 +51,7 @@ describe('ApplicationQueryService', () => {
   };
   let accessPolicy: {
     actorIsAssignedToCurrentStep: jest.Mock;
+    canListForActor: jest.Mock;
     assertCanRead: jest.Mock;
   };
   let correctionService: {
@@ -58,6 +60,9 @@ describe('ApplicationQueryService', () => {
   };
   let progressService: {
     hydrate: jest.Mock;
+  };
+  let readAccess: {
+    loadReadable: jest.Mock;
   };
   let service: ApplicationQueryService;
 
@@ -77,6 +82,21 @@ describe('ApplicationQueryService', () => {
     };
     accessPolicy = {
       actorIsAssignedToCurrentStep: jest.fn(),
+      canListForActor: jest.fn(
+        (
+          currentActor: AuthUserPayload,
+          row: Application,
+          canManageGroup: boolean,
+        ): boolean => {
+          const isSetup =
+            row.status === ApplicationStatus.DRAFT ||
+            row.status === ApplicationStatus.PUBLISHED;
+          return (
+            row.applicantUserId === currentActor.id ||
+            (canManageGroup && isSetup)
+          );
+        },
+      ),
       assertCanRead: jest.fn(),
     };
     correctionService = {
@@ -86,12 +106,16 @@ describe('ApplicationQueryService', () => {
     progressService = {
       hydrate: jest.fn((row: Application) => Promise.resolve(row)),
     };
+    readAccess = {
+      loadReadable: jest.fn(),
+    };
     service = new ApplicationQueryService(
       applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
       accessPolicy as unknown as ApplicationAccessPolicy,
       correctionService as unknown as ApplicationCorrectionService,
       progressService as unknown as ApplicationProgressService,
+      readAccess as unknown as ApplicationReadAccessService,
     );
   });
 
@@ -135,8 +159,9 @@ describe('ApplicationQueryService', () => {
       hiddenSetup,
     ]);
     spaceAccess.actorCanManageGroup.mockResolvedValue(false);
-    accessPolicy.actorIsAssignedToCurrentStep.mockImplementation(
-      (_actor: AuthUserPayload, row: Application) => row.id === 'assigned',
+    accessPolicy.canListForActor.mockImplementation(
+      (_actor: AuthUserPayload, row: Application) =>
+        row.id === 'own' || row.id === 'assigned',
     );
 
     await expect(service.listForActor(actor(), 'group-1')).resolves.toEqual([
@@ -150,33 +175,39 @@ describe('ApplicationQueryService', () => {
     );
   });
 
-  it('allows group managers to read setup applications without read policy', async () => {
+  it('loads detail applications through read access before hydrating progress', async () => {
     const setupApp = app({ status: ApplicationStatus.PUBLISHED });
-    applicationsRepository.findById.mockResolvedValue(setupApp);
-    spaceAccess.actorCanManageGroup.mockResolvedValue(true);
+    readAccess.loadReadable.mockResolvedValue(setupApp);
 
     await expect(service.getOneForActor(actor(), 'app-1')).resolves.toBe(
       setupApp,
     );
 
-    expect(accessPolicy.assertCanRead).not.toHaveBeenCalled();
+    expect(readAccess.loadReadable).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 'user-1' }),
+      'app-1',
+      {
+        detail: true,
+        allowManagingSetup: true,
+      },
+    );
     expect(progressService.hydrate).toHaveBeenCalledWith(setupApp);
   });
 
   it('checks read access before listing corrections', async () => {
     const row = app({ status: ApplicationStatus.RETURNED });
     const corrections = { corrections: [] };
-    applicationsRepository.findById.mockResolvedValue(row);
+    readAccess.loadReadable.mockResolvedValue(row);
     correctionService.listCorrections.mockResolvedValue(corrections);
 
     await expect(
       service.getCorrectionsForActor(actor(), 'app-1'),
     ).resolves.toEqual(corrections);
 
-    expect(accessPolicy.assertCanRead).toHaveBeenCalledWith(
+    expect(readAccess.loadReadable).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'user-1' }),
-      row,
-      expect.any(Function),
+      'app-1',
+      { detail: false },
     );
     expect(correctionService.listCorrections).toHaveBeenCalledWith(
       'tenant-1',

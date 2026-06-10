@@ -12,6 +12,32 @@ type CountApprovalsByActor = (
 
 @Injectable()
 export class ApplicationAccessPolicy {
+  isSetupApplication(app: Application): boolean {
+    return (
+      app.status === ApplicationStatus.DRAFT ||
+      app.status === ApplicationStatus.PUBLISHED
+    );
+  }
+
+  canListForActor(
+    actor: AuthUserPayload,
+    app: Application,
+    canManageGroup: boolean,
+  ): boolean {
+    return (
+      app.applicantUserId === actor.id ||
+      this.actorIsAssignedToCurrentStep(actor, app) ||
+      (canManageGroup && this.isSetupApplication(app))
+    );
+  }
+
+  canReadSetupApplicationAsManager(
+    app: Application,
+    canManageGroup: boolean,
+  ): boolean {
+    return canManageGroup && this.isSetupApplication(app);
+  }
+
   actorIsAssignedToCurrentStep(
     actor: AuthUserPayload,
     app: Application,
