@@ -50,6 +50,31 @@ Before changing behavior:
 - Prefer the actual repository implementation over assumptions in stale docs.
 - If database details matter, inspect the current config and migrations first. The project uses TypeORM with a relational database; current repository docs/config may differ from older MySQL-oriented descriptions.
 
+## Default Work Plan
+
+When working on ReviewFlow:
+
+1. Identify the affected domain: frontend UI, backend API, workflow, authorization, tenant/space scoping, docs, or portfolio presentation.
+2. Read the relevant local docs and reference files before editing.
+3. Locate the current implementation and follow existing patterns.
+4. Confirm the security and workflow invariants:
+   - backend authorization
+   - `tenantId` scoping
+   - `groupId`/space scoping
+   - application status transition validity
+   - current approval step assignment
+   - audit log requirement
+5. Put logic in the correct layer:
+   - UI in frontend components
+   - API coordination in server actions/utilities
+   - request mapping in Controllers
+   - business rules in Services, policies, validators, or workflow classes
+   - persistence in repositories
+6. Add or update tests for business-risk areas.
+7. If backend API contracts change, update Swagger/OpenAPI and regenerate frontend API types.
+8. Update README/docs when the change affects portfolio value, setup, architecture, or user-facing behavior.
+9. Run the narrowest useful verification first, then broader checks if the change has wider impact.
+
 ## Portfolio Evaluation Criteria
 
 When implementing or reviewing, check whether the change strengthens these points:
@@ -99,6 +124,19 @@ When implementing or reviewing, check whether the change strengthens these point
 - Users must not access data from another tenant or another workspace/space.
 - Returned applications must preserve correction target fields and comments.
 - Important operations must be written to audit logs.
+
+## Definition Of Done
+
+A ReviewFlow change is not complete until:
+
+- Backend authorization is enforced, not only frontend UI visibility.
+- Tenant and space/workspace boundaries are preserved.
+- Invalid workflow transitions are rejected.
+- Important business actions are audit logged.
+- Frontend views handle loading, error, and empty states where relevant.
+- OpenAPI-generated types are updated when API contracts change.
+- Tests cover changed policy, workflow, validation, or API behavior where risk exists.
+- Docs/README are updated when portfolio explanation or behavior changes.
 
 ## Reference Files
 
