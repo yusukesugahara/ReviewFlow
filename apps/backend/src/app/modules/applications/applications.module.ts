@@ -26,11 +26,13 @@ import { ApplicationAccessPolicy } from './policies/application-access.policy';
 import { ApplicationApprovalFlowResolver } from './resolvers/application-approval-flow.resolver';
 import { ApplicantApplicationService } from './services/applicant-application.service';
 import { ApplicationCorrectionService } from './services/application-correction.service';
+import { ApplicationCreationContextLoader } from './services/application-creation-context.loader';
 import { ApplicationCreationService } from './services/application-creation.service';
 import { ApplicationCreationUseCaseService } from './services/application-creation-use-case.service';
 import { ApplicationFieldValuePatchBuilder } from './services/application-field-value-patch.builder';
 import { ApplicationFieldValuePatchService } from './services/application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './validators/application-form-value.validator';
+import { ApplicationInitialFieldValueBuilder } from './services/application-initial-field-value.builder';
 import { ApplicationNotificationService } from './services/application-notification.service';
 import { ApplicationPatchContextLoader } from './services/application-patch-context.loader';
 import { ApplicationPatchPolicy } from './policies/application-patch.policy';
@@ -83,11 +85,13 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationAccessPolicy,
     ApplicationApprovalFlowResolver,
     ApplicationCorrectionService,
+    ApplicationCreationContextLoader,
     ApplicationCreationService,
     ApplicationCreationUseCaseService,
     ApplicationFieldValuePatchBuilder,
     ApplicationFieldValuePatchService,
     ApplicationFormValueValidator,
+    ApplicationInitialFieldValueBuilder,
     ApplicationNotificationService,
     ApplicationPatchContextLoader,
     ApplicationPatchPolicy,

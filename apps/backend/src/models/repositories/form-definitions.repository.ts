@@ -91,6 +91,22 @@ export class FormDefinitionsRepository {
     });
   }
 
+  findPublishedTemplatesForApplicationCreation(params: {
+    tenantId: string;
+    groupId: string;
+    formDefinitionId?: string;
+  }): Promise<FormDefinition[]> {
+    return this.definitions.find({
+      where: {
+        ...(params.formDefinitionId ? { id: params.formDefinitionId } : {}),
+        tenantId: params.tenantId,
+        groupId: params.groupId,
+        status: FormDefinitionStatus.PUBLISHED,
+      },
+      relations: ['fields'],
+    });
+  }
+
   findFieldByKey(
     definitionId: string,
     fieldKey: string,

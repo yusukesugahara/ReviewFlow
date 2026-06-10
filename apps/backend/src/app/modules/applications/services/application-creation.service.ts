@@ -2,18 +2,17 @@ import { Injectable } from '@nestjs/common';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { Application } from '../../../../models/entities/application.entity';
-import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { ApplicationCreationRepository } from '../../../../models/repositories/application-creation.repository';
 import type { CreateApplicationDto } from '../dto/applications.dto';
-import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
-import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
+import { ApplicationCreationContextLoader } from './application-creation-context.loader';
+import { ApplicationInitialFieldValueBuilder } from './application-initial-field-value.builder';
 
 @Injectable()
 export class ApplicationCreationService {
   constructor(
     private readonly creationRepository: ApplicationCreationRepository,
-    private readonly flowResolver: ApplicationApprovalFlowResolver,
-    private readonly formValueValidator: ApplicationFormValueValidator,
+    private readonly contextLoader: ApplicationCreationContextLoader,
+    private readonly initialFieldValueBuilder: ApplicationInitialFieldValueBuilder,
   ) {}
 
   async create(
@@ -22,21 +21,10 @@ export class ApplicationCreationService {
     applicantUserId: string | null,
     dto: CreateApplicationDto,
   ): Promise<Application> {
-    const template = await this.resolvePublishedTemplate(tenantId, dto);
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-
-    const values = dto.values ?? {};
-    const fieldsByKey = this.formValueValidator.buildFieldsByKey(
-      template.fields ?? [],
-    );
-    this.formValueValidator.assertValuesMatchFields(fieldsByKey, values);
-
-    const flow = await this.flowResolver.resolveActiveFlow(
-      tenantId,
-      dto.groupId,
-      dto.approvalFlowId,
+    const { template, flow } = await this.contextLoader.load(tenantId, dto);
+    const values = this.initialFieldValueBuilder.build(
+      template,
+      dto.values ?? {},
     );
 
     const newId = await this.creationRepository.createApplicationWithValues({
@@ -50,35 +38,10 @@ export class ApplicationCreationService {
         dto.status === ApplicationStatus.PUBLISHED
           ? ApplicationStatus.PUBLISHED
           : ApplicationStatus.DRAFT,
-      values: Object.entries(values).map(([key, val]) => {
-        const field = this.formValueValidator.getKnownField(fieldsByKey, key);
-        return {
-          formFieldId: field.id,
-          valueJson: val,
-        };
-      }),
+      values,
     });
 
     return this.loadCreatedApplication(tenantId, newId);
-  }
-
-  private async resolvePublishedTemplate(
-    tenantId: string,
-    dto: CreateApplicationDto,
-  ): Promise<FormDefinition | null> {
-    const result = await this.creationRepository.findPublishedTemplate({
-      tenantId,
-      groupId: dto.groupId,
-      formDefinitionId: dto.formDefinitionId,
-    });
-    if (!Array.isArray(result)) {
-      return result;
-    }
-    const templates = result;
-    if (templates.length > 1) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_AMBIGUOUS);
-    }
-    return templates[0] ?? null;
   }
 
   private async loadCreatedApplication(

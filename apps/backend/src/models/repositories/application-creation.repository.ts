@@ -5,10 +5,8 @@ import {
   ApplicationStatus,
   type ApplicationStatusValue,
 } from '../constants/application-status';
-import { FormDefinitionStatus } from '../constants/form-definition-status';
 import { ApplicationFieldValue } from '../entities/application-field-value.entity';
 import { Application } from '../entities/application.entity';
-import { FormDefinition } from '../entities/form-definition.entity';
 
 export type CreateApplicationValue = {
   formFieldId: string;
@@ -20,35 +18,7 @@ export class ApplicationCreationRepository {
   constructor(
     @InjectRepository(Application)
     private readonly apps: Repository<Application>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
   ) {}
-
-  findPublishedTemplate(params: {
-    tenantId: string;
-    groupId: string;
-    formDefinitionId?: string;
-  }): Promise<FormDefinition | null> | Promise<FormDefinition[]> {
-    if (params.formDefinitionId) {
-      return this.templates.findOne({
-        where: {
-          id: params.formDefinitionId,
-          tenantId: params.tenantId,
-          groupId: params.groupId,
-          status: FormDefinitionStatus.PUBLISHED,
-        },
-        relations: ['fields'],
-      });
-    }
-    return this.templates.find({
-      where: {
-        tenantId: params.tenantId,
-        groupId: params.groupId,
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-      relations: ['fields'],
-    });
-  }
 
   async createApplicationWithValues(params: {
     tenantId: string;

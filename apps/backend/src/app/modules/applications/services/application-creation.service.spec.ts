@@ -2,15 +2,16 @@ import { ClientErrorCodes } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { FormFieldType } from '../../../../models/constants/form-field-type';
-import type { ApplicationFieldValue } from '../../../../models/entities/application-field-value.entity';
-import { Application } from '../../../../models/entities/application.entity';
 import type { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationCreationRepository } from '../../../../models/repositories/application-creation.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
+import { ApplicationCreationContextLoader } from './application-creation-context.loader';
 import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
+import { ApplicationInitialFieldValueBuilder } from './application-initial-field-value.builder';
 
 const field = (overrides: Partial<FormField> = {}): FormField =>
   ({
@@ -48,58 +49,40 @@ const expectErrorCode = async (
  * @group application-creation-service
  */
 describe('ApplicationCreationService', () => {
-  let appsRepo: { findOne: jest.Mock; manager: { transaction: jest.Mock } };
-  let fieldValuesRepo: { create: jest.Mock; save: jest.Mock };
   let flowResolver: { resolveActiveFlow: jest.Mock };
-  let appRepo: { create: jest.Mock; save: jest.Mock };
   let service: ApplicationCreationService;
   let creationRepository: {
-    findPublishedTemplate: jest.Mock;
     createApplicationWithValues: jest.Mock;
     findCreatedApplication: jest.Mock;
   };
+  let formDefinitionsRepository: {
+    findPublishedTemplatesForApplicationCreation: jest.Mock;
+  };
 
   beforeEach(() => {
-    appRepo = {
-      create: jest.fn((value: Partial<Application>) => ({ ...value })),
-      save: jest.fn((value: Application) =>
-        Promise.resolve({ ...value, id: 'app-1' }),
-      ),
-    };
-    fieldValuesRepo = {
-      create: jest.fn((value: Partial<ApplicationFieldValue>) => ({
-        ...value,
-      })),
-      save: jest.fn((value: ApplicationFieldValue) => Promise.resolve(value)),
-    };
-    appsRepo = {
-      findOne: jest.fn(),
-      manager: {
-        transaction: jest.fn((fn: (em: unknown) => unknown) =>
-          Promise.resolve(
-            fn({
-              getRepository: (entity: unknown) =>
-                entity === Application ? appRepo : fieldValuesRepo,
-            }),
-          ),
-        ),
-      },
-    };
     creationRepository = {
-      findPublishedTemplate: jest.fn(),
       createApplicationWithValues: jest.fn().mockResolvedValue('app-1'),
       findCreatedApplication: jest.fn().mockResolvedValue({ id: 'app-1' }),
+    };
+    formDefinitionsRepository = {
+      findPublishedTemplatesForApplicationCreation: jest.fn(),
     };
     flowResolver = {
       resolveActiveFlow: jest.fn(() =>
         Promise.resolve({ id: 'flow-1' } as ApprovalFlow),
       ),
     };
-    appsRepo.findOne.mockResolvedValue({ id: 'app-1' });
+    const contextLoader = new ApplicationCreationContextLoader(
+      formDefinitionsRepository as unknown as FormDefinitionsRepository,
+      flowResolver as unknown as ApplicationApprovalFlowResolver,
+    );
+    const initialFieldValueBuilder = new ApplicationInitialFieldValueBuilder(
+      new ApplicationFormValueValidator(),
+    );
     service = new ApplicationCreationService(
       creationRepository as unknown as ApplicationCreationRepository,
-      flowResolver as unknown as ApplicationApprovalFlowResolver,
-      new ApplicationFormValueValidator(),
+      contextLoader,
+      initialFieldValueBuilder,
     );
   });
 
@@ -107,7 +90,9 @@ describe('ApplicationCreationService', () => {
    * 公開済みフォームと承認フローから申請と初期値を保存すること
    */
   it('creates an application with initial field values', async () => {
-    creationRepository.findPublishedTemplate.mockResolvedValue(template());
+    formDefinitionsRepository.findPublishedTemplatesForApplicationCreation.mockResolvedValue(
+      [template()],
+    );
 
     await service.create('tenant-1', 'user@example.com', 'user-1', {
       groupId: 'group-1',
@@ -136,10 +121,9 @@ describe('ApplicationCreationService', () => {
    * フォーム指定なしで複数公開フォームがある場合に拒否すること
    */
   it('rejects ambiguous published templates', async () => {
-    creationRepository.findPublishedTemplate.mockResolvedValue([
-      template(),
-      template([field({ id: 'field-other' })]),
-    ]);
+    formDefinitionsRepository.findPublishedTemplatesForApplicationCreation.mockResolvedValue(
+      [template(), template([field({ id: 'field-other' })])],
+    );
 
     await expectErrorCode(
       () =>

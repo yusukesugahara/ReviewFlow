@@ -112,6 +112,26 @@ describe('FormDefinitionsRepository', () => {
     });
   });
 
+  it('finds published templates for application creation', async () => {
+    definitions.find.mockResolvedValue([]);
+
+    await repository.findPublishedTemplatesForApplicationCreation({
+      tenantId: 'tenant-1',
+      groupId: 'group-1',
+      formDefinitionId: 'form-1',
+    });
+
+    expect(definitions.find).toHaveBeenCalledWith({
+      where: {
+        id: 'form-1',
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        status: FormDefinitionStatus.PUBLISHED,
+      },
+      relations: ['fields'],
+    });
+  });
+
   it('creates fields with normalized params supplied by service', async () => {
     await repository.createField({
       tenantId: 'tenant-1',
