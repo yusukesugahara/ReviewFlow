@@ -37,6 +37,7 @@ import { ApplicationInitialFieldValueBuilder } from './services/application-init
 import { ApplicationNotificationService } from './services/application-notification.service';
 import { ApplicationPatchContextLoader } from './services/application-patch-context.loader';
 import { ApplicationPatchPolicy } from './policies/application-patch.policy';
+import { ApplicationProgressBuilder } from './services/application-progress.builder';
 import { ApplicationProgressService } from './services/application-progress.service';
 import { ApplicationQueryService } from './services/application-query.service';
 import { ApplicationReadAccessService } from './services/application-read-access.service';
@@ -97,6 +98,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationNotificationService,
     ApplicationPatchContextLoader,
     ApplicationPatchPolicy,
+    ApplicationProgressBuilder,
     ApplicationProgressService,
     ApplicationQueryService,
     ApplicationReadAccessService,

@@ -4,9 +4,7 @@ import type { Application } from '../../../../models/entities/application.entity
 import type { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
 import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 import type { User } from '../../../../models/entities/user.entity';
-import type { ApplicationProgressRepository } from '../../../../models/repositories/application-progress.repository';
 import { ApplicationProgressBuilder } from './application-progress.builder';
-import { ApplicationProgressService } from './application-progress.service';
 
 const step = (
   stepOrder: number,
@@ -56,59 +54,56 @@ const approval = (
     ...overrides,
   }) as ApplicationApproval;
 
-/**
- * ApplicationProgressService のテスト
- *
- * @group application-progress-service
- */
-describe('ApplicationProgressService', () => {
-  let progressRepository: {
-    findApprovalsForProgress: jest.Mock;
-    findUsersByIdsInTenant: jest.Mock;
-  };
-  let service: ApplicationProgressService;
+const user = (overrides: Partial<User> = {}): User =>
+  ({
+    id: 'reviewer-1',
+    email: 'reviewer-1@example.com',
+    name: 'Reviewer One',
+    ...overrides,
+  }) as User;
+
+describe('ApplicationProgressBuilder', () => {
+  let builder: ApplicationProgressBuilder;
 
   beforeEach(() => {
-    progressRepository = {
-      findApprovalsForProgress: jest.fn(),
-      findUsersByIdsInTenant: jest.fn(),
-    };
-    service = new ApplicationProgressService(
-      progressRepository as unknown as ApplicationProgressRepository,
-      new ApplicationProgressBuilder(),
-    );
+    builder = new ApplicationProgressBuilder();
   });
 
-  it('hydrates approval progress with actions and assignee labels', async () => {
-    const row = app();
-    progressRepository.findApprovalsForProgress.mockResolvedValue([approval()]);
-    progressRepository.findUsersByIdsInTenant.mockResolvedValue([
-      {
-        id: 'reviewer-1',
-        email: 'reviewer-1@example.com',
-        name: 'Reviewer One',
-      },
-      {
-        id: 'reviewer-2',
-        email: 'reviewer-2@example.com',
-        name: 'Reviewer Two',
-      },
-    ] as User[]);
+  it('sorts approval steps by step order', () => {
+    expect(builder.getOrderedSteps(app()).map((row) => row.id)).toEqual([
+      'step-1',
+      'step-2',
+    ]);
+  });
 
-    const hydrated = await service.hydrate(row);
+  it('collects assignee and approval actor ids', () => {
+    expect(
+      builder.collectUserIds(app(), [
+        approval({ actedByUserId: 'reviewer-3' }),
+      ]),
+    ).toEqual(['reviewer-1', 'reviewer-2', 'reviewer-3']);
+  });
 
-    expect(progressRepository.findApprovalsForProgress).toHaveBeenCalledWith({
-      tenantId: 'tenant-1',
-      applicationId: 'app-1',
-    });
-    expect(hydrated.approvalProgress).toEqual([
+  it('builds progress rows with approval status and user labels', () => {
+    const progress = builder.build(
+      app(),
+      [approval()],
+      [
+        user(),
+        user({
+          id: 'reviewer-2',
+          email: 'reviewer-2@example.com',
+          name: 'Reviewer Two',
+        }),
+      ],
+    );
+
+    expect(progress).toEqual([
       expect.objectContaining({
         id: 'step-1',
         status: 'approved',
         assignees: [
-          expect.objectContaining({
-            email: 'reviewer-1@example.com',
-          }),
+          expect.objectContaining({ email: 'reviewer-1@example.com' }),
         ],
         actions: [
           expect.objectContaining({
@@ -121,20 +116,25 @@ describe('ApplicationProgressService', () => {
         id: 'step-2',
         status: 'current',
         assignees: [
-          expect.objectContaining({
-            email: 'reviewer-2@example.com',
-          }),
+          expect.objectContaining({ email: 'reviewer-2@example.com' }),
         ],
       }),
     ]);
   });
 
-  it('does not load progress data when approval flow has no steps', async () => {
-    const row = app({ approvalFlow: flow([]) });
+  it('uses the latest approval action to determine returned status', () => {
+    const progress = builder.build(
+      app(),
+      [
+        approval(),
+        approval({
+          id: 'approval-2',
+          action: ApplicationApprovalAction.RETURNED,
+        }),
+      ],
+      [],
+    );
 
-    const hydrated = await service.hydrate(row);
-
-    expect(hydrated.approvalProgress).toEqual([]);
-    expect(progressRepository.findApprovalsForProgress).not.toHaveBeenCalled();
+    expect(progress[0].status).toBe('returned');
   });
 });
