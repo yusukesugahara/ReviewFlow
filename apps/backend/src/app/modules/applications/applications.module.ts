@@ -18,6 +18,7 @@ import { ApplicationApprovalFlowResolver } from './resolvers/application-approva
 import { ApplicantApplicationService } from './services/applicant-application.service';
 import { ApplicationCorrectionService } from './services/application-correction.service';
 import { ApplicationCreationService } from './services/application-creation.service';
+import { ApplicationCreationUseCaseService } from './services/application-creation-use-case.service';
 import { ApplicationFieldValuePatchService } from './services/application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './validators/application-form-value.validator';
 import { ApplicationNotificationService } from './services/application-notification.service';
@@ -59,6 +60,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationApprovalFlowResolver,
     ApplicationCorrectionService,
     ApplicationCreationService,
+    ApplicationCreationUseCaseService,
     ApplicationFieldValuePatchService,
     ApplicationFormValueValidator,
     ApplicationNotificationService,

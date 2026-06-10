@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
 import { Application } from '../../../../models/entities/application.entity';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type {
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
@@ -17,7 +16,7 @@ import {
   mapApplicationToSummary,
 } from '../mappers/applications.mapper';
 import { ApplicantApplicationService } from './applicant-application.service';
-import { ApplicationCreationService } from './application-creation.service';
+import { ApplicationCreationUseCaseService } from './application-creation-use-case.service';
 import { ApplicationQueryService } from './application-query.service';
 import { ApplicationReviewUseCaseService } from './application-review-use-case.service';
 import { ApplicationReturnEmailUseCaseService } from './application-return-email-use-case.service';
@@ -29,8 +28,7 @@ type ApplicantSession = ApplicantAccessTokenPayload;
 export class ApplicationsService {
   constructor(
     private readonly applicantApplicationService: ApplicantApplicationService,
-    private readonly spaceAccess: SpaceAccessService,
-    private readonly creationService: ApplicationCreationService,
+    private readonly creationUseCaseService: ApplicationCreationUseCaseService,
     private readonly queryService: ApplicationQueryService,
     private readonly reviewUseCaseService: ApplicationReviewUseCaseService,
     private readonly returnEmailUseCaseService: ApplicationReturnEmailUseCaseService,
@@ -55,13 +53,7 @@ export class ApplicationsService {
     actor: AuthUserPayload,
     dto: CreateApplicationDto,
   ): Promise<Application> {
-    await this.spaceAccess.assertCanUseGroup(actor, dto.groupId);
-    return this.creationService.create(
-      actor.tenantId,
-      actor.email,
-      actor.id,
-      dto,
-    );
+    return this.creationUseCaseService.create(actor, dto);
   }
 
   async createAndSubmitForApplicant(
