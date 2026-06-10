@@ -19,16 +19,14 @@ import {
   mapApplicationToSummary,
 } from '../mappers/applications.mapper';
 import { ApplicationAccessPolicy } from '../policies/application-access.policy';
-import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
 import { ApplicantApplicationService } from './applicant-application.service';
 import { ApplicationCorrectionService } from './application-correction.service';
 import { ApplicationCreationService } from './application-creation.service';
-import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
 import { ApplicationNotificationService } from './application-notification.service';
 import { ApplicationQueryService } from './application-query.service';
 import { ApplicationReviewUseCaseService } from './application-review-use-case.service';
-import { ApplicationSubmissionService } from './application-submission.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
+import { ApplicationUserSubmissionUseCaseService } from './application-user-submission-use-case.service';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
 
@@ -41,13 +39,11 @@ export class ApplicationsService {
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly correctionService: ApplicationCorrectionService,
     private readonly creationService: ApplicationCreationService,
-    private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
-    private readonly flowResolver: ApplicationApprovalFlowResolver,
     private readonly notificationService: ApplicationNotificationService,
     private readonly queryService: ApplicationQueryService,
     private readonly reviewUseCaseService: ApplicationReviewUseCaseService,
-    private readonly submissionService: ApplicationSubmissionService,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
+    private readonly userSubmissionUseCaseService: ApplicationUserSubmissionUseCaseService,
   ) {}
 
   private countApprovalsByActor(
@@ -110,45 +106,16 @@ export class ApplicationsService {
     return this.applicantApplicationService.createAndSubmit(actor, dto);
   }
 
-  private async loadApplicantEditableApplication(
-    actor: { tenantId: string; id?: string; email: string },
-    id: string,
-  ): Promise<Application> {
-    const app = await this.applicationsRepository.findApplicantEditable({
-      id,
-      tenantId: actor.tenantId,
-      applicantUserId: actor.id,
-      applicantEmail: actor.email,
-    });
-    if (!app) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    return app;
-  }
-
   async patch(
     actor: AuthUserPayload,
     id: string,
     dto: PatchApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    if (dto.approvalFlowId) {
-      await this.flowResolver.resolveActiveFlow(
-        actor.tenantId,
-        app.groupId,
-        dto.approvalFlowId,
-      );
-    }
-    await this.fieldValuePatchService.applyPatch(actor.tenantId, app, dto);
-    return this.getOneForActor(actor, id);
+    return this.userSubmissionUseCaseService.patch(actor, id, dto);
   }
 
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    await this.submissionService.submit(actor.tenantId, app);
-    return this.getOneForActor(actor, id);
+    return this.userSubmissionUseCaseService.submit(actor, id);
   }
 
   async approve(
@@ -202,10 +169,7 @@ export class ApplicationsService {
   }
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    await this.submissionService.resubmit(actor.tenantId, app);
-    return this.getOneForActor(actor, id);
+    return this.userSubmissionUseCaseService.resubmit(actor, id);
   }
 
   async getReturnedCorrectionForApplicant(

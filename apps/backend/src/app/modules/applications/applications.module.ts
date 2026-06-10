@@ -27,6 +27,7 @@ import { ApplicationReviewActionService } from './services/application-review-ac
 import { ApplicationReviewUseCaseService } from './services/application-review-use-case.service';
 import { ApplicationSubmissionService } from './services/application-submission.service';
 import { ApplicationTransitionPolicy } from './policies/application-transition.policy';
+import { ApplicationUserSubmissionUseCaseService } from './services/application-user-submission-use-case.service';
 import { ApplicationsController } from './controllers/applications.controller';
 import { ApplicationsService } from './services/applications.service';
 import { PublicApplicationsController } from './controllers/public-applications.controller';
@@ -66,6 +67,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationReviewUseCaseService,
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
+    ApplicationUserSubmissionUseCaseService,
   ],
 })
 export class ApplicationsModule {}
