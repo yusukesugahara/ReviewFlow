@@ -32,6 +32,7 @@ import { ApplicationCreationService } from './services/application-creation.serv
 import { ApplicationCreationUseCaseService } from './services/application-creation-use-case.service';
 import { ApplicationFieldValuePatchBuilder } from './services/application-field-value-patch.builder';
 import { ApplicationFieldValuePatchService } from './services/application-field-value-patch.service';
+import { ApplicationFieldValueTypeValidator } from './validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from './validators/application-form-value.validator';
 import { ApplicationInitialFieldValueBuilder } from './services/application-initial-field-value.builder';
 import { ApplicationNotificationService } from './services/application-notification.service';
@@ -93,6 +94,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationCreationUseCaseService,
     ApplicationFieldValuePatchBuilder,
     ApplicationFieldValuePatchService,
+    ApplicationFieldValueTypeValidator,
     ApplicationFormValueValidator,
     ApplicationInitialFieldValueBuilder,
     ApplicationNotificationService,
