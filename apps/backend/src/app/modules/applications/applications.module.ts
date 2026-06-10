@@ -20,6 +20,7 @@ import { ApplicationCreationService } from './services/application-creation.serv
 import { ApplicationFieldValuePatchService } from './services/application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './validators/application-form-value.validator';
 import { ApplicationProgressService } from './services/application-progress.service';
+import { ApplicationQueryService } from './services/application-query.service';
 import { ApplicationReviewActionService } from './services/application-review-action.service';
 import { ApplicationSubmissionService } from './services/application-submission.service';
 import { ApplicationTransitionPolicy } from './policies/application-transition.policy';
@@ -55,6 +56,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationFieldValuePatchService,
     ApplicationFormValueValidator,
     ApplicationProgressService,
+    ApplicationQueryService,
     ApplicationReviewActionService,
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
