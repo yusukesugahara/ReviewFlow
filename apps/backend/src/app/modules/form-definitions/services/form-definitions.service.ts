@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
-import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
@@ -20,6 +19,7 @@ import {
 } from '../mappers/form-definitions.mapper';
 import { FormAccessRequestService } from './form-access-request.service';
 import { FormDefinitionFieldsService } from './form-definition-fields.service';
+import { FormDefinitionLifecycleService } from './form-definition-lifecycle.service';
 
 @Injectable()
 export class FormDefinitionsService {
@@ -27,6 +27,7 @@ export class FormDefinitionsService {
     private readonly formDefinitionsRepository: FormDefinitionsRepository,
     private readonly formDefinitionFields: FormDefinitionFieldsService,
     private readonly formAccessRequests: FormAccessRequestService,
+    private readonly formDefinitionLifecycle: FormDefinitionLifecycleService,
     private readonly spaceAccess: SpaceAccessService,
   ) {}
 
@@ -72,13 +73,6 @@ export class FormDefinitionsService {
         : null,
       createdByUserId: actor.id,
     });
-  }
-
-  private async assertCanManageDefinition(
-    actor: AuthUserPayload,
-    definition: FormDefinition,
-  ): Promise<void> {
-    await this.spaceAccess.assertCanManageGroup(actor, definition.groupId);
   }
 
   async addField(
@@ -129,48 +123,21 @@ export class FormDefinitionsService {
     actor: AuthUserPayload,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const t = await this.formDefinitionsRepository.findByIdWithFields(
-      actor.tenantId,
-      definitionId,
-    );
-    if (!t) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-    if (t.status !== FormDefinitionStatus.DRAFT) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_PUBLISHABLE);
-    }
-    await this.assertCanManageDefinition(actor, t);
-    t.status = FormDefinitionStatus.PUBLISHED;
-    return this.formDefinitionsRepository.saveDefinition(t);
+    return this.formDefinitionLifecycle.publish(actor, definitionId);
   }
 
   async archive(
     actor: AuthUserPayload,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const definition = await this.getOne(actor.tenantId, definitionId);
-    await this.assertCanManageDefinition(actor, definition);
-    if (definition.status === FormDefinitionStatus.ARCHIVED) {
-      return definition;
-    }
-    definition.archivedFromStatus = definition.status;
-    definition.status = FormDefinitionStatus.ARCHIVED;
-    return this.formDefinitionsRepository.saveDefinition(definition);
+    return this.formDefinitionLifecycle.archive(actor, definitionId);
   }
 
   async restore(
     actor: AuthUserPayload,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const definition = await this.getOne(actor.tenantId, definitionId);
-    await this.assertCanManageDefinition(actor, definition);
-    if (definition.status !== FormDefinitionStatus.ARCHIVED) {
-      return definition;
-    }
-    definition.status =
-      definition.archivedFromStatus ?? FormDefinitionStatus.PUBLISHED;
-    definition.archivedFromStatus = null;
-    return this.formDefinitionsRepository.saveDefinition(definition);
+    return this.formDefinitionLifecycle.restore(actor, definitionId);
   }
 
   async getOne(
@@ -201,12 +168,11 @@ export class FormDefinitionsService {
     definitionId: string,
     dto: UpdateFormDefinitionDescriptionDto,
   ): Promise<FormDefinition> {
-    const definition = await this.getOne(actor.tenantId, definitionId);
-    await this.assertCanManageDefinition(actor, definition);
-    definition.description = dto.description?.trim().length
-      ? dto.description.trim()
-      : null;
-    return this.formDefinitionsRepository.saveDefinition(definition);
+    return this.formDefinitionLifecycle.updateDescription(
+      actor,
+      definitionId,
+      dto,
+    );
   }
 
   async getPublishedDefinitionForApplicant(

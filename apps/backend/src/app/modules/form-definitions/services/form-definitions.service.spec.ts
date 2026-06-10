@@ -1,5 +1,4 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ClientErrorCodes } from '../../../../common/errors';
 import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import { FormField } from '../../../../models/entities/form-field.entity';
@@ -9,6 +8,7 @@ import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.servi
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { FormAccessRequestService } from './form-access-request.service';
 import { FormDefinitionFieldsService } from './form-definition-fields.service';
+import { FormDefinitionLifecycleService } from './form-definition-lifecycle.service';
 import { FormDefinitionsService } from './form-definitions.service';
 
 /**
@@ -19,10 +19,7 @@ import { FormDefinitionsService } from './form-definitions.service';
 describe('FormDefinitionsService', () => {
   let service: FormDefinitionsService;
   let formDefinitionsRepository: jest.Mocked<
-    Pick<
-      FormDefinitionsRepository,
-      'createDefinition' | 'findByIdWithFields' | 'saveDefinition'
-    >
+    Pick<FormDefinitionsRepository, 'createDefinition' | 'findByIdWithFields'>
   >;
   let formDefinitionFields: jest.Mocked<
     Pick<
@@ -34,6 +31,12 @@ describe('FormDefinitionsService', () => {
     Pick<
       FormAccessRequestService,
       'getPublishedDefinitionForApplicant' | 'requestAccess'
+    >
+  >;
+  let formDefinitionLifecycle: jest.Mocked<
+    Pick<
+      FormDefinitionLifecycleService,
+      'publish' | 'archive' | 'restore' | 'updateDescription'
     >
   >;
   let spaceAccess: jest.Mocked<
@@ -50,7 +53,6 @@ describe('FormDefinitionsService', () => {
     formDefinitionsRepository = {
       createDefinition: jest.fn(),
       findByIdWithFields: jest.fn(),
-      saveDefinition: jest.fn(),
     };
     formDefinitionFields = {
       addField: jest.fn(),
@@ -61,6 +63,12 @@ describe('FormDefinitionsService', () => {
     formAccessRequests = {
       getPublishedDefinitionForApplicant: jest.fn(),
       requestAccess: jest.fn(),
+    };
+    formDefinitionLifecycle = {
+      publish: jest.fn(),
+      archive: jest.fn(),
+      restore: jest.fn(),
+      updateDescription: jest.fn(),
     };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
@@ -81,6 +89,10 @@ describe('FormDefinitionsService', () => {
         {
           provide: FormAccessRequestService,
           useValue: formAccessRequests,
+        },
+        {
+          provide: FormDefinitionLifecycleService,
+          useValue: formDefinitionLifecycle,
         },
         { provide: SpaceAccessService, useValue: spaceAccess },
       ],
@@ -147,65 +159,76 @@ describe('FormDefinitionsService', () => {
   });
 
   /**
-   * publish は草稿定義でない場合にエラーを返すこと
+   * publish は lifecycle 専用サービスへ委譲すること
    */
-  it('publish rejects when not draft', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue({
-      id: 't1',
-      tenantId: 'ten1',
-      groupId: 'g1',
-      status: FormDefinitionStatus.ARCHIVED,
-    } as FormDefinition);
-
-    await expect(service.publish(actor, 't1')).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.FORM_DEFINITION_NOT_PUBLISHABLE,
-    });
-  });
-
-  /**
-   * archive は管理権限を確認し、定義をアーカイブにすること
-   */
-  it('archive marks definition as archived after management check', async () => {
+  it('publish delegates lifecycle transition', async () => {
     const definition = {
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
       status: FormDefinitionStatus.PUBLISHED,
     } as FormDefinition;
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
-    formDefinitionsRepository.saveDefinition.mockResolvedValue(definition);
+    formDefinitionLifecycle.publish.mockResolvedValue(definition);
 
-    const out = await service.archive(actor, 't1');
+    const out = await service.publish(actor, 't1');
 
-    expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
-    expect(out.status).toBe(FormDefinitionStatus.ARCHIVED);
-    expect(out.archivedFromStatus).toBe(FormDefinitionStatus.PUBLISHED);
-    expect(formDefinitionsRepository.saveDefinition).toHaveBeenCalledWith(
-      definition,
-    );
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.publish).toHaveBeenCalledWith(actor, 't1');
   });
 
   /**
-   * restore は管理権限を確認し、アーカイブされた定義を元のステータスに戻すこと
+   * archive は lifecycle 専用サービスへ委譲すること
    */
-  it('restore moves archived definition back to its previous status', async () => {
+  it('archive delegates lifecycle transition', async () => {
     const definition = {
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
       status: FormDefinitionStatus.ARCHIVED,
-      archivedFromStatus: FormDefinitionStatus.DRAFT,
     } as FormDefinition;
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
-    formDefinitionsRepository.saveDefinition.mockResolvedValue(definition);
+    formDefinitionLifecycle.archive.mockResolvedValue(definition);
+
+    const out = await service.archive(actor, 't1');
+
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.archive).toHaveBeenCalledWith(actor, 't1');
+  });
+
+  /**
+   * restore は lifecycle 専用サービスへ委譲すること
+   */
+  it('restore delegates lifecycle transition', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.DRAFT,
+    } as FormDefinition;
+    formDefinitionLifecycle.restore.mockResolvedValue(definition);
 
     const out = await service.restore(actor, 't1');
 
-    expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
-    expect(out.status).toBe(FormDefinitionStatus.DRAFT);
-    expect(out.archivedFromStatus).toBeNull();
-    expect(formDefinitionsRepository.saveDefinition).toHaveBeenCalledWith(
-      definition,
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.restore).toHaveBeenCalledWith(actor, 't1');
+  });
+
+  it('updateDescription delegates lifecycle mutation', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      description: 'new',
+    } as FormDefinition;
+    const dto = { description: ' new ' };
+    formDefinitionLifecycle.updateDescription.mockResolvedValue(definition);
+
+    const out = await service.updateDescription(actor, 't1', dto);
+
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.updateDescription).toHaveBeenCalledWith(
+      actor,
+      't1',
+      dto,
     );
   });
 

@@ -12,6 +12,7 @@ import { MailModule } from '../mail/mail.module';
 import { FormDefinitionsController } from './controllers/form-definitions.controller';
 import { FormAccessRequestService } from './services/form-access-request.service';
 import { FormDefinitionFieldsService } from './services/form-definition-fields.service';
+import { FormDefinitionLifecycleService } from './services/form-definition-lifecycle.service';
 import { FormDefinitionsService } from './services/form-definitions.service';
 
 @Module({
@@ -27,6 +28,7 @@ import { FormDefinitionsService } from './services/form-definitions.service';
     FormDefinitionsService,
     FormAccessRequestService,
     FormDefinitionFieldsService,
+    FormDefinitionLifecycleService,
     FormDefinitionsRepository,
     FormFieldsRepository,
     ApplicantAccessGuard,
