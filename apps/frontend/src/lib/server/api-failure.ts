@@ -7,6 +7,12 @@ export type ApiFailure = {
   body?: unknown;
 };
 
+export type ApiResponseLike = {
+  response: Pick<Response, "ok" | "status">;
+  data?: unknown;
+  error?: unknown;
+};
+
 const apiFailureSchema = z.object({
   status: z.number(),
   body: z.unknown().optional(),
@@ -38,11 +44,19 @@ export function errorMessageFromBody(
   return fallback;
 }
 
-export function throwIfApiResponseFailed(response: {
-  response: Response;
-  error?: unknown;
-}): void {
+export function toApiFailure(response: ApiResponseLike): ApiFailure {
+  return {
+    status: response.response.status,
+    body: response.error ?? response.data,
+  };
+}
+
+export function throwApiFailure(response: ApiResponseLike): never {
+  throw toApiFailure(response);
+}
+
+export function throwIfApiResponseFailed(response: ApiResponseLike): void {
   if (!response.response.ok) {
-    throw { status: response.response.status, body: response.error };
+    throwApiFailure(response);
   }
 }

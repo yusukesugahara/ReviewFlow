@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import type { ApplicationDetailViewModel } from "@/components/applications/application-detail.types";
@@ -45,10 +45,7 @@ async function postApplicationAction(
     body,
     headers: await authHeadersOrRedirect(),
   });
-  if (!response.response.ok || !response.data) {
-    throw { status: response.response.status, body: response.error };
-  }
-  return unwrapData<ApplicationDetailViewModel>(response.data);
+  return unwrapResponseData<ApplicationDetailViewModel>(response);
 }
 
 export async function submitAction(spaceId: string, applicationId: string): Promise<void> {

@@ -4,8 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
-import { unwrapData } from "@/lib/server/api-envelope";
+import {
+  errorMessageFromBody,
+  isApiFailure,
+  throwIfApiResponseFailed,
+} from "@/lib/server/api-failure";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import {
   APPLICATION_SETUP_ERRORS,
   APPLICATION_SETUP_ERROR_MESSAGES,
@@ -143,10 +147,7 @@ export async function submitApplicationSetupAction(
       },
       headers: authHeaders,
     });
-    if (!createdResponse.response.ok || !createdResponse.data) {
-      throw { status: createdResponse.response.status, body: createdResponse.error };
-    }
-    const created = unwrapData<CreateDefinitionResponse>(createdResponse.data);
+    const created = unwrapResponseData<CreateDefinitionResponse>(createdResponse);
     createdDefinitionId = created.id;
 
     for (const field of fieldPayloads) {
@@ -155,18 +156,14 @@ export async function submitApplicationSetupAction(
         body: toFieldRequest(field),
         headers: authHeaders,
       });
-      if (!fieldResponse.response.ok) {
-        throw { status: fieldResponse.response.status, body: fieldResponse.error };
-      }
+      throwIfApiResponseFailed(fieldResponse);
     }
 
     const publishResponse = await client.POST("/form-definitions/{id}/publish", {
       params: { path: { id: createdDefinitionId } },
       headers: authHeaders,
     });
-    if (!publishResponse.response.ok) {
-      throw { status: publishResponse.response.status, body: publishResponse.error };
-    }
+    throwIfApiResponseFailed(publishResponse);
 
     const flowResponse = await client.POST("/approval-flows", {
       body: {
@@ -176,10 +173,7 @@ export async function submitApplicationSetupAction(
       },
       headers: authHeaders,
     });
-    if (!flowResponse.response.ok || !flowResponse.data) {
-      throw { status: flowResponse.response.status, body: flowResponse.error };
-    }
-    const flow = unwrapData<CreateApprovalFlowResponse>(flowResponse.data);
+    const flow = unwrapResponseData<CreateApprovalFlowResponse>(flowResponse);
 
     const applicationResponse = await client.POST("/applications", {
       body: {
@@ -191,10 +185,8 @@ export async function submitApplicationSetupAction(
       },
       headers: authHeaders,
     });
-    if (!applicationResponse.response.ok || !applicationResponse.data) {
-      throw { status: applicationResponse.response.status, body: applicationResponse.error };
-    }
-    const application = unwrapData<CreateApplicationResponse>(applicationResponse.data);
+    const application =
+      unwrapResponseData<CreateApplicationResponse>(applicationResponse);
     createdApplicationId = application.id;
   } catch (error) {
     redirect(setupErrorRedirectUrl(redirectBase, error));
@@ -297,9 +289,7 @@ export async function updateApplicationSetupAction(
       },
       headers: authHeaders,
     });
-    if (!flowResponse.response.ok) {
-      throw { status: flowResponse.response.status, body: flowResponse.error };
-    }
+    throwIfApiResponseFailed(flowResponse);
 
     const applicationResponse = await client.PATCH("/applications/{id}", {
       params: { path: { id: applicationId } },
@@ -308,9 +298,7 @@ export async function updateApplicationSetupAction(
       },
       headers: authHeaders,
     });
-    if (!applicationResponse.response.ok) {
-      throw { status: applicationResponse.response.status, body: applicationResponse.error };
-    }
+    throwIfApiResponseFailed(applicationResponse);
   } catch (error) {
     redirect(setupErrorRedirectUrl(redirectBase, error));
   }
