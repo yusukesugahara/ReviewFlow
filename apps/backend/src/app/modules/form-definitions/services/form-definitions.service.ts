@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type {
   CreateFormFieldDto,
   CreateFormDefinitionDto,
@@ -18,17 +15,19 @@ import {
   mapFormDefinitionToDto,
 } from '../mappers/form-definitions.mapper';
 import { FormAccessRequestService } from './form-access-request.service';
+import { FormDefinitionCreationService } from './form-definition-creation.service';
 import { FormDefinitionFieldsService } from './form-definition-fields.service';
 import { FormDefinitionLifecycleService } from './form-definition-lifecycle.service';
+import { FormDefinitionQueryService } from './form-definition-query.service';
 
 @Injectable()
 export class FormDefinitionsService {
   constructor(
-    private readonly formDefinitionsRepository: FormDefinitionsRepository,
+    private readonly formDefinitionCreation: FormDefinitionCreationService,
+    private readonly formDefinitionQuery: FormDefinitionQueryService,
     private readonly formDefinitionFields: FormDefinitionFieldsService,
     private readonly formAccessRequests: FormAccessRequestService,
     private readonly formDefinitionLifecycle: FormDefinitionLifecycleService,
-    private readonly spaceAccess: SpaceAccessService,
   ) {}
 
   async listByGroup(
@@ -36,43 +35,25 @@ export class FormDefinitionsService {
     groupId: string,
     includeArchived = false,
   ): Promise<FormDefinition[]> {
-    await this.spaceAccess.assertCanManageGroup(actor, groupId);
-    return this.formDefinitionsRepository.listByGroup({
-      tenantId: actor.tenantId,
+    return this.formDefinitionQuery.listByGroup(
+      actor,
       groupId,
       includeArchived,
-    });
+    );
   }
 
   async getOneByGroupForActor(
     actor: AuthUserPayload,
     groupId: string,
   ): Promise<FormDefinition> {
-    await this.spaceAccess.assertCanManageGroup(actor, groupId);
-    const row = await this.formDefinitionsRepository.findOneByGroup({
-      tenantId: actor.tenantId,
-      groupId,
-    });
-    if (!row) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-    return row;
+    return this.formDefinitionQuery.getOneByGroupForActor(actor, groupId);
   }
 
   async create(
     actor: AuthUserPayload,
     dto: CreateFormDefinitionDto,
   ): Promise<FormDefinition> {
-    await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
-    return this.formDefinitionsRepository.createDefinition({
-      tenantId: actor.tenantId,
-      groupId: dto.groupId,
-      name: dto.name.trim(),
-      description: dto.description?.trim().length
-        ? dto.description.trim()
-        : null,
-      createdByUserId: actor.id,
-    });
+    return this.formDefinitionCreation.create(actor, dto);
   }
 
   async addField(
@@ -144,23 +125,14 @@ export class FormDefinitionsService {
     tenantId: string,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const t = await this.formDefinitionsRepository.findByIdWithFields(
-      tenantId,
-      definitionId,
-    );
-    if (!t) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-    return t;
+    return this.formDefinitionQuery.getOne(tenantId, definitionId);
   }
 
   async getOneForActor(
     actor: AuthUserPayload,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const definition = await this.getOne(actor.tenantId, definitionId);
-    await this.spaceAccess.assertCanUseGroup(actor, definition.groupId);
-    return definition;
+    return this.formDefinitionQuery.getOneForActor(actor, definitionId);
   }
 
   async updateDescription(

@@ -3,12 +3,12 @@ import { FormDefinitionStatus } from '../../../../models/constants/form-definiti
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { FormAccessRequestService } from './form-access-request.service';
+import { FormDefinitionCreationService } from './form-definition-creation.service';
 import { FormDefinitionFieldsService } from './form-definition-fields.service';
 import { FormDefinitionLifecycleService } from './form-definition-lifecycle.service';
+import { FormDefinitionQueryService } from './form-definition-query.service';
 import { FormDefinitionsService } from './form-definitions.service';
 
 /**
@@ -18,8 +18,14 @@ import { FormDefinitionsService } from './form-definitions.service';
  */
 describe('FormDefinitionsService', () => {
   let service: FormDefinitionsService;
-  let formDefinitionsRepository: jest.Mocked<
-    Pick<FormDefinitionsRepository, 'createDefinition' | 'findByIdWithFields'>
+  let formDefinitionCreation: jest.Mocked<
+    Pick<FormDefinitionCreationService, 'create'>
+  >;
+  let formDefinitionQuery: jest.Mocked<
+    Pick<
+      FormDefinitionQueryService,
+      'listByGroup' | 'getOneByGroupForActor' | 'getOne' | 'getOneForActor'
+    >
   >;
   let formDefinitionFields: jest.Mocked<
     Pick<
@@ -39,9 +45,6 @@ describe('FormDefinitionsService', () => {
       'publish' | 'archive' | 'restore' | 'updateDescription'
     >
   >;
-  let spaceAccess: jest.Mocked<
-    Pick<SpaceAccessService, 'assertCanManageGroup' | 'assertCanUseGroup'>
-  >;
   const actor = {
     id: 'u1',
     tenantId: 'ten1',
@@ -50,9 +53,14 @@ describe('FormDefinitionsService', () => {
   };
 
   beforeEach(async () => {
-    formDefinitionsRepository = {
-      createDefinition: jest.fn(),
-      findByIdWithFields: jest.fn(),
+    formDefinitionCreation = {
+      create: jest.fn(),
+    };
+    formDefinitionQuery = {
+      listByGroup: jest.fn(),
+      getOneByGroupForActor: jest.fn(),
+      getOne: jest.fn(),
+      getOneForActor: jest.fn(),
     };
     formDefinitionFields = {
       addField: jest.fn(),
@@ -70,17 +78,17 @@ describe('FormDefinitionsService', () => {
       restore: jest.fn(),
       updateDescription: jest.fn(),
     };
-    spaceAccess = {
-      assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
-      assertCanUseGroup: jest.fn().mockResolvedValue(undefined),
-    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FormDefinitionsService,
         {
-          provide: FormDefinitionsRepository,
-          useValue: formDefinitionsRepository,
+          provide: FormDefinitionCreationService,
+          useValue: formDefinitionCreation,
+        },
+        {
+          provide: FormDefinitionQueryService,
+          useValue: formDefinitionQuery,
         },
         {
           provide: FormDefinitionFieldsService,
@@ -94,7 +102,6 @@ describe('FormDefinitionsService', () => {
           provide: FormDefinitionLifecycleService,
           useValue: formDefinitionLifecycle,
         },
-        { provide: SpaceAccessService, useValue: spaceAccess },
       ],
     }).compile();
 
@@ -102,9 +109,33 @@ describe('FormDefinitionsService', () => {
   });
 
   /**
-   * create は草稿定義を保存すること
+   * listByGroup は query 専用サービスへ委譲すること
    */
-  it('create saves draft definition', async () => {
+  it('listByGroup delegates query service', async () => {
+    const rows = [
+      {
+        id: 't1',
+        tenantId: 'ten1',
+        groupId: 'g1',
+        status: FormDefinitionStatus.PUBLISHED,
+      } as FormDefinition,
+    ];
+    formDefinitionQuery.listByGroup.mockResolvedValue(rows);
+
+    const out = await service.listByGroup(actor, 'g1', true);
+
+    expect(out).toBe(rows);
+    expect(formDefinitionQuery.listByGroup).toHaveBeenCalledWith(
+      actor,
+      'g1',
+      true,
+    );
+  });
+
+  /**
+   * create は作成専用サービスへ委譲すること
+   */
+  it('create delegates creation service', async () => {
     const saved = {
       id: 't1',
       tenantId: 'ten1',
@@ -113,18 +144,13 @@ describe('FormDefinitionsService', () => {
       status: FormDefinitionStatus.DRAFT,
       createdByUserId: 'u1',
     } as FormDefinition;
-    formDefinitionsRepository.createDefinition.mockResolvedValue(saved);
+    const dto = { groupId: 'g1', name: '  A  ' };
+    formDefinitionCreation.create.mockResolvedValue(saved);
 
-    const out = await service.create(actor, { groupId: 'g1', name: '  A  ' });
+    const out = await service.create(actor, dto);
 
-    expect(formDefinitionsRepository.createDefinition).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'A',
-        groupId: 'g1',
-        createdByUserId: 'u1',
-      }),
-    );
-    expect(out.id).toBe('t1');
+    expect(out).toBe(saved);
+    expect(formDefinitionCreation.create).toHaveBeenCalledWith(actor, dto);
   });
 
   /**
@@ -233,22 +259,42 @@ describe('FormDefinitionsService', () => {
   });
 
   /**
-   * getOneForActor はスペース利用権限のみを確認すること
+   * getOne は query 専用サービスへ委譲すること
    */
-  it('getOneForActor requires space usage access only', async () => {
+  it('getOne delegates query service', async () => {
     const definition = {
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
       status: FormDefinitionStatus.PUBLISHED,
     } as FormDefinition;
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
+    formDefinitionQuery.getOne.mockResolvedValue(definition);
+
+    const out = await service.getOne('ten1', 't1');
+
+    expect(out).toBe(definition);
+    expect(formDefinitionQuery.getOne).toHaveBeenCalledWith('ten1', 't1');
+  });
+
+  /**
+   * getOneForActor は query 専用サービスへ委譲すること
+   */
+  it('getOneForActor delegates query service', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.PUBLISHED,
+    } as FormDefinition;
+    formDefinitionQuery.getOneForActor.mockResolvedValue(definition);
 
     const out = await service.getOneForActor(actor, 't1');
 
     expect(out).toBe(definition);
-    expect(spaceAccess.assertCanUseGroup).toHaveBeenCalledWith(actor, 'g1');
-    expect(spaceAccess.assertCanManageGroup).not.toHaveBeenCalled();
+    expect(formDefinitionQuery.getOneForActor).toHaveBeenCalledWith(
+      actor,
+      't1',
+    );
   });
 
   it('getPublishedDefinitionForApplicant delegates public applicant lookup', async () => {

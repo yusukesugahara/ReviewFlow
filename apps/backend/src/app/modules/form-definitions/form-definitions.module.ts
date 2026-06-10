@@ -11,8 +11,10 @@ import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
 import { FormDefinitionsController } from './controllers/form-definitions.controller';
 import { FormAccessRequestService } from './services/form-access-request.service';
+import { FormDefinitionCreationService } from './services/form-definition-creation.service';
 import { FormDefinitionFieldsService } from './services/form-definition-fields.service';
 import { FormDefinitionLifecycleService } from './services/form-definition-lifecycle.service';
+import { FormDefinitionQueryService } from './services/form-definition-query.service';
 import { FormDefinitionsService } from './services/form-definitions.service';
 
 @Module({
@@ -27,8 +29,10 @@ import { FormDefinitionsService } from './services/form-definitions.service';
   providers: [
     FormDefinitionsService,
     FormAccessRequestService,
+    FormDefinitionCreationService,
     FormDefinitionFieldsService,
     FormDefinitionLifecycleService,
+    FormDefinitionQueryService,
     FormDefinitionsRepository,
     FormFieldsRepository,
     ApplicantAccessGuard,
