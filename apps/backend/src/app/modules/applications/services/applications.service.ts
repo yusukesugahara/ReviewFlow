@@ -1,15 +1,10 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
-import {
-  AuthService,
-  type ApplicantAccessTokenPayload,
-} from '../../auth/services/auth.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { Application } from '../../../../models/entities/application.entity';
-import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
-import { MailService } from '../../mail/services/mail.service';
 import type {
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
@@ -29,6 +24,7 @@ import { ApplicantApplicationService } from './applicant-application.service';
 import { ApplicationCorrectionService } from './application-correction.service';
 import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
+import { ApplicationNotificationService } from './application-notification.service';
 import { ApplicationQueryService } from './application-query.service';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationSubmissionService } from './application-submission.service';
@@ -38,19 +34,16 @@ type ApplicantSession = ApplicantAccessTokenPayload;
 
 @Injectable()
 export class ApplicationsService {
-  private readonly logger = new Logger(ApplicationsService.name);
-
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
     private readonly applicantApplicationService: ApplicantApplicationService,
-    private readonly authService: AuthService,
     private readonly spaceAccess: SpaceAccessService,
-    private readonly mailService: MailService,
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly correctionService: ApplicationCorrectionService,
     private readonly creationService: ApplicationCreationService,
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
     private readonly flowResolver: ApplicationApprovalFlowResolver,
+    private readonly notificationService: ApplicationNotificationService,
     private readonly queryService: ApplicationQueryService,
     private readonly reviewActionService: ApplicationReviewActionService,
     private readonly submissionService: ApplicationSubmissionService,
@@ -219,43 +212,9 @@ export class ApplicationsService {
       actor.id,
       dto,
     );
-    await this.notifyApplicantOfReturn(app, template, dto);
+    await this.notificationService.notifyApplicantOfReturn(app, template, dto);
 
     return this.getOneForActor(actor, id);
-  }
-
-  private async notifyApplicantOfReturn(
-    app: Application,
-    template: FormDefinition,
-    dto: ReturnApplicationDto,
-  ): Promise<void> {
-    const fieldsById = new Map((template.fields ?? []).map((f) => [f.id, f]));
-    const accessToken = this.authService.issueApplicantAccessToken({
-      tenantId: app.tenantId,
-      email: app.applicantEmail,
-      groupId: app.groupId,
-      formDefinitionId: app.formDefinitionId,
-      applicationId: app.id,
-    });
-    try {
-      await this.mailService.sendApplicationReturnedEmail({
-        to: app.applicantEmail,
-        applicationId: app.id,
-        accessToken,
-        groupId: app.groupId,
-        templateName: template.name,
-        overallComment: dto.overallComment ?? null,
-        fields: dto.fields.map((field) => ({
-          label: fieldsById.get(field.fieldId)?.label ?? field.fieldId,
-          comment: field.comment ?? null,
-        })),
-      });
-    } catch (error) {
-      this.logger.error(
-        `failed to send application return email for application ${app.id} to ${app.applicantEmail}`,
-        error instanceof Error ? error.stack : undefined,
-      );
-    }
   }
 
   async resendReturnEmail(
@@ -275,7 +234,11 @@ export class ApplicationsService {
     this.transitionPolicy.assertReturned(app);
 
     const context = await this.correctionService.getReturnEmailContext(app);
-    await this.notifyApplicantOfReturn(app, context.template, context.dto);
+    await this.notificationService.notifyApplicantOfReturn(
+      app,
+      context.template,
+      context.dto,
+    );
 
     return this.getOneForActor(actor, id);
   }

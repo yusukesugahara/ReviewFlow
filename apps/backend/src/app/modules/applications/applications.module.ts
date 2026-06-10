@@ -20,6 +20,7 @@ import { ApplicationCorrectionService } from './services/application-correction.
 import { ApplicationCreationService } from './services/application-creation.service';
 import { ApplicationFieldValuePatchService } from './services/application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './validators/application-form-value.validator';
+import { ApplicationNotificationService } from './services/application-notification.service';
 import { ApplicationProgressService } from './services/application-progress.service';
 import { ApplicationQueryService } from './services/application-query.service';
 import { ApplicationReviewActionService } from './services/application-review-action.service';
@@ -57,6 +58,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationCreationService,
     ApplicationFieldValuePatchService,
     ApplicationFormValueValidator,
+    ApplicationNotificationService,
     ApplicationProgressService,
     ApplicationQueryService,
     ApplicationReviewActionService,
