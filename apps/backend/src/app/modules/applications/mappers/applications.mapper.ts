@@ -4,9 +4,11 @@ import type {
   ApplicationDetailDto,
   ApplicationProgressStepDto,
   ApplicationSummaryDto,
+  CorrectionTargetsResponseDto,
   CorrectionRequestItemResponseDto,
   CorrectionRequestResponseDto,
   CorrectionsListResponseDto,
+  ReturnApplicationDto,
 } from '../dto/applications.dto';
 
 export type ApplicationWithProgress = Application & {
@@ -109,4 +111,61 @@ export function mapCorrectionsList(
     (a, b) => b.createdAt.getTime() - a.createdAt.getTime(),
   );
   return { corrections: sorted.map(mapCorrectionRequestToDto) };
+}
+
+export function mapCorrectionTargetsResponse(
+  app: Application,
+  openCorrection: CorrectionRequest | null,
+): CorrectionTargetsResponseDto {
+  if (!openCorrection) {
+    return {
+      applicationId: app.id,
+      applicationStatus: app.status,
+      openCorrection: null,
+    };
+  }
+
+  const valueByFieldId = new Map(
+    (app.fieldValues ?? []).map((value) => [
+      value.formFieldId,
+      value.valueJson,
+    ]),
+  );
+
+  return {
+    applicationId: app.id,
+    applicationStatus: app.status,
+    openCorrection: {
+      id: openCorrection.id,
+      overallComment: openCorrection.overallComment,
+      createdAt: openCorrection.createdAt.toISOString(),
+      items: (openCorrection.items ?? []).map((item) => {
+        const field = item.formField;
+        return {
+          itemId: item.id,
+          formFieldId: item.formFieldId,
+          fieldKey: field?.fieldKey ?? '',
+          label: field?.label ?? '',
+          fieldType: field?.fieldType ?? '',
+          required: field?.required ?? false,
+          comment: item.comment,
+          currentValue: valueByFieldId.has(item.formFieldId)
+            ? valueByFieldId.get(item.formFieldId)
+            : null,
+        };
+      }),
+    },
+  };
+}
+
+export function mapCorrectionToReturnApplicationDto(
+  openCorrection: CorrectionRequest,
+): ReturnApplicationDto {
+  return {
+    overallComment: openCorrection.overallComment ?? undefined,
+    fields: (openCorrection.items ?? []).map((item) => ({
+      fieldId: item.formFieldId,
+      comment: item.comment ?? undefined,
+    })),
+  };
 }

@@ -26,6 +26,10 @@ import {
 } from "@/components/ui/tooltip";
 import { createSubmissionCsvExportAction } from "@/app/(authorized)/space/[spaceId]/submissions/actions";
 import type { ExportJobResponse } from "@/lib/schema";
+import {
+  buildSubmissionCsvExportDownloadUrl,
+  fetchSubmissionCsvExportJob,
+} from "./submission-csv-export-polling";
 
 type SubmissionCsvExportControlsProps = {
   exportFormOptions: Array<{ id: string; name: string }>;
@@ -54,7 +58,7 @@ export function SubmissionCsvExportControls({
     if (!jobId) {
       return null;
     }
-    return `/space/${encodeURIComponent(spaceId)}/submissions/export-jobs/${encodeURIComponent(jobId)}/download`;
+    return buildSubmissionCsvExportDownloadUrl(spaceId, jobId);
   }, [jobId, spaceId]);
 
   useEffect(() => {
@@ -70,15 +74,8 @@ export function SubmissionCsvExportControls({
     let cancelled = false;
     const intervalId = window.setInterval(async () => {
       try {
-        const response = await fetch(
-          `/space/${encodeURIComponent(spaceId)}/submissions/export-jobs/${encodeURIComponent(jobId)}`,
-          { cache: "no-store" },
-        );
-        if (!response.ok) {
-          return;
-        }
-        const job = (await response.json()) as ExportJobResponse;
-        if (!cancelled) {
+        const job = await fetchSubmissionCsvExportJob(spaceId, jobId);
+        if (!cancelled && job) {
           setStatus(job.status);
         }
       } catch {

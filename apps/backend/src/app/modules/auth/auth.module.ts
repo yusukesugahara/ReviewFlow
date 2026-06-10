@@ -15,6 +15,7 @@ import { Tenant } from '../../../models/entities/tenant.entity';
 import { User } from '../../../models/entities/user.entity';
 import { AuthRepository } from '../../../models/repositories/auth.repository';
 import { AuthController } from './controllers/auth.controller';
+import { AuthPasswordResetService } from './services/auth-password-reset.service';
 import { AuthService } from './services/auth.service';
 
 const jwtModule = JwtModule.registerAsync({
@@ -43,6 +44,7 @@ const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthPasswordResetService,
     AuthRepository,
     JwtStrategy,
     { provide: APP_GUARD, useClass: InternalApiKeyGuard },

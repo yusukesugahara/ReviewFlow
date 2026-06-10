@@ -1,4 +1,18 @@
-import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
+import {
+  errorMessageFromBody,
+  isApiFailure,
+  throwIfApiResponseFailed,
+  toApiFailure,
+} from "@/lib/server/api-failure";
+
+function captureThrownValue(fn: () => void): unknown {
+  try {
+    fn();
+  } catch (error) {
+    return error;
+  }
+  throw new Error("expected function to throw");
+}
 
 describe("api failure helpers", () => {
   // テスト内容: API failure の shape を判定できることを確認する
@@ -20,5 +34,37 @@ describe("api failure helpers", () => {
   it("returns fallback when no usable message exists", () => {
     expect(errorMessageFromBody({ message: "" }, "fallback")).toBe("fallback");
     expect(errorMessageFromBody("invalid", "fallback")).toBe("fallback");
+  });
+
+  // テスト内容: openapi-fetch のレスポンス形状から API failure を作れることを確認する
+  it("builds API failure from response-like objects", () => {
+    expect(
+      toApiFailure({
+        response: { ok: false, status: 403 },
+        error: { message: "forbidden" },
+      }),
+    ).toEqual({
+      status: 403,
+      body: { message: "forbidden" },
+    });
+  });
+
+  // テスト内容: failed response だけ例外化することを確認する
+  it("throws only when response failed", () => {
+    expect(() =>
+      throwIfApiResponseFailed({
+        response: { ok: true, status: 200 },
+        data: { status: 200, data: { ok: true } },
+      }),
+    ).not.toThrow();
+
+    expect(
+      captureThrownValue(() =>
+        throwIfApiResponseFailed({
+          response: { ok: false, status: 500 },
+          error: { message: "failed" },
+        }),
+      ),
+    ).toEqual({ status: 500, body: { message: "failed" } });
   });
 });

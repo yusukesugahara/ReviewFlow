@@ -3,14 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createExportJobSchema } from "@/lib/auth-schema";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-import type {
-  CreateExportJobBody,
-  CreateExportJobSuccessJson,
-  ExportJobResponse,
-} from "@/lib/schema";
+import type { CreateExportJobBody, ExportJobResponse } from "@/lib/schema";
 
 export async function createSubmissionCsvExportAction(
   spaceId: string,
@@ -42,15 +39,11 @@ export async function createSubmissionCsvExportAction(
       body,
       headers: { Authorization: `Bearer ${accessToken}` },
     });
-    const data: CreateExportJobSuccessJson | undefined = response.data;
-    if (!response.response.ok || !data) {
-      throw response.response.status;
-    }
-    job = unwrapData<ExportJobResponse>(data);
+    job = unwrapResponseData<ExportJobResponse>(response);
   } catch (error) {
     const message =
-      typeof error === "number"
-        ? `CSVジョブの作成に失敗しました（status: ${error}）`
+      isApiFailure(error)
+        ? `CSVジョブの作成に失敗しました（status: ${error.status}）`
         : "CSVジョブの作成に失敗しました";
     redirectToSubmissions(spaceId, { toast: "error", message });
   }

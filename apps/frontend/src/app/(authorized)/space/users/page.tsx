@@ -1,5 +1,5 @@
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
@@ -20,11 +20,7 @@ import { SpaceUsersErrorView, SpaceUsersView } from "./view";
 
 async function listSpaces(headers: { Authorization: string }): Promise<SpaceUsersGroup[]> {
   const response = await client.GET("/groups", { headers });
-  const data: GroupsListSuccessJson | undefined = response.data;
-  if (!response.response.ok || !data) {
-    throw { status: response.response.status };
-  }
-  return unwrapData<GroupsListSuccessJson["data"]>(data).groups ?? [];
+  return unwrapResponseData<GroupsListSuccessJson["data"]>(response).groups ?? [];
 }
 
 async function listSpaceMembers(
@@ -35,11 +31,9 @@ async function listSpaceMembers(
     params: { path: { groupId } },
     headers,
   });
-  const data: GroupMembersListSuccessJson | undefined = response.data;
-  if (!response.response.ok || !data) {
-    throw { status: response.response.status };
-  }
-  return unwrapData<GroupMembersListSuccessJson["data"]>(data).members.map((member) => ({
+  return unwrapResponseData<GroupMembersListSuccessJson["data"]>(
+    response,
+  ).members.map((member) => ({
     ...member,
     name: typeof member.name === "string" ? member.name : null,
   }));
@@ -53,11 +47,9 @@ async function listAvailableUsers(
     params: { path: { groupId } },
     headers,
   });
-  const data: GroupAvailableUsersSuccessJson | undefined = response.data;
-  if (!response.response.ok || !data) {
-    throw { status: response.response.status };
-  }
-  return unwrapData<GroupAvailableUsersSuccessJson["data"]>(data).users.map((user) => ({
+  return unwrapResponseData<GroupAvailableUsersSuccessJson["data"]>(
+    response,
+  ).users.map((user) => ({
     ...user,
     name: typeof user.name === "string" ? user.name : null,
   }));

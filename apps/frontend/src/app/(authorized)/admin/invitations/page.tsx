@@ -1,5 +1,6 @@
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { TenantUserSummary, TenantUsersListResponse } from "@/lib/schema";
@@ -30,10 +31,7 @@ export default async function AdminInvitationsPage({
       }),
       getCurrentSessionUser(),
     ]);
-    if (!response.response.ok || !response.data) {
-      throw response.response.status;
-    }
-    const users = unwrapData<TenantUsersListResponse>(response.data).users;
+    const users = unwrapResponseData<TenantUsersListResponse>(response).users;
     return (
       <AdminInvitationsView
         {...params}
@@ -43,8 +41,8 @@ export default async function AdminInvitationsPage({
     );
   } catch (error) {
     const message =
-      typeof error === "number"
-        ? `ユーザ一覧の取得に失敗しました（status: ${error}）`
+      isApiFailure(error)
+        ? `ユーザ一覧の取得に失敗しました（status: ${error.status}）`
         : "ユーザ一覧の取得に失敗しました";
     return (
       <AdminInvitationsView

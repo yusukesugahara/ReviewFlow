@@ -2,12 +2,13 @@
 
 import { redirect } from "next/navigation";
 import { requestFormAccessSchema } from "@/lib/auth-schema";
-import { errorMessageFromBody } from "@/lib/server/api-failure";
+import {
+  errorMessageFromBody,
+  isApiFailure,
+} from "@/lib/server/api-failure";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
-import type {
-  RequestFormAccessBody,
-  RequestFormAccessSuccessJson,
-} from "@/lib/schema";
+import type { RequestFormAccessBody } from "@/lib/schema";
 
 const REQUEST_ACCESS_FAILED_MESSAGE =
   "フォーム案内の送信に失敗しました。時間をおいて再度お試しください。";
@@ -97,15 +98,11 @@ export async function requestAccessAction(formData: FormData): Promise<void> {
         body,
       },
     );
-    const data: RequestFormAccessSuccessJson | undefined = response.data;
-    if (!response.response.ok || !data) {
-      failureMessage = requestAccessFailureMessage(
-        response.error,
-        Boolean(parsed.data.formDefinitionId),
-      );
-    }
-  } catch {
-    failureMessage = REQUEST_ACCESS_FAILED_MESSAGE;
+    unwrapResponseData<unknown>(response);
+  } catch (error) {
+    failureMessage = isApiFailure(error)
+      ? requestAccessFailureMessage(error.body, Boolean(parsed.data.formDefinitionId))
+      : REQUEST_ACCESS_FAILED_MESSAGE;
   }
 
   if (failureMessage) {

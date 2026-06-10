@@ -7,6 +7,7 @@ import { User } from '../../../models/entities/user.entity';
 import { ApprovalFlowsRepository } from '../../../models/repositories/approval-flows.repository';
 import { GroupsModule } from '../groups/groups.module';
 import { ApprovalFlowsController } from './controllers/approval-flows.controller';
+import { ApprovalFlowMutationService } from './services/approval-flow-mutation.service';
 import { ApprovalFlowsService } from './services/approval-flows.service';
 
 @Module({
@@ -15,7 +16,11 @@ import { ApprovalFlowsService } from './services/approval-flows.service';
     GroupsModule,
   ],
   controllers: [ApprovalFlowsController],
-  providers: [ApprovalFlowsService, ApprovalFlowsRepository],
+  providers: [
+    ApprovalFlowsService,
+    ApprovalFlowMutationService,
+    ApprovalFlowsRepository,
+  ],
   exports: [ApprovalFlowsService],
 })
 export class ApprovalFlowsModule {}

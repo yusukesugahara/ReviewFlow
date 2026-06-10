@@ -5,7 +5,7 @@ import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { TENANT_ROLES } from "@/lib/constants/roles";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type { GroupMembersListSuccessJson, GroupsListSuccessJson } from "@/lib/schema";
 import type {
   SpaceNewApplicationGroup,
@@ -30,12 +30,14 @@ export default async function SpaceNewApplicationPage({
     client.GET("/groups", { headers: authHeaders }),
     getCurrentSessionUser(),
   ]);
-  const groupsData: GroupsListSuccessJson | undefined = groupsRaw.data;
-  if (!groupsRaw.response.ok || !groupsData) {
+  let groups: SpaceNewApplicationGroup[];
+  try {
+    groups = unwrapResponseData<GroupsListSuccessJson["data"]>(
+      groupsRaw,
+    ).groups as SpaceNewApplicationGroup[];
+  } catch {
     redirect("/login");
   }
-  const groups = unwrapData<GroupsListSuccessJson["data"]>(groupsData)
-    .groups as SpaceNewApplicationGroup[];
   const currentGroup = groups.find((group) => group.id === spaceId);
   const canManageSpace =
     me?.roles.includes(TENANT_ROLES.admin) ||
@@ -46,16 +48,17 @@ export default async function SpaceNewApplicationPage({
       params: { path: { groupId: spaceId } },
       headers: authHeaders,
     });
-    const membersData: GroupMembersListSuccessJson | undefined = membersRaw.data;
-    if (!membersRaw.response.ok || !membersData) {
+    let members: SpaceNewApplicationMember[];
+    try {
+      members = unwrapResponseData<GroupMembersListSuccessJson["data"]>(
+        membersRaw,
+      ).members.map((member) => ({
+        ...member,
+        name: typeof member.name === "string" ? member.name : null,
+      })) as SpaceNewApplicationMember[];
+    } catch {
       redirect("/space");
     }
-    const members =
-      unwrapData<GroupMembersListSuccessJson["data"]>(membersData)
-        .members.map((member) => ({
-          ...member,
-          name: typeof member.name === "string" ? member.name : null,
-        })) as SpaceNewApplicationMember[];
     assignees = members.map((member) => ({
       id: member.userId,
       label: member.name ? `${member.name} (${member.email})` : member.email,

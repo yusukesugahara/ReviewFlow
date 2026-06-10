@@ -8,7 +8,7 @@ import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { isProduction } from "@/lib/env";
 import { client } from "@/lib/server/backend-fetch";
-import { errorMessageFromBody } from "@/lib/server/api-failure";
+import { errorMessageFromBody, toApiFailure } from "@/lib/server/api-failure";
 import { parseAuthLoginSuccess } from "@/lib/server/auth-response-schema";
 import type { LoginRequestBody } from "@/lib/schema";
 
@@ -75,10 +75,11 @@ async function postAuthLogin(
   const response = await client.POST("/auth/login", { body });
   const data = parseAuthLoginSuccess(response.data);
   if (!response.response.ok || !data) {
+    const failure = toApiFailure(response);
     return {
       ok: false,
-      status: response.response.status,
-      body: response.error ?? response.data,
+      status: failure.status,
+      body: failure.body,
     };
   }
   return { ok: true, accessToken: data.data.access_token };

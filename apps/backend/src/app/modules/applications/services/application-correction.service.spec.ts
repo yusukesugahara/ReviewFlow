@@ -3,7 +3,8 @@ import { CorrectionRequestStatus } from '../../../../models/constants/correction
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import type { Application } from '../../../../models/entities/application.entity';
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationCorrectionService } from './application-correction.service';
 
 const app = (overrides: Partial<Application> = {}): Application =>
@@ -53,23 +54,28 @@ const correction = (
  * @group application-correction-service
  */
 describe('ApplicationCorrectionService', () => {
-  let applicationsRepository: {
+  let formDefinitionsRepository: {
+    findTemplateByIdInGroup: jest.Mock;
+  };
+  let correctionRepository: {
     findLatestOpenCorrectionWithItems: jest.Mock;
     findOpenCorrection: jest.Mock;
-    findTemplateByIdInGroup: jest.Mock;
     listCorrections: jest.Mock;
   };
   let service: ApplicationCorrectionService;
 
   beforeEach(() => {
-    applicationsRepository = {
+    formDefinitionsRepository = {
+      findTemplateByIdInGroup: jest.fn(),
+    };
+    correctionRepository = {
       findLatestOpenCorrectionWithItems: jest.fn(),
       findOpenCorrection: jest.fn(),
-      findTemplateByIdInGroup: jest.fn(),
       listCorrections: jest.fn(),
     };
     service = new ApplicationCorrectionService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      formDefinitionsRepository as unknown as FormDefinitionsRepository,
+      correctionRepository as unknown as ApplicationCorrectionRepository,
     );
   });
 
@@ -77,7 +83,7 @@ describe('ApplicationCorrectionService', () => {
    * open correction と現在値を修正対象レスポンスに変換すること
    */
   it('builds correction target response with current values', async () => {
-    applicationsRepository.findLatestOpenCorrectionWithItems.mockResolvedValue(
+    correctionRepository.findLatestOpenCorrectionWithItems.mockResolvedValue(
       correction(),
     );
 
@@ -99,7 +105,7 @@ describe('ApplicationCorrectionService', () => {
    * open correction が無い場合は null を返すこと
    */
   it('returns null target when there is no open correction', async () => {
-    applicationsRepository.findLatestOpenCorrectionWithItems.mockResolvedValue(
+    correctionRepository.findLatestOpenCorrectionWithItems.mockResolvedValue(
       null,
     );
 
@@ -113,8 +119,8 @@ describe('ApplicationCorrectionService', () => {
    * 差し戻しメール再送用 context を組み立てること
    */
   it('builds return email context', async () => {
-    applicationsRepository.findOpenCorrection.mockResolvedValue(correction());
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue({
+    correctionRepository.findOpenCorrection.mockResolvedValue(correction());
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue({
       id: 'template-1',
       name: 'Expense',
       fields: [],

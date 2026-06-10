@@ -4,9 +4,13 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { createInvitationSchema } from "@/lib/auth-schema";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
+import {
+  errorMessageFromBody,
+  isApiFailure,
+  throwIfApiResponseFailed,
+} from "@/lib/server/api-failure";
 import type {
   CreateInvitationBody,
   CreateInvitationSuccessJson,
@@ -96,16 +100,13 @@ export async function createInvitationAction(
   }
 
   const body: CreateInvitationBody = parsed.data;
-  let createdRaw: CreateInvitationSuccessJson;
+  let created: CreateInvitationSuccessJson["data"];
   try {
     const response = await client.POST("/invitations", {
       body,
       headers: await authHeadersOrRedirect(),
     });
-    if (!response.response.ok || !response.data) {
-      throw { status: response.response.status, body: response.error };
-    }
-    createdRaw = response.data;
+    created = unwrapResponseData<CreateInvitationSuccessJson["data"]>(response);
   } catch (error) {
     const nextParams = new URLSearchParams({
       toast: "error",
@@ -114,7 +115,6 @@ export async function createInvitationAction(
     redirect(`/admin/invitations?${nextParams.toString()}`);
   }
 
-  const created = unwrapData<CreateInvitationSuccessJson["data"]>(createdRaw);
   revalidatePath("/admin/invitations");
 
   const nextParams = new URLSearchParams({
@@ -132,9 +132,7 @@ export async function deleteUserAction(userId: string): Promise<void> {
       params: { path: { id: userId } },
       headers: await authHeadersOrRedirect(),
     });
-    if (!response.response.ok) {
-      throw { status: response.response.status, body: response.error };
-    }
+    throwIfApiResponseFailed(response);
   } catch (error) {
     const nextParams = new URLSearchParams({
       toast: "error",
@@ -153,9 +151,7 @@ export async function restoreUserAction(userId: string): Promise<void> {
       params: { path: { id: userId } },
       headers: await authHeadersOrRedirect(),
     });
-    if (!response.response.ok) {
-      throw { status: response.response.status, body: response.error };
-    }
+    throwIfApiResponseFailed(response);
   } catch (error) {
     const nextParams = new URLSearchParams({
       toast: "error",

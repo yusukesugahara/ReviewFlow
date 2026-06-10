@@ -1,7 +1,7 @@
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type { ApplicationRow } from "@/components/space/space-applications.types";
 import type {
   ApplicationsListSuccessJson,
@@ -9,6 +9,7 @@ import type {
   ExportJobResponse,
   GetExportJobSuccessJson,
 } from "@/lib/schema";
+import { normalizeSubmissionSearchParams } from "./_components/space-submissions.helpers";
 import type { SpaceSubmissionsPageProps } from "./types";
 import { SpaceSubmissionsView } from "./view";
 
@@ -18,16 +19,7 @@ export default async function SpaceSubmissionsPage({
 }: SpaceSubmissionsPageProps) {
   const { spaceId } = await params;
   const query = await searchParams;
-  const filters = {
-    applicant: normalizeSearchValue(query?.applicant),
-    createdFrom: normalizeSearchValue(query?.createdFrom),
-    createdTo: normalizeSearchValue(query?.createdTo),
-    form: normalizeSearchValue(query?.form),
-    page: normalizePage(query?.page),
-    status: normalizeSearchValue(query?.status),
-    summary: normalizeSummaryFilter(query?.summary),
-  };
-  const jobId = normalizeSearchValue(query?.jobId);
+  const { filters, jobId } = normalizeSubmissionSearchParams(query);
   const authHeaders = await authHeadersOrRedirect();
 
   try {
@@ -44,25 +36,21 @@ export default async function SpaceSubmissionsPage({
         : Promise.resolve(null),
       client.POST("/auth/me", { headers: authHeaders }),
     ]);
-    const applicationsData: ApplicationsListSuccessJson | undefined = applicationsRaw.data;
-    if (!applicationsRaw.response.ok || !applicationsData) {
-      throw { status: applicationsRaw.response.status };
-    }
     const latestExportJob =
       jobRaw?.response.ok && jobRaw.data
-        ? unwrapData<ExportJobResponse>(
-            jobRaw.data as GetExportJobSuccessJson,
+        ? unwrapResponseData<ExportJobResponse>(
+            jobRaw as typeof jobRaw & { data: GetExportJobSuccessJson },
           )
         : null;
     const currentUserId =
       meRaw.response.ok && meRaw.data
-        ? unwrapData<AuthMeSuccessJson["data"]>(meRaw.data).id
+        ? unwrapResponseData<AuthMeSuccessJson["data"]>(meRaw).id
         : null;
 
     return (
       <SpaceSubmissionsView
         applications={
-          unwrapData<ApplicationsListSuccessJson["data"]>(applicationsData)
+          unwrapResponseData<ApplicationsListSuccessJson["data"]>(applicationsRaw)
             .applications as ApplicationRow[]
         }
         filters={filters}
@@ -83,27 +71,4 @@ export default async function SpaceSubmissionsPage({
       />
     );
   }
-}
-
-function normalizeSearchValue(value?: string): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizePage(value?: string): number {
-  const page = Number(value);
-  return Number.isInteger(page) && page > 0 ? page : 1;
-}
-
-function normalizeSummaryFilter(
-  value?: string,
-): "" | "myNeedsAction" | "spaceNeedsAction" | "returned" | "recentProcessed" {
-  if (
-    value === "myNeedsAction" ||
-    value === "spaceNeedsAction" ||
-    value === "returned" ||
-    value === "recentProcessed"
-  ) {
-    return value;
-  }
-  return "";
 }

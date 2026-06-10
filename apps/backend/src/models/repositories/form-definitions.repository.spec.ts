@@ -2,21 +2,13 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Not, Repository } from 'typeorm';
 import { FormDefinitionStatus } from '../constants/form-definition-status';
-import { FormFieldType } from '../constants/form-field-type';
 import { FormDefinition } from '../entities/form-definition.entity';
-import { FormField } from '../entities/form-field.entity';
 import { FormDefinitionsRepository } from './form-definitions.repository';
 
 describe('FormDefinitionsRepository', () => {
   let repository: FormDefinitionsRepository;
   let definitions: jest.Mocked<
     Pick<Repository<FormDefinition>, 'find' | 'findOne' | 'create' | 'save'>
-  >;
-  let fields: jest.Mocked<
-    Pick<
-      Repository<FormField>,
-      'find' | 'findOne' | 'create' | 'save' | 'remove'
-    >
   >;
 
   beforeEach(async () => {
@@ -28,24 +20,11 @@ describe('FormDefinitionsRepository', () => {
     } as unknown as jest.Mocked<
       Pick<Repository<FormDefinition>, 'find' | 'findOne' | 'create' | 'save'>
     >;
-    fields = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      create: jest.fn((row: Partial<FormField>) => row as FormField),
-      save: jest.fn((row: FormField | FormField[]) => Promise.resolve(row)),
-      remove: jest.fn((row: FormField) => Promise.resolve(row)),
-    } as unknown as jest.Mocked<
-      Pick<
-        Repository<FormField>,
-        'find' | 'findOne' | 'create' | 'save' | 'remove'
-      >
-    >;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FormDefinitionsRepository,
         { provide: getRepositoryToken(FormDefinition), useValue: definitions },
-        { provide: getRepositoryToken(FormField), useValue: fields },
       ],
     }).compile();
 
@@ -91,31 +70,44 @@ describe('FormDefinitionsRepository', () => {
     });
   });
 
-  it('creates fields with normalized params supplied by service', async () => {
-    await repository.createField({
+  it('finds a template by id within the group', async () => {
+    definitions.findOne.mockResolvedValue(null);
+
+    await repository.findTemplateByIdInGroup({
       tenantId: 'tenant-1',
-      formDefinitionId: 'definition-1',
-      fieldKey: 'amount',
-      label: 'Amount',
-      fieldType: FormFieldType.NUMBER,
-      required: true,
-      placeholder: null,
-      helpText: null,
-      optionsJson: null,
-      sortOrder: 0,
+      groupId: 'group-1',
+      formDefinitionId: 'form-1',
+      onlyPublished: true,
     });
 
-    expect(fields.create).toHaveBeenCalledWith({
+    expect(definitions.findOne).toHaveBeenCalledWith({
+      where: {
+        id: 'form-1',
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        status: FormDefinitionStatus.PUBLISHED,
+      },
+      relations: ['fields'],
+    });
+  });
+
+  it('finds published templates for application creation', async () => {
+    definitions.find.mockResolvedValue([]);
+
+    await repository.findPublishedTemplatesForApplicationCreation({
       tenantId: 'tenant-1',
-      formDefinitionId: 'definition-1',
-      fieldKey: 'amount',
-      label: 'Amount',
-      fieldType: FormFieldType.NUMBER,
-      required: true,
-      placeholder: null,
-      helpText: null,
-      optionsJson: null,
-      sortOrder: 0,
+      groupId: 'group-1',
+      formDefinitionId: 'form-1',
+    });
+
+    expect(definitions.find).toHaveBeenCalledWith({
+      where: {
+        id: 'form-1',
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        status: FormDefinitionStatus.PUBLISHED,
+      },
+      relations: ['fields'],
     });
   });
 });

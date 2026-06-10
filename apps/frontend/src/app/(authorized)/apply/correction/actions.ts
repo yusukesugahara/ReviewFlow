@@ -8,6 +8,7 @@ import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-fi
 import { validateRequiredDynamicFields } from "@/components/applications/dynamic-field-validation";
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { applicantHeaders } from "../form/server";
 import type { PublicCorrectionSubmitState } from "./types";
 
@@ -61,9 +62,7 @@ export async function submitPublicCorrectionAction(
       body: { values },
       headers,
     });
-    if (!patchResponse.response.ok || !patchResponse.data) {
-      throw { status: patchResponse.response.status, body: patchResponse.error };
-    }
+    unwrapResponseData<unknown>(patchResponse);
 
     const resubmitResponse = await client.POST(
       "/public/applications/{id}/resubmit",
@@ -72,12 +71,7 @@ export async function submitPublicCorrectionAction(
         headers,
       },
     );
-    if (!resubmitResponse.response.ok || !resubmitResponse.data) {
-      throw {
-        status: resubmitResponse.response.status,
-        body: resubmitResponse.error,
-      };
-    }
+    unwrapResponseData<unknown>(resubmitResponse);
   } catch (error) {
     const message = isApiFailure(error)
       ? errorMessageFromBody(error.body, "submit_failed")

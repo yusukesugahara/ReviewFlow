@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { GroupsListSuccessJson } from "@/lib/schema";
@@ -42,7 +42,7 @@ async function getFallbackSpaceContext(): Promise<FallbackSpaceContext> {
   ]);
   const spaces =
     spacesRaw.response.ok && spacesRaw.data
-      ? unwrapData<GroupsListSuccessJson["data"]>(spacesRaw.data).groups ?? []
+      ? unwrapResponseData<GroupsListSuccessJson["data"]>(spacesRaw).groups ?? []
       : [];
   return { spaceId: spaces[0]?.id ?? "", userRoles: me?.roles ?? [] };
 }

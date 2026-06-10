@@ -24,14 +24,13 @@ import { SubmissionStatusFilterSelect } from "./submission-status-filter-select"
 import type { ApplicationRow } from "@/components/space/space-applications.types";
 import {
   buildExportFormOptions,
+  buildSubmittedApplications,
   buildSubmissionsPageHref,
+  buildSubmissionSummaryCounts,
   buildSummaryFilterHref,
   filterApplications,
-  isFormSetupApplication,
-  isAssignedToCurrentUser,
-  isRecentlyProcessedApplication,
-  isReturnedApplication,
-  isSpaceNeedsActionApplication,
+  hasSubmissionFilters,
+  paginateApplications,
   type SubmissionFilters,
 } from "./space-submissions.helpers";
 
@@ -61,36 +60,23 @@ export function SpaceSubmissionsPageContent({
     );
   }
 
-  const submittedApplications = applications.filter((row) => !isFormSetupApplication(row));
+  const submittedApplications = buildSubmittedApplications(applications);
   const exportFormOptions = buildExportFormOptions(submittedApplications);
-  const myNeedsActionApplications = submittedApplications.filter((row) =>
-    isAssignedToCurrentUser(row, currentUserId),
-  );
-  const spaceNeedsActionApplications = submittedApplications.filter(
-    isSpaceNeedsActionApplication,
-  );
-  const returnedApplications = submittedApplications.filter(isReturnedApplication);
-  const recentProcessedApplications = submittedApplications.filter(
-    isRecentlyProcessedApplication,
+  const summaryCounts = buildSubmissionSummaryCounts(
+    submittedApplications,
+    currentUserId,
   );
   const filteredApplications = filterApplications(
     submittedApplications,
     filters,
     currentUserId,
   );
-  const hasFilters =
-    filters.applicant.length > 0 ||
-    filters.createdFrom.length > 0 ||
-    filters.createdTo.length > 0 ||
-    filters.form.length > 0 ||
-    filters.status.length > 0 ||
-    filters.summary.length > 0;
-  const totalPages = Math.max(1, Math.ceil(filteredApplications.length / PAGE_SIZE));
-  const currentPage = Math.min(filters.page, totalPages);
-  const paginatedApplications = filteredApplications.slice(
-    (currentPage - 1) * PAGE_SIZE,
-    currentPage * PAGE_SIZE,
+  const { currentPage, paginatedApplications, totalPages } = paginateApplications(
+    filteredApplications,
+    filters.page,
+    PAGE_SIZE,
   );
+  const hasFilters = hasSubmissionFilters(filters);
 
   return (
     <div className="space-y-6">
@@ -99,28 +85,28 @@ export function SpaceSubmissionsPageContent({
           href={buildSummaryFilterHref(spaceId, "myNeedsAction")}
           isActive={filters.summary === "myNeedsAction"}
           label="あなたの対応が必要"
-          value={myNeedsActionApplications.length}
+          value={summaryCounts.myNeedsAction}
           tone="blue"
         />
         <SummaryCard
           href={buildSummaryFilterHref(spaceId, "spaceNeedsAction")}
           isActive={filters.summary === "spaceNeedsAction"}
           label="スペース内で対応が必要"
-          value={spaceNeedsActionApplications.length}
+          value={summaryCounts.spaceNeedsAction}
           tone="amber"
         />
         <SummaryCard
           href={buildSummaryFilterHref(spaceId, "returned")}
           isActive={filters.summary === "returned"}
           label="差し戻し後、再申請待ち"
-          value={returnedApplications.length}
+          value={summaryCounts.returned}
           tone="rose"
         />
         <SummaryCard
           href={buildSummaryFilterHref(spaceId, "recentProcessed")}
           isActive={filters.summary === "recentProcessed"}
           label="直近7日間に対応"
-          value={recentProcessedApplications.length}
+          value={summaryCounts.recentProcessed}
           tone="emerald"
         />
       </div>

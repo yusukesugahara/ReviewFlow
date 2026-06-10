@@ -7,9 +7,14 @@ import type { ApplicationFieldValue } from '../../../../models/entities/applicat
 import { Application } from '../../../../models/entities/application.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
+import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
+import { ApplicationPatchPolicy } from '../policies/application-patch.policy';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
+import { ApplicationFieldValuePatchBuilder } from './application-field-value-patch.builder';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
+import { ApplicationPatchContextLoader } from './application-patch-context.loader';
 
 const app = (overrides: Partial<Application> = {}): Application =>
   ({
@@ -62,25 +67,45 @@ const expectErrorCode = async (
  */
 describe('ApplicationFieldValuePatchService', () => {
   let service: ApplicationFieldValuePatchService;
-  let applicationsRepository: {
+  let formDefinitionsRepository: {
     findTemplateByIdInGroup: jest.Mock;
+  };
+  let correctionRepository: {
     findOpenCorrection: jest.Mock;
+  };
+  let submissionRepository: {
     findExistingFieldValues: jest.Mock;
     createFieldValue: jest.Mock;
     saveApplicationPatch: jest.Mock;
   };
 
   beforeEach(() => {
-    applicationsRepository = {
+    formDefinitionsRepository = {
       findTemplateByIdInGroup: jest.fn(),
+    };
+    correctionRepository = {
       findOpenCorrection: jest.fn(),
+    };
+    submissionRepository = {
       findExistingFieldValues: jest.fn(),
       createFieldValue: jest.fn((value: object) => ({ ...value })),
       saveApplicationPatch: jest.fn(),
     };
+    const formValueValidator = new ApplicationFormValueValidator();
+    const patchContextLoader = new ApplicationPatchContextLoader(
+      formDefinitionsRepository as unknown as FormDefinitionsRepository,
+      correctionRepository as unknown as ApplicationCorrectionRepository,
+      new ApplicationPatchPolicy(),
+      formValueValidator,
+    );
+    const fieldValuePatchBuilder = new ApplicationFieldValuePatchBuilder(
+      submissionRepository as unknown as ApplicationSubmissionRepository,
+      formValueValidator,
+    );
     service = new ApplicationFieldValuePatchService(
-      applicationsRepository as unknown as ApplicationsRepository,
-      new ApplicationFormValueValidator(),
+      submissionRepository as unknown as ApplicationSubmissionRepository,
+      patchContextLoader,
+      fieldValuePatchBuilder,
     );
   });
 
@@ -93,17 +118,15 @@ describe('ApplicationFieldValuePatchService', () => {
       formFieldId: 'field-title',
       valueJson: 'old',
     } as ApplicationFieldValue;
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
-    applicationsRepository.findExistingFieldValues.mockResolvedValue([
-      existing,
-    ]);
+    submissionRepository.findExistingFieldValues.mockResolvedValue([existing]);
 
     await service.applyPatch('tenant-1', app(), { values: { title: 'new' } });
 
     expect(existing.valueJson).toBe('new');
-    expect(applicationsRepository.saveApplicationPatch).toHaveBeenCalledWith(
+    expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ values: [existing] }),
     );
   });
@@ -112,16 +135,16 @@ describe('ApplicationFieldValuePatchService', () => {
    * フォーム定義を差し替えると既存 field values を削除すること
    */
   it('deletes existing values when changing form definition', async () => {
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field({ id: 'field-next' })]),
     );
-    applicationsRepository.findExistingFieldValues.mockResolvedValue([]);
+    submissionRepository.findExistingFieldValues.mockResolvedValue([]);
 
     await service.applyPatch('tenant-1', app(), {
       formDefinitionId: 'template-next',
     });
 
-    expect(applicationsRepository.saveApplicationPatch).toHaveBeenCalledWith(
+    expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ formDefinitionId: 'template-next' }),
     );
   });
@@ -130,16 +153,16 @@ describe('ApplicationFieldValuePatchService', () => {
    * draft / published の公開状態だけを更新できること
    */
   it('updates draft or published status without field value changes', async () => {
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
-    applicationsRepository.findExistingFieldValues.mockResolvedValue([]);
+    submissionRepository.findExistingFieldValues.mockResolvedValue([]);
 
     await service.applyPatch('tenant-1', app(), {
       status: ApplicationStatus.PUBLISHED,
     });
 
-    expect(applicationsRepository.saveApplicationPatch).toHaveBeenCalledWith(
+    expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ status: ApplicationStatus.PUBLISHED }),
     );
   });
@@ -148,10 +171,10 @@ describe('ApplicationFieldValuePatchService', () => {
    * 差し戻し中は correction 対象外フィールドの更新を拒否すること
    */
   it('rejects returned patches outside correction target fields', async () => {
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field({ id: 'field-title' })]),
     );
-    applicationsRepository.findOpenCorrection.mockResolvedValue({
+    correctionRepository.findOpenCorrection.mockResolvedValue({
       id: 'correction-1',
       status: CorrectionRequestStatus.OPEN,
       items: [{ formFieldId: 'field-other' }],

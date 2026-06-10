@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { GroupsListSuccessJson } from "@/lib/schema";
 import type { ApplicationSetupRedirectPageProps } from "./types";
@@ -19,7 +19,7 @@ export default async function AdminApplicationSetupPage({
   });
   const spaces =
     spacesRaw.response.ok && spacesRaw.data
-      ? unwrapData<GroupsListSuccessJson["data"]>(spacesRaw.data).groups ?? []
+      ? unwrapResponseData<GroupsListSuccessJson["data"]>(spacesRaw).groups ?? []
       : [];
   const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
   if (!spaceId) {
