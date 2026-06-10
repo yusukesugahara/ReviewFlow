@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
 import { FormDefinitionsController } from './controllers/form-definitions.controller';
+import { FormAccessRequestService } from './services/form-access-request.service';
 import { FormDefinitionFieldsService } from './services/form-definition-fields.service';
 import { FormDefinitionsService } from './services/form-definitions.service';
 
@@ -24,6 +25,7 @@ import { FormDefinitionsService } from './services/form-definitions.service';
   controllers: [FormDefinitionsController],
   providers: [
     FormDefinitionsService,
+    FormAccessRequestService,
     FormDefinitionFieldsService,
     FormDefinitionsRepository,
     FormFieldsRepository,

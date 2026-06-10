@@ -5,9 +5,9 @@ import { FormFieldType } from '../../../../models/constants/form-field-type';
 import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
-import { AuthService } from '../../auth/services/auth.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
-import { MailService } from '../../mail/services/mail.service';
+import { FormAccessRequestService } from './form-access-request.service';
 import { FormDefinitionFieldsService } from './form-definition-fields.service';
 import { FormDefinitionsService } from './form-definitions.service';
 
@@ -28,6 +28,12 @@ describe('FormDefinitionsService', () => {
     Pick<
       FormDefinitionFieldsService,
       'addField' | 'moveField' | 'deleteField' | 'updateFieldSettings'
+    >
+  >;
+  let formAccessRequests: jest.Mocked<
+    Pick<
+      FormAccessRequestService,
+      'getPublishedDefinitionForApplicant' | 'requestAccess'
     >
   >;
   let spaceAccess: jest.Mocked<
@@ -52,6 +58,10 @@ describe('FormDefinitionsService', () => {
       deleteField: jest.fn(),
       updateFieldSettings: jest.fn(),
     };
+    formAccessRequests = {
+      getPublishedDefinitionForApplicant: jest.fn(),
+      requestAccess: jest.fn(),
+    };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
       assertCanUseGroup: jest.fn().mockResolvedValue(undefined),
@@ -68,15 +78,11 @@ describe('FormDefinitionsService', () => {
           provide: FormDefinitionFieldsService,
           useValue: formDefinitionFields,
         },
+        {
+          provide: FormAccessRequestService,
+          useValue: formAccessRequests,
+        },
         { provide: SpaceAccessService, useValue: spaceAccess },
-        {
-          provide: MailService,
-          useValue: { sendApplicationAccessEmail: jest.fn() },
-        },
-        {
-          provide: AuthService,
-          useValue: { issueApplicantAccessToken: jest.fn() },
-        },
       ],
     }).compile();
 
@@ -220,5 +226,48 @@ describe('FormDefinitionsService', () => {
     expect(out).toBe(definition);
     expect(spaceAccess.assertCanUseGroup).toHaveBeenCalledWith(actor, 'g1');
     expect(spaceAccess.assertCanManageGroup).not.toHaveBeenCalled();
+  });
+
+  it('getPublishedDefinitionForApplicant delegates public applicant lookup', async () => {
+    const applicant = {
+      kind: 'applicant_access',
+      tenantId: 'ten1',
+      email: 'applicant@example.com',
+      groupId: 'g1',
+      formDefinitionId: 't1',
+    } satisfies ApplicantAccessTokenPayload;
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.PUBLISHED,
+    } as FormDefinition;
+    formAccessRequests.getPublishedDefinitionForApplicant.mockResolvedValue(
+      definition,
+    );
+
+    const out = await service.getPublishedDefinitionForApplicant(applicant);
+
+    expect(out).toBe(definition);
+    expect(
+      formAccessRequests.getPublishedDefinitionForApplicant,
+    ).toHaveBeenCalledWith(applicant);
+  });
+
+  it('requestAccess delegates public access email flow', async () => {
+    formAccessRequests.requestAccess.mockResolvedValue({ accepted: true });
+
+    const out = await service.requestAccess(
+      'g1',
+      { email: 'applicant@example.com' },
+      't1',
+    );
+
+    expect(out).toEqual({ accepted: true });
+    expect(formAccessRequests.requestAccess).toHaveBeenCalledWith(
+      'g1',
+      { email: 'applicant@example.com' },
+      't1',
+    );
   });
 });
