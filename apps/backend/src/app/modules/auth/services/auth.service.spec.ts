@@ -5,8 +5,8 @@ import { ClientErrorCodes } from '../../../../common/errors';
 import { UserRole } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
 import { AuthRepository } from '../../../../models/repositories/auth.repository';
-import { MailService } from '../../mail/services/mail.service';
 import { UsersService } from '../../users/services/users.service';
+import { AuthPasswordResetService } from './auth-password-reset.service';
 import { AuthService } from './auth.service';
 
 /**
@@ -20,11 +20,11 @@ describe('AuthService', () => {
   let jwt: { sign: jest.Mock };
   let authRepository: {
     createTenantAdmin: jest.Mock;
-    createPasswordResetToken: jest.Mock;
-    findPasswordResetToken: jest.Mock;
-    updatePasswordAndMarkResetTokenUsed: jest.Mock;
   };
-  let mailService: { sendPasswordResetEmail: jest.Mock };
+  let passwordResetService: {
+    requestPasswordReset: jest.Mock;
+    confirmPasswordReset: jest.Mock;
+  };
 
   beforeEach(async () => {
     users = {
@@ -33,20 +33,18 @@ describe('AuthService', () => {
     jwt = { sign: jest.fn().mockReturnValue('signed-jwt') };
     authRepository = {
       createTenantAdmin: jest.fn(),
-      createPasswordResetToken: jest.fn((x: object) =>
-        Promise.resolve({ id: 'reset-1', ...x }),
-      ),
-      findPasswordResetToken: jest.fn(),
-      updatePasswordAndMarkResetTokenUsed: jest.fn(),
     };
-    mailService = { sendPasswordResetEmail: jest.fn() };
+    passwordResetService = {
+      requestPasswordReset: jest.fn().mockResolvedValue({ ok: true }),
+      confirmPasswordReset: jest.fn().mockResolvedValue({ ok: true }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         AuthService,
         { provide: AuthRepository, useValue: authRepository },
         { provide: UsersService, useValue: users },
-        { provide: MailService, useValue: mailService },
+        { provide: AuthPasswordResetService, useValue: passwordResetService },
         { provide: JwtService, useValue: jwt },
       ],
     }).compile();
@@ -186,69 +184,30 @@ describe('AuthService', () => {
   });
 
   describe('password reset', () => {
-    /**
-     * アクティブなユーザに対してリセットトークンを作成し、メールを送信すること
-     */
-    it('creates reset token and sends mail for active users', async () => {
-      users.findAllByEmail.mockResolvedValue([
-        {
-          id: 'u1',
-          tenantId: 't1',
-          email: 'a@b.com',
-          passwordHash: 'h',
-          role: UserRole.TENANT_USER,
-          name: null,
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as User,
-      ]);
+    it('delegates password reset request to password reset service', async () => {
+      const dto = { email: 'A@B.com' };
 
-      await service.requestPasswordReset({ email: 'A@B.com' });
+      await expect(service.requestPasswordReset(dto)).resolves.toEqual({
+        ok: true,
+      });
 
-      expect(authRepository.createPasswordResetToken).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tenantId: 't1',
-          userId: 'u1',
-          email: 'a@b.com',
-        }),
-      );
-      expect(mailService.sendPasswordResetEmail).toHaveBeenCalledWith(
-        expect.objectContaining({
-          to: 'a@b.com',
-          resetToken: expect.any(String) as string,
-          expiresAtIso: expect.any(String) as string,
-        }),
+      expect(passwordResetService.requestPasswordReset).toHaveBeenCalledWith(
+        dto,
       );
     });
 
-    /**
-     * パスワードを更新し、トークンを使用済みにすること
-     */
-    it('updates password and marks token used', async () => {
-      const tokenRow = {
-        id: 'rt1',
-        tenantId: 't1',
-        userId: 'u1',
-        email: 'a@b.com',
-        token: 'token',
-        expiresAt: new Date(Date.now() + 60_000),
-        usedAt: null,
-      };
-      authRepository.findPasswordResetToken.mockResolvedValue(tokenRow);
-
-      await service.confirmPasswordReset({
+    it('delegates password reset confirmation to password reset service', async () => {
+      const dto = {
         token: 'token',
         password: 'newpassword12',
+      };
+
+      await expect(service.confirmPasswordReset(dto)).resolves.toEqual({
+        ok: true,
       });
 
-      expect(
-        authRepository.updatePasswordAndMarkResetTokenUsed,
-      ).toHaveBeenCalledWith(
-        expect.objectContaining({
-          tokenRow,
-          passwordHash: expect.any(String) as string,
-        }),
+      expect(passwordResetService.confirmPasswordReset).toHaveBeenCalledWith(
+        dto,
       );
     });
   });

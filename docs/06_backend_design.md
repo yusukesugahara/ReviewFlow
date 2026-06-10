@@ -40,7 +40,7 @@
 
 | 領域 | サービス |
 | --- | --- |
-| 認証 | `AuthService` |
+| 認証 | `AuthService`, `AuthPasswordResetService` |
 | 招待 | `InvitationsService` |
 | ユーザー | `UsersService` |
 | スペース | `GroupsService`, `SpaceAccessService` |
@@ -56,6 +56,7 @@
 | メール | `MailService` |
 
 テナント作成は `AuthRepository.createTenantAdmin()` で行い、専用の `TenantService` は持たない。差し戻しは `ApplicationsModule` 内の `ApplicationCorrectionService` が担当し、独立した `correction-requests` モジュールはない。
+パスワード再設定は `AuthPasswordResetService` が担当し、`AuthService` は認証 facade として登録・ログイン・トークン発行・パスワード再設定の委譲を扱う。
 
 ## ポリシー・バリデータ
 
