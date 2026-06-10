@@ -80,6 +80,53 @@ describe('ApprovalFlowsRepository', () => {
     expect(rows[0].steps.map((step) => step.stepOrder)).toEqual([1, 2]);
   });
 
+  it('finds an active flow by tenant, group, and id', async () => {
+    flows.findOne.mockResolvedValue({
+      id: 'flow-1',
+      steps: [
+        { id: 'step-2', stepOrder: 2 },
+        { id: 'step-1', stepOrder: 1 },
+      ],
+    } as ApprovalFlow);
+
+    const row = await repository.findActiveApprovalFlow({
+      tenantId: 'tenant-1',
+      groupId: 'group-1',
+      approvalFlowId: 'flow-1',
+    });
+
+    expect(flows.findOne).toHaveBeenCalledWith({
+      where: {
+        id: 'flow-1',
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        isActive: true,
+      },
+      relations: ['steps'],
+    });
+    expect(row?.steps.map((step) => step.stepOrder)).toEqual([1, 2]);
+  });
+
+  it('lists active flows for application resolution with default ordering', async () => {
+    flows.find.mockResolvedValue([]);
+
+    await repository.listActiveApprovalFlows({
+      tenantId: 'tenant-1',
+      groupId: 'group-1',
+      defaultOrder: true,
+    });
+
+    expect(flows.find).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        isActive: true,
+      },
+      relations: ['steps'],
+      order: { createdAt: 'ASC', id: 'ASC' },
+    });
+  });
+
   it('creates a flow and steps in one transaction', async () => {
     const flowId = await repository.createFlowWithSteps({
       tenantId: 'tenant-1',

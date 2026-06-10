@@ -142,6 +142,42 @@ export class ApprovalFlowsRepository {
     return row ? sortFlowSteps([row])[0] : null;
   }
 
+  async findActiveApprovalFlow(params: {
+    tenantId: string;
+    groupId: string;
+    approvalFlowId: string;
+  }): Promise<ApprovalFlow | null> {
+    const row = await this.flows.findOne({
+      where: {
+        id: params.approvalFlowId,
+        tenantId: params.tenantId,
+        groupId: params.groupId,
+        isActive: true,
+      },
+      relations: ['steps'],
+    });
+    return row ? sortFlowSteps([row])[0] : null;
+  }
+
+  async listActiveApprovalFlows(params: {
+    tenantId: string;
+    groupId: string;
+    defaultOrder?: boolean;
+  }): Promise<ApprovalFlow[]> {
+    const rows = await this.flows.find({
+      where: {
+        tenantId: params.tenantId,
+        groupId: params.groupId,
+        isActive: true,
+      },
+      relations: ['steps'],
+      ...(params.defaultOrder
+        ? { order: { createdAt: 'ASC', id: 'ASC' } }
+        : {}),
+    });
+    return sortFlowSteps(rows);
+  }
+
   async listActiveForApplicant(params: {
     tenantId: string;
     groupId: string;

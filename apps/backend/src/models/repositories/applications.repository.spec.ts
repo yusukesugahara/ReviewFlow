@@ -3,7 +3,6 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { FormDefinitionStatus } from '../constants/form-definition-status';
 import { ApplicationApproval } from '../entities/application-approval.entity';
-import { ApprovalFlow } from '../entities/approval-flow.entity';
 import { FormDefinition } from '../entities/form-definition.entity';
 import { User } from '../entities/user.entity';
 import { ApplicationsRepository } from './applications.repository';
@@ -16,15 +15,11 @@ describe('ApplicationsRepository', () => {
   let templates: jest.Mocked<
     Pick<Repository<FormDefinition>, 'find' | 'findOne'>
   >;
-  let approvalFlows: jest.Mocked<
-    Pick<Repository<ApprovalFlow>, 'find' | 'findOne'>
-  >;
   let users: jest.Mocked<Pick<Repository<User>, 'find'>>;
 
   beforeEach(async () => {
     approvals = { count: jest.fn(), find: jest.fn() };
     templates = { find: jest.fn(), findOne: jest.fn() };
-    approvalFlows = { find: jest.fn(), findOne: jest.fn() };
     users = { find: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -35,7 +30,6 @@ describe('ApplicationsRepository', () => {
           useValue: approvals,
         },
         { provide: getRepositoryToken(FormDefinition), useValue: templates },
-        { provide: getRepositoryToken(ApprovalFlow), useValue: approvalFlows },
         { provide: getRepositoryToken(User), useValue: users },
       ],
     }).compile();

@@ -7,12 +7,14 @@ import { CorrectionRequestItem } from '../../../models/entities/correction-reque
 import { CorrectionRequest } from '../../../models/entities/correction-request.entity';
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
+import { GroupMember } from '../../../models/entities/group-member.entity';
 import { User } from '../../../models/entities/user.entity';
 import { ApplicationCorrectionRepository } from '../../../models/repositories/application-correction.repository';
 import { ApplicationCreationRepository } from '../../../models/repositories/application-creation.repository';
 import { ApplicationQueryRepository } from '../../../models/repositories/application-query.repository';
 import { ApplicationReviewRepository } from '../../../models/repositories/application-review.repository';
 import { ApplicationSubmissionRepository } from '../../../models/repositories/application-submission.repository';
+import { ApprovalFlowsRepository } from '../../../models/repositories/approval-flows.repository';
 import { ApplicationsRepository } from '../../../models/repositories/applications.repository';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
@@ -52,6 +54,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
       CorrectionRequestItem,
       FormDefinition,
       ApprovalFlow,
+      GroupMember,
       User,
     ]),
   ],
@@ -63,6 +66,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationQueryRepository,
     ApplicationReviewRepository,
     ApplicationSubmissionRepository,
+    ApprovalFlowsRepository,
     ApplicationsRepository,
     ApplicantAccessGuard,
     ApplicantApplicationService,
