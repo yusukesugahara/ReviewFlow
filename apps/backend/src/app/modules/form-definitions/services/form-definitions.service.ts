@@ -9,6 +9,7 @@ import { FormDefinitionStatus } from '../../../../models/constants/form-definiti
 import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
+import { FormFieldsRepository } from '../../../../models/repositories/form-fields.repository';
 import { MailService } from '../../mail/services/mail.service';
 import { AuthService } from '../../auth/services/auth.service';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
@@ -31,6 +32,7 @@ export class FormDefinitionsService {
 
   constructor(
     private readonly formDefinitionsRepository: FormDefinitionsRepository,
+    private readonly formFieldsRepository: FormFieldsRepository,
     private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
     private readonly authService: AuthService,
@@ -116,7 +118,7 @@ export class FormDefinitionsService {
     await this.assertCanManageDefinition(actor, definition);
 
     const key = dto.fieldKey.trim();
-    const existing = await this.formDefinitionsRepository.findFieldByKey(
+    const existing = await this.formFieldsRepository.findFieldByKey(
       definitionId,
       key,
     );
@@ -124,7 +126,7 @@ export class FormDefinitionsService {
       throw clientError(ClientErrorCodes.FORM_FIELD_KEY_EXISTS);
     }
 
-    return this.formDefinitionsRepository.createField({
+    return this.formFieldsRepository.createField({
       tenantId: actor.tenantId,
       formDefinitionId: definitionId,
       fieldKey: key,
@@ -152,7 +154,7 @@ export class FormDefinitionsService {
       definitionId,
     );
     await this.assertCanManageDefinition(actor, definition);
-    const rows = await this.formDefinitionsRepository.findFieldsOrdered(
+    const rows = await this.formFieldsRepository.findFieldsOrdered(
       actor.tenantId,
       definitionId,
     );
@@ -174,7 +176,7 @@ export class FormDefinitionsService {
       field.sortOrder = index;
       return field;
     });
-    await this.formDefinitionsRepository.saveFields(normalized);
+    await this.formFieldsRepository.saveFields(normalized);
   }
 
   async deleteField(
@@ -187,18 +189,17 @@ export class FormDefinitionsService {
       definitionId,
     );
     await this.assertCanManageDefinition(actor, definition);
-    const target =
-      await this.formDefinitionsRepository.findFieldByIdInDefinition({
-        tenantId: actor.tenantId,
-        definitionId,
-        fieldId,
-      });
+    const target = await this.formFieldsRepository.findFieldByIdInDefinition({
+      tenantId: actor.tenantId,
+      definitionId,
+      fieldId,
+    });
     if (!target) {
       throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
     }
-    await this.formDefinitionsRepository.removeField(target);
+    await this.formFieldsRepository.removeField(target);
 
-    const remaining = await this.formDefinitionsRepository.findFieldsOrdered(
+    const remaining = await this.formFieldsRepository.findFieldsOrdered(
       actor.tenantId,
       definitionId,
     );
@@ -207,7 +208,7 @@ export class FormDefinitionsService {
       return field;
     });
     if (normalized.length > 0) {
-      await this.formDefinitionsRepository.saveFields(normalized);
+      await this.formFieldsRepository.saveFields(normalized);
     }
   }
 
@@ -222,12 +223,11 @@ export class FormDefinitionsService {
       definitionId,
     );
     await this.assertCanManageDefinition(actor, definition);
-    const target =
-      await this.formDefinitionsRepository.findFieldByIdInDefinition({
-        tenantId: actor.tenantId,
-        definitionId,
-        fieldId,
-      });
+    const target = await this.formFieldsRepository.findFieldByIdInDefinition({
+      tenantId: actor.tenantId,
+      definitionId,
+      fieldId,
+    });
     if (!target) {
       throw clientError(ClientErrorCodes.FORM_FIELD_NOT_FOUND);
     }
@@ -242,7 +242,7 @@ export class FormDefinitionsService {
     target.helpText = dto.helpText?.trim().length ? dto.helpText.trim() : null;
     target.optionsJson =
       dto.options !== undefined && dto.options !== null ? dto.options : null;
-    await this.formDefinitionsRepository.saveField(target);
+    await this.formFieldsRepository.saveField(target);
   }
 
   async publish(

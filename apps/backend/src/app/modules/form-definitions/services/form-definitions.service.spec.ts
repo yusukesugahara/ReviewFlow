@@ -4,6 +4,7 @@ import { FormDefinitionStatus } from '../../../../models/constants/form-definiti
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
+import { FormFieldsRepository } from '../../../../models/repositories/form-fields.repository';
 import { AuthService } from '../../auth/services/auth.service';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { MailService } from '../../mail/services/mail.service';
@@ -22,6 +23,9 @@ describe('FormDefinitionsService', () => {
       'createDefinition' | 'findByIdWithFields' | 'saveDefinition'
     >
   >;
+  let formFieldsRepository: jest.Mocked<
+    Pick<FormFieldsRepository, 'findFieldByKey' | 'createField'>
+  >;
   let spaceAccess: jest.Mocked<
     Pick<SpaceAccessService, 'assertCanManageGroup' | 'assertCanUseGroup'>
   >;
@@ -38,6 +42,10 @@ describe('FormDefinitionsService', () => {
       findByIdWithFields: jest.fn(),
       saveDefinition: jest.fn(),
     };
+    formFieldsRepository = {
+      findFieldByKey: jest.fn(),
+      createField: jest.fn(),
+    };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
       assertCanUseGroup: jest.fn().mockResolvedValue(undefined),
@@ -49,6 +57,10 @@ describe('FormDefinitionsService', () => {
         {
           provide: FormDefinitionsRepository,
           useValue: formDefinitionsRepository,
+        },
+        {
+          provide: FormFieldsRepository,
+          useValue: formFieldsRepository,
         },
         { provide: SpaceAccessService, useValue: spaceAccess },
         {
