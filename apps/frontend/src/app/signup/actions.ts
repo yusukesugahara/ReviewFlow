@@ -5,7 +5,7 @@ import { z } from "zod";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { client } from "@/lib/server/backend-fetch";
-import { errorMessageFromBody } from "@/lib/server/api-failure";
+import { errorMessageFromBody, toApiFailure } from "@/lib/server/api-failure";
 import { parseAuthRegisterSuccess } from "@/lib/server/auth-response-schema";
 import type { RegisterRequestBody } from "@/lib/schema";
 import { persistAccessTokenCookie } from "../login/actions";
@@ -44,10 +44,11 @@ async function postAuthRegister(
   const response = await client.POST("/auth/register", { body });
   const data = parseAuthRegisterSuccess(response.data);
   if (!response.response.ok || !data) {
+    const failure = toApiFailure(response);
     return {
       ok: false,
-      status: response.response.status,
-      body: response.error ?? response.data,
+      status: failure.status,
+      body: failure.body,
     };
   }
   return { ok: true, accessToken: data.data.access_token };
