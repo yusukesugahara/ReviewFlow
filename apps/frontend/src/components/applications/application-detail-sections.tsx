@@ -14,6 +14,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatDateTimeJa } from "@/lib/date-format";
 import { renderFieldValue } from "@/lib/form-field-value";
+import {
+  formatCorrectionSubmittedValue,
+  getCorrectionItemLabel,
+} from "./application-corrections.helpers";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { DynamicFieldsTable } from "./dynamic-fields";
 import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
@@ -37,49 +41,6 @@ export function getCurrentStep(application: ApplicationDetailViewModel) {
 
 function formatDateTime(value?: string | null): string {
   return value ? formatDateTimeJa(value) : "-";
-}
-
-function formatFieldKeyLabel(fieldKey: string): string {
-  return fieldKey
-    .split("_")
-    .filter(Boolean)
-    .map((word) => {
-      const dictionary: Record<string, string> = {
-        applicant: "申請者",
-        procedure: "手続き",
-        type: "種別",
-        email: "メール",
-        name: "氏名",
-        address: "住所",
-        phone: "電話番号",
-        reason: "理由",
-        date: "日付",
-        content: "内容",
-      };
-      return dictionary[word] ?? word;
-    })
-    .join("");
-}
-
-function getCorrectionItemLabel(
-  item: Pick<ApplicationCorrection["items"][number], "formFieldId" | "fieldKey">,
-  fields: ApplicationFormField[],
-): string {
-  const field = fields.find(
-    (candidate) =>
-      candidate.id === item.formFieldId || candidate.fieldKey === item.fieldKey,
-  );
-  return field?.label ?? formatFieldKeyLabel(item.fieldKey);
-}
-
-function getCorrectionItemField(
-  item: Pick<ApplicationCorrection["items"][number], "formFieldId" | "fieldKey">,
-  fields: ApplicationFormField[],
-): ApplicationFormField | undefined {
-  return fields.find(
-    (candidate) =>
-      candidate.id === item.formFieldId || candidate.fieldKey === item.fieldKey,
-  );
 }
 
 export function ApplicationBasicInfo({
@@ -461,16 +422,8 @@ function CorrectionHistoryItem({
   item: ApplicationCorrection["items"][number];
   values: Record<string, unknown>;
 }) {
-  const field = getCorrectionItemField(item, fields);
   const label = getCorrectionItemLabel(item, fields);
-  const submittedValue = field
-    ? renderFieldValue(field, values[field.fieldKey])
-    : renderFieldValue(
-        {
-          fieldType: "text",
-        },
-        values[item.fieldKey],
-      );
+  const submittedValue = formatCorrectionSubmittedValue({ fields, item, values });
 
   return (
     <li className="space-y-2 border-l-2 border-amber-400 pl-4 text-sm">
