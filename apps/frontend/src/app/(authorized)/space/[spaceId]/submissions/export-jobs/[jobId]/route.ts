@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getServerApiBaseUrl, getServerAuthEnv } from "@/lib/server/env";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { ExportJobResponse, GetExportJobSuccessJson } from "@/lib/schema";
 
@@ -34,5 +34,7 @@ export async function GET(_request: Request, context: ExportJobRouteContext) {
   }
 
   const body = (await response.json()) as GetExportJobSuccessJson;
-  return NextResponse.json(unwrapData<ExportJobResponse>(body));
+  return NextResponse.json(
+    unwrapResponseData<ExportJobResponse>({ response, data: body }),
+  );
 }

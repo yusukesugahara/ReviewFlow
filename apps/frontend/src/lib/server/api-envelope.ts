@@ -7,7 +7,7 @@ export type ApiSuccessEnvelope<T> = {
   data: T;
 };
 
-export function unwrapData<T>(raw: unknown): T {
+function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
     throw new Error("invalid success envelope");
   }
