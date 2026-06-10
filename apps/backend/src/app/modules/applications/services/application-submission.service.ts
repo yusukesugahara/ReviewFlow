@@ -1,65 +1,33 @@
 import { Injectable } from '@nestjs/common';
-import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { Application } from '../../../../models/entities/application.entity';
-import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
-import { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
-import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
-
-type SubmittableApplicationContext = {
-  app: Application;
-  template: FormDefinition;
-};
-
-type ResubmittableApplicationContext = SubmittableApplicationContext & {
-  openCorrection: CorrectionRequest;
-};
+import {
+  ApplicationSubmissionContextLoader,
+  type ResubmittableApplicationContext,
+  type SubmittableApplicationContext,
+} from './application-submission-context.loader';
 
 @Injectable()
 export class ApplicationSubmissionService {
   constructor(
-    private readonly formDefinitionsRepository: FormDefinitionsRepository,
-    private readonly correctionRepository: ApplicationCorrectionRepository,
+    private readonly contextLoader: ApplicationSubmissionContextLoader,
     private readonly submissionRepository: ApplicationSubmissionRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
   async submit(tenantId: string, app: Application): Promise<void> {
-    const context = await this.loadSubmittableApplicationContext(tenantId, app);
+    const context = await this.contextLoader.loadSubmittable(tenantId, app);
     this.validateApplicationReadyToSubmit(context);
     await this.applySubmitTransition(context);
   }
 
   async resubmit(tenantId: string, app: Application): Promise<void> {
-    const context = await this.loadResubmittableApplicationContext(
-      tenantId,
-      app,
-    );
+    const context = await this.contextLoader.loadResubmittable(tenantId, app);
     this.validateApplicationReadyToSubmit(context);
     await this.applyResubmitTransition(context);
-  }
-
-  private async loadSubmittableApplicationContext(
-    tenantId: string,
-    app: Application,
-  ): Promise<SubmittableApplicationContext> {
-    this.transitionPolicy.assertDraft(app);
-
-    const template =
-      await this.formDefinitionsRepository.findTemplateByIdInGroup({
-        tenantId,
-        groupId: app.groupId,
-        formDefinitionId: app.formDefinitionId,
-      });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-
-    return { app, template };
   }
 
   private validateApplicationReadyToSubmit(
@@ -80,32 +48,6 @@ export class ApplicationSubmissionService {
   ): Promise<void> {
     this.transitionPolicy.startReview(context.app);
     await this.saveSubmittedApplication(context.app);
-  }
-
-  private async loadResubmittableApplicationContext(
-    tenantId: string,
-    app: Application,
-  ): Promise<ResubmittableApplicationContext> {
-    this.transitionPolicy.assertReturned(app);
-
-    const openCorrection = await this.correctionRepository.findOpenCorrection(
-      app.id,
-    );
-    if (!openCorrection) {
-      throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
-    }
-
-    const template =
-      await this.formDefinitionsRepository.findTemplateByIdInGroup({
-        tenantId,
-        groupId: app.groupId,
-        formDefinitionId: app.formDefinitionId,
-      });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-
-    return { app, template, openCorrection };
   }
 
   private async applyResubmitTransition(

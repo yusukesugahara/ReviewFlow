@@ -12,6 +12,7 @@ import { ApplicationCorrectionRepository } from '../../../../models/repositories
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
+import { ApplicationSubmissionContextLoader } from './application-submission-context.loader';
 import { ApplicationSubmissionService } from './application-submission.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -97,12 +98,17 @@ describe('ApplicationSubmissionService', () => {
       saveSubmittedApplication: jest.fn(),
       saveResubmittedApplication: jest.fn(),
     };
-    service = new ApplicationSubmissionService(
+    const transitionPolicy = new ApplicationTransitionPolicy();
+    const contextLoader = new ApplicationSubmissionContextLoader(
       formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,
+      transitionPolicy,
+    );
+    service = new ApplicationSubmissionService(
+      contextLoader,
       submissionRepository as unknown as ApplicationSubmissionRepository,
       new ApplicationFormValueValidator(),
-      new ApplicationTransitionPolicy(),
+      transitionPolicy,
     );
   });
 

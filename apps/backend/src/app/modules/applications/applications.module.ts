@@ -40,6 +40,7 @@ import { ApplicationReadAccessService } from './services/application-read-access
 import { ApplicationReviewActionService } from './services/application-review-action.service';
 import { ApplicationReviewUseCaseService } from './services/application-review-use-case.service';
 import { ApplicationReturnEmailUseCaseService } from './services/application-return-email-use-case.service';
+import { ApplicationSubmissionContextLoader } from './services/application-submission-context.loader';
 import { ApplicationSubmissionService } from './services/application-submission.service';
 import { ApplicationTransitionPolicy } from './policies/application-transition.policy';
 import { ApplicationUserSubmissionUseCaseService } from './services/application-user-submission-use-case.service';
@@ -95,6 +96,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationReviewActionService,
     ApplicationReviewUseCaseService,
     ApplicationReturnEmailUseCaseService,
+    ApplicationSubmissionContextLoader,
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
     ApplicationUserSubmissionUseCaseService,
