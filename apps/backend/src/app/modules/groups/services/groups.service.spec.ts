@@ -7,6 +7,7 @@ import { Group } from '../../../../models/entities/group.entity';
 import { User } from '../../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../../models/repositories/groups.repository';
 import { UsersService } from '../../users/services/users.service';
+import { GroupMembersService } from './group-members.service';
 import { GroupsService } from './groups.service';
 
 /**
@@ -25,19 +26,23 @@ describe('GroupsService', () => {
       | 'findGroupByTenantAndName'
       | 'findGroupByIdInTenant'
       | 'createGroupWithAdmins'
-      | 'findMember'
-      | 'findAdminMember'
-      | 'createMember'
-      | 'saveMember'
-      | 'deleteMember'
-      | 'findAdmins'
+      | 'deleteGroup'
     >
   >;
   let usersService: {
     findAllByIdsInTenant: jest.Mock;
-    findAllByTenant: jest.Mock;
-    findByIdAndTenant: jest.Mock;
   };
+  let groupMembers: jest.Mocked<
+    Pick<
+      GroupMembersService,
+      | 'listMembers'
+      | 'listAvailableUsers'
+      | 'addMember'
+      | 'updateMemberRole'
+      | 'removeMember'
+      | 'leave'
+    >
+  >;
 
   const systemAdmin = {
     id: 'sys-1',
@@ -61,17 +66,18 @@ describe('GroupsService', () => {
       findGroupByTenantAndName: jest.fn(),
       findGroupByIdInTenant: jest.fn(),
       createGroupWithAdmins: jest.fn(),
-      findMember: jest.fn(),
-      findAdminMember: jest.fn(),
-      createMember: jest.fn(),
-      saveMember: jest.fn(),
-      deleteMember: jest.fn(),
-      findAdmins: jest.fn(),
+      deleteGroup: jest.fn(),
     };
     usersService = {
       findAllByIdsInTenant: jest.fn(),
-      findAllByTenant: jest.fn(),
-      findByIdAndTenant: jest.fn(),
+    };
+    groupMembers = {
+      listMembers: jest.fn(),
+      listAvailableUsers: jest.fn(),
+      addMember: jest.fn(),
+      updateMemberRole: jest.fn(),
+      removeMember: jest.fn(),
+      leave: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -79,25 +85,23 @@ describe('GroupsService', () => {
         GroupsService,
         { provide: GroupsRepository, useValue: groupsRepository },
         { provide: UsersService, useValue: usersService },
+        { provide: GroupMembersService, useValue: groupMembers },
       ],
     }).compile();
 
     service = module.get(GroupsService);
   });
 
-  /**
-   * 現在のユーザのスペースロールをグループごとに独立して返すこと
-   */
   it('returns current user space roles independently per group', async () => {
     groupsRepository.findMembershipsWithGroupsByTenantAndUser.mockResolvedValue(
       [
         {
           role: GroupMemberRole.ADMIN,
-          group: { id: 'group-a', name: 'Aスペース' },
+          group: group({ id: 'group-a', name: 'Aスペース' }),
         },
         {
           role: GroupMemberRole.USER,
-          group: { id: 'group-b', name: 'Bスペース' },
+          group: group({ id: 'group-b', name: 'Bスペース' }),
         },
       ] as GroupMember[],
     );
@@ -116,14 +120,11 @@ describe('GroupsService', () => {
     ]);
   });
 
-  /**
-   * テナント管理者のグループ一覧をメンバーシップロールと共に返すこと
-   */
   it('returns tenant admin groups with membership role when present', async () => {
     groupsRepository.findGroupsByTenant.mockResolvedValue([
-      { id: 'group-a', name: 'Aスペース' },
-      { id: 'group-b', name: 'Bスペース' },
-    ] as Group[]);
+      group({ id: 'group-a', name: 'Aスペース' }),
+      group({ id: 'group-b', name: 'Bスペース' }),
+    ]);
     groupsRepository.findMembershipsByTenantAndUser.mockResolvedValue([
       { groupId: 'group-a', role: GroupMemberRole.ADMIN },
     ] as GroupMember[]);
@@ -139,17 +140,15 @@ describe('GroupsService', () => {
     ]);
   });
 
-  /**
-   * グループを作成し、初期グループ管理者を設定すること
-   */
   it('creates a group with initial group admins', async () => {
     groupsRepository.findGroupByTenantAndName.mockResolvedValue(null);
-    groupsRepository.createGroupWithAdmins.mockResolvedValue({
-      id: 'group-1',
-      tenantId: 'tenant-1',
-      name: 'Team A',
-      createdByUserId: 'sys-1',
-    } as Group);
+    groupsRepository.createGroupWithAdmins.mockResolvedValue(
+      group({
+        id: 'group-1',
+        name: 'Team A',
+        createdByUserId: 'sys-1',
+      }),
+    );
     usersService.findAllByIdsInTenant.mockResolvedValue([
       { id: 'admin-1' } as User,
       { id: 'admin-2' } as User,
@@ -174,9 +173,6 @@ describe('GroupsService', () => {
     );
   });
 
-  /**
-   * 初期管理者がテナント外の場合にエラーを返すこと
-   */
   it('rejects initial admins outside the tenant', async () => {
     groupsRepository.findGroupByTenantAndName.mockResolvedValue(null);
     usersService.findAllByIdsInTenant.mockResolvedValue([{ id: 'admin-1' }]);
@@ -191,134 +187,90 @@ describe('GroupsService', () => {
     });
   });
 
-  /**
-   * テナント管理者がメンバーを追加できること
-   */
-  it('allows a tenant admin to add a member', async () => {
-    groupsRepository.findGroupByIdInTenant.mockResolvedValue({
-      id: 'group-1',
-    } as Group);
-    groupsRepository.findMember.mockResolvedValueOnce(null);
-    usersService.findByIdAndTenant.mockResolvedValue({
-      id: 'user-1',
-      email: 'user@example.com',
-      name: null,
-    });
-    groupsRepository.createMember.mockResolvedValue({
-      groupId: 'group-1',
-      userId: 'user-1',
-      invitedByUserId: 'sys-1',
-    } as GroupMember);
-
-    const out = await service.addMember(
-      'group-1',
-      { userId: 'user-1', role: GroupMemberRole.USER },
-      systemAdmin,
+  it('removes a tenant-scoped group', async () => {
+    groupsRepository.findGroupByIdInTenant.mockResolvedValue(
+      group({ id: 'group-1' }),
     );
 
-    expect(out.user.email).toBe('user@example.com');
-    expect(groupsRepository.createMember).toHaveBeenCalledWith(
-      expect.objectContaining({
-        groupId: 'group-1',
-        userId: 'user-1',
-        invitedByUserId: 'sys-1',
-      }),
-    );
+    await service.remove('group-1', systemAdmin);
+
+    expect(groupsRepository.deleteGroup).toHaveBeenCalledWith('group-1');
   });
 
-  /**
-   * 非テナント管理者がメンバーを追加できないこと
-   */
-  it('rejects adding members by non tenant admins', async () => {
-    groupsRepository.findGroupByIdInTenant.mockResolvedValue({
-      id: 'group-1',
-    } as Group);
+  it('delegates member operations to GroupMembersService', async () => {
+    const member = groupMember({ id: 'member-1' });
+    const availableUsers = [user({ id: 'user-2' })];
+    groupMembers.listMembers.mockResolvedValue([member]);
+    groupMembers.listAvailableUsers.mockResolvedValue(availableUsers);
+    groupMembers.addMember.mockResolvedValue(member);
+    groupMembers.updateMemberRole.mockResolvedValue(member);
 
+    await expect(service.listMembers('group-1', groupAdmin)).resolves.toEqual([
+      member,
+    ]);
+    await expect(
+      service.listAvailableUsers('group-1', groupAdmin),
+    ).resolves.toEqual(availableUsers);
     await expect(
       service.addMember(
         'group-1',
-        { userId: 'user-2', role: GroupMemberRole.USER },
-        groupAdmin,
+        { userId: 'user-1', role: GroupMemberRole.USER },
+        systemAdmin,
       ),
-    ).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.GROUP_ADMIN_REQUIRED,
-    });
-  });
-
-  /**
-   * 最後のグループ管理者が降格されないように保護すること
-   */
-  it('protects the last group admin from demotion', async () => {
-    groupsRepository.findGroupByIdInTenant.mockResolvedValue({
-      id: 'group-1',
-    } as Group);
-    groupsRepository.findAdminMember.mockResolvedValue({
-      userId: 'admin-1',
-      role: GroupMemberRole.ADMIN,
-    } as GroupMember);
-    groupsRepository.findMember.mockResolvedValue({
-      id: 'member-1',
-      userId: 'admin-1',
-      role: GroupMemberRole.ADMIN,
-    } as GroupMember);
-    groupsRepository.findAdmins.mockResolvedValue([
-      { userId: 'admin-1', role: GroupMemberRole.ADMIN },
-    ] as GroupMember[]);
-
+    ).resolves.toBe(member);
     await expect(
       service.updateMemberRole(
         'group-1',
-        'admin-1',
-        { role: GroupMemberRole.USER },
+        'user-1',
+        { role: GroupMemberRole.ADMIN },
         groupAdmin,
       ),
-    ).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.LAST_GROUP_ADMIN_PROTECTED,
-    });
-  });
+    ).resolves.toBe(member);
+    await service.removeMember('group-1', 'user-1', groupAdmin);
+    await service.leave('group-1', groupAdmin);
 
-  /**
-   * グループ管理者がメンバーを削除できること
-   */
-  it('allows a group admin to remove a group member', async () => {
-    groupsRepository.findGroupByIdInTenant.mockResolvedValue({
-      id: 'group-1',
-    } as Group);
-    groupsRepository.findAdminMember.mockResolvedValue({
-      userId: 'admin-1',
-      role: GroupMemberRole.ADMIN,
-    } as GroupMember);
-    groupsRepository.findMember.mockResolvedValue({
-      id: 'member-2',
-      userId: 'user-2',
-      role: GroupMemberRole.USER,
-    } as GroupMember);
-
-    await service.removeMember('group-1', 'user-2', groupAdmin);
-
-    expect(groupsRepository.deleteMember).toHaveBeenCalledWith('member-2');
-  });
-
-  /**
-   * 非グループ管理者がメンバーを削除できないこと
-   */
-  it('rejects removing members by non group admins', async () => {
-    groupsRepository.findGroupByIdInTenant.mockResolvedValue({
-      id: 'group-1',
-    } as Group);
-    groupsRepository.findAdminMember.mockResolvedValue(null);
-
-    await expect(
-      service.removeMember('group-1', 'user-2', {
-        id: 'user-1',
-        email: 'user@example.com',
-        tenantId: 'tenant-1',
-        roles: [UserRole.TENANT_USER],
-      }),
-    ).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.GROUP_ADMIN_REQUIRED,
-    });
-
-    expect(groupsRepository.deleteMember).not.toHaveBeenCalled();
+    expect(groupMembers.removeMember).toHaveBeenCalledWith(
+      'group-1',
+      'user-1',
+      groupAdmin,
+    );
+    expect(groupMembers.leave).toHaveBeenCalledWith('group-1', groupAdmin);
   });
 });
+
+function group(overrides: Partial<Group> = {}): Group {
+  const date = new Date('2026-01-01T00:00:00.000Z');
+  return {
+    id: 'group-1',
+    tenantId: 'tenant-1',
+    name: 'Team A',
+    description: null,
+    createdByUserId: 'sys-1',
+    createdAt: date,
+    updatedAt: date,
+    ...overrides,
+  } as Group;
+}
+
+function groupMember(overrides: Partial<GroupMember> = {}): GroupMember {
+  return {
+    id: 'member-1',
+    tenantId: 'tenant-1',
+    groupId: 'group-1',
+    userId: 'user-1',
+    role: GroupMemberRole.USER,
+    invitedByUserId: 'sys-1',
+    user: user({ id: 'user-1' }),
+    ...overrides,
+  } as GroupMember;
+}
+
+function user(overrides: Partial<User> = {}): User {
+  return {
+    id: 'user-1',
+    tenantId: 'tenant-1',
+    email: 'user@example.com',
+    name: null,
+    ...overrides,
+  } as User;
+}
