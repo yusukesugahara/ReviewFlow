@@ -2,12 +2,13 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { FormFieldType } from '../../../../models/constants/form-field-type';
+import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
-import { FormFieldsRepository } from '../../../../models/repositories/form-fields.repository';
 import { AuthService } from '../../auth/services/auth.service';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { MailService } from '../../mail/services/mail.service';
+import { FormDefinitionFieldsService } from './form-definition-fields.service';
 import { FormDefinitionsService } from './form-definitions.service';
 
 /**
@@ -23,8 +24,11 @@ describe('FormDefinitionsService', () => {
       'createDefinition' | 'findByIdWithFields' | 'saveDefinition'
     >
   >;
-  let formFieldsRepository: jest.Mocked<
-    Pick<FormFieldsRepository, 'findFieldByKey' | 'createField'>
+  let formDefinitionFields: jest.Mocked<
+    Pick<
+      FormDefinitionFieldsService,
+      'addField' | 'moveField' | 'deleteField' | 'updateFieldSettings'
+    >
   >;
   let spaceAccess: jest.Mocked<
     Pick<SpaceAccessService, 'assertCanManageGroup' | 'assertCanUseGroup'>
@@ -42,9 +46,11 @@ describe('FormDefinitionsService', () => {
       findByIdWithFields: jest.fn(),
       saveDefinition: jest.fn(),
     };
-    formFieldsRepository = {
-      findFieldByKey: jest.fn(),
-      createField: jest.fn(),
+    formDefinitionFields = {
+      addField: jest.fn(),
+      moveField: jest.fn(),
+      deleteField: jest.fn(),
+      updateFieldSettings: jest.fn(),
     };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
@@ -59,8 +65,8 @@ describe('FormDefinitionsService', () => {
           useValue: formDefinitionsRepository,
         },
         {
-          provide: FormFieldsRepository,
-          useValue: formFieldsRepository,
+          provide: FormDefinitionFieldsService,
+          useValue: formDefinitionFields,
         },
         { provide: SpaceAccessService, useValue: spaceAccess },
         {
@@ -104,27 +110,34 @@ describe('FormDefinitionsService', () => {
   });
 
   /**
-   * addField は草稿定義でない場合にエラーを返すこと
+   * addField はフォーム項目専用サービスへ委譲すること
    */
-  it('addField rejects when definition not draft', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue({
-      id: 't1',
-      tenantId: 'ten1',
-      groupId: 'g1',
-      status: FormDefinitionStatus.PUBLISHED,
-    } as FormDefinition);
+  it('addField delegates field editing to FormDefinitionFieldsService', async () => {
+    const saved = {
+      id: 'field1',
+      fieldKey: 'k',
+      label: 'L',
+      fieldType: FormFieldType.TEXT,
+      required: true,
+      sortOrder: 0,
+    } as FormField;
+    const dto = {
+      fieldKey: 'k',
+      label: 'L',
+      fieldType: FormFieldType.TEXT,
+      required: true,
+      sortOrder: 0,
+    };
+    formDefinitionFields.addField.mockResolvedValue(saved);
 
-    await expect(
-      service.addField(actor, 't1', {
-        fieldKey: 'k',
-        label: 'L',
-        fieldType: FormFieldType.TEXT,
-        required: true,
-        sortOrder: 0,
-      }),
-    ).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.FORM_DEFINITION_IMMUTABLE,
-    });
+    const out = await service.addField(actor, 't1', dto);
+
+    expect(out).toBe(saved);
+    expect(formDefinitionFields.addField).toHaveBeenCalledWith(
+      actor,
+      't1',
+      dto,
+    );
   });
 
   /**
