@@ -72,6 +72,25 @@ export class FormDefinitionsRepository {
     });
   }
 
+  findTemplateByIdInGroup(params: {
+    tenantId: string;
+    groupId: string;
+    formDefinitionId: string;
+    onlyPublished?: boolean;
+  }): Promise<FormDefinition | null> {
+    return this.definitions.findOne({
+      where: {
+        id: params.formDefinitionId,
+        tenantId: params.tenantId,
+        groupId: params.groupId,
+        ...(params.onlyPublished
+          ? { status: FormDefinitionStatus.PUBLISHED }
+          : {}),
+      },
+      relations: ['fields'],
+    });
+  }
+
   findFieldByKey(
     definitionId: string,
     fieldKey: string,

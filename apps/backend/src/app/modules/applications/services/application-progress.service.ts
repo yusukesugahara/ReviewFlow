@@ -2,14 +2,14 @@ import { Injectable } from '@nestjs/common';
 import { ApplicationApprovalAction } from '../../../../models/constants/application-approval-action';
 import { ApplicationApproval } from '../../../../models/entities/application-approval.entity';
 import { Application } from '../../../../models/entities/application.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationProgressRepository } from '../../../../models/repositories/application-progress.repository';
 import type { ApplicationProgressStepDto } from '../dto/applications.dto';
 import type { ApplicationWithProgress } from '../mappers/applications.mapper';
 
 @Injectable()
 export class ApplicationProgressService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly progressRepository: ApplicationProgressRepository,
   ) {}
 
   async hydrate(row: Application): Promise<ApplicationWithProgress> {
@@ -20,11 +20,10 @@ export class ApplicationProgressService {
       return Object.assign(row, { approvalProgress: [] });
     }
 
-    const approvals =
-      await this.applicationsRepository.findApprovalsForProgress({
-        tenantId: row.tenantId,
-        applicationId: row.id,
-      });
+    const approvals = await this.progressRepository.findApprovalsForProgress({
+      tenantId: row.tenantId,
+      applicationId: row.id,
+    });
     const userIds = new Set<string>();
     for (const step of steps) {
       const assigneeIds =
@@ -38,7 +37,7 @@ export class ApplicationProgressService {
     for (const approval of approvals) {
       userIds.add(approval.actedByUserId);
     }
-    const users = await this.applicationsRepository.findUsersByIdsInTenant(
+    const users = await this.progressRepository.findUsersByIdsInTenant(
       row.tenantId,
       [...userIds],
     );

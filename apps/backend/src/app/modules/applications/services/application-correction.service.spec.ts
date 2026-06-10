@@ -4,7 +4,7 @@ import { FormFieldType } from '../../../../models/constants/form-field-type';
 import type { Application } from '../../../../models/entities/application.entity';
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationCorrectionService } from './application-correction.service';
 
 const app = (overrides: Partial<Application> = {}): Application =>
@@ -54,7 +54,7 @@ const correction = (
  * @group application-correction-service
  */
 describe('ApplicationCorrectionService', () => {
-  let applicationsRepository: {
+  let formDefinitionsRepository: {
     findTemplateByIdInGroup: jest.Mock;
   };
   let correctionRepository: {
@@ -65,7 +65,7 @@ describe('ApplicationCorrectionService', () => {
   let service: ApplicationCorrectionService;
 
   beforeEach(() => {
-    applicationsRepository = {
+    formDefinitionsRepository = {
       findTemplateByIdInGroup: jest.fn(),
     };
     correctionRepository = {
@@ -74,7 +74,7 @@ describe('ApplicationCorrectionService', () => {
       listCorrections: jest.fn(),
     };
     service = new ApplicationCorrectionService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,
     );
   });
@@ -120,7 +120,7 @@ describe('ApplicationCorrectionService', () => {
    */
   it('builds return email context', async () => {
     correctionRepository.findOpenCorrection.mockResolvedValue(correction());
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue({
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue({
       id: 'template-1',
       name: 'Expense',
       fields: [],

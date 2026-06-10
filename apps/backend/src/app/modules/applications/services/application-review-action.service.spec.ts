@@ -7,7 +7,7 @@ import type { FormDefinition } from '../../../../models/entities/form-definition
 import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -64,7 +64,7 @@ const expectErrorCode = async (
  */
 describe('ApplicationReviewActionService', () => {
   let service: ApplicationReviewActionService;
-  let applicationsRepository: {
+  let formDefinitionsRepository: {
     findTemplateByIdInGroup: jest.Mock;
   };
   let correctionRepository: {
@@ -76,7 +76,7 @@ describe('ApplicationReviewActionService', () => {
   };
 
   beforeEach(() => {
-    applicationsRepository = {
+    formDefinitionsRepository = {
       findTemplateByIdInGroup: jest.fn(),
     };
     correctionRepository = {
@@ -87,7 +87,7 @@ describe('ApplicationReviewActionService', () => {
       saveReturnForCorrection: jest.fn(),
     };
     service = new ApplicationReviewActionService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,
       reviewRepository as unknown as ApplicationReviewRepository,
       new ApplicationTransitionPolicy(),
@@ -137,7 +137,7 @@ describe('ApplicationReviewActionService', () => {
    */
   it('rejects return fields outside the form definition', async () => {
     correctionRepository.findOpenCorrection.mockResolvedValue(null);
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title' } as FormField]),
     );
 
@@ -156,7 +156,7 @@ describe('ApplicationReviewActionService', () => {
   it('records return action and creates correction items', async () => {
     const target = app();
     correctionRepository.findOpenCorrection.mockResolvedValue(null);
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title', label: 'Title' } as FormField]),
     );
 

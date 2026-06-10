@@ -5,7 +5,7 @@ import { CorrectionRequest } from '../../../../models/entities/correction-reques
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -21,7 +21,7 @@ type ResubmittableApplicationContext = SubmittableApplicationContext & {
 @Injectable()
 export class ApplicationSubmissionService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly formDefinitionsRepository: FormDefinitionsRepository,
     private readonly correctionRepository: ApplicationCorrectionRepository,
     private readonly submissionRepository: ApplicationSubmissionRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
@@ -49,11 +49,12 @@ export class ApplicationSubmissionService {
   ): Promise<SubmittableApplicationContext> {
     this.transitionPolicy.assertDraft(app);
 
-    const template = await this.applicationsRepository.findTemplateByIdInGroup({
-      tenantId,
-      groupId: app.groupId,
-      formDefinitionId: app.formDefinitionId,
-    });
+    const template =
+      await this.formDefinitionsRepository.findTemplateByIdInGroup({
+        tenantId,
+        groupId: app.groupId,
+        formDefinitionId: app.formDefinitionId,
+      });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -94,11 +95,12 @@ export class ApplicationSubmissionService {
       throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
     }
 
-    const template = await this.applicationsRepository.findTemplateByIdInGroup({
-      tenantId,
-      groupId: app.groupId,
-      formDefinitionId: app.formDefinitionId,
-    });
+    const template =
+      await this.formDefinitionsRepository.findTemplateByIdInGroup({
+        tenantId,
+        groupId: app.groupId,
+        formDefinitionId: app.formDefinitionId,
+      });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }

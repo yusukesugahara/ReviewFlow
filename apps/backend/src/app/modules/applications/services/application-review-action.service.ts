@@ -6,7 +6,7 @@ import { CorrectionRequest } from '../../../../models/entities/correction-reques
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import type {
   ApproveApplicationDto,
   RejectApplicationDto,
@@ -17,7 +17,7 @@ import { ApplicationTransitionPolicy } from '../policies/application-transition.
 @Injectable()
 export class ApplicationReviewActionService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly formDefinitionsRepository: FormDefinitionsRepository,
     private readonly correctionRepository: ApplicationCorrectionRepository,
     private readonly reviewRepository: ApplicationReviewRepository,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
@@ -73,11 +73,12 @@ export class ApplicationReviewActionService {
       throw clientError(ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN);
     }
 
-    const template = await this.applicationsRepository.findTemplateByIdInGroup({
-      tenantId: app.tenantId,
-      groupId: app.groupId,
-      formDefinitionId: app.formDefinitionId,
-    });
+    const template =
+      await this.formDefinitionsRepository.findTemplateByIdInGroup({
+        tenantId: app.tenantId,
+        groupId: app.groupId,
+        formDefinitionId: app.formDefinitionId,
+      });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }

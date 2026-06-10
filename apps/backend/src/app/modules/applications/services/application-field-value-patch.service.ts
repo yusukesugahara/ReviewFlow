@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
-import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { ApplicationFieldValue } from '../../../../models/entities/application-field-value.entity';
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import type { PatchApplicationDto } from '../dto/applications.dto';
+import { ApplicationPatchPolicy } from '../policies/application-patch.policy';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 
 type EditablePatchContext = {
@@ -20,9 +20,10 @@ type EditablePatchContext = {
 @Injectable()
 export class ApplicationFieldValuePatchService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly formDefinitionsRepository: FormDefinitionsRepository,
     private readonly correctionRepository: ApplicationCorrectionRepository,
     private readonly submissionRepository: ApplicationSubmissionRepository,
+    private readonly patchPolicy: ApplicationPatchPolicy,
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
 
@@ -31,7 +32,7 @@ export class ApplicationFieldValuePatchService {
     app: Application,
     dto: PatchApplicationDto,
   ): Promise<void> {
-    this.assertPatchTargetEditable(app, dto);
+    this.patchPolicy.assertPatchTargetEditable(app, dto);
     const context = await this.loadEditablePatchContext(
       tenantId,
       app,
@@ -44,43 +45,19 @@ export class ApplicationFieldValuePatchService {
     await this.saveApplicationPatch(app, dto, fieldValues);
   }
 
-  private assertPatchTargetEditable(
-    app: Application,
-    dto: PatchApplicationDto,
-  ): void {
-    if (
-      app.status === ApplicationStatus.RETURNED &&
-      (dto.formDefinitionId || dto.approvalFlowId || dto.status)
-    ) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
-    }
-    if (
-      dto.status &&
-      app.status !== ApplicationStatus.DRAFT &&
-      app.status !== ApplicationStatus.PUBLISHED
-    ) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
-    }
-  }
-
   private async loadEditablePatchContext(
     tenantId: string,
     app: Application,
     formDefinitionId?: string,
   ): Promise<EditablePatchContext> {
-    if (
-      formDefinitionId &&
-      app.status !== ApplicationStatus.DRAFT &&
-      app.status !== ApplicationStatus.PUBLISHED
-    ) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
-    }
-    const template = await this.applicationsRepository.findTemplateByIdInGroup({
-      tenantId,
-      groupId: app.groupId,
-      formDefinitionId: formDefinitionId ?? app.formDefinitionId,
-      onlyPublished: !!formDefinitionId,
-    });
+    this.patchPolicy.assertFormDefinitionChangeAllowed(app, formDefinitionId);
+    const template =
+      await this.formDefinitionsRepository.findTemplateByIdInGroup({
+        tenantId,
+        groupId: app.groupId,
+        formDefinitionId: formDefinitionId ?? app.formDefinitionId,
+        onlyPublished: !!formDefinitionId,
+      });
     if (!template) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }
@@ -90,17 +67,14 @@ export class ApplicationFieldValuePatchService {
     );
     let allowedFieldIds: Set<string> | undefined;
 
-    if (app.status === ApplicationStatus.RETURNED) {
+    if (this.patchPolicy.requiresCorrectionFieldScope(app)) {
       const open = await this.findOpenCorrection(app.id);
       if (!open?.items?.length) {
         throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
       }
       allowedFieldIds = new Set(open.items.map((i) => i.formFieldId));
-    } else if (
-      app.status !== ApplicationStatus.DRAFT &&
-      app.status !== ApplicationStatus.PUBLISHED
-    ) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
+    } else {
+      this.patchPolicy.assertFieldPatchAllowedWithoutCorrectionScope(app);
     }
 
     return { app, fieldsByKey, allowedFieldIds };

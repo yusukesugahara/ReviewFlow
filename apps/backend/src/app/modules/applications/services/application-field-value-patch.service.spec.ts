@@ -9,7 +9,8 @@ import type { FormDefinition } from '../../../../models/entities/form-definition
 import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
+import { ApplicationPatchPolicy } from '../policies/application-patch.policy';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
 
@@ -64,7 +65,7 @@ const expectErrorCode = async (
  */
 describe('ApplicationFieldValuePatchService', () => {
   let service: ApplicationFieldValuePatchService;
-  let applicationsRepository: {
+  let formDefinitionsRepository: {
     findTemplateByIdInGroup: jest.Mock;
   };
   let correctionRepository: {
@@ -77,7 +78,7 @@ describe('ApplicationFieldValuePatchService', () => {
   };
 
   beforeEach(() => {
-    applicationsRepository = {
+    formDefinitionsRepository = {
       findTemplateByIdInGroup: jest.fn(),
     };
     correctionRepository = {
@@ -89,9 +90,10 @@ describe('ApplicationFieldValuePatchService', () => {
       saveApplicationPatch: jest.fn(),
     };
     service = new ApplicationFieldValuePatchService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,
       submissionRepository as unknown as ApplicationSubmissionRepository,
+      new ApplicationPatchPolicy(),
       new ApplicationFormValueValidator(),
     );
   });
@@ -105,7 +107,7 @@ describe('ApplicationFieldValuePatchService', () => {
       formFieldId: 'field-title',
       valueJson: 'old',
     } as ApplicationFieldValue;
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
     submissionRepository.findExistingFieldValues.mockResolvedValue([existing]);
@@ -122,7 +124,7 @@ describe('ApplicationFieldValuePatchService', () => {
    * フォーム定義を差し替えると既存 field values を削除すること
    */
   it('deletes existing values when changing form definition', async () => {
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field({ id: 'field-next' })]),
     );
     submissionRepository.findExistingFieldValues.mockResolvedValue([]);
@@ -140,7 +142,7 @@ describe('ApplicationFieldValuePatchService', () => {
    * draft / published の公開状態だけを更新できること
    */
   it('updates draft or published status without field value changes', async () => {
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
     submissionRepository.findExistingFieldValues.mockResolvedValue([]);
@@ -158,7 +160,7 @@ describe('ApplicationFieldValuePatchService', () => {
    * 差し戻し中は correction 対象外フィールドの更新を拒否すること
    */
   it('rejects returned patches outside correction target fields', async () => {
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field({ id: 'field-title' })]),
     );
     correctionRepository.findOpenCorrection.mockResolvedValue({
