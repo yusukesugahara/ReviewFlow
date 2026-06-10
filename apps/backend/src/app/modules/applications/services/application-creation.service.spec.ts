@@ -7,7 +7,7 @@ import { Application } from '../../../../models/entities/application.entity';
 import type { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationCreationRepository } from '../../../../models/repositories/application-creation.repository';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
 import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -53,7 +53,7 @@ describe('ApplicationCreationService', () => {
   let flowResolver: { resolveActiveFlow: jest.Mock };
   let appRepo: { create: jest.Mock; save: jest.Mock };
   let service: ApplicationCreationService;
-  let applicationsRepository: {
+  let creationRepository: {
     findPublishedTemplate: jest.Mock;
     createApplicationWithValues: jest.Mock;
     findCreatedApplication: jest.Mock;
@@ -85,7 +85,7 @@ describe('ApplicationCreationService', () => {
         ),
       },
     };
-    applicationsRepository = {
+    creationRepository = {
       findPublishedTemplate: jest.fn(),
       createApplicationWithValues: jest.fn().mockResolvedValue('app-1'),
       findCreatedApplication: jest.fn().mockResolvedValue({ id: 'app-1' }),
@@ -97,7 +97,7 @@ describe('ApplicationCreationService', () => {
     };
     appsRepo.findOne.mockResolvedValue({ id: 'app-1' });
     service = new ApplicationCreationService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      creationRepository as unknown as ApplicationCreationRepository,
       flowResolver as unknown as ApplicationApprovalFlowResolver,
       new ApplicationFormValueValidator(),
     );
@@ -107,7 +107,7 @@ describe('ApplicationCreationService', () => {
    * 公開済みフォームと承認フローから申請と初期値を保存すること
    */
   it('creates an application with initial field values', async () => {
-    applicationsRepository.findPublishedTemplate.mockResolvedValue(template());
+    creationRepository.findPublishedTemplate.mockResolvedValue(template());
 
     await service.create('tenant-1', 'user@example.com', 'user-1', {
       groupId: 'group-1',
@@ -115,9 +115,7 @@ describe('ApplicationCreationService', () => {
       values: { title: 'Expense' },
     });
 
-    expect(
-      applicationsRepository.createApplicationWithValues,
-    ).toHaveBeenCalledWith(
+    expect(creationRepository.createApplicationWithValues).toHaveBeenCalledWith(
       expect.objectContaining({
         applicantEmail: 'user@example.com',
         applicantUserId: 'user-1',
@@ -138,7 +136,7 @@ describe('ApplicationCreationService', () => {
    * フォーム指定なしで複数公開フォームがある場合に拒否すること
    */
   it('rejects ambiguous published templates', async () => {
-    applicationsRepository.findPublishedTemplate.mockResolvedValue([
+    creationRepository.findPublishedTemplate.mockResolvedValue([
       template(),
       template([field({ id: 'field-other' })]),
     ]);

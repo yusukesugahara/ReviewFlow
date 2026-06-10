@@ -1,7 +1,6 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
-import { FormDefinitionStatus } from '../constants/form-definition-status';
 import { ApplicationApproval } from '../entities/application-approval.entity';
 import { ApplicationFieldValue } from '../entities/application-field-value.entity';
 import { Application } from '../entities/application.entity';
@@ -91,24 +90,6 @@ describe('ApplicationsRepository', () => {
         'approvalFlow',
         'approvalFlow.steps',
       ],
-    });
-  });
-
-  it('finds published templates by group', async () => {
-    templates.find.mockResolvedValue([]);
-
-    await repository.findPublishedTemplate({
-      tenantId: 'tenant-1',
-      groupId: 'group-1',
-    });
-
-    expect(templates.find).toHaveBeenCalledWith({
-      where: {
-        tenantId: 'tenant-1',
-        groupId: 'group-1',
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-      relations: ['fields'],
     });
   });
 });

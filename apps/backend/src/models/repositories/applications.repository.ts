@@ -5,10 +5,7 @@ import {
   ApplicationApprovalAction,
   type ApplicationApprovalActionValue,
 } from '../constants/application-approval-action';
-import {
-  ApplicationStatus,
-  type ApplicationStatusValue,
-} from '../constants/application-status';
+import { type ApplicationStatusValue } from '../constants/application-status';
 import { CorrectionRequestStatus } from '../constants/correction-request-status';
 import { FormDefinitionStatus } from '../constants/form-definition-status';
 import { ApplicationApproval } from '../entities/application-approval.entity';
@@ -19,11 +16,6 @@ import { CorrectionRequestItem } from '../entities/correction-request-item.entit
 import { CorrectionRequest } from '../entities/correction-request.entity';
 import { FormDefinition } from '../entities/form-definition.entity';
 import { User } from '../entities/user.entity';
-
-export type CreateApplicationValue = {
-  formFieldId: string;
-  valueJson: unknown;
-};
 
 @Injectable()
 export class ApplicationsRepository {
@@ -146,32 +138,6 @@ export class ApplicationsRepository {
     });
   }
 
-  findPublishedTemplate(params: {
-    tenantId: string;
-    groupId: string;
-    formDefinitionId?: string;
-  }): Promise<FormDefinition | null> | Promise<FormDefinition[]> {
-    if (params.formDefinitionId) {
-      return this.templates.findOne({
-        where: {
-          id: params.formDefinitionId,
-          tenantId: params.tenantId,
-          groupId: params.groupId,
-          status: FormDefinitionStatus.PUBLISHED,
-        },
-        relations: ['fields'],
-      });
-    }
-    return this.templates.find({
-      where: {
-        tenantId: params.tenantId,
-        groupId: params.groupId,
-        status: FormDefinitionStatus.PUBLISHED,
-      },
-      relations: ['fields'],
-    });
-  }
-
   findTemplateByIdInGroup(params: {
     tenantId: string;
     groupId: string;
@@ -188,66 +154,6 @@ export class ApplicationsRepository {
           : {}),
       },
       relations: ['fields'],
-    });
-  }
-
-  async createApplicationWithValues(params: {
-    tenantId: string;
-    groupId: string;
-    applicantUserId: string | null;
-    applicantEmail: string;
-    formDefinitionId: string;
-    approvalFlowId: string;
-    status: ApplicationStatusValue;
-    values: CreateApplicationValue[];
-  }): Promise<string> {
-    let newId = '';
-    await this.apps.manager.transaction(async (em) => {
-      const appRepo = em.getRepository(Application);
-      const valRepo = em.getRepository(ApplicationFieldValue);
-      const app = appRepo.create({
-        tenantId: params.tenantId,
-        groupId: params.groupId,
-        applicantUserId: params.applicantUserId,
-        applicantEmail: params.applicantEmail,
-        formDefinitionId: params.formDefinitionId,
-        approvalFlowId: params.approvalFlowId,
-        status:
-          params.status === ApplicationStatus.PUBLISHED
-            ? ApplicationStatus.PUBLISHED
-            : ApplicationStatus.DRAFT,
-        currentStepOrder: null,
-        submittedAt: null,
-      });
-      const saved = await appRepo.save(app);
-      newId = saved.id;
-      for (const value of params.values) {
-        await valRepo.save(
-          valRepo.create({
-            tenantId: params.tenantId,
-            applicationId: saved.id,
-            formFieldId: value.formFieldId,
-            valueJson: value.valueJson,
-          }),
-        );
-      }
-    });
-    return newId;
-  }
-
-  findCreatedApplication(
-    tenantId: string,
-    id: string,
-  ): Promise<Application | null> {
-    return this.apps.findOne({
-      where: { id, tenantId },
-      relations: [
-        'fieldValues',
-        'fieldValues.formField',
-        'formDefinition',
-        'approvalFlow',
-        'approvalFlow.steps',
-      ],
     });
   }
 

@@ -3,7 +3,7 @@ import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { Application } from '../../../../models/entities/application.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationCreationRepository } from '../../../../models/repositories/application-creation.repository';
 import type { CreateApplicationDto } from '../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -11,7 +11,7 @@ import { ApplicationFormValueValidator } from '../validators/application-form-va
 @Injectable()
 export class ApplicationCreationService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly creationRepository: ApplicationCreationRepository,
     private readonly flowResolver: ApplicationApprovalFlowResolver,
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
@@ -39,27 +39,25 @@ export class ApplicationCreationService {
       dto.approvalFlowId,
     );
 
-    const newId = await this.applicationsRepository.createApplicationWithValues(
-      {
-        tenantId,
-        groupId: dto.groupId,
-        applicantUserId,
-        applicantEmail,
-        formDefinitionId: template.id,
-        approvalFlowId: flow.id,
-        status:
-          dto.status === ApplicationStatus.PUBLISHED
-            ? ApplicationStatus.PUBLISHED
-            : ApplicationStatus.DRAFT,
-        values: Object.entries(values).map(([key, val]) => {
-          const field = this.formValueValidator.getKnownField(fieldsByKey, key);
-          return {
-            formFieldId: field.id,
-            valueJson: val,
-          };
-        }),
-      },
-    );
+    const newId = await this.creationRepository.createApplicationWithValues({
+      tenantId,
+      groupId: dto.groupId,
+      applicantUserId,
+      applicantEmail,
+      formDefinitionId: template.id,
+      approvalFlowId: flow.id,
+      status:
+        dto.status === ApplicationStatus.PUBLISHED
+          ? ApplicationStatus.PUBLISHED
+          : ApplicationStatus.DRAFT,
+      values: Object.entries(values).map(([key, val]) => {
+        const field = this.formValueValidator.getKnownField(fieldsByKey, key);
+        return {
+          formFieldId: field.id,
+          valueJson: val,
+        };
+      }),
+    });
 
     return this.loadCreatedApplication(tenantId, newId);
   }
@@ -68,7 +66,7 @@ export class ApplicationCreationService {
     tenantId: string,
     dto: CreateApplicationDto,
   ): Promise<FormDefinition | null> {
-    const result = await this.applicationsRepository.findPublishedTemplate({
+    const result = await this.creationRepository.findPublishedTemplate({
       tenantId,
       groupId: dto.groupId,
       formDefinitionId: dto.formDefinitionId,
@@ -87,7 +85,7 @@ export class ApplicationCreationService {
     tenantId: string,
     id: string,
   ): Promise<Application> {
-    const created = await this.applicationsRepository.findCreatedApplication(
+    const created = await this.creationRepository.findCreatedApplication(
       tenantId,
       id,
     );
