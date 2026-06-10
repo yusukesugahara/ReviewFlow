@@ -20,6 +20,100 @@ export type SummaryFilter =
 
 const RECENT_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
+export type SubmissionSummaryCounts = {
+  myNeedsAction: number;
+  recentProcessed: number;
+  returned: number;
+  spaceNeedsAction: number;
+};
+
+export type SubmissionPagination = {
+  currentPage: number;
+  paginatedApplications: ApplicationRow[];
+  totalPages: number;
+};
+
+export type SubmissionSearchParams = {
+  applicant?: string;
+  createdFrom?: string;
+  createdTo?: string;
+  form?: string;
+  jobId?: string;
+  page?: string;
+  status?: string;
+  summary?: string;
+};
+
+export type NormalizedSubmissionSearchParams = {
+  filters: SubmissionFilters;
+  jobId: string;
+};
+
+export function normalizeSubmissionSearchParams(
+  query?: SubmissionSearchParams | null,
+): NormalizedSubmissionSearchParams {
+  return {
+    filters: {
+      applicant: normalizeSearchValue(query?.applicant),
+      createdFrom: normalizeSearchValue(query?.createdFrom),
+      createdTo: normalizeSearchValue(query?.createdTo),
+      form: normalizeSearchValue(query?.form),
+      page: normalizePage(query?.page),
+      status: normalizeSearchValue(query?.status),
+      summary: normalizeSummaryFilter(query?.summary),
+    },
+    jobId: normalizeSearchValue(query?.jobId),
+  };
+}
+
+export function buildSubmittedApplications(
+  applications: ApplicationRow[],
+): ApplicationRow[] {
+  return applications.filter((row) => !isFormSetupApplication(row));
+}
+
+export function buildSubmissionSummaryCounts(
+  applications: ApplicationRow[],
+  currentUserId?: string | null,
+): SubmissionSummaryCounts {
+  return {
+    myNeedsAction: applications.filter((row) =>
+      isAssignedToCurrentUser(row, currentUserId),
+    ).length,
+    recentProcessed: applications.filter(isRecentlyProcessedApplication).length,
+    returned: applications.filter(isReturnedApplication).length,
+    spaceNeedsAction: applications.filter(isSpaceNeedsActionApplication).length,
+  };
+}
+
+export function hasSubmissionFilters(filters: SubmissionFilters): boolean {
+  return (
+    filters.applicant.length > 0 ||
+    filters.createdFrom.length > 0 ||
+    filters.createdTo.length > 0 ||
+    filters.form.length > 0 ||
+    filters.status.length > 0 ||
+    filters.summary.length > 0
+  );
+}
+
+export function paginateApplications(
+  applications: ApplicationRow[],
+  requestedPage: number,
+  pageSize: number,
+): SubmissionPagination {
+  const totalPages = Math.max(1, Math.ceil(applications.length / pageSize));
+  const currentPage = Math.min(Math.max(1, requestedPage), totalPages);
+  return {
+    currentPage,
+    paginatedApplications: applications.slice(
+      (currentPage - 1) * pageSize,
+      currentPage * pageSize,
+    ),
+    totalPages,
+  };
+}
+
 export function buildExportFormOptions(
   applications: ApplicationRow[],
 ): Array<{ id: string; name: string }> {
@@ -205,4 +299,25 @@ function parseDateEnd(value: string): number | null {
   }
   const date = new Date(`${value}T23:59:59.999`);
   return Number.isNaN(date.getTime()) ? null : date.getTime();
+}
+
+function normalizeSearchValue(value?: string): string {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function normalizePage(value?: string): number {
+  const page = Number(value);
+  return Number.isInteger(page) && page > 0 ? page : 1;
+}
+
+function normalizeSummaryFilter(value?: string): SummaryFilter {
+  if (
+    value === "myNeedsAction" ||
+    value === "spaceNeedsAction" ||
+    value === "returned" ||
+    value === "recentProcessed"
+  ) {
+    return value;
+  }
+  return "";
 }

@@ -9,6 +9,7 @@ import type {
   ExportJobResponse,
   GetExportJobSuccessJson,
 } from "@/lib/schema";
+import { normalizeSubmissionSearchParams } from "./_components/space-submissions.helpers";
 import type { SpaceSubmissionsPageProps } from "./types";
 import { SpaceSubmissionsView } from "./view";
 
@@ -18,16 +19,7 @@ export default async function SpaceSubmissionsPage({
 }: SpaceSubmissionsPageProps) {
   const { spaceId } = await params;
   const query = await searchParams;
-  const filters = {
-    applicant: normalizeSearchValue(query?.applicant),
-    createdFrom: normalizeSearchValue(query?.createdFrom),
-    createdTo: normalizeSearchValue(query?.createdTo),
-    form: normalizeSearchValue(query?.form),
-    page: normalizePage(query?.page),
-    status: normalizeSearchValue(query?.status),
-    summary: normalizeSummaryFilter(query?.summary),
-  };
-  const jobId = normalizeSearchValue(query?.jobId);
+  const { filters, jobId } = normalizeSubmissionSearchParams(query);
   const authHeaders = await authHeadersOrRedirect();
 
   try {
@@ -79,27 +71,4 @@ export default async function SpaceSubmissionsPage({
       />
     );
   }
-}
-
-function normalizeSearchValue(value?: string): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizePage(value?: string): number {
-  const page = Number(value);
-  return Number.isInteger(page) && page > 0 ? page : 1;
-}
-
-function normalizeSummaryFilter(
-  value?: string,
-): "" | "myNeedsAction" | "spaceNeedsAction" | "returned" | "recentProcessed" {
-  if (
-    value === "myNeedsAction" ||
-    value === "spaceNeedsAction" ||
-    value === "returned" ||
-    value === "recentProcessed"
-  ) {
-    return value;
-  }
-  return "";
 }

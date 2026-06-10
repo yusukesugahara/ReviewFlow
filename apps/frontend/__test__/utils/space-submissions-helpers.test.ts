@@ -1,12 +1,17 @@
 import {
   buildExportFormOptions,
+  buildSubmittedApplications,
   buildSubmissionsPageHref,
+  buildSubmissionSummaryCounts,
   filterApplications,
+  hasSubmissionFilters,
   isAssignedToCurrentUser,
   isFormSetupApplication,
   isPendingApplication,
   isReturnedApplication,
   isSpaceNeedsActionApplication,
+  normalizeSubmissionSearchParams,
+  paginateApplications,
 } from "@/app/(authorized)/space/[spaceId]/submissions/_components/space-submissions.helpers";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
@@ -67,6 +72,40 @@ describe("space submissions helpers", () => {
     );
   });
 
+  // テスト内容: URLクエリから申請一覧フィルタとCSV出力ジョブIDを正規化できることを確認する
+  it("normalizes submission search params", () => {
+    expect(
+      normalizeSubmissionSearchParams({
+        applicant: " member@example.com ",
+        createdFrom: "2026-06-01",
+        createdTo: "2026-06-30",
+        form: " 経費 ",
+        jobId: " job-1 ",
+        page: "3",
+        status: APPLICATION_STATUSES.submitted,
+        summary: "spaceNeedsAction",
+      }),
+    ).toEqual({
+      filters: {
+        applicant: "member@example.com",
+        createdFrom: "2026-06-01",
+        createdTo: "2026-06-30",
+        form: "経費",
+        page: 3,
+        status: APPLICATION_STATUSES.submitted,
+        summary: "spaceNeedsAction",
+      },
+      jobId: "job-1",
+    });
+
+    expect(
+      normalizeSubmissionSearchParams({ page: "0", summary: "invalid" }),
+    ).toEqual({
+      filters,
+      jobId: "",
+    });
+  });
+
   // テスト内容: セットアップ用申請と対応が必要な申請を判定できることを確認する
   it("detects setup, action-needed, returned, and assigned application rows", () => {
     expect(isFormSetupApplication({ ...row, status: APPLICATION_STATUSES.published })).toBe(true);
@@ -75,5 +114,66 @@ describe("space submissions helpers", () => {
     expect(isReturnedApplication({ ...row, status: APPLICATION_STATUSES.returned })).toBe(true);
     expect(isAssignedToCurrentUser(row, "user-1")).toBe(true);
     expect(isAssignedToCurrentUser(row, "user-2")).toBe(false);
+  });
+
+  // テスト内容: 一覧表示用にセットアップ申請を除外し、サマリー件数を算出できることを確認する
+  it("builds submitted applications and summary counts", () => {
+    const submitted = row;
+    const inReview = {
+      ...row,
+      id: "application-2",
+      status: APPLICATION_STATUSES.inReview,
+      currentStepAssigneeUserIds: ["user-2"],
+    };
+    const returned = {
+      ...row,
+      id: "application-3",
+      status: APPLICATION_STATUSES.returned,
+    };
+    const approved = {
+      ...row,
+      id: "application-4",
+      status: APPLICATION_STATUSES.approved,
+      updatedAt: new Date().toISOString(),
+    };
+    const draft = {
+      ...row,
+      id: "application-5",
+      status: APPLICATION_STATUSES.draft,
+    };
+
+    expect(buildSubmittedApplications([submitted, inReview, returned, approved, draft])).toEqual([
+      submitted,
+      inReview,
+      returned,
+      approved,
+    ]);
+    expect(
+      buildSubmissionSummaryCounts([submitted, inReview, returned, approved], "user-1"),
+    ).toEqual({
+      myNeedsAction: 1,
+      recentProcessed: 1,
+      returned: 1,
+      spaceNeedsAction: 2,
+    });
+  });
+
+  // テスト内容: フィルタ有無とページングを表示ロジック外で判定できることを確認する
+  it("detects active filters and paginates applications", () => {
+    expect(hasSubmissionFilters(filters)).toBe(false);
+    expect(hasSubmissionFilters({ ...filters, form: "経費" })).toBe(true);
+
+    const applications = Array.from({ length: 12 }, (_, index) => ({
+      ...row,
+      id: `application-${index + 1}`,
+    }));
+
+    expect(paginateApplications(applications, 2, 10)).toMatchObject({
+      currentPage: 2,
+      totalPages: 2,
+      paginatedApplications: applications.slice(10, 12),
+    });
+    expect(paginateApplications(applications, 99, 10).currentPage).toBe(2);
+    expect(paginateApplications(applications, -1, 10).currentPage).toBe(1);
   });
 });
