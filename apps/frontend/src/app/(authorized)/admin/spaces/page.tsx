@@ -4,7 +4,7 @@ import { client } from "@/lib/server/backend-fetch";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import { AdminSpacesView } from "./view";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type {
   AdminSpacesAvailableUsersData,
   AdminSpacesGroupsData,
@@ -64,11 +64,11 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
 
   const authHeaders = { Authorization: `Bearer ${accessToken}` };
   const meResponse = await client.POST("/auth/me", { headers: authHeaders });
-  if (meResponse.error) {
+  if (!meResponse.response.ok || !meResponse.data) {
     redirect("/login");
   }
 
-  const me = unwrapData<AdminSpacesMe>(meResponse.data);
+  const me = unwrapResponseData<AdminSpacesMe>(meResponse);
   const isSystemAdmin = me.roles.includes(TENANT_ROLES.admin);
   const canCreateSpace = isSystemAdmin;
 
@@ -108,10 +108,14 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
       );
     }
 
-    const groups = normalizeGroups(unwrapData<AdminSpacesGroupsData>(groupsResponse.data).groups);
+    const groups = normalizeGroups(
+      unwrapResponseData<AdminSpacesGroupsData>(groupsResponse).groups,
+    );
     const users =
-      usersResponse?.data
-        ? normalizeTenantUsers(unwrapData<AdminSpacesUsersData>(usersResponse.data).users)
+      usersResponse
+        ? normalizeTenantUsers(
+            unwrapResponseData<AdminSpacesUsersData>(usersResponse).users,
+          )
         : [];
     const membersByGroup = new Map<string, GroupMemberSummary[]>();
     const availableUsersByGroup = new Map<string, AvailableUserSummary[]>();
@@ -130,16 +134,21 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
 
       membersByGroup.set(
         group.id,
-        membersResponse.error
+        !membersResponse.response.ok || !membersResponse.data
           ? []
-          : normalizeMembers(unwrapData<AdminSpacesMembersData>(membersResponse.data).members),
+          : normalizeMembers(
+              unwrapResponseData<AdminSpacesMembersData>(membersResponse)
+                .members,
+            ),
       );
       availableUsersByGroup.set(
         group.id,
-        availableUsersResponse.error
+        !availableUsersResponse.response.ok || !availableUsersResponse.data
           ? []
           : normalizeAvailableUsers(
-              unwrapData<AdminSpacesAvailableUsersData>(availableUsersResponse.data).users,
+              unwrapResponseData<AdminSpacesAvailableUsersData>(
+                availableUsersResponse,
+              ).users,
             ),
       );
     }

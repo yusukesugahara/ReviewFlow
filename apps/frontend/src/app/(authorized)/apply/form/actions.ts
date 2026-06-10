@@ -8,6 +8,7 @@ import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-fi
 import { validateRequiredDynamicFields } from "@/components/applications/dynamic-field-validation";
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type {
   CreatePublicApplicationBody,
   CreatePublicApplicationSuccessJson,
@@ -67,10 +68,7 @@ export async function submitPublicApplicationAction(
       body,
       headers: await applicantHeaders(),
     });
-    const data: CreatePublicApplicationSuccessJson | undefined = response.data;
-    if (!response.response.ok || !data) {
-      throw { status: response.response.status, body: response.error };
-    }
+    unwrapResponseData<CreatePublicApplicationSuccessJson["data"]>(response);
   } catch (error) {
     const message = isApiFailure(error)
       ? errorMessageFromBody(error.body, "submit_failed")

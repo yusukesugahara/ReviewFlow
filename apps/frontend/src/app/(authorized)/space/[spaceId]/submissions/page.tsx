@@ -1,7 +1,7 @@
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type { ApplicationRow } from "@/components/space/space-applications.types";
 import type {
   ApplicationsListSuccessJson,
@@ -44,25 +44,21 @@ export default async function SpaceSubmissionsPage({
         : Promise.resolve(null),
       client.POST("/auth/me", { headers: authHeaders }),
     ]);
-    const applicationsData: ApplicationsListSuccessJson | undefined = applicationsRaw.data;
-    if (!applicationsRaw.response.ok || !applicationsData) {
-      throw { status: applicationsRaw.response.status };
-    }
     const latestExportJob =
       jobRaw?.response.ok && jobRaw.data
-        ? unwrapData<ExportJobResponse>(
-            jobRaw.data as GetExportJobSuccessJson,
+        ? unwrapResponseData<ExportJobResponse>(
+            jobRaw as typeof jobRaw & { data: GetExportJobSuccessJson },
           )
         : null;
     const currentUserId =
       meRaw.response.ok && meRaw.data
-        ? unwrapData<AuthMeSuccessJson["data"]>(meRaw.data).id
+        ? unwrapResponseData<AuthMeSuccessJson["data"]>(meRaw).id
         : null;
 
     return (
       <SpaceSubmissionsView
         applications={
-          unwrapData<ApplicationsListSuccessJson["data"]>(applicationsData)
+          unwrapResponseData<ApplicationsListSuccessJson["data"]>(applicationsRaw)
             .applications as ApplicationRow[]
         }
         filters={filters}
