@@ -1,24 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationApprovalAction } from '../../../../models/constants/application-approval-action';
 import { Application } from '../../../../models/entities/application.entity';
-import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
-import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import type {
   ApproveApplicationDto,
   RejectApplicationDto,
   ReturnApplicationDto,
 } from '../dto/applications.dto';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
+import { ApplicationReturnForCorrectionContextLoader } from './application-return-for-correction-context.loader';
 
 @Injectable()
 export class ApplicationReviewActionService {
   constructor(
-    private readonly formDefinitionsRepository: FormDefinitionsRepository,
-    private readonly correctionRepository: ApplicationCorrectionRepository,
+    private readonly returnContextLoader: ApplicationReturnForCorrectionContextLoader,
     private readonly reviewRepository: ApplicationReviewRepository,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
@@ -65,31 +61,13 @@ export class ApplicationReviewActionService {
     actorId: string,
     dto: ReturnApplicationDto,
   ): Promise<FormDefinition> {
-    const cur = this.transitionPolicy.getCurrentStep(app);
-    this.transitionPolicy.assertStepCanReturn(cur);
-
-    const existingOpen = await this.findOpenCorrection(app.id);
-    if (existingOpen) {
-      throw clientError(ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN);
-    }
-
-    const template =
-      await this.formDefinitionsRepository.findTemplateByIdInGroup({
-        tenantId: app.tenantId,
-        groupId: app.groupId,
-        formDefinitionId: app.formDefinitionId,
-      });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-    this.assertReturnFieldsBelongToTemplate(template, dto);
-
+    const context = await this.returnContextLoader.load(app, dto);
     const overall = this.trimComment(dto.overallComment);
 
     this.transitionPolicy.applyReturn(app);
     await this.reviewRepository.saveReturnForCorrection({
       app,
-      approvalStepId: cur.id,
+      approvalStepId: context.currentStep.id,
       actorId,
       overallComment: overall,
       fields: dto.fields.map((field) => ({
@@ -98,28 +76,7 @@ export class ApplicationReviewActionService {
       })),
     });
 
-    return template;
-  }
-
-  private async findOpenCorrection(
-    applicationId: string,
-  ): Promise<CorrectionRequest | null> {
-    return this.correctionRepository.findOpenCorrection(applicationId);
-  }
-
-  private assertReturnFieldsBelongToTemplate(
-    template: FormDefinition,
-    dto: ReturnApplicationDto,
-  ): void {
-    const fieldIdsOnTemplate = new Set(
-      (template.fields ?? []).map((field) => field.id),
-    );
-
-    for (const field of dto.fields) {
-      if (!fieldIdsOnTemplate.has(field.fieldId)) {
-        throw clientError(ClientErrorCodes.APPLICATION_RETURN_FIELDS_INVALID);
-      }
-    }
+    return context.template;
   }
 
   private trimComment(value: string | undefined): string | null {

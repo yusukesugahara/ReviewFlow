@@ -8,6 +8,7 @@ import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
+import { ApplicationReturnForCorrectionContextLoader } from './application-return-for-correction-context.loader';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -86,11 +87,16 @@ describe('ApplicationReviewActionService', () => {
       saveApproval: jest.fn(),
       saveReturnForCorrection: jest.fn(),
     };
-    service = new ApplicationReviewActionService(
+    const transitionPolicy = new ApplicationTransitionPolicy();
+    const returnContextLoader = new ApplicationReturnForCorrectionContextLoader(
       formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,
+      transitionPolicy,
+    );
+    service = new ApplicationReviewActionService(
+      returnContextLoader,
       reviewRepository as unknown as ApplicationReviewRepository,
-      new ApplicationTransitionPolicy(),
+      transitionPolicy,
     );
   });
 

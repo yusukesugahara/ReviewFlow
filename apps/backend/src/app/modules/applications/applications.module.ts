@@ -37,6 +37,7 @@ import { ApplicationPatchPolicy } from './policies/application-patch.policy';
 import { ApplicationProgressService } from './services/application-progress.service';
 import { ApplicationQueryService } from './services/application-query.service';
 import { ApplicationReadAccessService } from './services/application-read-access.service';
+import { ApplicationReturnForCorrectionContextLoader } from './services/application-return-for-correction-context.loader';
 import { ApplicationReviewActionService } from './services/application-review-action.service';
 import { ApplicationReviewUseCaseService } from './services/application-review-use-case.service';
 import { ApplicationReturnEmailUseCaseService } from './services/application-return-email-use-case.service';
@@ -93,6 +94,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationProgressService,
     ApplicationQueryService,
     ApplicationReadAccessService,
+    ApplicationReturnForCorrectionContextLoader,
     ApplicationReviewActionService,
     ApplicationReviewUseCaseService,
     ApplicationReturnEmailUseCaseService,
