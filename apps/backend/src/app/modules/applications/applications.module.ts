@@ -28,9 +28,11 @@ import { ApplicantApplicationService } from './services/applicant-application.se
 import { ApplicationCorrectionService } from './services/application-correction.service';
 import { ApplicationCreationService } from './services/application-creation.service';
 import { ApplicationCreationUseCaseService } from './services/application-creation-use-case.service';
+import { ApplicationFieldValuePatchBuilder } from './services/application-field-value-patch.builder';
 import { ApplicationFieldValuePatchService } from './services/application-field-value-patch.service';
 import { ApplicationFormValueValidator } from './validators/application-form-value.validator';
 import { ApplicationNotificationService } from './services/application-notification.service';
+import { ApplicationPatchContextLoader } from './services/application-patch-context.loader';
 import { ApplicationPatchPolicy } from './policies/application-patch.policy';
 import { ApplicationProgressService } from './services/application-progress.service';
 import { ApplicationQueryService } from './services/application-query.service';
@@ -80,9 +82,11 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationCorrectionService,
     ApplicationCreationService,
     ApplicationCreationUseCaseService,
+    ApplicationFieldValuePatchBuilder,
     ApplicationFieldValuePatchService,
     ApplicationFormValueValidator,
     ApplicationNotificationService,
+    ApplicationPatchContextLoader,
     ApplicationPatchPolicy,
     ApplicationProgressService,
     ApplicationQueryService,

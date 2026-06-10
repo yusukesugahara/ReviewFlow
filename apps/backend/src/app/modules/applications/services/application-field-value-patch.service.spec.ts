@@ -12,7 +12,9 @@ import { ApplicationSubmissionRepository } from '../../../../models/repositories
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationPatchPolicy } from '../policies/application-patch.policy';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
+import { ApplicationFieldValuePatchBuilder } from './application-field-value-patch.builder';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
+import { ApplicationPatchContextLoader } from './application-patch-context.loader';
 
 const app = (overrides: Partial<Application> = {}): Application =>
   ({
@@ -89,12 +91,21 @@ describe('ApplicationFieldValuePatchService', () => {
       createFieldValue: jest.fn((value: object) => ({ ...value })),
       saveApplicationPatch: jest.fn(),
     };
-    service = new ApplicationFieldValuePatchService(
+    const formValueValidator = new ApplicationFormValueValidator();
+    const patchContextLoader = new ApplicationPatchContextLoader(
       formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,
-      submissionRepository as unknown as ApplicationSubmissionRepository,
       new ApplicationPatchPolicy(),
-      new ApplicationFormValueValidator(),
+      formValueValidator,
+    );
+    const fieldValuePatchBuilder = new ApplicationFieldValuePatchBuilder(
+      submissionRepository as unknown as ApplicationSubmissionRepository,
+      formValueValidator,
+    );
+    service = new ApplicationFieldValuePatchService(
+      submissionRepository as unknown as ApplicationSubmissionRepository,
+      patchContextLoader,
+      fieldValuePatchBuilder,
     );
   });
 
