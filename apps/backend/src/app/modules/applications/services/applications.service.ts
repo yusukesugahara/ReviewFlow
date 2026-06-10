@@ -5,7 +5,6 @@ import {
   type ApplicantAccessTokenPayload,
 } from '../../auth/services/auth.service';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
-import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { Application } from '../../../../models/entities/application.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
@@ -26,10 +25,10 @@ import {
 } from '../mappers/applications.mapper';
 import { ApplicationAccessPolicy } from '../policies/application-access.policy';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
+import { ApplicantApplicationService } from './applicant-application.service';
 import { ApplicationCorrectionService } from './application-correction.service';
 import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
-import { ApplicationProgressService } from './application-progress.service';
 import { ApplicationQueryService } from './application-query.service';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationSubmissionService } from './application-submission.service';
@@ -43,6 +42,7 @@ export class ApplicationsService {
 
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly applicantApplicationService: ApplicantApplicationService,
     private readonly authService: AuthService,
     private readonly spaceAccess: SpaceAccessService,
     private readonly mailService: MailService,
@@ -51,7 +51,6 @@ export class ApplicationsService {
     private readonly creationService: ApplicationCreationService,
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
     private readonly flowResolver: ApplicationApprovalFlowResolver,
-    private readonly progressService: ApplicationProgressService,
     private readonly queryService: ApplicationQueryService,
     private readonly reviewActionService: ApplicationReviewActionService,
     private readonly submissionService: ApplicationSubmissionService,
@@ -115,33 +114,7 @@ export class ApplicationsService {
     actor: ApplicantSession,
     dto: CreatePublicApplicationDto,
   ): Promise<Application> {
-    if (dto.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    const flow = await this.flowResolver.resolveDefaultActiveFlow(
-      actor.tenantId,
-      actor.groupId,
-    );
-    const created = await this.creationService.create(
-      actor.tenantId,
-      actor.email,
-      null,
-      {
-        ...dto,
-        formDefinitionId: actor.formDefinitionId ?? dto.formDefinitionId,
-        approvalFlowId: flow.id,
-        status: ApplicationStatus.DRAFT,
-      },
-    );
-    await this.submissionService.submit(actor.tenantId, created);
-    const submitted = await this.loadApplicationOrThrow(
-      actor.tenantId,
-      created.id,
-      {
-        detail: true,
-      },
-    );
-    return this.progressService.hydrate(submitted);
+    return this.applicantApplicationService.createAndSubmit(actor, dto);
   }
 
   private async loadApplicantEditableApplication(
@@ -314,29 +287,10 @@ export class ApplicationsService {
     return this.getOneForActor(actor, id);
   }
 
-  private assertApplicantCanAccessApplication(
-    actor: ApplicantSession,
-    id: string,
-  ): void {
-    if (actor.applicationId && actor.applicationId !== id) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-  }
-
   async getReturnedCorrectionForApplicant(
     actor: ApplicantSession,
   ): Promise<CorrectionTargetsResponseDto> {
-    if (!actor.applicationId) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    const app = await this.loadApplicantEditableApplication(
-      actor,
-      actor.applicationId,
-    );
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    return this.correctionService.buildTargetsResponse(app);
+    return this.applicantApplicationService.getReturnedCorrection(actor);
   }
 
   async patchReturnedForApplicant(
@@ -344,31 +298,14 @@ export class ApplicationsService {
     id: string,
     dto: PatchApplicationDto,
   ): Promise<Application> {
-    this.assertApplicantCanAccessApplication(actor, id);
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    if (dto.formDefinitionId || dto.approvalFlowId) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
-    }
-    await this.fieldValuePatchService.applyPatch(actor.tenantId, app, dto);
-    const updated = await this.loadApplicantEditableApplication(actor, id);
-    return this.progressService.hydrate(updated);
+    return this.applicantApplicationService.patchReturned(actor, id, dto);
   }
 
   async resubmitForApplicant(
     actor: ApplicantSession,
     id: string,
   ): Promise<Application> {
-    this.assertApplicantCanAccessApplication(actor, id);
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-    await this.submissionService.resubmit(actor.tenantId, app);
-    const updated = await this.loadApplicantEditableApplication(actor, id);
-    return this.progressService.hydrate(updated);
+    return this.applicantApplicationService.resubmit(actor, id);
   }
 
   async getCorrectionsForActor(actor: AuthUserPayload, id: string) {
