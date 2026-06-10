@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { Application } from '../../../../models/entities/application.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type {
   ApproveApplicationDto,
@@ -17,7 +17,7 @@ import { ApplicationReviewActionService } from './application-review-action.serv
 @Injectable()
 export class ApplicationReviewUseCaseService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly queryRepository: ApplicationQueryRepository,
     private readonly spaceAccess: SpaceAccessService,
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly notificationService: ApplicationNotificationService,
@@ -80,7 +80,7 @@ export class ApplicationReviewUseCaseService {
     tenantId: string,
     id: string,
   ): Promise<Application> {
-    const row = await this.applicationsRepository.findById({
+    const row = await this.queryRepository.findById({
       tenantId,
       id,
       detail: true,

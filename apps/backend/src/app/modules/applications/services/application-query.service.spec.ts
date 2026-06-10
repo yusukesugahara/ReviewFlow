@@ -1,7 +1,7 @@
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { UserRole } from '../../../../models/constants/user-role';
 import type { Application } from '../../../../models/entities/application.entity';
-import type { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import type { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { ApplicationAccessPolicy } from '../policies/application-access.policy';
@@ -87,7 +87,7 @@ describe('ApplicationQueryService', () => {
       hydrate: jest.fn((row: Application) => Promise.resolve(row)),
     };
     service = new ApplicationQueryService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
       accessPolicy as unknown as ApplicationAccessPolicy,
       correctionService as unknown as ApplicationCorrectionService,

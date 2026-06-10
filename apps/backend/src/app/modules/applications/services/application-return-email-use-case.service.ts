@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { Application } from '../../../../models/entities/application.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import { ApplicationAccessPolicy } from '../policies/application-access.policy';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
@@ -13,7 +13,7 @@ import { ApplicationQueryService } from './application-query.service';
 @Injectable()
 export class ApplicationReturnEmailUseCaseService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly queryRepository: ApplicationQueryRepository,
     private readonly spaceAccess: SpaceAccessService,
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly correctionService: ApplicationCorrectionService,
@@ -47,17 +47,14 @@ export class ApplicationReturnEmailUseCaseService {
     applicationId: string,
     actorId: string,
   ): Promise<number> {
-    return this.applicationsRepository.countApprovalsByActor(
-      applicationId,
-      actorId,
-    );
+    return this.queryRepository.countApprovalsByActor(applicationId, actorId);
   }
 
   private async loadApplicationOrThrow(
     tenantId: string,
     id: string,
   ): Promise<Application> {
-    const row = await this.applicationsRepository.findById({
+    const row = await this.queryRepository.findById({
       tenantId,
       id,
       detail: true,

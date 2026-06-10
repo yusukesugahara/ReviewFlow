@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { Application } from '../../../../models/entities/application.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { PatchApplicationDto } from '../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
@@ -13,7 +13,7 @@ import { ApplicationSubmissionService } from './application-submission.service';
 @Injectable()
 export class ApplicationUserSubmissionUseCaseService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly queryRepository: ApplicationQueryRepository,
     private readonly spaceAccess: SpaceAccessService,
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
     private readonly flowResolver: ApplicationApprovalFlowResolver,
@@ -57,7 +57,7 @@ export class ApplicationUserSubmissionUseCaseService {
     actor: { tenantId: string; id?: string; email: string },
     id: string,
   ): Promise<Application> {
-    const app = await this.applicationsRepository.findApplicantEditable({
+    const app = await this.queryRepository.findApplicantEditable({
       id,
       tenantId: actor.tenantId,
       applicantUserId: actor.id,

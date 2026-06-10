@@ -1,8 +1,8 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
+import { CorrectionRequestStatus } from '../constants/correction-request-status';
 import { ApplicationApproval } from '../entities/application-approval.entity';
-import { Application } from '../entities/application.entity';
 import { ApprovalFlow } from '../entities/approval-flow.entity';
 import { CorrectionRequest } from '../entities/correction-request.entity';
 import { FormDefinition } from '../entities/form-definition.entity';
@@ -11,9 +11,6 @@ import { ApplicationsRepository } from './applications.repository';
 
 describe('ApplicationsRepository', () => {
   let repository: ApplicationsRepository;
-  let apps: jest.Mocked<
-    Pick<Repository<Application>, 'find' | 'findOne' | 'manager'>
-  >;
   let approvals: jest.Mocked<
     Pick<Repository<ApplicationApproval>, 'count' | 'find'>
   >;
@@ -29,13 +26,6 @@ describe('ApplicationsRepository', () => {
   let users: jest.Mocked<Pick<Repository<User>, 'find'>>;
 
   beforeEach(async () => {
-    apps = {
-      find: jest.fn(),
-      findOne: jest.fn(),
-      manager: {
-        transaction: jest.fn(),
-      } as unknown as Repository<Application>['manager'],
-    };
     approvals = { count: jest.fn(), find: jest.fn() };
     correctionRequests = { find: jest.fn(), findOne: jest.fn() };
     templates = { find: jest.fn(), findOne: jest.fn() };
@@ -45,7 +35,6 @@ describe('ApplicationsRepository', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ApplicationsRepository,
-        { provide: getRepositoryToken(Application), useValue: apps },
         {
           provide: getRepositoryToken(ApplicationApproval),
           useValue: approvals,
@@ -63,24 +52,17 @@ describe('ApplicationsRepository', () => {
     repository = module.get(ApplicationsRepository);
   });
 
-  it('loads detailed applications with expected relations', async () => {
-    apps.findOne.mockResolvedValue(null);
+  it('finds open correction requests with items', async () => {
+    correctionRequests.findOne.mockResolvedValue(null);
 
-    await repository.findById({
-      tenantId: 'tenant-1',
-      id: 'app-1',
-      detail: true,
-    });
+    await repository.findOpenCorrection('app-1');
 
-    expect(apps.findOne).toHaveBeenCalledWith({
-      where: { id: 'app-1', tenantId: 'tenant-1' },
-      relations: [
-        'fieldValues',
-        'fieldValues.formField',
-        'formDefinition',
-        'approvalFlow',
-        'approvalFlow.steps',
-      ],
+    expect(correctionRequests.findOne).toHaveBeenCalledWith({
+      where: {
+        applicationId: 'app-1',
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items'],
     });
   });
 });

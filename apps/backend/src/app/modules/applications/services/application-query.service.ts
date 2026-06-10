@@ -4,7 +4,7 @@ import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { UserRole } from '../../../../models/constants/user-role';
 import type { Application } from '../../../../models/entities/application.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { CorrectionTargetsResponseDto } from '../dto/applications.dto';
 import { ApplicationAccessPolicy } from '../policies/application-access.policy';
@@ -21,7 +21,7 @@ function isSetupApplication(app: Application): boolean {
 @Injectable()
 export class ApplicationQueryService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly queryRepository: ApplicationQueryRepository,
     private readonly spaceAccess: SpaceAccessService,
     private readonly accessPolicy: ApplicationAccessPolicy,
     private readonly correctionService: ApplicationCorrectionService,
@@ -34,14 +34,14 @@ export class ApplicationQueryService {
   ): Promise<Application[]> {
     await this.spaceAccess.assertCanUseGroup(actor, groupId);
     if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
-      const rows = await this.applicationsRepository.listForTenantAdmin(
+      const rows = await this.queryRepository.listForTenantAdmin(
         actor.tenantId,
         groupId,
       );
       return this.hydrateListFormDefinitions(actor.tenantId, rows);
     }
 
-    const rows = await this.applicationsRepository.listForGroup(
+    const rows = await this.queryRepository.listForGroup(
       actor.tenantId,
       groupId,
     );
@@ -122,10 +122,7 @@ export class ApplicationQueryService {
     applicationId: string,
     actorId: string,
   ): Promise<number> {
-    return this.applicationsRepository.countApprovalsByActor(
-      applicationId,
-      actorId,
-    );
+    return this.queryRepository.countApprovalsByActor(applicationId, actorId);
   }
 
   private async loadApplicationOrThrow(
@@ -133,7 +130,7 @@ export class ApplicationQueryService {
     id: string,
     withRelations: { detail: boolean },
   ): Promise<Application> {
-    const row = await this.applicationsRepository.findById({
+    const row = await this.queryRepository.findById({
       tenantId,
       id,
       detail: withRelations.detail,
@@ -148,6 +145,6 @@ export class ApplicationQueryService {
     tenantId: string,
     rows: Application[],
   ): Promise<Application[]> {
-    return this.applicationsRepository.hydrateFormDefinitions(tenantId, rows);
+    return this.queryRepository.hydrateFormDefinitions(tenantId, rows);
   }
 }

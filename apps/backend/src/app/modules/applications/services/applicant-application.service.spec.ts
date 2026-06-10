@@ -1,6 +1,6 @@
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import type { Application } from '../../../../models/entities/application.entity';
-import type { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
 import type { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
 import type { ApplicationCorrectionService } from './application-correction.service';
@@ -90,7 +90,7 @@ describe('ApplicantApplicationService', () => {
       submit: jest.fn(),
     };
     service = new ApplicantApplicationService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      applicationsRepository as unknown as ApplicationQueryRepository,
       correctionService as unknown as ApplicationCorrectionService,
       creationService as unknown as ApplicationCreationService,
       fieldValuePatchService as unknown as ApplicationFieldValuePatchService,

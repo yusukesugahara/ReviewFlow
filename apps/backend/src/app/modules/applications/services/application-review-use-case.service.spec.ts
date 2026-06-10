@@ -2,7 +2,7 @@ import { ApplicationStatus } from '../../../../models/constants/application-stat
 import { UserRole } from '../../../../models/constants/user-role';
 import type { Application } from '../../../../models/entities/application.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import type { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import type { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { ApplicationAccessPolicy } from '../policies/application-access.policy';
@@ -91,7 +91,7 @@ describe('ApplicationReviewUseCaseService', () => {
       returnForCorrection: jest.fn(),
     };
     service = new ApplicationReviewUseCaseService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
       accessPolicy as unknown as ApplicationAccessPolicy,
       notificationService as unknown as ApplicationNotificationService,

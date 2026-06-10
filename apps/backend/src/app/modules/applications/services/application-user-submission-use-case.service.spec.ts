@@ -1,6 +1,6 @@
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import type { Application } from '../../../../models/entities/application.entity';
-import type { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import type { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
@@ -76,7 +76,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       submit: jest.fn(),
     };
     service = new ApplicationUserSubmissionUseCaseService(
-      applicationsRepository as unknown as ApplicationsRepository,
+      applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
       fieldValuePatchService as unknown as ApplicationFieldValuePatchService,
       flowResolver as unknown as ApplicationApprovalFlowResolver,
