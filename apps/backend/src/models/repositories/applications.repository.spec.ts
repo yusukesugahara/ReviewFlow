@@ -2,7 +2,6 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
 import { Repository } from 'typeorm';
 import { ApplicationApproval } from '../entities/application-approval.entity';
-import { ApplicationFieldValue } from '../entities/application-field-value.entity';
 import { Application } from '../entities/application.entity';
 import { ApprovalFlow } from '../entities/approval-flow.entity';
 import { CorrectionRequest } from '../entities/correction-request.entity';
@@ -17,9 +16,6 @@ describe('ApplicationsRepository', () => {
   >;
   let approvals: jest.Mocked<
     Pick<Repository<ApplicationApproval>, 'count' | 'find'>
-  >;
-  let fieldValues: jest.Mocked<
-    Pick<Repository<ApplicationFieldValue>, 'find' | 'create'>
   >;
   let correctionRequests: jest.Mocked<
     Pick<Repository<CorrectionRequest>, 'find' | 'findOne'>
@@ -41,7 +37,6 @@ describe('ApplicationsRepository', () => {
       } as unknown as Repository<Application>['manager'],
     };
     approvals = { count: jest.fn(), find: jest.fn() };
-    fieldValues = { find: jest.fn(), create: jest.fn() };
     correctionRequests = { find: jest.fn(), findOne: jest.fn() };
     templates = { find: jest.fn(), findOne: jest.fn() };
     approvalFlows = { find: jest.fn(), findOne: jest.fn() };
@@ -54,10 +49,6 @@ describe('ApplicationsRepository', () => {
         {
           provide: getRepositoryToken(ApplicationApproval),
           useValue: approvals,
-        },
-        {
-          provide: getRepositoryToken(ApplicationFieldValue),
-          useValue: fieldValues,
         },
         {
           provide: getRepositoryToken(CorrectionRequest),

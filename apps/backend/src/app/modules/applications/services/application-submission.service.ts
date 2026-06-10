@@ -3,6 +3,7 @@ import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
@@ -20,6 +21,7 @@ type ResubmittableApplicationContext = SubmittableApplicationContext & {
 export class ApplicationSubmissionService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly submissionRepository: ApplicationSubmissionRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
@@ -67,7 +69,7 @@ export class ApplicationSubmissionService {
   }
 
   private async saveSubmittedApplication(app: Application): Promise<void> {
-    await this.applicationsRepository.saveSubmittedApplication(app);
+    await this.submissionRepository.saveSubmittedApplication(app);
   }
 
   private async applySubmitTransition(
@@ -106,7 +108,7 @@ export class ApplicationSubmissionService {
     context: ResubmittableApplicationContext,
   ): Promise<void> {
     this.transitionPolicy.applyResubmit(context.app);
-    await this.applicationsRepository.saveResubmittedApplication({
+    await this.submissionRepository.saveResubmittedApplication({
       app: context.app,
       openCorrection: context.openCorrection,
     });

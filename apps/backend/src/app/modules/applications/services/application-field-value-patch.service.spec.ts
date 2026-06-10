@@ -7,6 +7,7 @@ import type { ApplicationFieldValue } from '../../../../models/entities/applicat
 import { Application } from '../../../../models/entities/application.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
@@ -65,6 +66,8 @@ describe('ApplicationFieldValuePatchService', () => {
   let applicationsRepository: {
     findTemplateByIdInGroup: jest.Mock;
     findOpenCorrection: jest.Mock;
+  };
+  let submissionRepository: {
     findExistingFieldValues: jest.Mock;
     createFieldValue: jest.Mock;
     saveApplicationPatch: jest.Mock;
@@ -74,12 +77,15 @@ describe('ApplicationFieldValuePatchService', () => {
     applicationsRepository = {
       findTemplateByIdInGroup: jest.fn(),
       findOpenCorrection: jest.fn(),
+    };
+    submissionRepository = {
       findExistingFieldValues: jest.fn(),
       createFieldValue: jest.fn((value: object) => ({ ...value })),
       saveApplicationPatch: jest.fn(),
     };
     service = new ApplicationFieldValuePatchService(
       applicationsRepository as unknown as ApplicationsRepository,
+      submissionRepository as unknown as ApplicationSubmissionRepository,
       new ApplicationFormValueValidator(),
     );
   });
@@ -96,14 +102,12 @@ describe('ApplicationFieldValuePatchService', () => {
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
-    applicationsRepository.findExistingFieldValues.mockResolvedValue([
-      existing,
-    ]);
+    submissionRepository.findExistingFieldValues.mockResolvedValue([existing]);
 
     await service.applyPatch('tenant-1', app(), { values: { title: 'new' } });
 
     expect(existing.valueJson).toBe('new');
-    expect(applicationsRepository.saveApplicationPatch).toHaveBeenCalledWith(
+    expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ values: [existing] }),
     );
   });
@@ -115,13 +119,13 @@ describe('ApplicationFieldValuePatchService', () => {
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field({ id: 'field-next' })]),
     );
-    applicationsRepository.findExistingFieldValues.mockResolvedValue([]);
+    submissionRepository.findExistingFieldValues.mockResolvedValue([]);
 
     await service.applyPatch('tenant-1', app(), {
       formDefinitionId: 'template-next',
     });
 
-    expect(applicationsRepository.saveApplicationPatch).toHaveBeenCalledWith(
+    expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ formDefinitionId: 'template-next' }),
     );
   });
@@ -133,13 +137,13 @@ describe('ApplicationFieldValuePatchService', () => {
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
-    applicationsRepository.findExistingFieldValues.mockResolvedValue([]);
+    submissionRepository.findExistingFieldValues.mockResolvedValue([]);
 
     await service.applyPatch('tenant-1', app(), {
       status: ApplicationStatus.PUBLISHED,
     });
 
-    expect(applicationsRepository.saveApplicationPatch).toHaveBeenCalledWith(
+    expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ status: ApplicationStatus.PUBLISHED }),
     );
   });

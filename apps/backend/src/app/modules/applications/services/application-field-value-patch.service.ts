@@ -5,6 +5,7 @@ import { ApplicationFieldValue } from '../../../../models/entities/application-f
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type { PatchApplicationDto } from '../dto/applications.dto';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -19,6 +20,7 @@ type EditablePatchContext = {
 export class ApplicationFieldValuePatchService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly submissionRepository: ApplicationSubmissionRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
 
@@ -119,7 +121,7 @@ export class ApplicationFieldValuePatchService {
     );
 
     const existingValues =
-      await this.applicationsRepository.findExistingFieldValues(context.app.id);
+      await this.submissionRepository.findExistingFieldValues(context.app.id);
     const existingByFieldId = new Map(
       existingValues.map((value) => [value.formFieldId, value]),
     );
@@ -136,7 +138,7 @@ export class ApplicationFieldValuePatchService {
         patchedValues.push(existing);
       } else {
         patchedValues.push(
-          this.applicationsRepository.createFieldValue({
+          this.submissionRepository.createFieldValue({
             tenantId: context.app.tenantId,
             applicationId: context.app.id,
             formFieldId: field.id,
@@ -162,7 +164,7 @@ export class ApplicationFieldValuePatchService {
     ) {
       return;
     }
-    await this.applicationsRepository.saveApplicationPatch({
+    await this.submissionRepository.saveApplicationPatch({
       app,
       formDefinitionId: dto.formDefinitionId,
       approvalFlowId: dto.approvalFlowId,

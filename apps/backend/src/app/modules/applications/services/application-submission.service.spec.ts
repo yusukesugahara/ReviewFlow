@@ -8,6 +8,7 @@ import type { ApprovalStep } from '../../../../models/entities/approval-step.ent
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationSubmissionService } from './application-submission.service';
@@ -75,20 +76,25 @@ describe('ApplicationSubmissionService', () => {
   let service: ApplicationSubmissionService;
   let applicationsRepository: {
     findTemplateByIdInGroup: jest.Mock;
-    saveSubmittedApplication: jest.Mock;
     findOpenCorrection: jest.Mock;
+  };
+  let submissionRepository: {
+    saveSubmittedApplication: jest.Mock;
     saveResubmittedApplication: jest.Mock;
   };
 
   beforeEach(() => {
     applicationsRepository = {
       findTemplateByIdInGroup: jest.fn(),
-      saveSubmittedApplication: jest.fn(),
       findOpenCorrection: jest.fn(),
+    };
+    submissionRepository = {
+      saveSubmittedApplication: jest.fn(),
       saveResubmittedApplication: jest.fn(),
     };
     service = new ApplicationSubmissionService(
       applicationsRepository as unknown as ApplicationsRepository,
+      submissionRepository as unknown as ApplicationSubmissionRepository,
       new ApplicationFormValueValidator(),
       new ApplicationTransitionPolicy(),
     );
@@ -107,9 +113,9 @@ describe('ApplicationSubmissionService', () => {
 
     expect(target.status).toBe(ApplicationStatus.IN_REVIEW);
     expect(target.currentStepOrder).toBe(1);
-    expect(
-      applicationsRepository.saveSubmittedApplication,
-    ).toHaveBeenCalledWith(target);
+    expect(submissionRepository.saveSubmittedApplication).toHaveBeenCalledWith(
+      target,
+    );
   });
 
   /**
@@ -155,7 +161,7 @@ describe('ApplicationSubmissionService', () => {
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
-    applicationsRepository.saveResubmittedApplication.mockImplementation(
+    submissionRepository.saveResubmittedApplication.mockImplementation(
       ({
         app,
         openCorrection,
@@ -178,8 +184,6 @@ describe('ApplicationSubmissionService', () => {
     expect(correction.resolvedAt).toBeInstanceOf(Date);
     expect(item.isResolved).toBe(true);
     expect(target.status).toBe(ApplicationStatus.IN_REVIEW);
-    expect(
-      applicationsRepository.saveResubmittedApplication,
-    ).toHaveBeenCalled();
+    expect(submissionRepository.saveResubmittedApplication).toHaveBeenCalled();
   });
 });
