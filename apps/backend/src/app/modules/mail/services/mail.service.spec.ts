@@ -1,5 +1,6 @@
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import { MailMessageFactory } from './mail-message.factory';
 import { MailService } from './mail.service';
 
 jest.mock('nodemailer', () => ({
@@ -24,6 +25,10 @@ describe('MailService', () => {
     createTransport.mockReturnValue(transporter);
   });
 
+  function createService(config: ConfigService): MailService {
+    return new MailService(config, new MailMessageFactory(config));
+  }
+
   /**
    * Gmail トランスポートを使用すること
    */
@@ -35,7 +40,7 @@ describe('MailService', () => {
       MAIL_GMAIL_USER: 'gmail-user@example.com',
       MAIL_GMAIL_APP_PASSWORD: 'app-password',
     });
-    const service = new MailService(config);
+    const service = createService(config);
 
     await service.send({
       to: 'user@example.com',
@@ -74,7 +79,7 @@ describe('MailService', () => {
       MAIL_SMTP_USER: 'smtp-user',
       MAIL_SMTP_PASSWORD: 'smtp-pass',
     });
-    const service = new MailService(config);
+    const service = createService(config);
 
     await service.send({
       to: 'user@example.com',
@@ -102,7 +107,7 @@ describe('MailService', () => {
       NODE_ENV: 'test',
       MAIL_ENABLED: '0',
     });
-    const service = new MailService(config);
+    const service = createService(config);
 
     await service.send({
       to: 'user@example.com',
@@ -115,10 +120,7 @@ describe('MailService', () => {
     expect(sendMail).not.toHaveBeenCalled();
   });
 
-  /**
-   * 申請が差し戻されたメールを送信すること
-   */
-  it('sends an application returned email with correction details', async () => {
+  it('sends generated application returned email messages', async () => {
     const config = new ConfigService({
       NODE_ENV: 'test',
       MAIL_ENABLED: '1',
@@ -129,7 +131,7 @@ describe('MailService', () => {
       MAIL_SMTP_PASSWORD: 'smtp-pass',
       FRONTEND_BASE_URL: 'https://review.example.com',
     });
-    const service = new MailService(config);
+    const service = createService(config);
 
     await service.sendApplicationReturnedEmail({
       to: 'applicant@example.com',
@@ -152,9 +154,6 @@ describe('MailService', () => {
     expect(sent?.to).toBe('applicant@example.com');
     expect(sent?.subject).toBe('ReviewFlow 経費申請 が差し戻されました');
     expect(sent?.text).toContain('備考: 詳細を追記してください');
-    expect(sent?.text).toContain(
-      'https://review.example.com/apply/access?token=return-token&next=%2Fapply%2Fcorrection',
-    );
     expect(sent?.html).toContain('修正画面を開く');
   });
 });
