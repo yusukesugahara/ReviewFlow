@@ -5,6 +5,7 @@ import { Application } from '../../../../models/entities/application.entity';
 import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
@@ -63,21 +64,26 @@ const expectErrorCode = async (
 describe('ApplicationReviewActionService', () => {
   let service: ApplicationReviewActionService;
   let applicationsRepository: {
-    saveApproval: jest.Mock;
     findOpenCorrection: jest.Mock;
     findTemplateByIdInGroup: jest.Mock;
+  };
+  let reviewRepository: {
+    saveApproval: jest.Mock;
     saveReturnForCorrection: jest.Mock;
   };
 
   beforeEach(() => {
     applicationsRepository = {
-      saveApproval: jest.fn(),
       findOpenCorrection: jest.fn(),
       findTemplateByIdInGroup: jest.fn(),
+    };
+    reviewRepository = {
+      saveApproval: jest.fn(),
       saveReturnForCorrection: jest.fn(),
     };
     service = new ApplicationReviewActionService(
       applicationsRepository as unknown as ApplicationsRepository,
+      reviewRepository as unknown as ApplicationReviewRepository,
       new ApplicationTransitionPolicy(),
     );
   });
@@ -90,7 +96,7 @@ describe('ApplicationReviewActionService', () => {
 
     await service.approve(target, 'actor-1', { comment: ' ok ' });
 
-    expect(applicationsRepository.saveApproval).toHaveBeenCalledWith(
+    expect(reviewRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
         action: ApplicationApprovalAction.APPROVED,
         comment: 'ok',
@@ -109,7 +115,7 @@ describe('ApplicationReviewActionService', () => {
 
     await service.reject(target, 'actor-1', { comment: ' no ' });
 
-    expect(applicationsRepository.saveApproval).toHaveBeenCalledWith(
+    expect(reviewRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
         action: ApplicationApprovalAction.REJECTED,
         comment: 'no',
@@ -158,7 +164,7 @@ describe('ApplicationReviewActionService', () => {
     );
 
     expect(returnedTemplate.id).toBe('template-1');
-    expect(applicationsRepository.saveReturnForCorrection).toHaveBeenCalledWith(
+    expect(reviewRepository.saveReturnForCorrection).toHaveBeenCalledWith(
       expect.objectContaining({
         overallComment: 'fix',
         fields: [

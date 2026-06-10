@@ -4,6 +4,7 @@ import { ApplicationApprovalAction } from '../../../../models/constants/applicat
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type {
   ApproveApplicationDto,
@@ -16,6 +17,7 @@ import { ApplicationTransitionPolicy } from '../policies/application-transition.
 export class ApplicationReviewActionService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly reviewRepository: ApplicationReviewRepository,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
@@ -29,7 +31,7 @@ export class ApplicationReviewActionService {
     const comment = this.trimComment(dto.comment);
 
     this.transitionPolicy.applyApproval(app, next);
-    await this.applicationsRepository.saveApproval({
+    await this.reviewRepository.saveApproval({
       app,
       approvalStepId: cur.id,
       actorId,
@@ -47,7 +49,7 @@ export class ApplicationReviewActionService {
     const comment = this.trimComment(dto.comment);
 
     this.transitionPolicy.applyReject(app);
-    await this.applicationsRepository.saveApproval({
+    await this.reviewRepository.saveApproval({
       app,
       approvalStepId: cur.id,
       actorId,
@@ -82,7 +84,7 @@ export class ApplicationReviewActionService {
     const overall = this.trimComment(dto.overallComment);
 
     this.transitionPolicy.applyReturn(app);
-    await this.applicationsRepository.saveReturnForCorrection({
+    await this.reviewRepository.saveReturnForCorrection({
       app,
       approvalStepId: cur.id,
       actorId,
