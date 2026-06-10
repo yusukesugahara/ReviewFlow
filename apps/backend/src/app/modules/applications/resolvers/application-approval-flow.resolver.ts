@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApprovalFlowsRepository } from '../../../../models/repositories/approval-flows.repository';
 
 @Injectable()
 export class ApplicationApprovalFlowResolver {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly approvalFlowsRepository: ApprovalFlowsRepository,
   ) {}
 
   async resolveActiveFlow(
@@ -15,7 +15,7 @@ export class ApplicationApprovalFlowResolver {
     approvalFlowId?: string,
   ): Promise<ApprovalFlow> {
     if (approvalFlowId) {
-      const flow = await this.applicationsRepository.findActiveApprovalFlow({
+      const flow = await this.approvalFlowsRepository.findActiveApprovalFlow({
         tenantId,
         groupId,
         approvalFlowId,
@@ -26,7 +26,7 @@ export class ApplicationApprovalFlowResolver {
       return flow;
     }
 
-    const list = await this.applicationsRepository.listActiveApprovalFlows({
+    const list = await this.approvalFlowsRepository.listActiveApprovalFlows({
       tenantId,
       groupId,
     });
@@ -43,7 +43,7 @@ export class ApplicationApprovalFlowResolver {
     tenantId: string,
     groupId: string,
   ): Promise<ApprovalFlow> {
-    const list = await this.applicationsRepository.listActiveApprovalFlows({
+    const list = await this.approvalFlowsRepository.listActiveApprovalFlows({
       tenantId,
       groupId,
       defaultOrder: true,

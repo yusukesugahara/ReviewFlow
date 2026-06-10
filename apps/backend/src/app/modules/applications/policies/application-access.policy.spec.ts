@@ -102,6 +102,28 @@ describe('ApplicationAccessPolicy', () => {
     ).toBe(true);
   });
 
+  it('allows setup applications to be listed by group managers', () => {
+    expect(
+      policy.canListForActor(
+        actor('manager-1'),
+        application({
+          applicantUserId: 'other-user',
+          status: ApplicationStatus.PUBLISHED,
+        }),
+        true,
+      ),
+    ).toBe(true);
+  });
+
+  it('does not treat non setup applications as manager-readable setup rows', () => {
+    expect(
+      policy.canReadSetupApplicationAsManager(
+        application({ status: ApplicationStatus.IN_REVIEW }),
+        true,
+      ),
+    ).toBe(false);
+  });
+
   /**
    * 過去に承認した担当者が非草稿の申請を読み込めること
    */

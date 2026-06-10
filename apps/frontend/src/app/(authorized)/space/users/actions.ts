@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { isApiFailure } from "@/lib/server/api-failure";
+import { isApiFailure, throwIfApiResponseFailed } from "@/lib/server/api-failure";
 import {
   addGroupMemberSchema,
   updateGroupMemberRoleSchema,
@@ -66,9 +66,7 @@ export async function removeSpaceMemberAction(
       params: { path: { groupId, userId } },
       headers: await authHeadersOrRedirect(),
     });
-    if (!response.response.ok) {
-      throw { status: response.response.status };
-    }
+    throwIfApiResponseFailed(response);
   } catch (error) {
     redirectWithSpaceUsersError(
       groupId,
@@ -110,9 +108,7 @@ export async function updateSpaceMemberRoleAction(
       body,
       headers: await authHeadersOrRedirect(),
     });
-    if (!response.response.ok) {
-      throw { status: response.response.status };
-    }
+    throwIfApiResponseFailed(response);
   } catch (error) {
     redirectWithSpaceUsersError(
       groupId,
@@ -153,9 +149,7 @@ export async function addSpaceMemberAction(
       body,
       headers: await authHeadersOrRedirect(),
     });
-    if (!response.response.ok) {
-      throw { status: response.response.status };
-    }
+    throwIfApiResponseFailed(response);
   } catch (error) {
     redirectWithSpaceUsersError(
       groupId,

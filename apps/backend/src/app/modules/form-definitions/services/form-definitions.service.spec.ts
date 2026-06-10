@@ -1,12 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { ClientErrorCodes } from '../../../../common/errors';
 import { FormDefinitionStatus } from '../../../../models/constants/form-definition-status';
 import { FormFieldType } from '../../../../models/constants/form-field-type';
+import { FormField } from '../../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
-import { AuthService } from '../../auth/services/auth.service';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
-import { MailService } from '../../mail/services/mail.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
+import { FormAccessRequestService } from './form-access-request.service';
+import { FormDefinitionCreationService } from './form-definition-creation.service';
+import { FormDefinitionFieldsService } from './form-definition-fields.service';
+import { FormDefinitionLifecycleService } from './form-definition-lifecycle.service';
+import { FormDefinitionQueryService } from './form-definition-query.service';
 import { FormDefinitionsService } from './form-definitions.service';
 
 /**
@@ -16,14 +18,32 @@ import { FormDefinitionsService } from './form-definitions.service';
  */
 describe('FormDefinitionsService', () => {
   let service: FormDefinitionsService;
-  let formDefinitionsRepository: jest.Mocked<
+  let formDefinitionCreation: jest.Mocked<
+    Pick<FormDefinitionCreationService, 'create'>
+  >;
+  let formDefinitionQuery: jest.Mocked<
     Pick<
-      FormDefinitionsRepository,
-      'createDefinition' | 'findByIdWithFields' | 'saveDefinition'
+      FormDefinitionQueryService,
+      'listByGroup' | 'getOneByGroupForActor' | 'getOne' | 'getOneForActor'
     >
   >;
-  let spaceAccess: jest.Mocked<
-    Pick<SpaceAccessService, 'assertCanManageGroup' | 'assertCanUseGroup'>
+  let formDefinitionFields: jest.Mocked<
+    Pick<
+      FormDefinitionFieldsService,
+      'addField' | 'moveField' | 'deleteField' | 'updateFieldSettings'
+    >
+  >;
+  let formAccessRequests: jest.Mocked<
+    Pick<
+      FormAccessRequestService,
+      'getPublishedDefinitionForApplicant' | 'requestAccess'
+    >
+  >;
+  let formDefinitionLifecycle: jest.Mocked<
+    Pick<
+      FormDefinitionLifecycleService,
+      'publish' | 'archive' | 'restore' | 'updateDescription'
+    >
   >;
   const actor = {
     id: 'u1',
@@ -33,31 +53,54 @@ describe('FormDefinitionsService', () => {
   };
 
   beforeEach(async () => {
-    formDefinitionsRepository = {
-      createDefinition: jest.fn(),
-      findByIdWithFields: jest.fn(),
-      saveDefinition: jest.fn(),
+    formDefinitionCreation = {
+      create: jest.fn(),
     };
-    spaceAccess = {
-      assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
-      assertCanUseGroup: jest.fn().mockResolvedValue(undefined),
+    formDefinitionQuery = {
+      listByGroup: jest.fn(),
+      getOneByGroupForActor: jest.fn(),
+      getOne: jest.fn(),
+      getOneForActor: jest.fn(),
+    };
+    formDefinitionFields = {
+      addField: jest.fn(),
+      moveField: jest.fn(),
+      deleteField: jest.fn(),
+      updateFieldSettings: jest.fn(),
+    };
+    formAccessRequests = {
+      getPublishedDefinitionForApplicant: jest.fn(),
+      requestAccess: jest.fn(),
+    };
+    formDefinitionLifecycle = {
+      publish: jest.fn(),
+      archive: jest.fn(),
+      restore: jest.fn(),
+      updateDescription: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         FormDefinitionsService,
         {
-          provide: FormDefinitionsRepository,
-          useValue: formDefinitionsRepository,
-        },
-        { provide: SpaceAccessService, useValue: spaceAccess },
-        {
-          provide: MailService,
-          useValue: { sendApplicationAccessEmail: jest.fn() },
+          provide: FormDefinitionCreationService,
+          useValue: formDefinitionCreation,
         },
         {
-          provide: AuthService,
-          useValue: { issueApplicantAccessToken: jest.fn() },
+          provide: FormDefinitionQueryService,
+          useValue: formDefinitionQuery,
+        },
+        {
+          provide: FormDefinitionFieldsService,
+          useValue: formDefinitionFields,
+        },
+        {
+          provide: FormAccessRequestService,
+          useValue: formAccessRequests,
+        },
+        {
+          provide: FormDefinitionLifecycleService,
+          useValue: formDefinitionLifecycle,
         },
       ],
     }).compile();
@@ -66,9 +109,33 @@ describe('FormDefinitionsService', () => {
   });
 
   /**
-   * create は草稿定義を保存すること
+   * listByGroup は query 専用サービスへ委譲すること
    */
-  it('create saves draft definition', async () => {
+  it('listByGroup delegates query service', async () => {
+    const rows = [
+      {
+        id: 't1',
+        tenantId: 'ten1',
+        groupId: 'g1',
+        status: FormDefinitionStatus.PUBLISHED,
+      } as FormDefinition,
+    ];
+    formDefinitionQuery.listByGroup.mockResolvedValue(rows);
+
+    const out = await service.listByGroup(actor, 'g1', true);
+
+    expect(out).toBe(rows);
+    expect(formDefinitionQuery.listByGroup).toHaveBeenCalledWith(
+      actor,
+      'g1',
+      true,
+    );
+  });
+
+  /**
+   * create は作成専用サービスへ委譲すること
+   */
+  it('create delegates creation service', async () => {
     const saved = {
       id: 't1',
       tenantId: 'ten1',
@@ -77,123 +144,199 @@ describe('FormDefinitionsService', () => {
       status: FormDefinitionStatus.DRAFT,
       createdByUserId: 'u1',
     } as FormDefinition;
-    formDefinitionsRepository.createDefinition.mockResolvedValue(saved);
+    const dto = { groupId: 'g1', name: '  A  ' };
+    formDefinitionCreation.create.mockResolvedValue(saved);
 
-    const out = await service.create(actor, { groupId: 'g1', name: '  A  ' });
+    const out = await service.create(actor, dto);
 
-    expect(formDefinitionsRepository.createDefinition).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'A',
-        groupId: 'g1',
-        createdByUserId: 'u1',
-      }),
+    expect(out).toBe(saved);
+    expect(formDefinitionCreation.create).toHaveBeenCalledWith(actor, dto);
+  });
+
+  /**
+   * addField はフォーム項目専用サービスへ委譲すること
+   */
+  it('addField delegates field editing to FormDefinitionFieldsService', async () => {
+    const saved = {
+      id: 'field1',
+      fieldKey: 'k',
+      label: 'L',
+      fieldType: FormFieldType.TEXT,
+      required: true,
+      sortOrder: 0,
+    } as FormField;
+    const dto = {
+      fieldKey: 'k',
+      label: 'L',
+      fieldType: FormFieldType.TEXT,
+      required: true,
+      sortOrder: 0,
+    };
+    formDefinitionFields.addField.mockResolvedValue(saved);
+
+    const out = await service.addField(actor, 't1', dto);
+
+    expect(out).toBe(saved);
+    expect(formDefinitionFields.addField).toHaveBeenCalledWith(
+      actor,
+      't1',
+      dto,
     );
-    expect(out.id).toBe('t1');
   });
 
   /**
-   * addField は草稿定義でない場合にエラーを返すこと
+   * publish は lifecycle 専用サービスへ委譲すること
    */
-  it('addField rejects when definition not draft', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue({
-      id: 't1',
-      tenantId: 'ten1',
-      groupId: 'g1',
-      status: FormDefinitionStatus.PUBLISHED,
-    } as FormDefinition);
-
-    await expect(
-      service.addField(actor, 't1', {
-        fieldKey: 'k',
-        label: 'L',
-        fieldType: FormFieldType.TEXT,
-        required: true,
-        sortOrder: 0,
-      }),
-    ).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.FORM_DEFINITION_IMMUTABLE,
-    });
-  });
-
-  /**
-   * publish は草稿定義でない場合にエラーを返すこと
-   */
-  it('publish rejects when not draft', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue({
-      id: 't1',
-      tenantId: 'ten1',
-      groupId: 'g1',
-      status: FormDefinitionStatus.ARCHIVED,
-    } as FormDefinition);
-
-    await expect(service.publish(actor, 't1')).rejects.toMatchObject({
-      errorCode: ClientErrorCodes.FORM_DEFINITION_NOT_PUBLISHABLE,
-    });
-  });
-
-  /**
-   * archive は管理権限を確認し、定義をアーカイブにすること
-   */
-  it('archive marks definition as archived after management check', async () => {
+  it('publish delegates lifecycle transition', async () => {
     const definition = {
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
       status: FormDefinitionStatus.PUBLISHED,
     } as FormDefinition;
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
-    formDefinitionsRepository.saveDefinition.mockResolvedValue(definition);
+    formDefinitionLifecycle.publish.mockResolvedValue(definition);
+
+    const out = await service.publish(actor, 't1');
+
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.publish).toHaveBeenCalledWith(actor, 't1');
+  });
+
+  /**
+   * archive は lifecycle 専用サービスへ委譲すること
+   */
+  it('archive delegates lifecycle transition', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.ARCHIVED,
+    } as FormDefinition;
+    formDefinitionLifecycle.archive.mockResolvedValue(definition);
 
     const out = await service.archive(actor, 't1');
 
-    expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
-    expect(out.status).toBe(FormDefinitionStatus.ARCHIVED);
-    expect(out.archivedFromStatus).toBe(FormDefinitionStatus.PUBLISHED);
-    expect(formDefinitionsRepository.saveDefinition).toHaveBeenCalledWith(
-      definition,
-    );
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.archive).toHaveBeenCalledWith(actor, 't1');
   });
 
   /**
-   * restore は管理権限を確認し、アーカイブされた定義を元のステータスに戻すこと
+   * restore は lifecycle 専用サービスへ委譲すること
    */
-  it('restore moves archived definition back to its previous status', async () => {
+  it('restore delegates lifecycle transition', async () => {
     const definition = {
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
-      status: FormDefinitionStatus.ARCHIVED,
-      archivedFromStatus: FormDefinitionStatus.DRAFT,
+      status: FormDefinitionStatus.DRAFT,
     } as FormDefinition;
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
-    formDefinitionsRepository.saveDefinition.mockResolvedValue(definition);
+    formDefinitionLifecycle.restore.mockResolvedValue(definition);
 
     const out = await service.restore(actor, 't1');
 
-    expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(actor, 'g1');
-    expect(out.status).toBe(FormDefinitionStatus.DRAFT);
-    expect(out.archivedFromStatus).toBeNull();
-    expect(formDefinitionsRepository.saveDefinition).toHaveBeenCalledWith(
-      definition,
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.restore).toHaveBeenCalledWith(actor, 't1');
+  });
+
+  it('updateDescription delegates lifecycle mutation', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      description: 'new',
+    } as FormDefinition;
+    const dto = { description: ' new ' };
+    formDefinitionLifecycle.updateDescription.mockResolvedValue(definition);
+
+    const out = await service.updateDescription(actor, 't1', dto);
+
+    expect(out).toBe(definition);
+    expect(formDefinitionLifecycle.updateDescription).toHaveBeenCalledWith(
+      actor,
+      't1',
+      dto,
     );
   });
 
   /**
-   * getOneForActor はスペース利用権限のみを確認すること
+   * getOne は query 専用サービスへ委譲すること
    */
-  it('getOneForActor requires space usage access only', async () => {
+  it('getOne delegates query service', async () => {
     const definition = {
       id: 't1',
       tenantId: 'ten1',
       groupId: 'g1',
       status: FormDefinitionStatus.PUBLISHED,
     } as FormDefinition;
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(definition);
+    formDefinitionQuery.getOne.mockResolvedValue(definition);
+
+    const out = await service.getOne('ten1', 't1');
+
+    expect(out).toBe(definition);
+    expect(formDefinitionQuery.getOne).toHaveBeenCalledWith('ten1', 't1');
+  });
+
+  /**
+   * getOneForActor は query 専用サービスへ委譲すること
+   */
+  it('getOneForActor delegates query service', async () => {
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.PUBLISHED,
+    } as FormDefinition;
+    formDefinitionQuery.getOneForActor.mockResolvedValue(definition);
 
     const out = await service.getOneForActor(actor, 't1');
 
     expect(out).toBe(definition);
-    expect(spaceAccess.assertCanUseGroup).toHaveBeenCalledWith(actor, 'g1');
-    expect(spaceAccess.assertCanManageGroup).not.toHaveBeenCalled();
+    expect(formDefinitionQuery.getOneForActor).toHaveBeenCalledWith(
+      actor,
+      't1',
+    );
+  });
+
+  it('getPublishedDefinitionForApplicant delegates public applicant lookup', async () => {
+    const applicant = {
+      kind: 'applicant_access',
+      tenantId: 'ten1',
+      email: 'applicant@example.com',
+      groupId: 'g1',
+      formDefinitionId: 't1',
+    } satisfies ApplicantAccessTokenPayload;
+    const definition = {
+      id: 't1',
+      tenantId: 'ten1',
+      groupId: 'g1',
+      status: FormDefinitionStatus.PUBLISHED,
+    } as FormDefinition;
+    formAccessRequests.getPublishedDefinitionForApplicant.mockResolvedValue(
+      definition,
+    );
+
+    const out = await service.getPublishedDefinitionForApplicant(applicant);
+
+    expect(out).toBe(definition);
+    expect(
+      formAccessRequests.getPublishedDefinitionForApplicant,
+    ).toHaveBeenCalledWith(applicant);
+  });
+
+  it('requestAccess delegates public access email flow', async () => {
+    formAccessRequests.requestAccess.mockResolvedValue({ accepted: true });
+
+    const out = await service.requestAccess(
+      'g1',
+      { email: 'applicant@example.com' },
+      't1',
+    );
+
+    expect(out).toEqual({ accepted: true });
+    expect(formAccessRequests.requestAccess).toHaveBeenCalledWith(
+      'g1',
+      { email: 'applicant@example.com' },
+      't1',
+    );
   });
 });

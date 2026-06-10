@@ -10,6 +10,7 @@ import {
   isApiFailure,
   throwIfApiResponseFailed,
 } from "@/lib/server/api-failure";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import {
   addGroupMemberSchema,
   createSpaceSchema,
@@ -91,11 +92,7 @@ export async function createSpaceAction(formData: FormData): Promise<void> {
       body,
       headers: await authHeadersOrRedirect(),
     });
-    const data: CreateGroupSuccessJson | undefined = response.data;
-    throwIfApiResponseFailed(response);
-    if (!data) {
-      throw { status: response.response.status, body: response.error };
-    }
+    unwrapResponseData<CreateGroupSuccessJson["data"]>(response);
   } catch (error) {
     redirectWithSpaceError(error, "スペースの作成に失敗しました");
   }
@@ -125,11 +122,7 @@ export async function addMemberAction(
       body,
       headers: await authHeadersOrRedirect(),
     });
-    const data: AddGroupMemberSuccessJson | undefined = response.data;
-    throwIfApiResponseFailed(response);
-    if (!data) {
-      throw { status: response.response.status, body: response.error };
-    }
+    unwrapResponseData<AddGroupMemberSuccessJson["data"]>(response);
   } catch (error) {
     redirectWithSpaceError(error, "スペースメンバーの追加に失敗しました");
   }
@@ -166,11 +159,7 @@ export async function inviteSpaceMemberAction(
       body,
       headers: await authHeadersOrRedirect(),
     });
-    const data: CreateInvitationSuccessJson | undefined = response.data;
-    throwIfApiResponseFailed(response);
-    if (!data) {
-      throw { status: response.response.status, body: response.error };
-    }
+    unwrapResponseData<CreateInvitationSuccessJson["data"]>(response);
   } catch (error) {
     redirectWithSpaceError(error, "スペース招待の作成に失敗しました");
   }
@@ -200,11 +189,7 @@ export async function updateMemberRoleAction(
       body,
       headers: await authHeadersOrRedirect(),
     });
-    const data: UpdateGroupMemberRoleSuccessJson | undefined = response.data;
-    throwIfApiResponseFailed(response);
-    if (!data) {
-      throw { status: response.response.status, body: response.error };
-    }
+    unwrapResponseData<UpdateGroupMemberRoleSuccessJson["data"]>(response);
   } catch (error) {
     redirectWithSpaceError(error, "スペースロールの更新に失敗しました");
   }

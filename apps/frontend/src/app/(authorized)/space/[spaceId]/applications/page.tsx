@@ -1,7 +1,7 @@
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type { ApplicationRow, FormDefinitionRow } from "@/components/space/space-applications.types";
 import type {
   ApplicationsListSuccessJson,
@@ -29,15 +29,10 @@ export default async function SpaceApplicationsPage({
       }),
       fetchFormDefinitionsForList(spaceId, authHeaders, showArchived),
     ]);
-    const applicationsData: ApplicationsListSuccessJson | undefined = applicationsRaw.data;
-    if (!applicationsRaw.response.ok || !applicationsData) {
-      throw { status: applicationsRaw.response.status };
-    }
-
     return (
       <SpaceApplicationsView
         applications={
-          unwrapData<ApplicationsListSuccessJson["data"]>(applicationsData)
+          unwrapResponseData<ApplicationsListSuccessJson["data"]>(applicationsRaw)
             .applications as ApplicationRow[]
         }
         formDefinitions={
@@ -70,12 +65,8 @@ async function fetchFormDefinitionsForList(
       params: { query: { groupId: spaceId, includeArchived } },
       headers,
     });
-    const definitionsData: FormDefinitionsListSuccessJson | undefined = definitionsRaw.data;
-    if (!definitionsRaw.response.ok || !definitionsData) {
-      throw { status: definitionsRaw.response.status };
-    }
     return (
-      unwrapData<FormDefinitionsListSuccessJson["data"]>(definitionsData)
+      unwrapResponseData<FormDefinitionsListSuccessJson["data"]>(definitionsRaw)
         .definitions as FormDefinitionRow[]
     );
   } catch (error) {

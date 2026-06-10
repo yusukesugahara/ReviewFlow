@@ -1,14 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
-import {
-  FORM_FIELD_TYPES_WITHOUT_VALUES,
-  FormFieldType,
-} from '../../../../models/constants/form-field-type';
+import { FORM_FIELD_TYPES_WITHOUT_VALUES } from '../../../../models/constants/form-field-type';
 import type { Application } from '../../../../models/entities/application.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationFieldValueTypeValidator } from './application-field-value-type.validator';
 
 @Injectable()
 export class ApplicationFormValueValidator {
+  constructor(
+    private readonly fieldValueTypeValidator = new ApplicationFieldValueTypeValidator(),
+  ) {}
+
   buildFieldsByKey(fields: FormField[]): Map<string, FormField> {
     return new Map(fields.map((field) => [field.fieldKey, field]));
   }
@@ -30,7 +32,7 @@ export class ApplicationFormValueValidator {
   ): void {
     for (const [key, value] of Object.entries(values)) {
       const field = this.getKnownField(fieldsByKey, key);
-      this.assertValueMatchesFieldType(field, value);
+      this.fieldValueTypeValidator.assertValueMatchesFieldType(field, value);
     }
   }
 
@@ -46,7 +48,7 @@ export class ApplicationFormValueValidator {
           ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
         );
       }
-      this.assertValueMatchesFieldType(field, value);
+      this.fieldValueTypeValidator.assertValueMatchesFieldType(field, value);
     }
   }
 
@@ -70,76 +72,20 @@ export class ApplicationFormValueValidator {
         continue;
       }
       const value = valueByFieldId.get(field.id);
-      if (!this.valuePresent(value)) {
+      if (!this.fieldValueTypeValidator.valuePresent(value)) {
         throw clientError(ClientErrorCodes.APPLICATION_REQUIRED_FIELDS_MISSING);
       }
-      this.assertValueMatchesFieldType(field, value);
+      this.fieldValueTypeValidator.assertValueMatchesFieldType(field, value);
     }
 
     for (const fieldValue of app.fieldValues ?? []) {
       const field = fieldById.get(fieldValue.formFieldId);
       if (field) {
-        this.assertValueMatchesFieldType(field, fieldValue.valueJson);
+        this.fieldValueTypeValidator.assertValueMatchesFieldType(
+          field,
+          fieldValue.valueJson,
+        );
       }
-    }
-  }
-
-  private valuePresent(value: unknown): boolean {
-    if (value === null || value === undefined) {
-      return false;
-    }
-    if (typeof value === 'string') {
-      return value.trim().length > 0;
-    }
-    if (typeof value === 'number') {
-      return Number.isFinite(value);
-    }
-    if (typeof value === 'boolean') {
-      return true;
-    }
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-    return true;
-  }
-
-  private assertValueMatchesFieldType(field: FormField, value: unknown): void {
-    switch (field.fieldType) {
-      case FormFieldType.TEXT:
-      case FormFieldType.TEXTAREA:
-      case FormFieldType.DATE:
-      case FormFieldType.SELECT:
-      case FormFieldType.RADIO:
-        if (typeof value !== 'string') {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      case FormFieldType.NUMBER:
-        if (typeof value !== 'number' || !Number.isFinite(value)) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      case FormFieldType.CHECKBOX:
-        if (
-          !Array.isArray(value) ||
-          !value.every((item) => typeof item === 'string')
-        ) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      case FormFieldType.CONSENT:
-        if (value !== true) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      case FormFieldType.DESCRIPTION:
-      case FormFieldType.SECTION:
-        if (value !== null && value !== undefined) {
-          throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
-        }
-        break;
-      default:
-        throw clientError(ClientErrorCodes.APPLICATION_FIELD_VALUE_INVALID);
     }
   }
 }

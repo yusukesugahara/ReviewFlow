@@ -5,7 +5,10 @@ import { Application } from '../../../../models/entities/application.entity';
 import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
+import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
+import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
+import { ApplicationReturnForCorrectionContextLoader } from './application-return-for-correction-context.loader';
 import { ApplicationReviewActionService } from './application-review-action.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -62,23 +65,38 @@ const expectErrorCode = async (
  */
 describe('ApplicationReviewActionService', () => {
   let service: ApplicationReviewActionService;
-  let applicationsRepository: {
-    saveApproval: jest.Mock;
-    findOpenCorrection: jest.Mock;
+  let formDefinitionsRepository: {
     findTemplateByIdInGroup: jest.Mock;
+  };
+  let correctionRepository: {
+    findOpenCorrection: jest.Mock;
+  };
+  let reviewRepository: {
+    saveApproval: jest.Mock;
     saveReturnForCorrection: jest.Mock;
   };
 
   beforeEach(() => {
-    applicationsRepository = {
-      saveApproval: jest.fn(),
-      findOpenCorrection: jest.fn(),
+    formDefinitionsRepository = {
       findTemplateByIdInGroup: jest.fn(),
+    };
+    correctionRepository = {
+      findOpenCorrection: jest.fn(),
+    };
+    reviewRepository = {
+      saveApproval: jest.fn(),
       saveReturnForCorrection: jest.fn(),
     };
+    const transitionPolicy = new ApplicationTransitionPolicy();
+    const returnContextLoader = new ApplicationReturnForCorrectionContextLoader(
+      formDefinitionsRepository as unknown as FormDefinitionsRepository,
+      correctionRepository as unknown as ApplicationCorrectionRepository,
+      transitionPolicy,
+    );
     service = new ApplicationReviewActionService(
-      applicationsRepository as unknown as ApplicationsRepository,
-      new ApplicationTransitionPolicy(),
+      returnContextLoader,
+      reviewRepository as unknown as ApplicationReviewRepository,
+      transitionPolicy,
     );
   });
 
@@ -90,7 +108,7 @@ describe('ApplicationReviewActionService', () => {
 
     await service.approve(target, 'actor-1', { comment: ' ok ' });
 
-    expect(applicationsRepository.saveApproval).toHaveBeenCalledWith(
+    expect(reviewRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
         action: ApplicationApprovalAction.APPROVED,
         comment: 'ok',
@@ -109,7 +127,7 @@ describe('ApplicationReviewActionService', () => {
 
     await service.reject(target, 'actor-1', { comment: ' no ' });
 
-    expect(applicationsRepository.saveApproval).toHaveBeenCalledWith(
+    expect(reviewRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
         action: ApplicationApprovalAction.REJECTED,
         comment: 'no',
@@ -124,8 +142,8 @@ describe('ApplicationReviewActionService', () => {
    * 差し戻し対象がフォーム定義に存在しない場合に拒否すること
    */
   it('rejects return fields outside the form definition', async () => {
-    applicationsRepository.findOpenCorrection.mockResolvedValue(null);
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    correctionRepository.findOpenCorrection.mockResolvedValue(null);
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title' } as FormField]),
     );
 
@@ -143,8 +161,8 @@ describe('ApplicationReviewActionService', () => {
    */
   it('records return action and creates correction items', async () => {
     const target = app();
-    applicationsRepository.findOpenCorrection.mockResolvedValue(null);
-    applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
+    correctionRepository.findOpenCorrection.mockResolvedValue(null);
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title', label: 'Title' } as FormField]),
     );
 
@@ -158,7 +176,7 @@ describe('ApplicationReviewActionService', () => {
     );
 
     expect(returnedTemplate.id).toBe('template-1');
-    expect(applicationsRepository.saveReturnForCorrection).toHaveBeenCalledWith(
+    expect(reviewRepository.saveReturnForCorrection).toHaveBeenCalledWith(
       expect.objectContaining({
         overallComment: 'fix',
         fields: [

@@ -1,5 +1,5 @@
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
@@ -80,10 +80,7 @@ export default async function SpaceApplicationDetailPage({
       }),
       getCurrentSessionUser(),
     ]);
-    if (!appRaw.response.ok || !appRaw.data) {
-      throw { status: appRaw.response.status, body: appRaw.error };
-    }
-    const app = unwrapData<ApplicationDetailViewModel>(appRaw.data);
+    const app = unwrapResponseData<ApplicationDetailViewModel>(appRaw);
     const definitionId = app.formDefinitionId ?? query.definitionId;
     const [templateRaw, correctionsRaw, correctionTargetsRaw] = await Promise.all([
       definitionId
@@ -104,28 +101,19 @@ export default async function SpaceApplicationDetailPage({
         headers: authHeaders,
       }),
     ]);
-    if (!templateRaw.response.ok || !templateRaw.data) {
-      throw { status: templateRaw.response.status, body: templateRaw.error };
-    }
-    if (!correctionsRaw.response.ok || !correctionsRaw.data) {
-      throw { status: correctionsRaw.response.status, body: correctionsRaw.error };
-    }
-    if (!correctionTargetsRaw.response.ok || !correctionTargetsRaw.data) {
-      throw { status: correctionTargetsRaw.response.status, body: correctionTargetsRaw.error };
-    }
     const definition = definitionId
-      ? unwrapData<FormDefinitionDetail>(templateRaw.data)
-      : (unwrapData<{ definitions?: { fields?: ApplicationFormField[] }[] }>(
-          templateRaw.data,
-        ).definitions?.[0] ?? null);
+      ? unwrapResponseData<FormDefinitionDetail>(templateRaw)
+      : (unwrapResponseData<{
+          definitions?: { fields?: ApplicationFormField[] }[];
+        }>(templateRaw).definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
     const corrections =
-      unwrapData<{ corrections?: ApplicationCorrection[] }>(correctionsRaw.data)
+      unwrapResponseData<{ corrections?: ApplicationCorrection[] }>(correctionsRaw)
         .corrections ?? [];
     const openItems =
-      unwrapData<{
+      unwrapResponseData<{
         openCorrection?: { items?: ApplicationCorrectionTargetItem[] } | null;
-      }>(correctionTargetsRaw.data).openCorrection?.items ?? [];
+      }>(correctionTargetsRaw).openCorrection?.items ?? [];
     const capabilities = getApplicationCapabilities(app, actor);
     const fieldMap = fields.map((field) => ({ id: field.id, key: field.fieldKey }));
     const missingRequiredFields = getMissingRequiredFields(fields, app.values);
@@ -139,11 +127,10 @@ export default async function SpaceApplicationDetailPage({
         params: { query: { groupId: spaceId } },
         headers: authHeaders,
       });
-      if (!applicationsRaw.response.ok || !applicationsRaw.data) {
-        throw { status: applicationsRaw.response.status, body: applicationsRaw.error };
-      }
       const relatedApplications =
-        unwrapData<{ applications?: ApplicationSummary[] }>(applicationsRaw.data)
+        unwrapResponseData<{ applications?: ApplicationSummary[] }>(
+          applicationsRaw,
+        )
           .applications?.filter(
             (row) =>
               row.formDefinitionId === definitionId &&
@@ -183,8 +170,8 @@ export default async function SpaceApplicationDetailPage({
       });
       if (applicationsRaw.response.ok && applicationsRaw.data) {
         const setupApplication =
-          unwrapData<{ applications?: ApplicationSummary[] }>(
-            applicationsRaw.data,
+          unwrapResponseData<{ applications?: ApplicationSummary[] }>(
+            applicationsRaw,
           ).applications?.find(
             (row) =>
               row.formDefinitionId === definitionId &&

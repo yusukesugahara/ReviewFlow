@@ -1,15 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useId, useState } from "react";
-import {
-  ArrowRight,
-  Copy,
-  FilePlusCorner,
-  RotateCcw,
-  Trash2,
-} from "lucide-react";
-import { toast } from "sonner";
+import { useState } from "react";
+import { FilePlusCorner } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
@@ -19,13 +12,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Tooltip,
@@ -33,29 +19,18 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { ApplicationEmptyState } from "@/components/applications/application-empty-state";
+import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
+import type { SpaceApplicationsPageContentProps } from "@/components/space/space-applications.types";
 import {
-  buildSpaceApplicationDetailHref,
-  buildSpaceApplicationNewHref,
-} from "@/components/applications/application-routes";
+  buildApplicationFormListRows,
+  type ApplicationFormListRow,
+} from "./space-applications.helpers";
+import { SpaceApplicationFormsTable } from "./space-application-forms-table";
 import {
-  archiveFormDefinitionAction,
-  restoreFormDefinitionAction,
-} from "@/app/(authorized)/space/[spaceId]/applications/actions";
-import type {
-  ApplicationRow,
-  FormDefinitionRow,
-  SpaceApplicationsPageContentProps,
-} from "@/components/space/space-applications.types";
+  FormDefinitionArchiveDialog,
+  FormDefinitionRestoreDialog,
+} from "./form-definition-action-dialogs";
 
 export function SpaceApplicationsPageContent({
   applications,
@@ -66,11 +41,6 @@ export function SpaceApplicationsPageContent({
 }: SpaceApplicationsPageContentProps) {
   const [archiveTarget, setArchiveTarget] = useState<ApplicationFormListRow | null>(null);
   const [restoreTarget, setRestoreTarget] = useState<ApplicationFormListRow | null>(null);
-  const [copiedPublicHref, setCopiedPublicHref] = useState<string | null>(null);
-  const archiveTitleId = useId();
-  const archiveDescriptionId = useId();
-  const restoreTitleId = useId();
-  const restoreDescriptionId = useId();
 
   if (fetchErrorStatus !== undefined) {
     return (
@@ -81,20 +51,12 @@ export function SpaceApplicationsPageContent({
     );
   }
 
-  const setupApplications = applications.filter(isFormSetupApplication);
-  const submittedApplications = applications.filter((row) => !isFormSetupApplication(row));
-  const displayDefinitions =
-    formDefinitions.length > 0
-      ? formDefinitions
-      : buildFallbackDefinitions(submittedApplications, spaceId);
-  const rows = displayDefinitions.map((definition) =>
-    buildApplicationFormListRow(definition, applications, setupApplications, spaceId),
-  );
-  const visibleRows = rows.filter((row) =>
-    showArchived
-      ? row.status === APPLICATION_STATUSES.archived
-      : row.status !== APPLICATION_STATUSES.archived,
-  );
+  const visibleRows = buildApplicationFormListRows({
+    applications,
+    formDefinitions,
+    showArchived,
+    spaceId,
+  });
   const activeHref = `/space/${encodeURIComponent(spaceId)}/applications`;
   const archivedHref = `${activeHref}?archived=true`;
 
@@ -174,338 +136,31 @@ export function SpaceApplicationsPageContent({
               }
             />
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>申請タイトル</TableHead>
-                  <TableHead>状態</TableHead>
-                  <TableHead className="text-right">未処理</TableHead>
-                  <TableHead className="text-right">処理済み</TableHead>
-                  <TableHead className="text-right">操作</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {visibleRows.map((row) => (
-                  <TableRow key={row.definitionId}>
-                    <TableCell className="font-medium">{row.title}</TableCell>
-                    <TableCell>
-                      <FormDefinitionStatusBadge status={row.status} />
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {row.pendingCount}
-                    </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {row.processedCount}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <TooltipProvider>
-                        <div className="flex flex-wrap justify-end gap-2">
-                          {!showArchived && row.detailHref ? (
-                            <Button asChild variant="outline" size="sm">
-                              <Link href={row.detailHref} title="フォーム詳細">
-                                詳細
-                                <ArrowRight aria-hidden="true" />
-                              </Link>
-                            </Button>
-                          ) : null}
-                          {!showArchived && row.publicHref ? (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="outline"
-                                  size="icon"
-                                  aria-label="公開URLをコピー"
-                                  onClick={() => {
-                                    const publicUrl = `${window.location.origin}${row.publicHref}`;
-                                    void navigator.clipboard
-                                      .writeText(publicUrl)
-                                      .then(() => {
-                                        setCopiedPublicHref(row.publicHref);
-                                        toast.success("公開URLをコピーしました");
-                                        window.setTimeout(() => setCopiedPublicHref(null), 1200);
-                                      })
-                                      .catch(() => {
-                                        toast.error("公開URLのコピーに失敗しました");
-                                      });
-                                  }}
-                                >
-                                  <Copy aria-hidden="true" />
-                                  <span className="sr-only">
-                                    {copiedPublicHref === row.publicHref ? "コピー済み" : ""}
-                                  </span>
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>公開URLをコピー</TooltipContent>
-                            </Tooltip>
-                          ) : !showArchived ? (
-                            <span className="self-center text-sm text-muted-foreground">
-                              未公開
-                            </span>
-                          ) : null}
-                          {showArchived ? (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setRestoreTarget(row)}
-                            >
-                              <RotateCcw aria-hidden="true" />
-                              復元
-                            </Button>
-                          ) : (
-                            <Tooltip>
-                              <TooltipTrigger asChild>
-                                <Button
-                                  type="button"
-                                  variant="destructive"
-                                  size="icon"
-                                  aria-label="削除"
-                                  onClick={() => setArchiveTarget(row)}
-                                >
-                                  <Trash2 aria-hidden="true" />
-                                </Button>
-                              </TooltipTrigger>
-                              <TooltipContent>削除</TooltipContent>
-                            </Tooltip>
-                          )}
-                        </div>
-                      </TooltipProvider>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <SpaceApplicationFormsTable
+              onArchive={setArchiveTarget}
+              onRestore={setRestoreTarget}
+              rows={visibleRows}
+              showArchived={showArchived}
+            />
           )}
         </CardContent>
       </Card>
 
       {archiveTarget ? (
         <FormDefinitionArchiveDialog
-          descriptionId={archiveDescriptionId}
           onCancel={() => setArchiveTarget(null)}
           spaceId={spaceId}
           target={archiveTarget}
-          titleId={archiveTitleId}
         />
       ) : null}
 
       {restoreTarget ? (
         <FormDefinitionRestoreDialog
-          descriptionId={restoreDescriptionId}
           onCancel={() => setRestoreTarget(null)}
           spaceId={spaceId}
           target={restoreTarget}
-          titleId={restoreTitleId}
         />
       ) : null}
     </div>
-  );
-}
-
-function FormDefinitionArchiveDialog({
-  descriptionId,
-  onCancel,
-  spaceId,
-  target,
-  titleId,
-}: {
-  descriptionId: string;
-  onCancel: () => void;
-  spaceId: string;
-  target: ApplicationFormListRow;
-  titleId: string;
-}) {
-  return (
-    <DialogContent
-      descriptionId={descriptionId}
-      titleId={titleId}
-      onClose={onCancel}
-    >
-      <form
-        action={archiveFormDefinitionAction.bind(null, target.definitionId, spaceId)}
-        className="space-y-5"
-      >
-        <DialogHeader>
-          <DialogTitle id={titleId}>申請フォームを削除しますか</DialogTitle>
-          <DialogDescription id={descriptionId}>
-            {target.title} を削除済みに移動します。削除済み一覧から復元できます。
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            キャンセル
-          </Button>
-          <Button type="submit" variant="destructive">
-            削除
-          </Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
-  );
-}
-
-function FormDefinitionRestoreDialog({
-  descriptionId,
-  onCancel,
-  spaceId,
-  target,
-  titleId,
-}: {
-  descriptionId: string;
-  onCancel: () => void;
-  spaceId: string;
-  target: ApplicationFormListRow;
-  titleId: string;
-}) {
-  return (
-    <DialogContent
-      descriptionId={descriptionId}
-      titleId={titleId}
-      onClose={onCancel}
-    >
-      <form
-        action={restoreFormDefinitionAction.bind(null, target.definitionId, spaceId)}
-        className="space-y-5"
-      >
-        <DialogHeader>
-          <DialogTitle id={titleId}>申請フォームを復元しますか</DialogTitle>
-          <DialogDescription id={descriptionId}>
-            {target.title} を申請フォーム一覧へ戻します。
-          </DialogDescription>
-        </DialogHeader>
-        <DialogFooter>
-          <Button type="button" variant="outline" onClick={onCancel}>
-            キャンセル
-          </Button>
-          <Button type="submit">復元</Button>
-        </DialogFooter>
-      </form>
-    </DialogContent>
-  );
-}
-
-function isFormSetupApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.draft ||
-    row.status === APPLICATION_STATUSES.published
-  );
-}
-
-type ApplicationFormListRow = {
-  definitionId: string;
-  detailHref: string | null;
-  pendingCount: number;
-  processedCount: number;
-  publicHref: string | null;
-  status: string;
-  title: string;
-};
-
-function buildApplicationFormListRow(
-  definition: FormDefinitionRow,
-  applications: ApplicationRow[],
-  setupApplications: ApplicationRow[],
-  spaceId: string,
-): ApplicationFormListRow {
-  const relatedApplications = applications.filter(
-    (row) => row.formDefinitionId === definition.id && !isFormSetupApplication(row),
-  );
-  const setupApplication = setupApplications.find(
-    (row) => row.formDefinitionId === definition.id,
-  );
-  const detailHref = setupApplication
-    ? buildSpaceApplicationDetailHref(setupApplication) ??
-      `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(setupApplication.id)}`
-    : null;
-  const formDetailHref = detailHref ? appendQueryParam(detailHref, "view", "form") : null;
-  const setupStatus =
-    definition.status === APPLICATION_STATUSES.archived
-      ? definition.status
-      : setupApplication?.status ?? definition.status;
-  const isPublished =
-    definition.status === APPLICATION_STATUSES.published &&
-    setupStatus === APPLICATION_STATUSES.published;
-
-  return {
-    definitionId: definition.id,
-    detailHref: formDetailHref,
-    pendingCount: relatedApplications.filter(isPendingApplicationStatus).length,
-    processedCount: relatedApplications.filter(isProcessedApplicationStatus).length,
-    publicHref: isPublished
-      ? `/apply/${encodeURIComponent(definition.groupId || spaceId)}?formDefinitionId=${encodeURIComponent(definition.id)}`
-      : null,
-    status: setupStatus,
-    title: definition.name,
-  };
-}
-
-function appendQueryParam(href: string, key: string, value: string): string {
-  const [pathname, query = ""] = href.split("?");
-  const params = new URLSearchParams(query);
-  params.set(key, value);
-  return `${pathname}?${params.toString()}`;
-}
-
-function isPendingApplicationStatus(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.submitted ||
-    row.status === APPLICATION_STATUSES.inReview ||
-    row.status === APPLICATION_STATUSES.returned
-  );
-}
-
-function isProcessedApplicationStatus(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.approved ||
-    row.status === APPLICATION_STATUSES.rejected
-  );
-}
-
-function buildFallbackDefinitions(
-  rows: ApplicationRow[],
-  spaceId: string,
-): FormDefinitionRow[] {
-  const definitions = new Map<string, FormDefinitionRow>();
-  for (const row of rows) {
-    const id = row.formDefinitionId;
-    if (!id || definitions.has(id)) {
-      continue;
-    }
-    definitions.set(id, {
-      id,
-      groupId: row.groupId || spaceId,
-      name: row.formDefinitionName?.trim() || row.applicationName?.trim() || "-",
-      status: APPLICATION_STATUSES.published,
-      fields: [],
-      createdAt: row.createdAt,
-      updatedAt: row.createdAt,
-    });
-  }
-  return Array.from(definitions.values());
-}
-
-function FormDefinitionStatusBadge({ status }: { status: string }) {
-  const isPublished = status === APPLICATION_STATUSES.published;
-  const isArchived = status === APPLICATION_STATUSES.archived;
-  const label = isPublished
-    ? "公開済み"
-    : isArchived
-      ? "削除済み"
-      : status === APPLICATION_STATUSES.draft
-        ? "下書き"
-        : status;
-  return (
-    <span
-      className={`inline-flex items-center rounded-md border px-2 py-1 text-xs font-medium ${
-        isArchived
-          ? "border-rose-200 bg-rose-50 text-rose-800"
-          : isPublished
-            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-            : "border-slate-200 bg-slate-50 text-slate-700"
-      }`}
-    >
-      {label}
-    </span>
   );
 }

@@ -3,6 +3,7 @@ import type { ApprovalStepItem } from "@/components/application-setup/approval-s
 import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { normalizeFieldOptions } from "@/components/applications/field-options";
 import {
@@ -27,13 +28,6 @@ import {
   SpaceApplicationEditUnavailableView,
   SpaceApplicationEditView,
 } from "./view";
-
-function unwrapData<T>(raw: unknown): T {
-  if (!raw || typeof raw !== "object" || !("data" in raw)) {
-    throw new Error("invalid success envelope");
-  }
-  return (raw as { data: T }).data;
-}
 
 function asFieldType(value: string): FieldType {
   return isFieldType(value) ? value : FIELD_TYPES.text;
@@ -99,10 +93,7 @@ export default async function SpaceApplicationEditPage({
       params: { path: { id: applicationId } },
       headers: authHeaders,
     });
-    if (!appRaw.response.ok || !appRaw.data) {
-      throw { status: appRaw.response.status };
-    }
-    const app = unwrapData<EditableApplicationDetail>(appRaw.data);
+    const app = unwrapResponseData<EditableApplicationDetail>(appRaw);
     const isSetupEditable =
       app.status === APPLICATION_STATUSES.draft ||
       app.status === APPLICATION_STATUSES.published;
@@ -121,12 +112,9 @@ export default async function SpaceApplicationEditPage({
           params: { query: { groupId: spaceId } },
           headers: authHeaders,
         });
-    if (!templateRaw.response.ok || !templateRaw.data) {
-      throw { status: templateRaw.response.status };
-    }
     const definition = definitionId
-      ? unwrapData<EditableFormDefinition>(templateRaw.data)
-      : (unwrapData<{ definitions?: EditableFormDefinition[] }>(templateRaw.data)
+      ? unwrapResponseData<EditableFormDefinition>(templateRaw)
+      : (unwrapResponseData<{ definitions?: EditableFormDefinition[] }>(templateRaw)
           .definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
     const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}${
@@ -141,16 +129,13 @@ export default async function SpaceApplicationEditPage({
         params: { path: { id: applicationId } },
         headers: authHeaders,
       });
-      if (!correctionTargetsRaw.response.ok || !correctionTargetsRaw.data) {
-        throw { status: correctionTargetsRaw.response.status };
-      }
       const targets =
-        unwrapData<{
+        unwrapResponseData<{
           openCorrection?: {
             overallComment?: string | null;
             items?: CorrectionTargetItem[];
           } | null;
-        }>(correctionTargetsRaw.data).openCorrection ?? null;
+        }>(correctionTargetsRaw).openCorrection ?? null;
 
       return (
         <ReturnedApplicationCorrectionView
@@ -180,19 +165,16 @@ export default async function SpaceApplicationEditPage({
         headers: authHeaders,
       }),
     ]);
-    if (!membersRaw.response.ok || !membersRaw.data) {
-      throw { status: membersRaw.response.status };
-    }
-    if (!flowsRaw.response.ok || !flowsRaw.data) {
-      throw { status: flowsRaw.response.status };
-    }
     const members =
-      unwrapData<{ members?: EditableGroupMember[] }>(membersRaw.data).members ?? [];
+      unwrapResponseData<{ members?: EditableGroupMember[] }>(membersRaw)
+        .members ?? [];
     const assignees = members.map((member) => ({
       id: member.userId,
       label: member.name ? `${member.name} (${member.email})` : member.email,
     }));
-    const flows = unwrapData<{ flows?: EditableApprovalFlow[] }>(flowsRaw.data).flows ?? [];
+    const flows =
+      unwrapResponseData<{ flows?: EditableApprovalFlow[] }>(flowsRaw).flows ??
+      [];
     const currentFlow =
       flows.find((flow) => flow.id === app.approvalFlowId) ?? null;
     return (

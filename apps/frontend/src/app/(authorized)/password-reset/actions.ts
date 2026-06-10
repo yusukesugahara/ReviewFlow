@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { confirmPasswordResetSchema } from "@/lib/auth-schema";
 import { client } from "@/lib/server/backend-fetch";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type {
   ConfirmPasswordResetBody,
   ConfirmPasswordResetSuccessJson,
@@ -22,10 +23,7 @@ export async function confirmPasswordResetAction(formData: FormData): Promise<vo
 
   try {
     const response = await client.POST("/auth/password-reset/confirm", { body });
-    const data: ConfirmPasswordResetSuccessJson | undefined = response.data;
-    if (!response.response.ok || !data) {
-      throw new Error("password reset confirm failed");
-    }
+    unwrapResponseData<ConfirmPasswordResetSuccessJson["data"]>(response);
   } catch {
     const params = new URLSearchParams({
       token: body.token,

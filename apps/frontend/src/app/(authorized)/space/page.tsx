@@ -1,8 +1,9 @@
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { SpaceEmptyState } from "@/components/space/space-empty-state";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
+import { isApiFailure } from "@/lib/server/api-failure";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { AdminDashboardView } from "./view";
 import type {
@@ -13,7 +14,6 @@ import type {
   GroupsListSuccessJson,
 } from "@/lib/schema";
 import type {
-  AdminDashboardApiFailure,
   AdminDashboardPageProps,
   SpaceDashboardSummary,
 } from "./types";
@@ -35,12 +35,8 @@ export default async function AdminDashboardPage({
       client.GET("/groups", { headers: authHeaders }),
       getCurrentSessionUser(),
     ]);
-    const spacesData: GroupsListSuccessJson | undefined = spacesRaw.data;
-    if (!spacesRaw.response.ok || !spacesData) {
-      throw { status: spacesRaw.response.status };
-    }
     const spaces =
-      unwrapData<GroupsListSuccessJson["data"]>(spacesData).groups ?? [];
+      unwrapResponseData<GroupsListSuccessJson["data"]>(spacesRaw).groups ?? [];
     const selectedSpaceId = params.spaceId ?? spaces[0]?.id ?? "";
     if (!selectedSpaceId) {
       return <SpaceEmptyState userRoles={me?.roles ?? []} />;
@@ -59,13 +55,7 @@ export default async function AdminDashboardPage({
   } catch (error) {
     return (
       <AdminDashboardView
-        fetchErrorStatus={
-          error &&
-          typeof error === "object" &&
-          typeof (error as AdminDashboardApiFailure).status === "number"
-            ? (error as AdminDashboardApiFailure).status
-            : 500
-        }
+        fetchErrorStatus={isApiFailure(error) ? error.status : 500}
         selectedSpaceId=""
         spaces={[]}
       />
@@ -91,36 +81,21 @@ async function buildSpaceDashboardSummary(
       headers,
     }),
   ]);
-  const appsData: ApplicationsListSuccessJson | undefined = appsRaw.data;
-  const formsData: FormDefinitionsListSuccessJson | undefined = formsRaw.data;
-  const membersData: GroupMembersListSuccessJson | undefined = membersRaw.data;
-  if (!appsRaw.response.ok || !appsData) {
-    throw { status: appsRaw.response.status };
-  }
-  if (!formsRaw.response.ok || !formsData) {
-    throw { status: formsRaw.response.status };
-  }
-  if (!membersRaw.response.ok || !membersData) {
-    throw { status: membersRaw.response.status };
-  }
-
   const apps =
-    unwrapData<ApplicationsListSuccessJson["data"]>(appsData).applications ?? [];
+    unwrapResponseData<ApplicationsListSuccessJson["data"]>(appsRaw).applications ?? [];
   const forms =
-    unwrapData<FormDefinitionsListSuccessJson["data"]>(formsData).definitions ?? [];
+    unwrapResponseData<FormDefinitionsListSuccessJson["data"]>(formsRaw)
+      .definitions ?? [];
   const members =
-    unwrapData<GroupMembersListSuccessJson["data"]>(membersData).members ?? [];
+    unwrapResponseData<GroupMembersListSuccessJson["data"]>(membersRaw)
+      .members ?? [];
   const correctionCounts = await Promise.all(
     apps.map(async (app) => {
       const cRaw = await client.GET("/applications/{id}/corrections", {
         params: { path: { id: app.id } },
         headers,
       });
-      const correctionsData: CorrectionsListSuccessJson | undefined = cRaw.data;
-      if (!cRaw.response.ok || !correctionsData) {
-        throw { status: cRaw.response.status };
-      }
-      return unwrapData<CorrectionsListSuccessJson["data"]>(correctionsData)
+      return unwrapResponseData<CorrectionsListSuccessJson["data"]>(cRaw)
         .corrections.length;
     }),
   );

@@ -1,21 +1,21 @@
 import { Injectable } from '@nestjs/common';
-import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationApprovalAction } from '../../../../models/constants/application-approval-action';
 import { Application } from '../../../../models/entities/application.entity';
-import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
+import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
 import type {
   ApproveApplicationDto,
   RejectApplicationDto,
   ReturnApplicationDto,
 } from '../dto/applications.dto';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
+import { ApplicationReturnForCorrectionContextLoader } from './application-return-for-correction-context.loader';
 
 @Injectable()
 export class ApplicationReviewActionService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
+    private readonly returnContextLoader: ApplicationReturnForCorrectionContextLoader,
+    private readonly reviewRepository: ApplicationReviewRepository,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
@@ -29,7 +29,7 @@ export class ApplicationReviewActionService {
     const comment = this.trimComment(dto.comment);
 
     this.transitionPolicy.applyApproval(app, next);
-    await this.applicationsRepository.saveApproval({
+    await this.reviewRepository.saveApproval({
       app,
       approvalStepId: cur.id,
       actorId,
@@ -47,7 +47,7 @@ export class ApplicationReviewActionService {
     const comment = this.trimComment(dto.comment);
 
     this.transitionPolicy.applyReject(app);
-    await this.applicationsRepository.saveApproval({
+    await this.reviewRepository.saveApproval({
       app,
       approvalStepId: cur.id,
       actorId,
@@ -61,30 +61,13 @@ export class ApplicationReviewActionService {
     actorId: string,
     dto: ReturnApplicationDto,
   ): Promise<FormDefinition> {
-    const cur = this.transitionPolicy.getCurrentStep(app);
-    this.transitionPolicy.assertStepCanReturn(cur);
-
-    const existingOpen = await this.findOpenCorrection(app.id);
-    if (existingOpen) {
-      throw clientError(ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN);
-    }
-
-    const template = await this.applicationsRepository.findTemplateByIdInGroup({
-      tenantId: app.tenantId,
-      groupId: app.groupId,
-      formDefinitionId: app.formDefinitionId,
-    });
-    if (!template) {
-      throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
-    }
-    this.assertReturnFieldsBelongToTemplate(template, dto);
-
+    const context = await this.returnContextLoader.load(app, dto);
     const overall = this.trimComment(dto.overallComment);
 
     this.transitionPolicy.applyReturn(app);
-    await this.applicationsRepository.saveReturnForCorrection({
+    await this.reviewRepository.saveReturnForCorrection({
       app,
-      approvalStepId: cur.id,
+      approvalStepId: context.currentStep.id,
       actorId,
       overallComment: overall,
       fields: dto.fields.map((field) => ({
@@ -93,28 +76,7 @@ export class ApplicationReviewActionService {
       })),
     });
 
-    return template;
-  }
-
-  private async findOpenCorrection(
-    applicationId: string,
-  ): Promise<CorrectionRequest | null> {
-    return this.applicationsRepository.findOpenCorrection(applicationId);
-  }
-
-  private assertReturnFieldsBelongToTemplate(
-    template: FormDefinition,
-    dto: ReturnApplicationDto,
-  ): void {
-    const fieldIdsOnTemplate = new Set(
-      (template.fields ?? []).map((field) => field.id),
-    );
-
-    for (const field of dto.fields) {
-      if (!fieldIdsOnTemplate.has(field.fieldId)) {
-        throw clientError(ClientErrorCodes.APPLICATION_RETURN_FIELDS_INVALID);
-      }
-    }
+    return context.template;
   }
 
   private trimComment(value: string | undefined): string | null {

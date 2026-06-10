@@ -1,7 +1,6 @@
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
-import type { PublicCurrentFormDefinitionSuccessJson } from "@/lib/schema";
 import { applicantHeaders } from "./server";
 import type { PublicApplicationFormDefinition, PublicApplicationFormPageProps } from "./types";
 import {
@@ -23,12 +22,9 @@ export default async function PublicApplicationFormPage({
     const response = await client.GET("/form-definitions/public/current", {
       headers: await applicantHeaders(),
     });
-    const data: PublicCurrentFormDefinitionSuccessJson | undefined = response.data;
-    if (!response.response.ok || !data) {
-      throw { status: response.response.status, body: response.error };
-    }
 
-    const definition = unwrapData<PublicApplicationFormDefinition>(data);
+    const definition =
+      unwrapResponseData<PublicApplicationFormDefinition>(response);
     return (
       <PublicApplicationFormView
         definition={definition}

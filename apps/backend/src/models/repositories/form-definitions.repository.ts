@@ -3,15 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Not, Repository } from 'typeorm';
 import { FormDefinitionStatus } from '../constants/form-definition-status';
 import { FormDefinition } from '../entities/form-definition.entity';
-import { FormField } from '../entities/form-field.entity';
 
 @Injectable()
 export class FormDefinitionsRepository {
   constructor(
     @InjectRepository(FormDefinition)
     private readonly definitions: Repository<FormDefinition>,
-    @InjectRepository(FormField)
-    private readonly fields: Repository<FormField>,
   ) {}
 
   listByGroup(params: {
@@ -72,64 +69,39 @@ export class FormDefinitionsRepository {
     });
   }
 
-  findFieldByKey(
-    definitionId: string,
-    fieldKey: string,
-  ): Promise<FormField | null> {
-    return this.fields.findOne({
-      where: { formDefinitionId: definitionId, fieldKey },
-    });
-  }
-
-  createField(params: {
+  findTemplateByIdInGroup(params: {
     tenantId: string;
+    groupId: string;
     formDefinitionId: string;
-    fieldKey: string;
-    label: string;
-    fieldType: FormField['fieldType'];
-    required: boolean;
-    placeholder: string | null;
-    helpText: string | null;
-    optionsJson: unknown[] | null;
-    sortOrder: number;
-  }): Promise<FormField> {
-    return this.fields.save(this.fields.create(params));
-  }
-
-  findFieldsOrdered(
-    tenantId: string,
-    definitionId: string,
-  ): Promise<FormField[]> {
-    return this.fields.find({
-      where: { tenantId, formDefinitionId: definitionId },
-      order: { sortOrder: 'ASC', createdAt: 'ASC' },
-    });
-  }
-
-  saveFields(fields: FormField[]): Promise<FormField[]> {
-    return this.fields.save(fields);
-  }
-
-  findFieldByIdInDefinition(params: {
-    tenantId: string;
-    definitionId: string;
-    fieldId: string;
-  }): Promise<FormField | null> {
-    return this.fields.findOne({
+    onlyPublished?: boolean;
+  }): Promise<FormDefinition | null> {
+    return this.definitions.findOne({
       where: {
-        id: params.fieldId,
+        id: params.formDefinitionId,
         tenantId: params.tenantId,
-        formDefinitionId: params.definitionId,
+        groupId: params.groupId,
+        ...(params.onlyPublished
+          ? { status: FormDefinitionStatus.PUBLISHED }
+          : {}),
       },
+      relations: ['fields'],
     });
   }
 
-  async removeField(field: FormField): Promise<void> {
-    await this.fields.remove(field);
-  }
-
-  saveField(field: FormField): Promise<FormField> {
-    return this.fields.save(field);
+  findPublishedTemplatesForApplicationCreation(params: {
+    tenantId: string;
+    groupId: string;
+    formDefinitionId?: string;
+  }): Promise<FormDefinition[]> {
+    return this.definitions.find({
+      where: {
+        ...(params.formDefinitionId ? { id: params.formDefinitionId } : {}),
+        tenantId: params.tenantId,
+        groupId: params.groupId,
+        status: FormDefinitionStatus.PUBLISHED,
+      },
+      relations: ['fields'],
+    });
   }
 
   saveDefinition(definition: FormDefinition): Promise<FormDefinition> {

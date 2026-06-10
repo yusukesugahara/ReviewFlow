@@ -3,6 +3,7 @@
 import { redirect } from "next/navigation";
 import { acceptInvitationSchema } from "@/lib/auth-schema";
 import { client } from "@/lib/server/backend-fetch";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type { AcceptInvitationBody, AcceptInvitationSuccessJson } from "@/lib/schema";
 
 export async function acceptInvitationAction(formData: FormData): Promise<void> {
@@ -25,10 +26,7 @@ export async function acceptInvitationAction(formData: FormData): Promise<void> 
 
   try {
     const response = await client.POST("/invitations/accept", { body });
-    const data: AcceptInvitationSuccessJson | undefined = response.data;
-    if (!response.response.ok || !data) {
-      throw new Error("invitation accept failed");
-    }
+    unwrapResponseData<AcceptInvitationSuccessJson["data"]>(response);
   } catch {
     const params = new URLSearchParams({
       toast: "error",

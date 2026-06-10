@@ -1,7 +1,6 @@
 import { client } from "@/lib/server/backend-fetch";
-import { unwrapData } from "@/lib/server/api-envelope";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
-import type { PublicCurrentFormDefinitionSuccessJson } from "@/lib/schema";
 import { applicantHeaders } from "../form/server";
 import type {
   PublicCorrectionFormDefinition,
@@ -30,19 +29,12 @@ export default async function PublicCorrectionPage({
       client.GET("/public/applications/returned/current", { headers }),
     ]);
 
-    if (!definitionRaw.response.ok || !definitionRaw.data) {
-      throw { status: definitionRaw.response.status, body: definitionRaw.error };
-    }
-    if (!correctionRaw.response.ok || !correctionRaw.data) {
-      throw { status: correctionRaw.response.status, body: correctionRaw.error };
-    }
-
     return (
       <PublicCorrectionView
-        correction={unwrapData<PublicCorrectionResponse>(correctionRaw.data)}
-        definition={unwrapData<PublicCorrectionFormDefinition>(
-          definitionRaw.data as PublicCurrentFormDefinitionSuccessJson,
-        )}
+        correction={unwrapResponseData<PublicCorrectionResponse>(correctionRaw)}
+        definition={
+          unwrapResponseData<PublicCorrectionFormDefinition>(definitionRaw)
+        }
         formError={
           query.formError ?? (query.toast === "error" ? query.message : undefined)
         }

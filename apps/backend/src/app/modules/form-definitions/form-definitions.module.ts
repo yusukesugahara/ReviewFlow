@@ -3,12 +3,18 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { FormField } from '../../../models/entities/form-field.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { FormDefinitionsRepository } from '../../../models/repositories/form-definitions.repository';
+import { FormFieldsRepository } from '../../../models/repositories/form-fields.repository';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApprovalFlowsModule } from '../approval-flows/approval-flows.module';
 import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
 import { FormDefinitionsController } from './controllers/form-definitions.controller';
+import { FormAccessRequestService } from './services/form-access-request.service';
+import { FormDefinitionCreationService } from './services/form-definition-creation.service';
+import { FormDefinitionFieldsService } from './services/form-definition-fields.service';
+import { FormDefinitionLifecycleService } from './services/form-definition-lifecycle.service';
+import { FormDefinitionQueryService } from './services/form-definition-query.service';
 import { FormDefinitionsService } from './services/form-definitions.service';
 
 @Module({
@@ -22,7 +28,13 @@ import { FormDefinitionsService } from './services/form-definitions.service';
   controllers: [FormDefinitionsController],
   providers: [
     FormDefinitionsService,
+    FormAccessRequestService,
+    FormDefinitionCreationService,
+    FormDefinitionFieldsService,
+    FormDefinitionLifecycleService,
+    FormDefinitionQueryService,
     FormDefinitionsRepository,
+    FormFieldsRepository,
     ApplicantAccessGuard,
   ],
   exports: [FormDefinitionsService],
