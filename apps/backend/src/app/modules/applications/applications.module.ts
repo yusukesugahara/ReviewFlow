@@ -25,6 +25,7 @@ import { ApplicationProgressService } from './services/application-progress.serv
 import { ApplicationQueryService } from './services/application-query.service';
 import { ApplicationReviewActionService } from './services/application-review-action.service';
 import { ApplicationReviewUseCaseService } from './services/application-review-use-case.service';
+import { ApplicationReturnEmailUseCaseService } from './services/application-return-email-use-case.service';
 import { ApplicationSubmissionService } from './services/application-submission.service';
 import { ApplicationTransitionPolicy } from './policies/application-transition.policy';
 import { ApplicationUserSubmissionUseCaseService } from './services/application-user-submission-use-case.service';
@@ -65,6 +66,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationQueryService,
     ApplicationReviewActionService,
     ApplicationReviewUseCaseService,
+    ApplicationReturnEmailUseCaseService,
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
     ApplicationUserSubmissionUseCaseService,

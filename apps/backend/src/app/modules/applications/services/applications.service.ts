@@ -1,9 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
-import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { Application } from '../../../../models/entities/application.entity';
-import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type {
   ApproveApplicationDto,
@@ -18,14 +16,11 @@ import {
   mapApplicationToDetail,
   mapApplicationToSummary,
 } from '../mappers/applications.mapper';
-import { ApplicationAccessPolicy } from '../policies/application-access.policy';
 import { ApplicantApplicationService } from './applicant-application.service';
-import { ApplicationCorrectionService } from './application-correction.service';
 import { ApplicationCreationService } from './application-creation.service';
-import { ApplicationNotificationService } from './application-notification.service';
 import { ApplicationQueryService } from './application-query.service';
 import { ApplicationReviewUseCaseService } from './application-review-use-case.service';
-import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
+import { ApplicationReturnEmailUseCaseService } from './application-return-email-use-case.service';
 import { ApplicationUserSubmissionUseCaseService } from './application-user-submission-use-case.service';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
@@ -33,44 +28,14 @@ type ApplicantSession = ApplicantAccessTokenPayload;
 @Injectable()
 export class ApplicationsService {
   constructor(
-    private readonly applicationsRepository: ApplicationsRepository,
     private readonly applicantApplicationService: ApplicantApplicationService,
     private readonly spaceAccess: SpaceAccessService,
-    private readonly accessPolicy: ApplicationAccessPolicy,
-    private readonly correctionService: ApplicationCorrectionService,
     private readonly creationService: ApplicationCreationService,
-    private readonly notificationService: ApplicationNotificationService,
     private readonly queryService: ApplicationQueryService,
     private readonly reviewUseCaseService: ApplicationReviewUseCaseService,
-    private readonly transitionPolicy: ApplicationTransitionPolicy,
+    private readonly returnEmailUseCaseService: ApplicationReturnEmailUseCaseService,
     private readonly userSubmissionUseCaseService: ApplicationUserSubmissionUseCaseService,
   ) {}
-
-  private countApprovalsByActor(
-    applicationId: string,
-    actorId: string,
-  ): Promise<number> {
-    return this.applicationsRepository.countApprovalsByActor(
-      applicationId,
-      actorId,
-    );
-  }
-
-  private async loadApplicationOrThrow(
-    tenantId: string,
-    id: string,
-    withRelations: { detail: boolean },
-  ): Promise<Application> {
-    const row = await this.applicationsRepository.findById({
-      tenantId,
-      id,
-      detail: withRelations.detail,
-    });
-    if (!row) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    return row;
-  }
 
   async listForActor(
     actor: AuthUserPayload,
@@ -146,26 +111,7 @@ export class ApplicationsService {
     actor: AuthUserPayload,
     id: string,
   ): Promise<Application> {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
-      detail: true,
-    });
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    await this.accessPolicy.assertCanRead(
-      actor,
-      app,
-      (applicationId, actorId) =>
-        this.countApprovalsByActor(applicationId, actorId),
-    );
-    this.transitionPolicy.assertReturned(app);
-
-    const context = await this.correctionService.getReturnEmailContext(app);
-    await this.notificationService.notifyApplicantOfReturn(
-      app,
-      context.template,
-      context.dto,
-    );
-
-    return this.getOneForActor(actor, id);
+    return this.returnEmailUseCaseService.resend(actor, id);
   }
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
