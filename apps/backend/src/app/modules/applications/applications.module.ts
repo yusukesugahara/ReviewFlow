@@ -24,6 +24,7 @@ import { ApplicationNotificationService } from './services/application-notificat
 import { ApplicationProgressService } from './services/application-progress.service';
 import { ApplicationQueryService } from './services/application-query.service';
 import { ApplicationReviewActionService } from './services/application-review-action.service';
+import { ApplicationReviewUseCaseService } from './services/application-review-use-case.service';
 import { ApplicationSubmissionService } from './services/application-submission.service';
 import { ApplicationTransitionPolicy } from './policies/application-transition.policy';
 import { ApplicationsController } from './controllers/applications.controller';
@@ -62,6 +63,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationProgressService,
     ApplicationQueryService,
     ApplicationReviewActionService,
+    ApplicationReviewUseCaseService,
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
   ],

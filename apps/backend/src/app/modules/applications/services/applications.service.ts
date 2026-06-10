@@ -26,7 +26,7 @@ import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
 import { ApplicationNotificationService } from './application-notification.service';
 import { ApplicationQueryService } from './application-query.service';
-import { ApplicationReviewActionService } from './application-review-action.service';
+import { ApplicationReviewUseCaseService } from './application-review-use-case.service';
 import { ApplicationSubmissionService } from './application-submission.service';
 import { ApplicationTransitionPolicy } from '../policies/application-transition.policy';
 
@@ -45,7 +45,7 @@ export class ApplicationsService {
     private readonly flowResolver: ApplicationApprovalFlowResolver,
     private readonly notificationService: ApplicationNotificationService,
     private readonly queryService: ApplicationQueryService,
-    private readonly reviewActionService: ApplicationReviewActionService,
+    private readonly reviewUseCaseService: ApplicationReviewUseCaseService,
     private readonly submissionService: ApplicationSubmissionService,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
@@ -156,19 +156,7 @@ export class ApplicationsService {
     id: string,
     dto: ApproveApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
-      detail: true,
-    });
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const canManageGroup = await this.spaceAccess.actorCanManageGroup(
-      actor,
-      app.groupId,
-    );
-    if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
-      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
-    }
-    await this.reviewActionService.approve(app, actor.id, dto);
-    return this.getOneForActor(actor, id);
+    return this.reviewUseCaseService.approve(actor, id, dto);
   }
 
   async reject(
@@ -176,19 +164,7 @@ export class ApplicationsService {
     id: string,
     dto: RejectApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
-      detail: true,
-    });
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const canManageGroup = await this.spaceAccess.actorCanManageGroup(
-      actor,
-      app.groupId,
-    );
-    if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
-      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
-    }
-    await this.reviewActionService.reject(app, actor.id, dto);
-    return this.getOneForActor(actor, id);
+    return this.reviewUseCaseService.reject(actor, id, dto);
   }
 
   async returnApplication(
@@ -196,25 +172,7 @@ export class ApplicationsService {
     id: string,
     dto: ReturnApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, id, {
-      detail: true,
-    });
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const canManageGroup = await this.spaceAccess.actorCanManageGroup(
-      actor,
-      app.groupId,
-    );
-    if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
-      throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
-    }
-    const template = await this.reviewActionService.returnForCorrection(
-      app,
-      actor.id,
-      dto,
-    );
-    await this.notificationService.notifyApplicantOfReturn(app, template, dto);
-
-    return this.getOneForActor(actor, id);
+    return this.reviewUseCaseService.returnApplication(actor, id, dto);
   }
 
   async resendReturnEmail(
