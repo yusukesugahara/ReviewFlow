@@ -3,6 +3,7 @@ import type { Application } from '../../../../models/entities/application.entity
 import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
 import type { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
+import { ApplicantApplicationAccessService } from './applicant-application-access.service';
 import type { ApplicationCorrectionService } from './application-correction.service';
 import type { ApplicationCreationService } from './application-creation.service';
 import type { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
@@ -89,8 +90,11 @@ describe('ApplicantApplicationService', () => {
       resubmit: jest.fn(),
       submit: jest.fn(),
     };
-    service = new ApplicantApplicationService(
+    const applicantAccess = new ApplicantApplicationAccessService(
       applicationsRepository as unknown as ApplicationQueryRepository,
+    );
+    service = new ApplicantApplicationService(
+      applicantAccess,
       correctionService as unknown as ApplicationCorrectionService,
       creationService as unknown as ApplicationCreationService,
       fieldValuePatchService as unknown as ApplicationFieldValuePatchService,

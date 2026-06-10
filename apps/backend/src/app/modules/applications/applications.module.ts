@@ -24,6 +24,7 @@ import { MailModule } from '../mail/mail.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { ApplicationAccessPolicy } from './policies/application-access.policy';
 import { ApplicationApprovalFlowResolver } from './resolvers/application-approval-flow.resolver';
+import { ApplicantApplicationAccessService } from './services/applicant-application-access.service';
 import { ApplicantApplicationService } from './services/applicant-application.service';
 import { ApplicationCorrectionService } from './services/application-correction.service';
 import { ApplicationCreationContextLoader } from './services/application-creation-context.loader';
@@ -81,6 +82,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApprovalFlowsRepository,
     FormDefinitionsRepository,
     ApplicantAccessGuard,
+    ApplicantApplicationAccessService,
     ApplicantApplicationService,
     ApplicationAccessPolicy,
     ApplicationApprovalFlowResolver,

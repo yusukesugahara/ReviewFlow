@@ -3,13 +3,13 @@ import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.servi
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import type { Application } from '../../../../models/entities/application.entity';
-import { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type {
   CorrectionTargetsResponseDto,
   CreatePublicApplicationDto,
   PatchApplicationDto,
 } from '../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
+import { ApplicantApplicationAccessService } from './applicant-application-access.service';
 import { ApplicationCorrectionService } from './application-correction.service';
 import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
@@ -21,7 +21,7 @@ type ApplicantSession = ApplicantAccessTokenPayload;
 @Injectable()
 export class ApplicantApplicationService {
   constructor(
-    private readonly queryRepository: ApplicationQueryRepository,
+    private readonly applicantAccess: ApplicantApplicationAccessService,
     private readonly correctionService: ApplicationCorrectionService,
     private readonly creationService: ApplicationCreationService,
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
@@ -34,9 +34,7 @@ export class ApplicantApplicationService {
     actor: ApplicantSession,
     dto: CreatePublicApplicationDto,
   ): Promise<Application> {
-    if (dto.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
+    this.applicantAccess.assertCanCreateInGroup(actor, dto.groupId);
     const flow = await this.flowResolver.resolveDefaultActiveFlow(
       actor.tenantId,
       actor.groupId,
@@ -53,7 +51,7 @@ export class ApplicantApplicationService {
       },
     );
     await this.submissionService.submit(actor.tenantId, created);
-    const submitted = await this.loadApplicationOrThrow(
+    const submitted = await this.applicantAccess.loadSubmittedApplication(
       actor.tenantId,
       created.id,
       {
@@ -66,14 +64,12 @@ export class ApplicantApplicationService {
   async getReturnedCorrection(
     actor: ApplicantSession,
   ): Promise<CorrectionTargetsResponseDto> {
-    if (!actor.applicationId) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    const app = await this.loadApplicantEditableApplication(
+    const applicationId =
+      this.applicantAccess.getTokenApplicationIdOrThrow(actor);
+    const app = await this.applicantAccess.loadEditableApplication(
       actor,
-      actor.applicationId,
+      applicationId,
     );
-    this.assertApplicantGroupMatches(actor, app);
     return this.correctionService.buildTargetsResponse(app);
   }
 
@@ -82,73 +78,25 @@ export class ApplicantApplicationService {
     id: string,
     dto: PatchApplicationDto,
   ): Promise<Application> {
-    this.assertApplicantCanAccessApplication(actor, id);
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    this.assertApplicantGroupMatches(actor, app);
+    const app = await this.applicantAccess.loadEditableApplication(actor, id);
     if (dto.formDefinitionId || dto.approvalFlowId) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
     await this.fieldValuePatchService.applyPatch(actor.tenantId, app, dto);
-    const updated = await this.loadApplicantEditableApplication(actor, id);
+    const updated = await this.applicantAccess.loadEditableApplication(
+      actor,
+      id,
+    );
     return this.progressService.hydrate(updated);
   }
 
   async resubmit(actor: ApplicantSession, id: string): Promise<Application> {
-    this.assertApplicantCanAccessApplication(actor, id);
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    this.assertApplicantGroupMatches(actor, app);
+    const app = await this.applicantAccess.loadEditableApplication(actor, id);
     await this.submissionService.resubmit(actor.tenantId, app);
-    const updated = await this.loadApplicantEditableApplication(actor, id);
+    const updated = await this.applicantAccess.loadEditableApplication(
+      actor,
+      id,
+    );
     return this.progressService.hydrate(updated);
-  }
-
-  private assertApplicantCanAccessApplication(
-    actor: ApplicantSession,
-    id: string,
-  ): void {
-    if (actor.applicationId && actor.applicationId !== id) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-  }
-
-  private assertApplicantGroupMatches(
-    actor: ApplicantSession,
-    app: Application,
-  ): void {
-    if (app.groupId !== actor.groupId) {
-      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
-    }
-  }
-
-  private async loadApplicationOrThrow(
-    tenantId: string,
-    id: string,
-    withRelations: { detail: boolean },
-  ): Promise<Application> {
-    const row = await this.queryRepository.findById({
-      tenantId,
-      id,
-      detail: withRelations.detail,
-    });
-    if (!row) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    return row;
-  }
-
-  private async loadApplicantEditableApplication(
-    actor: { tenantId: string; id?: string; email: string },
-    id: string,
-  ): Promise<Application> {
-    const app = await this.queryRepository.findApplicantEditable({
-      id,
-      tenantId: actor.tenantId,
-      applicantUserId: actor.id,
-      applicantEmail: actor.email,
-    });
-    if (!app) {
-      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
-    }
-    return app;
   }
 }
