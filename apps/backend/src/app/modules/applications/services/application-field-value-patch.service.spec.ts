@@ -7,6 +7,7 @@ import type { ApplicationFieldValue } from '../../../../models/entities/applicat
 import { Application } from '../../../../models/entities/application.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -65,6 +66,8 @@ describe('ApplicationFieldValuePatchService', () => {
   let service: ApplicationFieldValuePatchService;
   let applicationsRepository: {
     findTemplateByIdInGroup: jest.Mock;
+  };
+  let correctionRepository: {
     findOpenCorrection: jest.Mock;
   };
   let submissionRepository: {
@@ -76,6 +79,8 @@ describe('ApplicationFieldValuePatchService', () => {
   beforeEach(() => {
     applicationsRepository = {
       findTemplateByIdInGroup: jest.fn(),
+    };
+    correctionRepository = {
       findOpenCorrection: jest.fn(),
     };
     submissionRepository = {
@@ -85,6 +90,7 @@ describe('ApplicationFieldValuePatchService', () => {
     };
     service = new ApplicationFieldValuePatchService(
       applicationsRepository as unknown as ApplicationsRepository,
+      correctionRepository as unknown as ApplicationCorrectionRepository,
       submissionRepository as unknown as ApplicationSubmissionRepository,
       new ApplicationFormValueValidator(),
     );
@@ -155,7 +161,7 @@ describe('ApplicationFieldValuePatchService', () => {
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field({ id: 'field-title' })]),
     );
-    applicationsRepository.findOpenCorrection.mockResolvedValue({
+    correctionRepository.findOpenCorrection.mockResolvedValue({
       id: 'correction-1',
       status: CorrectionRequestStatus.OPEN,
       items: [{ formFieldId: 'field-other' }],

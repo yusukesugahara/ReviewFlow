@@ -5,6 +5,7 @@ import { ApplicationFieldValue } from '../../../../models/entities/application-f
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type { PatchApplicationDto } from '../dto/applications.dto';
@@ -20,6 +21,7 @@ type EditablePatchContext = {
 export class ApplicationFieldValuePatchService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly correctionRepository: ApplicationCorrectionRepository,
     private readonly submissionRepository: ApplicationSubmissionRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
@@ -107,7 +109,7 @@ export class ApplicationFieldValuePatchService {
   private async findOpenCorrection(
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    return this.applicationsRepository.findOpenCorrection(applicationId);
+    return this.correctionRepository.findOpenCorrection(applicationId);
   }
 
   private async buildFieldValuePatch(

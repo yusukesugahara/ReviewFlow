@@ -3,6 +3,7 @@ import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type {
   CorrectionTargetsResponseDto,
@@ -14,10 +15,11 @@ import { mapCorrectionsList } from '../mappers/applications.mapper';
 export class ApplicationCorrectionService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly correctionRepository: ApplicationCorrectionRepository,
   ) {}
 
   async listCorrections(tenantId: string, app: Application) {
-    const rows = await this.applicationsRepository.listCorrections(
+    const rows = await this.correctionRepository.listCorrections(
       tenantId,
       app.id,
     );
@@ -104,14 +106,14 @@ export class ApplicationCorrectionService {
   private async findOpenCorrection(
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    return this.applicationsRepository.findOpenCorrection(applicationId);
+    return this.correctionRepository.findOpenCorrection(applicationId);
   }
 
   private async findOpenCorrectionWithItems(
     tenantId: string,
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    return this.applicationsRepository.findLatestOpenCorrectionWithItems(
+    return this.correctionRepository.findLatestOpenCorrectionWithItems(
       tenantId,
       applicationId,
     );

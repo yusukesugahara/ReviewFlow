@@ -8,6 +8,7 @@ import { CorrectionRequest } from '../../../models/entities/correction-request.e
 import { ApprovalFlow } from '../../../models/entities/approval-flow.entity';
 import { FormDefinition } from '../../../models/entities/form-definition.entity';
 import { User } from '../../../models/entities/user.entity';
+import { ApplicationCorrectionRepository } from '../../../models/repositories/application-correction.repository';
 import { ApplicationCreationRepository } from '../../../models/repositories/application-creation.repository';
 import { ApplicationQueryRepository } from '../../../models/repositories/application-query.repository';
 import { ApplicationReviewRepository } from '../../../models/repositories/application-review.repository';
@@ -57,6 +58,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
   controllers: [ApplicationsController, PublicApplicationsController],
   providers: [
     ApplicationsService,
+    ApplicationCorrectionRepository,
     ApplicationCreationRepository,
     ApplicationQueryRepository,
     ApplicationReviewRepository,

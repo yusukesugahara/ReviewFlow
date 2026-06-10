@@ -5,6 +5,7 @@ import { Application } from '../../../../models/entities/application.entity';
 import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationReviewActionService } from './application-review-action.service';
@@ -64,8 +65,10 @@ const expectErrorCode = async (
 describe('ApplicationReviewActionService', () => {
   let service: ApplicationReviewActionService;
   let applicationsRepository: {
-    findOpenCorrection: jest.Mock;
     findTemplateByIdInGroup: jest.Mock;
+  };
+  let correctionRepository: {
+    findOpenCorrection: jest.Mock;
   };
   let reviewRepository: {
     saveApproval: jest.Mock;
@@ -74,8 +77,10 @@ describe('ApplicationReviewActionService', () => {
 
   beforeEach(() => {
     applicationsRepository = {
-      findOpenCorrection: jest.fn(),
       findTemplateByIdInGroup: jest.fn(),
+    };
+    correctionRepository = {
+      findOpenCorrection: jest.fn(),
     };
     reviewRepository = {
       saveApproval: jest.fn(),
@@ -83,6 +88,7 @@ describe('ApplicationReviewActionService', () => {
     };
     service = new ApplicationReviewActionService(
       applicationsRepository as unknown as ApplicationsRepository,
+      correctionRepository as unknown as ApplicationCorrectionRepository,
       reviewRepository as unknown as ApplicationReviewRepository,
       new ApplicationTransitionPolicy(),
     );
@@ -130,7 +136,7 @@ describe('ApplicationReviewActionService', () => {
    * 差し戻し対象がフォーム定義に存在しない場合に拒否すること
    */
   it('rejects return fields outside the form definition', async () => {
-    applicationsRepository.findOpenCorrection.mockResolvedValue(null);
+    correctionRepository.findOpenCorrection.mockResolvedValue(null);
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title' } as FormField]),
     );
@@ -149,7 +155,7 @@ describe('ApplicationReviewActionService', () => {
    */
   it('records return action and creates correction items', async () => {
     const target = app();
-    applicationsRepository.findOpenCorrection.mockResolvedValue(null);
+    correctionRepository.findOpenCorrection.mockResolvedValue(null);
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([{ id: 'field-title', label: 'Title' } as FormField]),
     );

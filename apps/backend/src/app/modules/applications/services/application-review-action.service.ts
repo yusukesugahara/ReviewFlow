@@ -4,6 +4,7 @@ import { ApplicationApprovalAction } from '../../../../models/constants/applicat
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationReviewRepository } from '../../../../models/repositories/application-review.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import type {
@@ -17,6 +18,7 @@ import { ApplicationTransitionPolicy } from '../policies/application-transition.
 export class ApplicationReviewActionService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly correctionRepository: ApplicationCorrectionRepository,
     private readonly reviewRepository: ApplicationReviewRepository,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
@@ -101,7 +103,7 @@ export class ApplicationReviewActionService {
   private async findOpenCorrection(
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    return this.applicationsRepository.findOpenCorrection(applicationId);
+    return this.correctionRepository.findOpenCorrection(applicationId);
   }
 
   private assertReturnFieldsBelongToTemplate(

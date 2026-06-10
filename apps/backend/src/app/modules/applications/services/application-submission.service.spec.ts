@@ -8,6 +8,7 @@ import type { ApprovalStep } from '../../../../models/entities/approval-step.ent
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -76,6 +77,8 @@ describe('ApplicationSubmissionService', () => {
   let service: ApplicationSubmissionService;
   let applicationsRepository: {
     findTemplateByIdInGroup: jest.Mock;
+  };
+  let correctionRepository: {
     findOpenCorrection: jest.Mock;
   };
   let submissionRepository: {
@@ -86,6 +89,8 @@ describe('ApplicationSubmissionService', () => {
   beforeEach(() => {
     applicationsRepository = {
       findTemplateByIdInGroup: jest.fn(),
+    };
+    correctionRepository = {
       findOpenCorrection: jest.fn(),
     };
     submissionRepository = {
@@ -94,6 +99,7 @@ describe('ApplicationSubmissionService', () => {
     };
     service = new ApplicationSubmissionService(
       applicationsRepository as unknown as ApplicationsRepository,
+      correctionRepository as unknown as ApplicationCorrectionRepository,
       submissionRepository as unknown as ApplicationSubmissionRepository,
       new ApplicationFormValueValidator(),
       new ApplicationTransitionPolicy(),
@@ -157,7 +163,7 @@ describe('ApplicationSubmissionService', () => {
       resolvedAt: null,
       items: [item],
     } as CorrectionRequest;
-    applicationsRepository.findOpenCorrection.mockResolvedValue(correction);
+    correctionRepository.findOpenCorrection.mockResolvedValue(correction);
     applicationsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );

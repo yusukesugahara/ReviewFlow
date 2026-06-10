@@ -3,6 +3,7 @@ import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { Application } from '../../../../models/entities/application.entity';
 import { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import { FormDefinition } from '../../../../models/entities/form-definition.entity';
+import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { ApplicationsRepository } from '../../../../models/repositories/applications.repository';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -21,6 +22,7 @@ type ResubmittableApplicationContext = SubmittableApplicationContext & {
 export class ApplicationSubmissionService {
   constructor(
     private readonly applicationsRepository: ApplicationsRepository,
+    private readonly correctionRepository: ApplicationCorrectionRepository,
     private readonly submissionRepository: ApplicationSubmissionRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
     private readonly transitionPolicy: ApplicationTransitionPolicy,
@@ -85,7 +87,7 @@ export class ApplicationSubmissionService {
   ): Promise<ResubmittableApplicationContext> {
     this.transitionPolicy.assertReturned(app);
 
-    const openCorrection = await this.applicationsRepository.findOpenCorrection(
+    const openCorrection = await this.correctionRepository.findOpenCorrection(
       app.id,
     );
     if (!openCorrection) {

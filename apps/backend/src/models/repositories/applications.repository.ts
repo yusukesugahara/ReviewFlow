@@ -1,11 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Repository } from 'typeorm';
-import { CorrectionRequestStatus } from '../constants/correction-request-status';
 import { FormDefinitionStatus } from '../constants/form-definition-status';
 import { ApplicationApproval } from '../entities/application-approval.entity';
 import { ApprovalFlow } from '../entities/approval-flow.entity';
-import { CorrectionRequest } from '../entities/correction-request.entity';
 import { FormDefinition } from '../entities/form-definition.entity';
 import { User } from '../entities/user.entity';
 
@@ -14,8 +12,6 @@ export class ApplicationsRepository {
   constructor(
     @InjectRepository(ApplicationApproval)
     private readonly approvals: Repository<ApplicationApproval>,
-    @InjectRepository(CorrectionRequest)
-    private readonly correctionRequests: Repository<CorrectionRequest>,
     @InjectRepository(FormDefinition)
     private readonly templates: Repository<FormDefinition>,
     @InjectRepository(ApprovalFlow)
@@ -41,40 +37,6 @@ export class ApplicationsRepository {
       },
       relations: ['fields'],
     });
-  }
-
-  findOpenCorrection(applicationId: string): Promise<CorrectionRequest | null> {
-    return this.correctionRequests.findOne({
-      where: { applicationId, status: CorrectionRequestStatus.OPEN },
-      relations: ['items'],
-    });
-  }
-
-  listCorrections(
-    tenantId: string,
-    applicationId: string,
-  ): Promise<CorrectionRequest[]> {
-    return this.correctionRequests.find({
-      where: { applicationId, tenantId },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
-  }
-
-  async findLatestOpenCorrectionWithItems(
-    tenantId: string,
-    applicationId: string,
-  ): Promise<CorrectionRequest | null> {
-    const opens = await this.correctionRequests.find({
-      where: {
-        applicationId,
-        tenantId,
-        status: CorrectionRequestStatus.OPEN,
-      },
-      relations: ['items', 'items.formField'],
-      order: { createdAt: 'DESC' },
-    });
-    return opens[0] ?? null;
   }
 
   findActiveApprovalFlow(params: {
