@@ -9,7 +9,11 @@ import type {
   CorrectionTargetsResponseDto,
   ReturnApplicationDto,
 } from '../dto/applications.dto';
-import { mapCorrectionsList } from '../mappers/applications.mapper';
+import {
+  mapCorrectionTargetsResponse,
+  mapCorrectionToReturnApplicationDto,
+  mapCorrectionsList,
+} from '../mappers/applications.mapper';
 
 @Injectable()
 export class ApplicationCorrectionService {
@@ -30,48 +34,7 @@ export class ApplicationCorrectionService {
     app: Application,
   ): Promise<CorrectionTargetsResponseDto> {
     const open = await this.findOpenCorrectionWithItems(app.tenantId, app.id);
-
-    if (!open) {
-      return {
-        applicationId: app.id,
-        applicationStatus: app.status,
-        openCorrection: null,
-      };
-    }
-
-    const valueByFieldId = new Map(
-      (app.fieldValues ?? []).map((value) => [
-        value.formFieldId,
-        value.valueJson,
-      ]),
-    );
-
-    const items = (open.items ?? []).map((item) => {
-      const field = item.formField;
-      return {
-        itemId: item.id,
-        formFieldId: item.formFieldId,
-        fieldKey: field?.fieldKey ?? '',
-        label: field?.label ?? '',
-        fieldType: field?.fieldType ?? '',
-        required: field?.required ?? false,
-        comment: item.comment,
-        currentValue: valueByFieldId.has(item.formFieldId)
-          ? valueByFieldId.get(item.formFieldId)
-          : null,
-      };
-    });
-
-    return {
-      applicationId: app.id,
-      applicationStatus: app.status,
-      openCorrection: {
-        id: open.id,
-        overallComment: open.overallComment,
-        createdAt: open.createdAt.toISOString(),
-        items,
-      },
-    };
+    return mapCorrectionTargetsResponse(app, open);
   }
 
   async getReturnEmailContext(
@@ -94,13 +57,7 @@ export class ApplicationCorrectionService {
 
     return {
       template,
-      dto: {
-        overallComment: openCorrection.overallComment ?? undefined,
-        fields: (openCorrection.items ?? []).map((item) => ({
-          fieldId: item.formFieldId,
-          comment: item.comment ?? undefined,
-        })),
-      },
+      dto: mapCorrectionToReturnApplicationDto(openCorrection),
     };
   }
 
