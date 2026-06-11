@@ -43,6 +43,7 @@ function optionsToText(options: unknown[] | null | undefined): string {
 function toDraftFields(fields: EditableFormField[]): DraftField[] {
   return fields.map((field) => ({
     id: field.id,
+    fieldKey: field.fieldKey,
     label: field.label,
     fieldType: asFieldType(field.fieldType),
     required: field.required,

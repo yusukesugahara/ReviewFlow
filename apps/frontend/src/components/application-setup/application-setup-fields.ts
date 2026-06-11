@@ -16,6 +16,11 @@ export type DraftField = {
   optionsText: string;
 };
 
+export type ApplicationSetupFieldOption = {
+  label: string;
+  value: string;
+};
+
 export function createDefaultField(index: number): DraftField {
   return {
     id: `field-${index + 1}`,
@@ -33,6 +38,12 @@ export function optionLines(optionsText: string): string[] {
     .split("\n")
     .map((line) => line.trim())
     .filter((line, index, all) => line.length > 0 && all.indexOf(line) === index);
+}
+
+export function fieldOptionsFromText(
+  optionsText: string,
+): ApplicationSetupFieldOption[] {
+  return optionLines(optionsText).map((line) => ({ label: line, value: line }));
 }
 
 export function normalizeFieldKey(
@@ -74,10 +85,7 @@ export function toDynamicField(
     placeholder: field.placeholder.trim() || null,
     helpText: field.helpText.trim() || null,
     options: fieldTypeNeedsOptions(field.fieldType)
-      ? optionLines(field.optionsText).map((option) => ({
-          label: option,
-          value: option,
-        }))
+      ? fieldOptionsFromText(field.optionsText)
       : [],
   };
 }
