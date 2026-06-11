@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { EnrichedAuditRow } from "../audit-log-helpers";
+import type { EnrichedAuditRow } from "../audit-log-view-model";
 import type { AdminAuditLogsViewProps } from "../types";
 import { AuditLogFiltersForm } from "./audit-log-filters-form";
 import { AuditLogTable } from "./audit-log-table";

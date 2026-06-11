@@ -8,7 +8,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatDateTimeJa } from "@/lib/date-format";
-import { textValue, type EnrichedAuditRow, type RiskLevel } from "../audit-log-helpers";
+import { textValue } from "../audit-log-metadata";
+import type { RiskLevel } from "../audit-log-risk";
+import type { EnrichedAuditRow } from "../audit-log-view-model";
 
 type AuditLogTableProps = {
   rows: EnrichedAuditRow[];

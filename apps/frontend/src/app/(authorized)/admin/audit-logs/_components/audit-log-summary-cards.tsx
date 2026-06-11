@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
 import { AlertTriangle, ShieldAlert, ShieldCheck } from "lucide-react";
-import type { AuditLogSummaryCounts } from "../audit-log-helpers";
+import type { AuditLogSummaryCounts } from "../audit-log-view-model";
 
 type AuditLogSummaryCardsProps = {
   highRiskHref: string;
