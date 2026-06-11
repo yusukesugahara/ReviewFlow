@@ -1,8 +1,6 @@
-import { client } from "@/lib/server/backend-fetch";
-import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { applicantHeaders } from "./server";
-import type { PublicApplicationFormDefinition, PublicApplicationFormPageProps } from "./types";
+import { getPublicApplicationFormPageData } from "./page-data";
+import type { PublicApplicationFormPageProps } from "./types";
 import {
   PublicApplicationFormErrorView,
   PublicApplicationFormView,
@@ -19,18 +17,11 @@ export default async function PublicApplicationFormPage({
   }
 
   try {
-    const response = await client.GET("/form-definitions/public/current", {
-      headers: await applicantHeaders(),
-    });
-
-    const definition =
-      unwrapResponseData<PublicApplicationFormDefinition>(response);
+    const data = await getPublicApplicationFormPageData(query);
     return (
       <PublicApplicationFormView
-        definition={definition}
-        formError={
-          query.formError ?? (query.toast === "error" ? query.message : undefined)
-        }
+        definition={data.definition}
+        formError={data.formError}
       />
     );
   } catch (error) {
