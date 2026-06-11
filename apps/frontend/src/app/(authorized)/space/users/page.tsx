@@ -1,88 +1,29 @@
-import { client } from "@/lib/server/backend-fetch";
-import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { TENANT_ROLES } from "@/lib/constants/roles";
 import { SpaceEmptyState } from "@/components/space/space-empty-state";
-import type {
-  GroupAvailableUsersSuccessJson,
-  GroupMembersListSuccessJson,
-  GroupsListSuccessJson,
-} from "@/lib/schema";
-import type {
-  SpaceUsersAvailableUser,
-  SpaceUsersGroup,
-  SpaceUsersMember,
-  SpaceUsersPageProps,
-} from "./types";
+import { getSpaceUsersPageData } from "./page-data";
+import type { SpaceUsersPageProps } from "./types";
 import { SpaceUsersErrorView, SpaceUsersView } from "./view";
-
-async function listSpaces(headers: { Authorization: string }): Promise<SpaceUsersGroup[]> {
-  const response = await client.GET("/groups", { headers });
-  return unwrapResponseData<GroupsListSuccessJson["data"]>(response).groups ?? [];
-}
-
-async function listSpaceMembers(
-  groupId: string,
-  headers: { Authorization: string },
-): Promise<SpaceUsersMember[]> {
-  const response = await client.GET("/groups/{groupId}/members", {
-    params: { path: { groupId } },
-    headers,
-  });
-  return unwrapResponseData<GroupMembersListSuccessJson["data"]>(
-    response,
-  ).members.map((member) => ({
-    ...member,
-    name: typeof member.name === "string" ? member.name : null,
-  }));
-}
-
-async function listAvailableUsers(
-  groupId: string,
-  headers: { Authorization: string },
-): Promise<SpaceUsersAvailableUser[]> {
-  const response = await client.GET("/groups/{groupId}/available-users", {
-    params: { path: { groupId } },
-    headers,
-  });
-  return unwrapResponseData<GroupAvailableUsersSuccessJson["data"]>(
-    response,
-  ).users.map((user) => ({
-    ...user,
-    name: typeof user.name === "string" ? user.name : null,
-  }));
-}
 
 export default async function SpaceUsersPage({ searchParams }: SpaceUsersPageProps) {
   try {
     const params = (await searchParams) ?? {};
-    const authHeaders = await authHeadersOrRedirect();
-    const [spaces, me] = await Promise.all([
-      listSpaces(authHeaders),
-      getCurrentSessionUser(),
-    ]);
-    const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
-    if (!spaceId) {
-      return <SpaceEmptyState userRoles={me?.roles ?? []} />;
-    }
+    const data = await getSpaceUsersPageData({
+      querySpaceId: params.spaceId,
+    });
 
-    const isTenantAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
-    const [members, availableUsers] = await Promise.all([
-      listSpaceMembers(spaceId, authHeaders),
-      isTenantAdmin ? listAvailableUsers(spaceId, authHeaders) : Promise.resolve([]),
-    ]);
+    if (data.kind === "empty") {
+      return <SpaceEmptyState userRoles={data.userRoles} />;
+    }
 
     return (
       <SpaceUsersView
-        availableUsers={availableUsers}
-        currentUserId={me?.id ?? null}
+        availableUsers={data.availableUsers}
+        currentUserId={data.currentUserId}
         error={params.error}
         formError={params.formError}
-        isTenantAdmin={isTenantAdmin}
-        members={members}
-        spaceId={spaceId}
+        isTenantAdmin={data.isTenantAdmin}
+        members={data.members}
+        spaceId={data.spaceId}
       />
     );
   } catch (error) {
