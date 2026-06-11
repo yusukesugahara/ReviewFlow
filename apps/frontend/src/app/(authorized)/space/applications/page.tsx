@@ -3,6 +3,7 @@ import { client } from "@/lib/server/backend-fetch";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
+import { buildSpaceApplicationsHref } from "@/components/applications/application-routes";
 import type { GroupsListSuccessJson } from "@/lib/schema";
 import type { FallbackSpaceContext, LegacySpaceApplicationsPageProps } from "./types";
 import { LegacySpaceApplicationsEmptyView } from "./view";
@@ -16,17 +17,7 @@ export default async function LegacySpaceApplicationsPage({
   if (!resolvedSpaceId) {
     return <LegacySpaceApplicationsEmptyView userRoles={userRoles} />;
   }
-  const params = new URLSearchParams();
-
-  if (query.status) {
-    params.set("status", query.status);
-  }
-
-  redirect(
-    `/space/${encodeURIComponent(resolvedSpaceId)}/applications${
-      params.size > 0 ? `?${params.toString()}` : ""
-    }`,
-  );
+  redirect(buildSpaceApplicationsHref(resolvedSpaceId, { status: query.status }));
 }
 
 async function getFallbackSpaceContext(): Promise<FallbackSpaceContext> {

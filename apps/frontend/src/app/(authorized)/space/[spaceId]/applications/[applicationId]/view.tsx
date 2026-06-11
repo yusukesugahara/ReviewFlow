@@ -241,12 +241,11 @@ export function ApplicationDetailScreen({
     canSubmitApplication:
       capabilities.canSubmitApplication && missingRequiredFields.length === 0,
   };
-  const editHref = definitionId
-    ? `${buildSpaceApplicationEditHrefByIds(
-        spaceId,
-        app.id,
-      )}?definitionId=${encodeURIComponent(definitionId)}`
-    : buildSpaceApplicationEditHrefByIds(spaceId, app.id);
+  const editHref = buildSpaceApplicationEditHrefByIds(
+    spaceId,
+    app.id,
+    definitionId,
+  );
   const canResendReturnEmail =
     isReturnedApplicationStatus(app.status) && openItems.length > 0;
 

@@ -1,4 +1,8 @@
-import { buildSpaceApplicationDetailHref } from "@/components/applications/application-routes";
+import {
+  appendQueryParams,
+  buildApplyFormHref,
+  buildSpaceApplicationDetailHref,
+} from "@/components/applications/application-routes";
 import {
   isFormSetupApplication,
   isPendingApplication,
@@ -73,7 +77,9 @@ function buildApplicationFormListRow(
     ? buildSpaceApplicationDetailHref(setupApplication) ??
       `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(setupApplication.id)}`
     : null;
-  const formDetailHref = detailHref ? appendQueryParam(detailHref, "view", "form") : null;
+  const formDetailHref = detailHref
+    ? appendQueryParams(detailHref, { view: "form" })
+    : null;
   const setupStatus =
     definition.status === APPLICATION_STATUSES.archived
       ? definition.status
@@ -88,18 +94,11 @@ function buildApplicationFormListRow(
     pendingCount: relatedApplications.filter(isPendingApplication).length,
     processedCount: relatedApplications.filter(isProcessedApplication).length,
     publicHref: isPublished
-      ? `/apply/${encodeURIComponent(definition.groupId || spaceId)}?formDefinitionId=${encodeURIComponent(definition.id)}`
+      ? buildApplyFormHref(definition.groupId || spaceId, definition.id)
       : null,
     status: setupStatus,
     title: definition.name,
   };
-}
-
-function appendQueryParam(href: string, key: string, value: string): string {
-  const [pathname, query = ""] = href.split("?");
-  const params = new URLSearchParams(query);
-  params.set(key, value);
-  return `${pathname}?${params.toString()}`;
 }
 
 function buildFallbackDefinitions(

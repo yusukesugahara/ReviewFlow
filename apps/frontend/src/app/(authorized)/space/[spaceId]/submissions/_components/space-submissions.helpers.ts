@@ -5,6 +5,7 @@ import {
   isReturnedApplication,
   isSpaceNeedsActionApplication,
 } from "@/components/applications/application-status-rules";
+import { buildSpaceSubmissionsHref } from "@/components/applications/application-routes";
 import type { ApplicationRow } from "@/components/space/space-applications.types";
 
 export {
@@ -204,36 +205,19 @@ export function buildSubmissionsPageHref(
   filters: SubmissionFilters,
   page: number,
 ): string {
-  const params = new URLSearchParams();
-  if (filters.applicant) {
-    params.set("applicant", filters.applicant);
-  }
-  if (filters.status) {
-    params.set("status", filters.status);
-  }
-  if (filters.form) {
-    params.set("form", filters.form);
-  }
-  if (filters.createdFrom) {
-    params.set("createdFrom", filters.createdFrom);
-  }
-  if (filters.createdTo) {
-    params.set("createdTo", filters.createdTo);
-  }
-  if (filters.summary) {
-    params.set("summary", filters.summary);
-  }
-  if (page > 1) {
-    params.set("page", String(page));
-  }
-
-  const pathname = `/space/${encodeURIComponent(spaceId)}/submissions`;
-  return params.size > 0 ? `${pathname}?${params.toString()}` : pathname;
+  return buildSpaceSubmissionsHref(spaceId, {
+    applicant: filters.applicant,
+    status: filters.status,
+    form: filters.form,
+    createdFrom: filters.createdFrom,
+    createdTo: filters.createdTo,
+    summary: filters.summary,
+    page: page > 1 ? page : undefined,
+  });
 }
 
 export function buildSummaryFilterHref(spaceId: string, summary: SummaryFilter): string {
-  const params = new URLSearchParams({ summary });
-  return `/space/${encodeURIComponent(spaceId)}/submissions?${params.toString()}`;
+  return buildSpaceSubmissionsHref(spaceId, { summary });
 }
 
 export function isAssignedToCurrentUser(

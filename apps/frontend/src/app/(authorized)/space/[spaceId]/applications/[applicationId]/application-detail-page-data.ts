@@ -3,7 +3,11 @@ import "server-only";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getApplicationCapabilities } from "@/components/applications/application-capabilities";
 import type { ApplicationCapabilities } from "@/components/applications/application-capabilities";
-import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/application-routes";
+import {
+  buildApplyFormHref,
+  buildSpaceApplicationEditHrefByIds,
+  buildSpaceApplicationFormDetailHref,
+} from "@/components/applications/application-routes";
 import type {
   ApplicationCorrection,
   ApplicationCorrectionTargetItem,
@@ -87,12 +91,13 @@ export async function getSpaceApplicationDetailPageData({
       application,
       definition,
       definitionId,
-      editHref: buildFormSetupEditHref({ applicationId: application.id, definitionId, spaceId }),
-      fields,
-      publicApplicationUrlPath: buildPublicApplicationUrlPath({
-        definitionId,
+      editHref: buildSpaceApplicationEditHrefByIds(
         spaceId,
-      }),
+        application.id,
+        definitionId,
+      ),
+      fields,
+      publicApplicationUrlPath: buildApplyFormHref(spaceId, definitionId),
       relatedApplications,
     };
   }
@@ -282,33 +287,6 @@ function getMissingRequiredFields(
   );
 }
 
-function buildPublicApplicationUrlPath({
-  definitionId,
-  spaceId,
-}: {
-  definitionId?: string;
-  spaceId: string;
-}): string {
-  return definitionId
-    ? `/apply/${encodeURIComponent(spaceId)}?formDefinitionId=${encodeURIComponent(definitionId)}`
-    : `/apply/${encodeURIComponent(spaceId)}`;
-}
-
-function buildFormSetupEditHref({
-  applicationId,
-  definitionId,
-  spaceId,
-}: {
-  applicationId: string;
-  definitionId?: string;
-  spaceId: string;
-}): string {
-  const editHref = buildSpaceApplicationEditHrefByIds(spaceId, applicationId);
-  return definitionId
-    ? `${editHref}?definitionId=${encodeURIComponent(definitionId)}`
-    : editHref;
-}
-
 function buildFormDetailHref({
   applicationId,
   definitionId,
@@ -318,10 +296,9 @@ function buildFormDetailHref({
   definitionId: string;
   spaceId: string;
 }): string {
-  return `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(
+  return buildSpaceApplicationFormDetailHref({
     applicationId,
-  )}?${new URLSearchParams({
-    view: "form",
     definitionId,
-  }).toString()}`;
+    spaceId,
+  });
 }

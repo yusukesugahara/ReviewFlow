@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import type { DynamicFormField } from "@/components/applications/dynamic-fields";
 import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-field-form-data";
 import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-field-schema";
+import { appendQueryParams } from "@/components/applications/application-routes";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 
@@ -14,10 +15,6 @@ function parseFields(fieldsJson: FormDataEntryValue | null): DynamicFormField[] 
   } catch {
     return [];
   }
-}
-
-function appendQueryString(href: string, params: URLSearchParams): string {
-  return `${href}${href.includes("?") ? "&" : "?"}${params.toString()}`;
 }
 
 export async function updateReturnedApplicationAction(
@@ -30,10 +27,9 @@ export async function updateReturnedApplicationAction(
   const fields = parseFields(formData.get("fieldsJson"));
   if (fields.length === 0) {
     redirect(
-      appendQueryString(
-        editPath,
-        new URLSearchParams({ correctionError: "修正対象項目を取得できませんでした。" }),
-      ),
+      appendQueryParams(editPath, {
+        correctionError: "修正対象項目を取得できませんでした。",
+      }),
     );
   }
 
@@ -48,24 +44,18 @@ export async function updateReturnedApplicationAction(
 
   if (!response.response.ok) {
     redirect(
-      appendQueryString(
-        editPath,
-        new URLSearchParams({
-          correctionError: `修正内容の保存に失敗しました（status: ${response.response.status}）`,
-        }),
-      ),
+      appendQueryParams(editPath, {
+        correctionError: `修正内容の保存に失敗しました（status: ${response.response.status}）`,
+      }),
     );
   }
 
   revalidatePath(detailPath);
   revalidatePath(`/space/${encodeURIComponent(spaceId)}/submissions`);
   redirect(
-    appendQueryString(
-      detailPath,
-      new URLSearchParams({
-        toast: "success",
-        message: "修正内容を保存しました。内容を確認して再提出してください。",
-      }),
-    ),
+    appendQueryParams(detailPath, {
+      toast: "success",
+      message: "修正内容を保存しました。内容を確認して再提出してください。",
+    }),
   );
 }

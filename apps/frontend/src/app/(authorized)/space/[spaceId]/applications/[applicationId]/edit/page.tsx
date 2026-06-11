@@ -7,6 +7,10 @@ import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { normalizeFieldOptions } from "@/components/applications/field-options";
 import {
+  buildSpaceApplicationDetailHrefByIds,
+  buildSpaceApplicationEditHrefByIds,
+} from "@/components/applications/application-routes";
+import {
   isFormSetupStatus,
   isPublishedApplicationStatus,
   isReturnedApplicationStatus,
@@ -120,12 +124,16 @@ export default async function SpaceApplicationEditPage({
       : (unwrapResponseData<{ definitions?: EditableFormDefinition[] }>(templateRaw)
           .definitions?.[0] ?? null);
     const fields = definition?.fields ?? [];
-    const detailPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}${
-      definitionId ? `?definitionId=${encodeURIComponent(definitionId)}` : ""
-    }`;
-    const editPath = `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}/edit${
-      definitionId ? `?definitionId=${encodeURIComponent(definitionId)}` : ""
-    }`;
+    const detailPath = buildSpaceApplicationDetailHrefByIds(
+      spaceId,
+      applicationId,
+      definitionId,
+    );
+    const editPath = buildSpaceApplicationEditHrefByIds(
+      spaceId,
+      applicationId,
+      definitionId,
+    );
 
     if (isReturnedEditable) {
       const correctionTargetsRaw = await client.GET("/applications/{id}/correction-targets", {
