@@ -18,7 +18,7 @@ import { formatDateTimeJa } from "@/lib/date-format";
 import { AuditLogDateFilterPicker } from "./audit-log-date-filter-picker";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
 import {
-  enrichAuditRow,
+  buildAdminAuditLogsViewModel,
   textValue,
   type RiskLevel,
 } from "./audit-log-helpers";
@@ -31,31 +31,21 @@ export function AdminAuditLogsView({
   risk,
   rows,
 }: AdminAuditLogsViewProps) {
-  const hasSearch = query.length > 0;
-  const enrichedRows = rows.map(enrichAuditRow);
-  const filteredRows = enrichedRows.filter((item) => {
-    if (outcome === "failed" && item.metadata.success !== false) {
-      return false;
-    }
-    if (outcome === "success" && item.metadata.success === false) {
-      return false;
-    }
-    if (risk !== "all" && item.risk !== risk) {
-      return false;
-    }
-    return true;
-  });
-  const highRiskCount = enrichedRows.filter((item) => item.risk === "high").length;
-  const mediumRiskCount = enrichedRows.filter((item) => item.risk === "medium").length;
-  const failedCount = enrichedRows.filter((item) => item.metadata.success === false).length;
-  const highRiskHref = buildAuditLogsHref({
+  const {
+    filteredRows,
+    hasActiveFilters,
+    highRiskHref,
+    isHighRiskFilterActive,
+    listDescription,
+    summaryCounts,
+  } = buildAdminAuditLogsViewModel({
     createdFrom,
     createdTo,
     outcome,
     query,
-    risk: "high",
+    risk,
+    rows,
   });
-  const isHighRiskFilterActive = risk === "high";
 
   return (
     <div className="space-y-6">
@@ -72,36 +62,28 @@ export function AdminAuditLogsView({
           href={highRiskHref}
           icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
           label="高リスク"
-          linkLabel={`高リスクの操作履歴を表示（${highRiskCount}件）`}
+          linkLabel={`高リスクの操作履歴を表示（${summaryCounts.highRisk}件）`}
           tone="red"
-          value={highRiskCount}
+          value={summaryCounts.highRisk}
         />
         <AuditSummaryCard
           icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
           label="要確認"
           tone="amber"
-          value={mediumRiskCount}
+          value={summaryCounts.mediumRisk}
         />
         <AuditSummaryCard
           icon={<ShieldCheck className="h-5 w-5" aria-hidden="true" />}
           label="失敗操作"
           tone="slate"
-          value={failedCount}
+          value={summaryCounts.failed}
         />
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>操作履歴</CardTitle>
-          <CardDescription>
-            {isHighRiskFilterActive
-              ? hasSearch
-                ? `高リスクの操作のうち「${query}」に一致する最新200件`
-                : "高リスクの操作履歴のみを表示しています"
-              : hasSearch
-                ? `「${query}」に一致する最新200件`
-                : "最新200件を新しい順に表示しています"}
-          </CardDescription>
+          <CardDescription>{listDescription}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
           <form className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
@@ -181,7 +163,7 @@ export function AdminAuditLogsView({
           </form>
           {filteredRows.length === 0 ? (
             <p className="py-8 text-center text-muted-foreground">
-              {hasSearch || risk !== "all" || outcome !== "all" || createdFrom || createdTo
+              {hasActiveFilters
                 ? "条件に一致する監査ログはありません"
                 : "監査ログはまだありません"}
             </p>
@@ -322,39 +304,6 @@ function AuditSummaryCard({
   }
 
   return <div className={className}>{content}</div>;
-}
-
-function buildAuditLogsHref({
-  createdFrom,
-  createdTo,
-  outcome,
-  query,
-  risk,
-}: {
-  createdFrom: string;
-  createdTo: string;
-  outcome: string;
-  query: string;
-  risk: string;
-}): string {
-  const params = new URLSearchParams();
-  if (query) {
-    params.set("q", query);
-  }
-  if (createdFrom) {
-    params.set("createdFrom", createdFrom);
-  }
-  if (createdTo) {
-    params.set("createdTo", createdTo);
-  }
-  if (outcome !== "all") {
-    params.set("outcome", outcome);
-  }
-  if (risk !== "all") {
-    params.set("risk", risk);
-  }
-  const search = params.toString();
-  return search ? `/admin/audit-logs?${search}` : "/admin/audit-logs";
 }
 
 function RiskBadge({ risk }: { risk: RiskLevel }) {
