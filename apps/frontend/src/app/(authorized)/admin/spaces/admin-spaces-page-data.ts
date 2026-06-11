@@ -1,6 +1,9 @@
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { TENANT_ROLES } from "@/lib/constants/roles";
+import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import type {
   AdminSpacesAvailableUsersData,
   AdminSpacesGroupsData,
@@ -24,6 +27,25 @@ export type AdminSpacesViewData = {
   spaces: SpaceListItem[];
   users: TenantUserSummary[];
 };
+
+export async function getAdminSpacesPageData(): Promise<AdminSpacesViewData> {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
+  if (!accessToken) {
+    redirect("/login");
+  }
+
+  const authHeaders = { Authorization: `Bearer ${accessToken}` };
+  const meResponse = await client.POST("/auth/me", { headers: authHeaders });
+  if (!meResponse.response.ok || !meResponse.data) {
+    redirect("/login");
+  }
+
+  return getAdminSpacesViewData({
+    authHeaders,
+    me: unwrapResponseData<AdminSpacesMe>(meResponse),
+  });
+}
 
 export function statusFromResponse(response?: Pick<Response, "status">): number {
   return response?.status ?? 500;
