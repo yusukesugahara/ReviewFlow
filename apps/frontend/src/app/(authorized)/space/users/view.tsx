@@ -32,7 +32,11 @@ import {
 } from "@/components/ui/tooltip";
 import { SPACE_ROLE_OPTIONS, SPACE_ROLES } from "@/lib/constants/roles";
 import { formatDateJa } from "@/lib/date-format";
-import { addSpaceMemberAction } from "./actions";
+import {
+  addSpaceMemberAction,
+  removeSpaceMemberAction,
+  updateSpaceMemberRoleAction,
+} from "./actions";
 import { SpaceUsersTable } from "./space-users-table";
 import type { SpaceUsersErrorViewProps, SpaceUsersViewProps } from "./types";
 
@@ -94,7 +98,9 @@ export function SpaceUsersView({
                 ...member,
                 createdAtLabel: formatDateJa(member.createdAt),
               }))}
+              removeMemberAction={removeSpaceMemberAction}
               spaceId={spaceId}
+              updateMemberRoleAction={updateSpaceMemberRoleAction}
             />
           )}
         </CardContent>

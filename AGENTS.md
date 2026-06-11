@@ -54,6 +54,18 @@ Respect the ownership of each layer:
 
 The frontend may hide buttons or routes for usability, but the backend must enforce the actual rule.
 
+### Next.js Frontend Responsibility Separation
+
+For Next.js / React / TypeScript code, separate by reason to change, not by file length.
+
+- Keep page-specific UI, helpers, and actions near the route. Use route-local `_components`, `_rules`, `_utils`, or page-data modules before moving code to shared directories.
+- Move code to `components`, `lib`, or other shared locations only after actual reuse is clear.
+- Keep `page.tsx` focused on route-level composition, data loading entry points, and passing props to view components.
+- Keep Client Components focused on UI rendering, browser state, forms, menus, dialogs, and event handling.
+- Keep business rules, permission checks, workflow/status decisions, response mapping, and display formatting in named helpers or policy-like modules when they are important enough to test.
+- Avoid over-splitting small one-off JSX fragments into vague files such as `Header`, `Body`, `Content`, `Item`, or `Helper`.
+- If splitting makes a route harder to read because related UI is usually changed together, prefer merging it back into a cohesive component.
+
 ### High Cohesion and Low Coupling
 
 Keep related logic together and avoid spreading the same business rule across many files.

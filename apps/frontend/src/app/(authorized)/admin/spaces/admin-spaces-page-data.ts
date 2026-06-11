@@ -1,3 +1,5 @@
+import { client } from "@/lib/server/backend-fetch";
+import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   AdminSpacesAvailableUsersData,
@@ -11,6 +13,17 @@ import type {
   SpaceListItem,
   TenantUserSummary,
 } from "./types";
+
+type AuthHeaders = { Authorization: string };
+
+export type AdminSpacesViewData = {
+  canCreateSpace: boolean;
+  currentUserId: string;
+  fetchErrorStatus?: number;
+  isSystemAdmin: boolean;
+  spaces: SpaceListItem[];
+  users: TenantUserSummary[];
+};
 
 export function statusFromResponse(response?: Pick<Response, "status">): number {
   return response?.status ?? 500;
@@ -103,6 +116,146 @@ export function buildAdminSpaceListItems({
       }),
     };
   });
+}
+
+export async function getAdminSpacesViewData({
+  authHeaders,
+  me,
+}: {
+  authHeaders: AuthHeaders;
+  me: AdminSpacesMe;
+}): Promise<AdminSpacesViewData> {
+  const isSystemAdmin = isSystemAdminUser(me);
+  const canCreateSpaceValue = canCreateSpace(me);
+
+  try {
+    const [groupsResponse, usersResponse] = await Promise.all([
+      client.GET("/groups", { headers: authHeaders }),
+      canCreateSpaceValue
+        ? client.GET("/users", { headers: authHeaders })
+        : Promise.resolve(null),
+    ]);
+
+    if (!groupsResponse.response.ok || !groupsResponse.data) {
+      return buildAdminSpacesErrorViewData({
+        canCreateSpace: canCreateSpaceValue,
+        currentUserId: me.id,
+        fetchErrorStatus: statusFromResponse(groupsResponse.response),
+        isSystemAdmin,
+      });
+    }
+
+    if (usersResponse && (!usersResponse.response.ok || !usersResponse.data)) {
+      return buildAdminSpacesErrorViewData({
+        canCreateSpace: canCreateSpaceValue,
+        currentUserId: me.id,
+        fetchErrorStatus: statusFromResponse(usersResponse.response),
+        isSystemAdmin,
+      });
+    }
+
+    const groups = normalizeGroups(
+      unwrapResponseData<AdminSpacesGroupsData>(groupsResponse).groups,
+    );
+    const users =
+      usersResponse
+        ? normalizeTenantUsers(
+            unwrapResponseData<AdminSpacesUsersData>(usersResponse).users,
+          )
+        : [];
+    const { availableUsersByGroup, membersByGroup } =
+      await getAdminSpaceMembersByGroup({ authHeaders, groups });
+
+    return {
+      canCreateSpace: canCreateSpaceValue,
+      currentUserId: me.id,
+      isSystemAdmin,
+      spaces: buildAdminSpaceListItems({
+        availableUsersByGroup,
+        currentUserId: me.id,
+        groups,
+        isSystemAdmin,
+        membersByGroup,
+      }),
+      users,
+    };
+  } catch {
+    return buildAdminSpacesErrorViewData({
+      canCreateSpace: canCreateSpaceValue,
+      currentUserId: me.id,
+      fetchErrorStatus: 500,
+      isSystemAdmin,
+    });
+  }
+}
+
+async function getAdminSpaceMembersByGroup({
+  authHeaders,
+  groups,
+}: {
+  authHeaders: AuthHeaders;
+  groups: GroupSummary[];
+}): Promise<{
+  availableUsersByGroup: Map<string, AvailableUserSummary[]>;
+  membersByGroup: Map<string, GroupMemberSummary[]>;
+}> {
+  const membersByGroup = new Map<string, GroupMemberSummary[]>();
+  const availableUsersByGroup = new Map<string, AvailableUserSummary[]>();
+
+  for (const group of groups) {
+    const [membersResponse, availableUsersResponse] = await Promise.all([
+      client.GET("/groups/{groupId}/members", {
+        params: { path: { groupId: group.id } },
+        headers: authHeaders,
+      }),
+      client.GET("/groups/{groupId}/available-users", {
+        params: { path: { groupId: group.id } },
+        headers: authHeaders,
+      }),
+    ]);
+
+    membersByGroup.set(
+      group.id,
+      !membersResponse.response.ok || !membersResponse.data
+        ? []
+        : normalizeMembers(
+            unwrapResponseData<AdminSpacesMembersData>(membersResponse).members,
+          ),
+    );
+    availableUsersByGroup.set(
+      group.id,
+      !availableUsersResponse.response.ok || !availableUsersResponse.data
+        ? []
+        : normalizeAvailableUsers(
+            unwrapResponseData<AdminSpacesAvailableUsersData>(
+              availableUsersResponse,
+            ).users,
+          ),
+    );
+  }
+
+  return { availableUsersByGroup, membersByGroup };
+}
+
+function buildAdminSpacesErrorViewData({
+  canCreateSpace,
+  currentUserId,
+  fetchErrorStatus,
+  isSystemAdmin,
+}: {
+  canCreateSpace: boolean;
+  currentUserId: string;
+  fetchErrorStatus: number;
+  isSystemAdmin: boolean;
+}): AdminSpacesViewData {
+  return {
+    canCreateSpace,
+    currentUserId,
+    fetchErrorStatus,
+    isSystemAdmin,
+    spaces: [],
+    users: [],
+  };
 }
 
 function normalizeName(value: unknown): string | null {

@@ -1,24 +1,9 @@
 "use client";
 
-import { useId, useState } from "react";
+import { useState } from "react";
 import { MoreVertical } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -28,11 +13,10 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { spaceRoleLabel } from "@/lib/constants/role-labels";
-import { SPACE_ROLE_OPTIONS, SPACE_ROLES } from "@/lib/constants/roles";
-import {
-  removeSpaceMemberAction,
-  updateSpaceMemberRoleAction,
-} from "./actions";
+import { SPACE_ROLES } from "@/lib/constants/roles";
+import { SpaceUserActionMenu } from "./_components/space-user-action-menu";
+import { SpaceUserDeleteDialog } from "./_components/space-user-delete-dialog";
+import { SpaceUserRoleDialog } from "./_components/space-user-role-dialog";
 
 export type SpaceUserTableMember = {
   id: string;
@@ -46,10 +30,16 @@ export type SpaceUserTableMember = {
 type SpaceUsersTableProps = {
   currentUserId: string | null;
   members: SpaceUserTableMember[];
+  removeMemberAction: (groupId: string, userId: string) => Promise<void>;
   spaceId: string;
+  updateMemberRoleAction: (
+    groupId: string,
+    userId: string,
+    formData: FormData,
+  ) => Promise<void>;
 };
 
-type ActionMenuState = {
+export type SpaceUserActionMenuState = {
   left: number;
   member: SpaceUserTableMember;
   top: number;
@@ -58,18 +48,17 @@ type ActionMenuState = {
 export function SpaceUsersTable({
   currentUserId,
   members,
+  removeMemberAction,
   spaceId,
+  updateMemberRoleAction,
 }: SpaceUsersTableProps) {
   const [deleteTarget, setDeleteTarget] =
     useState<SpaceUserTableMember | null>(null);
   const [roleTarget, setRoleTarget] = useState<SpaceUserTableMember | null>(
     null,
   );
-  const [actionMenu, setActionMenu] = useState<ActionMenuState | null>(null);
-  const deleteTitleId = useId();
-  const deleteDescriptionId = useId();
-  const roleTitleId = useId();
-  const roleDescriptionId = useId();
+  const [actionMenu, setActionMenu] =
+    useState<SpaceUserActionMenuState | null>(null);
 
   function toggleActionMenu(
     member: SpaceUserTableMember,
@@ -149,139 +138,35 @@ export function SpaceUsersTable({
       </Table>
 
       {actionMenu ? (
-        <>
-          <button
-            type="button"
-            aria-label="メニューを閉じる"
-            className="fixed inset-0 z-40 cursor-default bg-transparent"
-            onClick={() => setActionMenu(null)}
-          />
-          <div
-            className="fixed z-50 w-48 rounded-md border border-slate-200 bg-white p-1 text-left shadow-lg"
-            role="menu"
-            style={{ left: actionMenu.left, top: actionMenu.top }}
-            tabIndex={-1}
-            onKeyDown={(event) => {
-              if (event.key === "Escape") {
-                setActionMenu(null);
-              }
-            }}
-          >
-            <button
-              type="button"
-              className="block w-full rounded px-3 py-2 text-left text-sm hover:bg-slate-100 focus-visible:bg-slate-100 focus-visible:outline-none"
-              role="menuitem"
-              onClick={() => {
-                setRoleTarget(actionMenu.member);
-                setActionMenu(null);
-              }}
-            >
-              スペースロールを変更
-            </button>
-            {actionMenu.member.userId !== currentUserId ? (
-              <button
-                type="button"
-                className="block w-full rounded px-3 py-2 text-left text-sm text-destructive hover:bg-rose-50 focus-visible:bg-rose-50 focus-visible:outline-none"
-                role="menuitem"
-                onClick={() => {
-                  setDeleteTarget(actionMenu.member);
-                  setActionMenu(null);
-                }}
-              >
-                削除
-              </button>
-            ) : null}
-          </div>
-        </>
+        <SpaceUserActionMenu
+          currentUserId={currentUserId}
+          menu={actionMenu}
+          onClose={() => setActionMenu(null)}
+          onDelete={(member) => {
+            setDeleteTarget(member);
+            setActionMenu(null);
+          }}
+          onRoleChange={(member) => {
+            setRoleTarget(member);
+            setActionMenu(null);
+          }}
+        />
       ) : null}
 
       {deleteTarget ? (
-        <DialogContent
-          titleId={deleteTitleId}
-          descriptionId={deleteDescriptionId}
-          className="max-w-md"
+        <SpaceUserDeleteDialog
+          action={removeMemberAction.bind(null, spaceId, deleteTarget.userId)}
           onClose={() => setDeleteTarget(null)}
-        >
-          <form
-            action={removeSpaceMemberAction.bind(
-              null,
-              spaceId,
-              deleteTarget.userId,
-            )}
-            className="space-y-5"
-          >
-            <DialogHeader>
-              <DialogTitle id={deleteTitleId}>
-                スペースメンバーを削除しますか
-              </DialogTitle>
-              <DialogDescription id={deleteDescriptionId}>
-                {deleteTarget.email} をこのスペースから削除します。
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setDeleteTarget(null)}
-              >
-                キャンセル
-              </Button>
-              <Button type="submit" variant="destructive">
-                削除
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+          target={deleteTarget}
+        />
       ) : null}
 
       {roleTarget ? (
-        <DialogContent
-          titleId={roleTitleId}
-          descriptionId={roleDescriptionId}
-          className="max-w-md"
+        <SpaceUserRoleDialog
+          action={updateMemberRoleAction.bind(null, spaceId, roleTarget.userId)}
           onClose={() => setRoleTarget(null)}
-        >
-          <form
-            action={updateSpaceMemberRoleAction.bind(
-              null,
-              spaceId,
-              roleTarget.userId,
-            )}
-            className="space-y-5"
-          >
-            <DialogHeader>
-              <DialogTitle id={roleTitleId}>スペースロールを変更</DialogTitle>
-              <DialogDescription id={roleDescriptionId}>
-                {roleTarget.email} のスペースロールを変更します。
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-2">
-              <Label htmlFor="space-role">スペースロール</Label>
-              <Select name="role" defaultValue={roleTarget.role}>
-                <SelectTrigger id="space-role" className="h-10 bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SPACE_ROLE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <DialogFooter>
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => setRoleTarget(null)}
-              >
-                キャンセル
-              </Button>
-              <Button type="submit">保存</Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+          target={roleTarget}
+        />
       ) : null}
     </>
   );
