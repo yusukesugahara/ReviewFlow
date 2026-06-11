@@ -1,17 +1,6 @@
-import type { ApprovalAssigneeOption } from "@/components/application-setup/application-setup-draft-form";
 import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
-import { redirect } from "next/navigation";
-import { client } from "@/lib/server/backend-fetch";
-import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { TENANT_ROLES } from "@/lib/constants/roles";
-import { unwrapResponseData } from "@/lib/server/api-envelope";
-import type { GroupMembersListSuccessJson, GroupsListSuccessJson } from "@/lib/schema";
-import type {
-  SpaceNewApplicationGroup,
-  SpaceNewApplicationMember,
-  SpaceNewApplicationPageProps,
-} from "./types";
+import { getSpaceNewApplicationPageData } from "./page-data";
+import type { SpaceNewApplicationPageProps } from "./types";
 import { SpaceNewApplicationView } from "./view";
 
 export default async function SpaceNewApplicationPage({
@@ -24,51 +13,12 @@ export default async function SpaceNewApplicationPage({
       Promise.resolve({} as Awaited<NonNullable<SpaceNewApplicationPageProps["searchParams"]>>),
   ]);
   const newApplicationHref = buildSpaceApplicationNewHref(spaceId);
-  const authHeaders = await authHeadersOrRedirect();
-
-  const [groupsRaw, me] = await Promise.all([
-    client.GET("/groups", { headers: authHeaders }),
-    getCurrentSessionUser(),
-  ]);
-  let groups: SpaceNewApplicationGroup[];
-  try {
-    groups = unwrapResponseData<GroupsListSuccessJson["data"]>(
-      groupsRaw,
-    ).groups as SpaceNewApplicationGroup[];
-  } catch {
-    redirect("/login");
-  }
-  const currentGroup = groups.find((group) => group.id === spaceId);
-  const canManageSpace =
-    me?.roles.includes(TENANT_ROLES.admin) ||
-    currentGroup?.currentUserRole === "admin";
-  let assignees: ApprovalAssigneeOption[] = [];
-  if (canManageSpace) {
-    const membersRaw = await client.GET("/groups/{groupId}/members", {
-      params: { path: { groupId: spaceId } },
-      headers: authHeaders,
-    });
-    let members: SpaceNewApplicationMember[];
-    try {
-      members = unwrapResponseData<GroupMembersListSuccessJson["data"]>(
-        membersRaw,
-      ).members.map((member) => ({
-        ...member,
-        name: typeof member.name === "string" ? member.name : null,
-      })) as SpaceNewApplicationMember[];
-    } catch {
-      redirect("/space");
-    }
-    assignees = members.map((member) => ({
-      id: member.userId,
-      label: member.name ? `${member.name} (${member.email})` : member.email,
-    }));
-  }
+  const data = await getSpaceNewApplicationPageData({ spaceId });
 
   return (
     <SpaceNewApplicationView
-      assignees={assignees}
-      canManageSpace={Boolean(canManageSpace)}
+      assignees={data.assignees}
+      canManageSpace={data.canManageSpace}
       newApplicationHref={newApplicationHref}
       publishedFormDefinitionId={query.publishedFormDefinitionId ?? null}
       publishedGroupId={query.publishedGroupId ?? null}

@@ -8,7 +8,12 @@ import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import type { ApplicationDetailViewModel } from "@/components/applications/application-detail.types";
-import { buildSpaceSubmissionDetailHref } from "@/components/applications/application-routes";
+import {
+  appendQueryParams,
+  buildSpaceApplicationFormDetailHref,
+  buildSpaceApplicationsHref,
+  buildSpaceSubmissionDetailHref,
+} from "@/components/applications/application-routes";
 
 const optionalStringFormValueSchema = z.string().optional().catch(undefined);
 const optionalNonEmptyStringFormValueSchema = z
@@ -166,7 +171,11 @@ export async function updateDescriptionAction(
   formData: FormData,
 ): Promise<void> {
   const description = readOptionalString(formData, "description");
-  const detailHref = buildFormDetailHref(spaceId, applicationId, definitionId);
+  const detailHref = buildSpaceApplicationFormDetailHref({
+    applicationId,
+    definitionId,
+    spaceId,
+  });
   const response = await client.PATCH("/form-definitions/{id}/description", {
     params: { path: { id: definitionId } },
     body: {
@@ -175,35 +184,21 @@ export async function updateDescriptionAction(
     headers: await authHeadersOrRedirect(),
   });
   if (!response.response.ok) {
-    const params = new URLSearchParams({
-      view: "form",
-      definitionId,
-      toast: "error",
-      message: "説明欄の更新に失敗しました",
-    });
     redirect(
-      `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}?${params.toString()}`,
+      appendQueryParams(detailHref, {
+        toast: "error",
+        message: "説明欄の更新に失敗しました",
+      }),
     );
   }
   revalidatePath(detailHref);
-  revalidatePath(`/space/${encodeURIComponent(spaceId)}/applications`);
+  revalidatePath(buildSpaceApplicationsHref(spaceId));
   redirect(
-    `${detailHref}&${new URLSearchParams({
+    appendQueryParams(detailHref, {
       toast: "success",
       message: "保存しました",
-    }).toString()}`,
+    }),
   );
-}
-
-function buildFormDetailHref(
-  spaceId: string,
-  applicationId: string,
-  definitionId: string,
-): string {
-  return `/space/${encodeURIComponent(spaceId)}/applications/${encodeURIComponent(applicationId)}?${new URLSearchParams({
-    view: "form",
-    definitionId,
-  }).toString()}`;
 }
 
 function redirectToApplicationDetail(
@@ -213,13 +208,16 @@ function redirectToApplicationDetail(
   const detailHref = buildSpaceSubmissionDetailHref(application);
   if (detailHref) {
     revalidatePath(detailHref);
-    revalidatePath(`/space/${encodeURIComponent(application.groupId ?? "")}/submissions`);
+    revalidatePath(
+      `/space/${encodeURIComponent(application.groupId ?? "")}/submissions`,
+    );
     if (message) {
-      const params = new URLSearchParams({
-        toast: "success",
-        message,
-      });
-      redirect(appendQueryString(detailHref, params));
+      redirect(
+        appendQueryParams(detailHref, {
+          toast: "success",
+          message,
+        }),
+      );
     }
     redirect(detailHref);
   }
@@ -236,8 +234,7 @@ function redirectToApplicationValidationError(
     id: applicationId,
     groupId: spaceId,
   });
-  const params = new URLSearchParams({ actionError: message });
-  redirect(appendQueryString(detailHref ?? "/space", params));
+  redirect(appendQueryParams(detailHref ?? "/space", { actionError: message }));
 }
 
 function redirectToApplicationActionError(
@@ -249,15 +246,12 @@ function redirectToApplicationActionError(
     id: applicationId,
     groupId: spaceId,
   });
-  const params = new URLSearchParams({
-    toast: "error",
-    message: applicationActionErrorMessage(error),
-  });
-  redirect(appendQueryString(detailHref ?? "/space", params));
-}
-
-function appendQueryString(href: string, params: URLSearchParams): string {
-  return `${href}${href.includes("?") ? "&" : "?"}${params.toString()}`;
+  redirect(
+    appendQueryParams(detailHref ?? "/space", {
+      toast: "error",
+      message: applicationActionErrorMessage(error),
+    }),
+  );
 }
 
 function applicationActionErrorMessage(error: unknown): string {

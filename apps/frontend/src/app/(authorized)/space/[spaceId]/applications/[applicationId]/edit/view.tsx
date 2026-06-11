@@ -15,6 +15,7 @@ import type {
   EditableApplicationInitialState,
   EditableFormField,
 } from "./types";
+import { buildReturnedCorrectionFormModel } from "./returned-correction-view-model";
 
 type SpaceApplicationEditViewProps = EditableApplicationInitialState & {
   action: (formData: FormData) => Promise<void>;
@@ -88,11 +89,8 @@ export function ReturnedApplicationCorrectionView({
   overallComment,
   targets,
 }: ReturnedApplicationCorrectionViewProps) {
-  const targetByFieldId = new Map(targets.map((target) => [target.formFieldId, target]));
-  const targetFields = fields.filter((field) => targetByFieldId.has(field.id));
-  const values = Object.fromEntries(
-    targets.map((target) => [target.fieldKey, target.currentValue]),
-  );
+  const { targetByFieldId, targetFields, values } =
+    buildReturnedCorrectionFormModel({ fields, targets });
 
   return (
     <div className="space-y-6">
@@ -145,33 +143,34 @@ export function ReturnedApplicationCorrectionView({
               現在修正できる項目はありません。
             </p>
           ) : (
-          <form action={action} className="space-y-5">
-            <input type="hidden" name="fieldsJson" value={JSON.stringify(targetFields)} />
-            <DynamicFieldsTable
-              fields={targetFields.map((field) => ({
-                ...field,
-                required: field.required ?? false,
-              }))}
-              values={values}
-              title="修正内容"
-              renderValue={(field, value) => {
-                const target = targetByFieldId.get(field.id);
-                return (
-                  <div className="space-y-3">
-                    {target?.comment ? (
-                      <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
-                        {target.comment}
-                      </p>
-                    ) : null}
-                    <DynamicFieldInput field={field} value={value} variant="table" />
-                  </div>
-                );
-              }}
-            />
-            <div className="flex justify-end border-t border-slate-200 pt-4">
-              <Button type="submit">修正内容を保存</Button>
-            </div>
-          </form>
+            <form action={action} className="space-y-5">
+              <input
+                type="hidden"
+                name="fieldsJson"
+                value={JSON.stringify(targetFields)}
+              />
+              <DynamicFieldsTable
+                fields={targetFields}
+                values={values}
+                title="修正内容"
+                renderValue={(field, value) => {
+                  const target = targetByFieldId.get(field.id);
+                  return (
+                    <div className="space-y-3">
+                      {target?.comment ? (
+                        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
+                          {target.comment}
+                        </p>
+                      ) : null}
+                      <DynamicFieldInput field={field} value={value} variant="table" />
+                    </div>
+                  );
+                }}
+              />
+              <div className="flex justify-end border-t border-slate-200 pt-4">
+                <Button type="submit">修正内容を保存</Button>
+              </div>
+            </form>
           )}
         </CardContent>
       </Card>

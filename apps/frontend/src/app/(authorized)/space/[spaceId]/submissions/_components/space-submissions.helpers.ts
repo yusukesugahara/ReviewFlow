@@ -1,5 +1,19 @@
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
+import {
+  isFormSetupApplication,
+  isPendingApplication,
+  isProcessedApplication,
+  isReturnedApplication,
+  isSpaceNeedsActionApplication,
+} from "@/components/applications/application-status-rules";
+import { buildSpaceSubmissionsHref } from "@/components/applications/application-routes";
 import type { ApplicationRow } from "@/components/space/space-applications.types";
+
+export {
+  isFormSetupApplication,
+  isPendingApplication,
+  isReturnedApplication,
+  isSpaceNeedsActionApplication,
+};
 
 export type SubmissionFilters = {
   applicant: string;
@@ -191,62 +205,19 @@ export function buildSubmissionsPageHref(
   filters: SubmissionFilters,
   page: number,
 ): string {
-  const params = new URLSearchParams();
-  if (filters.applicant) {
-    params.set("applicant", filters.applicant);
-  }
-  if (filters.status) {
-    params.set("status", filters.status);
-  }
-  if (filters.form) {
-    params.set("form", filters.form);
-  }
-  if (filters.createdFrom) {
-    params.set("createdFrom", filters.createdFrom);
-  }
-  if (filters.createdTo) {
-    params.set("createdTo", filters.createdTo);
-  }
-  if (filters.summary) {
-    params.set("summary", filters.summary);
-  }
-  if (page > 1) {
-    params.set("page", String(page));
-  }
-
-  const pathname = `/space/${encodeURIComponent(spaceId)}/submissions`;
-  return params.size > 0 ? `${pathname}?${params.toString()}` : pathname;
+  return buildSpaceSubmissionsHref(spaceId, {
+    applicant: filters.applicant,
+    status: filters.status,
+    form: filters.form,
+    createdFrom: filters.createdFrom,
+    createdTo: filters.createdTo,
+    summary: filters.summary,
+    page: page > 1 ? page : undefined,
+  });
 }
 
 export function buildSummaryFilterHref(spaceId: string, summary: SummaryFilter): string {
-  const params = new URLSearchParams({ summary });
-  return `/space/${encodeURIComponent(spaceId)}/submissions?${params.toString()}`;
-}
-
-export function isFormSetupApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.draft ||
-    row.status === APPLICATION_STATUSES.published
-  );
-}
-
-export function isPendingApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.submitted ||
-    row.status === APPLICATION_STATUSES.inReview ||
-    row.status === APPLICATION_STATUSES.returned
-  );
-}
-
-export function isSpaceNeedsActionApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.submitted ||
-    row.status === APPLICATION_STATUSES.inReview
-  );
-}
-
-export function isReturnedApplication(row: ApplicationRow): boolean {
-  return row.status === APPLICATION_STATUSES.returned;
+  return buildSpaceSubmissionsHref(spaceId, { summary });
 }
 
 export function isAssignedToCurrentUser(
@@ -257,13 +228,6 @@ export function isAssignedToCurrentUser(
     return false;
   }
   return row.currentStepAssigneeUserIds?.includes(currentUserId) ?? false;
-}
-
-export function isProcessedApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.approved ||
-    row.status === APPLICATION_STATUSES.rejected
-  );
 }
 
 export function isRecentlyProcessedApplication(row: ApplicationRow): boolean {

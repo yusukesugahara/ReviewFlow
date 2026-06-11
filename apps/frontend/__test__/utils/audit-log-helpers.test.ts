@@ -1,5 +1,7 @@
 import {
+  buildAdminAuditLogsViewModel,
   buildAuditDisplay,
+  buildAuditLogsHref,
   describeActionLabel,
   enrichAuditRow,
   shortId,
@@ -308,5 +310,99 @@ describe("audit log helpers", () => {
     expect(shortId(null)).toBe("-");
     expect(textValue(200)).toBe("200");
     expect(textValue(false)).toBe("false");
+  });
+
+  // テスト内容: 監査ログ一覧のフィルタURLが空値を除外して組み立てられることを確認する
+  it("builds audit log filter hrefs", () => {
+    expect(
+      buildAuditLogsHref({
+        createdFrom: "",
+        createdTo: "",
+        outcome: "all",
+        query: "",
+        risk: "high",
+      }),
+    ).toBe("/admin/audit-logs?risk=high");
+    expect(
+      buildAuditLogsHref({
+        createdFrom: "2026-06-01",
+        createdTo: "2026-06-30",
+        outcome: "failed",
+        query: "admin@example.com",
+        risk: "medium",
+      }),
+    ).toBe(
+      "/admin/audit-logs?q=admin%40example.com&createdFrom=2026-06-01&createdTo=2026-06-30&outcome=failed&risk=medium",
+    );
+  });
+
+  // テスト内容: 監査ログ一覧用の集計とフィルタ済み行を表示ロジック外で作れることを確認する
+  it("builds audit log view model with summary counts and filtered rows", () => {
+    const highRiskRow: AuditLogItem = {
+      id: "audit-role",
+      actionType: "PATCH:users",
+      targetType: "users",
+      targetId: "user-12345678",
+      actorEmail: "admin@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/users/user-12345678/role",
+        method: "PATCH",
+        statusCode: 200,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+    const failedRow: AuditLogItem = {
+      id: "audit-failed",
+      actionType: "DELETE:users",
+      targetType: "users",
+      targetId: "user-23456789",
+      actorEmail: "admin@example.com",
+      metadataJson: metadata({
+        success: false,
+        path: "/users/user-23456789",
+        method: "DELETE",
+        statusCode: 403,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+    const lowRiskRow: AuditLogItem = {
+      id: "audit-read",
+      actionType: "GET:applications",
+      targetType: "applications",
+      targetId: "application-12345678",
+      actorEmail: "member@example.com",
+      metadataJson: metadata({
+        success: true,
+        path: "/applications",
+        method: "GET",
+        statusCode: 200,
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+
+    const viewModel = buildAdminAuditLogsViewModel({
+      createdFrom: "",
+      createdTo: "",
+      outcome: "all",
+      query: "",
+      risk: "high",
+      rows: [highRiskRow, failedRow, lowRiskRow],
+    });
+
+    expect(viewModel.filteredRows.map((item) => item.row.id)).toEqual([
+      "audit-role",
+    ]);
+    expect(viewModel.summaryCounts).toEqual({
+      failed: 1,
+      highRisk: 1,
+      mediumRisk: 1,
+    });
+    expect(viewModel.highRiskHref).toBe("/admin/audit-logs?risk=high");
+    expect(viewModel.hasActiveFilters).toBe(true);
+    expect(viewModel.isHighRiskFilterActive).toBe(true);
+    expect(viewModel.listDescription).toBe(
+      "高リスクの操作履歴のみを表示しています",
+    );
   });
 });

@@ -1,6 +1,10 @@
 import type { CurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import type { ApplicationDetailViewModel } from "./application-detail.types";
+import {
+  isFormSetupStatus,
+  isInReviewApplicationStatus,
+  isReturnedApplicationStatus,
+} from "./application-status-rules";
 
 export type ApplicationCapabilities = {
   canEditApplication: boolean;
@@ -33,7 +37,7 @@ function canActOnReview(
   application: ApplicationDetailViewModel,
   actor: CurrentSessionUser | null,
 ): boolean {
-  if (!actor || application.status !== APPLICATION_STATUSES.inReview) {
+  if (!actor || !isInReviewApplicationStatus(application.status)) {
     return false;
   }
   return isCurrentStepAssignee(application, actor);
@@ -53,15 +57,12 @@ export function getApplicationCapabilities(
   return {
     canEditApplication:
       isApplicant &&
-      (application.status === APPLICATION_STATUSES.draft ||
-        application.status === APPLICATION_STATUSES.published ||
-        application.status === APPLICATION_STATUSES.returned),
+      (isFormSetupStatus(application.status) ||
+        isReturnedApplicationStatus(application.status)),
     canSubmitApplication:
-      isApplicant &&
-      (application.status === APPLICATION_STATUSES.draft ||
-        application.status === APPLICATION_STATUSES.published),
+      isApplicant && isFormSetupStatus(application.status),
     canResubmitApplication:
-      isApplicant && application.status === APPLICATION_STATUSES.returned,
+      isApplicant && isReturnedApplicationStatus(application.status),
     canApproveApplication: canReview,
     canRejectApplication: canReview,
     canReturnApplication: canReturn,

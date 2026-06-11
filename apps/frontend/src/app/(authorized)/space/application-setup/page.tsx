@@ -1,47 +1,10 @@
 import { redirect } from "next/navigation";
-import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
-import { client } from "@/lib/server/backend-fetch";
-import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
-import type { GroupsListSuccessJson } from "@/lib/schema";
+import { getApplicationSetupRedirectTarget } from "./redirect-target";
 import type { ApplicationSetupRedirectPageProps } from "./types";
 
 export default async function AdminApplicationSetupPage({
   searchParams,
 }: ApplicationSetupRedirectPageProps) {
   const params = (await searchParams) ?? {};
-  const accessToken = await getAccessTokenFromCookie();
-  if (!accessToken) {
-    redirect("/login");
-  }
-  const spacesRaw = await client.GET("/groups", {
-    headers: { Authorization: `Bearer ${accessToken}` },
-  });
-  const spaces =
-    spacesRaw.response.ok && spacesRaw.data
-      ? unwrapResponseData<GroupsListSuccessJson["data"]>(spacesRaw).groups ?? []
-      : [];
-  const spaceId = params.spaceId ?? spaces[0]?.id ?? "";
-  if (!spaceId) {
-    redirect("/space");
-  }
-  const nextParams = new URLSearchParams();
-
-  if (params.setupError) {
-    nextParams.set("setupError", params.setupError);
-  }
-  if (params.setupStatus) {
-    nextParams.set("setupStatus", params.setupStatus);
-  }
-  if (params.publishedGroupId) {
-    nextParams.set("publishedGroupId", params.publishedGroupId);
-  }
-  if (params.publishedFormDefinitionId) {
-    nextParams.set("publishedFormDefinitionId", params.publishedFormDefinitionId);
-  }
-
-  const query = nextParams.toString();
-  redirect(
-    `${buildSpaceApplicationNewHref(spaceId)}${query.length > 0 ? `?${query}` : ""}`,
-  );
+  redirect(await getApplicationSetupRedirectTarget(params));
 }

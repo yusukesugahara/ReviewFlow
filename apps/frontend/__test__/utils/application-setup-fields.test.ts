@@ -1,5 +1,6 @@
 import {
   createDefaultField,
+  fieldOptionsFromText,
   normalizeFieldKey,
   optionLines,
   toDynamicField,
@@ -19,6 +20,10 @@ describe("application setup fields", () => {
   // テスト内容: 選択肢の空行と重複が取り除かれることを確認する
   it("normalizes option lines", () => {
     expect(optionLines("承認\n\n差し戻し\n承認")).toEqual(["承認", "差し戻し"]);
+    expect(fieldOptionsFromText("承認\n\n差し戻し\n承認")).toEqual([
+      { label: "承認", value: "承認" },
+      { label: "差し戻し", value: "差し戻し" },
+    ]);
   });
 
   // テスト内容: 明示キーとラベル由来キーが重複しないよう正規化されることを確認する
