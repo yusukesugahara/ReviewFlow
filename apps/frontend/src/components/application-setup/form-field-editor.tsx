@@ -4,22 +4,11 @@ import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  FIELD_TYPE_OPTIONS,
-  FIELD_TYPES,
-  fieldTypeNeedsOptions,
-  fieldTypeSupportsPlaceholder,
-  isFieldType,
-  type FieldType,
-} from "@/lib/constants/form-fields";
+import { type FieldType } from "@/lib/constants/form-fields";
+import { asFieldType, optionsToLines } from "./form-field-editor.helpers";
+import { FormFieldPreview } from "./form-field-preview";
+import { FormFieldTypeInputs } from "./form-field-type-inputs";
+import { FormFieldTypeSelect } from "./form-field-type-select";
 import { OrderMoveButtons } from "./order-move-buttons";
 
 type FormField = {
@@ -52,242 +41,6 @@ type AddFieldFormProps = {
   nextSortOrder: number;
   disabled: boolean;
 };
-
-function asFieldType(value: string): FieldType {
-  return isFieldType(value) ? value : FIELD_TYPES.text;
-}
-
-function optionsToLines(options: unknown[] | null | undefined): string {
-  if (!Array.isArray(options)) {
-    return "";
-  }
-  return options
-    .map((option) => {
-      if (option && typeof option === "object") {
-        const raw = option as { label?: unknown; value?: unknown };
-        if (typeof raw.label === "string" && raw.label.trim().length > 0) {
-          return raw.label.trim();
-        }
-        if (typeof raw.value === "string" && raw.value.trim().length > 0) {
-          return raw.value.trim();
-        }
-      }
-      if (typeof option === "string") {
-        return option.trim();
-      }
-      return "";
-    })
-    .filter(Boolean)
-    .join("\n");
-}
-
-function linesToOptions(optionsText: string): string[] {
-  return optionsText
-    .split("\n")
-    .map((line) => line.trim())
-    .filter((line, index, all) => line.length > 0 && all.indexOf(line) === index);
-}
-
-function TypeSelect({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: FieldType;
-  onChange: (value: FieldType) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Select
-      name="fieldType"
-      value={value}
-      disabled={disabled}
-      onValueChange={(nextValue) => onChange(asFieldType(nextValue))}
-    >
-      <SelectTrigger className="bg-white">
-        <SelectValue />
-      </SelectTrigger>
-      <SelectContent>
-        {FIELD_TYPE_OPTIONS.map((item) => (
-          <SelectItem key={item.value} value={item.value}>
-            {item.label}
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
-  );
-}
-
-function TypeSpecificInputs({
-  fieldType,
-  placeholder,
-  helpText,
-  optionsText,
-  onPlaceholderChange,
-  onHelpTextChange,
-  onOptionsTextChange,
-  disabled,
-}: {
-  fieldType: FieldType;
-  placeholder: string;
-  helpText: string;
-  optionsText: string;
-  onPlaceholderChange: (value: string) => void;
-  onHelpTextChange: (value: string) => void;
-  onOptionsTextChange: (value: string) => void;
-  disabled?: boolean;
-}) {
-  return (
-    <div className="grid gap-3 border-t pt-3 md:grid-cols-2">
-      {fieldTypeSupportsPlaceholder(fieldType) ? (
-        <div className="space-y-2">
-          <Label htmlFor={`placeholder-${fieldType}`}>プレースホルダー</Label>
-          <Input
-            id={`placeholder-${fieldType}`}
-            name="placeholder"
-            value={placeholder}
-            onChange={(event) => onPlaceholderChange(event.target.value)}
-            disabled={disabled}
-            placeholder={
-              fieldType === FIELD_TYPES.select
-                ? "例: 選択してください"
-                : "入力例や補足"
-            }
-            className="bg-white"
-          />
-        </div>
-      ) : (
-        <input type="hidden" name="placeholder" value="" />
-      )}
-      <div className="space-y-2">
-        <Label htmlFor={`helpText-${fieldType}`}>説明文</Label>
-        <Input
-          id={`helpText-${fieldType}`}
-          name="helpText"
-          value={helpText}
-          onChange={(event) => onHelpTextChange(event.target.value)}
-          disabled={disabled}
-          placeholder="入力欄の上に表示する説明"
-          className="bg-white"
-        />
-      </div>
-      {fieldTypeNeedsOptions(fieldType) ? (
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor={`options-${fieldType}`}>選択肢</Label>
-          <Textarea
-            id={`options-${fieldType}`}
-            name="optionsText"
-            value={optionsText}
-            onChange={(event) => onOptionsTextChange(event.target.value)}
-            disabled={disabled}
-            required
-            rows={4}
-            placeholder={"承認する\n差し戻す\n却下する"}
-            className="bg-white"
-          />
-        </div>
-      ) : (
-        <input type="hidden" name="optionsText" value="" />
-      )}
-    </div>
-  );
-}
-
-function FieldPreview({
-  fieldType,
-  label,
-  required,
-  placeholder,
-  helpText,
-  optionsText,
-}: {
-  fieldType: FieldType;
-  label: string;
-  required: boolean;
-  placeholder: string;
-  helpText: string;
-  optionsText: string;
-}) {
-  const options = linesToOptions(optionsText);
-  const previewLabel = label.trim().length > 0 ? label.trim() : "タイトル";
-  const previewPlaceholder = placeholder.trim();
-
-  return (
-    <div className="rounded-lg border bg-slate-50 p-4">
-      <div className="space-y-2">
-        <Label>
-          {previewLabel}
-          {required ? <span className="ml-1 text-destructive">*</span> : null}
-        </Label>
-        {helpText.trim().length > 0 ? <p className="text-sm text-muted-foreground">{helpText.trim()}</p> : null}
-        {fieldType === "textarea" ? (
-          <Textarea placeholder={previewPlaceholder} rows={7} className="min-h-40 bg-white" disabled />
-        ) : null}
-        {fieldType === "select" ? (
-          <Select disabled defaultValue="">
-            <SelectTrigger className="bg-white disabled:opacity-100">
-              <SelectValue placeholder={previewPlaceholder || "選択してください"} />
-            </SelectTrigger>
-            <SelectContent>
-              {(options.length > 0 ? options : ["選択肢1", "選択肢2"]).map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        ) : null}
-        {fieldType === "radio" ? (
-          <div className="space-y-2">
-            {(options.length > 0 ? options : ["選択肢1", "選択肢2"]).map((option) => (
-              <label key={option} className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="radio" disabled className="h-4 w-4" />
-                {option}
-              </label>
-            ))}
-          </div>
-        ) : null}
-        {fieldType === "checkbox" ? (
-          <div className="space-y-2">
-            {(options.length > 0 ? options : ["選択肢1", "選択肢2"]).map((option) => (
-              <label key={option} className="flex items-center gap-2 text-sm text-slate-700">
-                <input type="checkbox" disabled className="h-4 w-4 rounded border-gray-300" />
-                {option}
-              </label>
-            ))}
-          </div>
-        ) : null}
-        {fieldType === "consent" ? (
-          <label className="flex items-center gap-2 text-sm text-slate-700">
-            <input type="checkbox" disabled className="h-4 w-4 rounded border-gray-300" />
-            {previewLabel}
-          </label>
-        ) : null}
-        {fieldType === "description" ? (
-          <p className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm leading-6 text-slate-700">
-            {helpText.trim() || previewLabel}
-          </p>
-        ) : null}
-        {fieldType === "section" ? (
-          <div className="border-b border-slate-300 pb-2">
-            <h3 className="text-lg font-semibold text-slate-950">{previewLabel}</h3>
-            {helpText.trim().length > 0 ? (
-              <p className="mt-1 text-sm text-muted-foreground">{helpText.trim()}</p>
-            ) : null}
-          </div>
-        ) : null}
-        {fieldType !== "textarea" && fieldType !== "select" && fieldType !== "radio" && fieldType !== "checkbox" && fieldType !== "consent" && fieldType !== "description" && fieldType !== "section" ? (
-          <Input
-            type={fieldType === "number" ? "number" : fieldType === "date" ? "date" : "text"}
-            placeholder={previewPlaceholder}
-            disabled
-            className="bg-white disabled:opacity-100"
-          />
-        ) : null}
-      </div>
-    </div>
-  );
-}
 
 export function FormFieldEditor({
   field,
@@ -357,7 +110,7 @@ export function FormFieldEditor({
           </div>
           <div className="space-y-2">
             <Label>タイプ</Label>
-            <TypeSelect value={fieldType} onChange={setFieldType} disabled={disabled} />
+            <FormFieldTypeSelect value={fieldType} onChange={setFieldType} disabled={disabled} />
           </div>
         </div>
         <div className="flex justify-end">
@@ -373,7 +126,7 @@ export function FormFieldEditor({
             必須
           </label>
         </div>
-        <TypeSpecificInputs
+        <FormFieldTypeInputs
           fieldType={fieldType}
           placeholder={placeholder}
           helpText={helpText}
@@ -383,7 +136,7 @@ export function FormFieldEditor({
           onOptionsTextChange={setOptionsText}
           disabled={disabled}
         />
-        <FieldPreview
+        <FormFieldPreview
           fieldType={fieldType}
           label={label}
           required={required}
@@ -427,7 +180,7 @@ export function AddFieldForm({ action, nextSortOrder, disabled }: AddFieldFormPr
         </div>
         <div className="space-y-2">
           <Label>タイプ</Label>
-          <TypeSelect value={fieldType} onChange={setFieldType} disabled={disabled} />
+          <FormFieldTypeSelect value={fieldType} onChange={setFieldType} disabled={disabled} />
         </div>
         <label className="flex items-end gap-2 text-sm text-slate-600">
           <input
@@ -441,7 +194,7 @@ export function AddFieldForm({ action, nextSortOrder, disabled }: AddFieldFormPr
           <span className="mb-1.5">必須</span>
         </label>
       </div>
-      <TypeSpecificInputs
+      <FormFieldTypeInputs
         fieldType={fieldType}
         placeholder={placeholder}
         helpText={helpText}
@@ -451,7 +204,7 @@ export function AddFieldForm({ action, nextSortOrder, disabled }: AddFieldFormPr
         onOptionsTextChange={setOptionsText}
         disabled={disabled}
       />
-      <FieldPreview
+      <FormFieldPreview
         fieldType={fieldType}
         label={label || `フォーム${nextSortOrder + 1}`}
         required={required}
