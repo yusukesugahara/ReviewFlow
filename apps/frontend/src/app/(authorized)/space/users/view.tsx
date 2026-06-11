@@ -31,13 +31,13 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { SPACE_ROLE_OPTIONS, SPACE_ROLES } from "@/lib/constants/roles";
-import { formatDateJa } from "@/lib/date-format";
 import {
   addSpaceMemberAction,
   removeSpaceMemberAction,
   updateSpaceMemberRoleAction,
 } from "./actions";
 import { SpaceUsersTable } from "./space-users-table";
+import { buildSpaceUserTableMembers } from "./space-users-view-model";
 import type { SpaceUsersErrorViewProps, SpaceUsersViewProps } from "./types";
 
 export function SpaceUsersView({
@@ -94,10 +94,7 @@ export function SpaceUsersView({
           ) : (
             <SpaceUsersTable
               currentUserId={currentUserId}
-              members={members.map((member) => ({
-                ...member,
-                createdAtLabel: formatDateJa(member.createdAt),
-              }))}
+              members={buildSpaceUserTableMembers(members)}
               removeMemberAction={removeSpaceMemberAction}
               spaceId={spaceId}
               updateMemberRoleAction={updateSpaceMemberRoleAction}
