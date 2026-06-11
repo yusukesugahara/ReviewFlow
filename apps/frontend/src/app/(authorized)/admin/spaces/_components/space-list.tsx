@@ -48,21 +48,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import type {
-  AvailableUserSummary,
   GroupMemberSummary,
-  GroupSummary,
+  SpaceListItem,
 } from "../types";
 import {
   MemberActionMenu,
   type MemberActionMenuState,
 } from "./member-action-menu";
-
-type SpaceListItem = {
-  group: GroupSummary;
-  members: GroupMemberSummary[];
-  addableUsers: AvailableUserSummary[];
-  canManageSpace: boolean;
-};
 
 type SpaceListProps = {
   spaces: SpaceListItem[];

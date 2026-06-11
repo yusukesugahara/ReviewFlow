@@ -2,9 +2,18 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
-import { TENANT_ROLES } from "@/lib/constants/roles";
 import { AdminSpacesView } from "./view";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
+import {
+  buildAdminSpaceListItems,
+  canCreateSpace,
+  isSystemAdminUser,
+  normalizeAvailableUsers,
+  normalizeGroups,
+  normalizeMembers,
+  normalizeTenantUsers,
+  statusFromResponse,
+} from "./admin-spaces-page-data";
 import type {
   AdminSpacesAvailableUsersData,
   AdminSpacesGroupsData,
@@ -14,45 +23,7 @@ import type {
   AdminSpacesUsersData,
   AvailableUserSummary,
   GroupMemberSummary,
-  GroupSummary,
-  TenantUserSummary,
 } from "./types";
-
-function statusFromResponse(response?: Response): number {
-  return response?.status ?? 500;
-}
-
-function normalizeName(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
-}
-
-function normalizeGroups(groups: AdminSpacesGroupsData["groups"]): GroupSummary[] {
-  return groups.map((group) => ({
-    ...group,
-    description: normalizeName(group.description),
-  }));
-}
-
-function normalizeMembers(members: AdminSpacesMembersData["members"]): GroupMemberSummary[] {
-  return members.map((member) => ({
-    ...member,
-    name: normalizeName(member.name),
-  }));
-}
-
-function normalizeAvailableUsers(users: AdminSpacesAvailableUsersData["users"]): AvailableUserSummary[] {
-  return users.map((user) => ({
-    ...user,
-    name: normalizeName(user.name),
-  }));
-}
-
-function normalizeTenantUsers(users: AdminSpacesUsersData["users"]): TenantUserSummary[] {
-  return users.map((user) => ({
-    ...user,
-    name: normalizeName(user.name),
-  }));
-}
 
 export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageProps) {
   const params = (await searchParams) ?? {};
@@ -69,13 +40,13 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
   }
 
   const me = unwrapResponseData<AdminSpacesMe>(meResponse);
-  const isSystemAdmin = me.roles.includes(TENANT_ROLES.admin);
-  const canCreateSpace = isSystemAdmin;
+  const isSystemAdmin = isSystemAdminUser(me);
+  const canCreateSpaceValue = canCreateSpace(me);
 
   try {
     const [groupsResponse, usersResponse] = await Promise.all([
       client.GET("/groups", { headers: authHeaders }),
-      canCreateSpace
+      canCreateSpaceValue
         ? client.GET("/users", { headers: authHeaders })
         : Promise.resolve(null),
     ]);
@@ -83,7 +54,7 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
     if (!groupsResponse.response.ok || !groupsResponse.data) {
       return (
         <AdminSpacesView
-          canCreateSpace={canCreateSpace}
+          canCreateSpace={canCreateSpaceValue}
           currentUserId={me.id}
           formError={params.formError}
           fetchErrorStatus={statusFromResponse(groupsResponse.response)}
@@ -97,7 +68,7 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
     if (usersResponse && (!usersResponse.response.ok || !usersResponse.data)) {
       return (
         <AdminSpacesView
-          canCreateSpace={canCreateSpace}
+          canCreateSpace={canCreateSpaceValue}
           currentUserId={me.id}
           formError={params.formError}
           fetchErrorStatus={statusFromResponse(usersResponse.response)}
@@ -155,23 +126,17 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
 
     return (
       <AdminSpacesView
-        canCreateSpace={canCreateSpace}
+        canCreateSpace={canCreateSpaceValue}
         currentUserId={me.id}
         error={params.error}
         formError={params.formError}
         isSystemAdmin={isSystemAdmin}
-        spaces={groups.map((group) => {
-          const members = membersByGroup.get(group.id) ?? [];
-          return {
-            group,
-            members,
-            addableUsers: availableUsersByGroup.get(group.id) ?? [],
-            canManageSpace:
-              isSystemAdmin ||
-              members.some(
-                (member) => member.userId === me.id && member.role === "admin",
-              ),
-          };
+        spaces={buildAdminSpaceListItems({
+          availableUsersByGroup,
+          currentUserId: me.id,
+          groups,
+          isSystemAdmin,
+          membersByGroup,
         })}
         users={users}
       />
@@ -179,7 +144,7 @@ export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageP
   } catch {
     return (
       <AdminSpacesView
-        canCreateSpace={canCreateSpace}
+        canCreateSpace={canCreateSpaceValue}
         currentUserId={me.id}
         formError={params.formError}
         fetchErrorStatus={500}
