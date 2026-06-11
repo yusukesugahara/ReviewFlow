@@ -18,14 +18,9 @@ import { ApplicationStatusBadge } from "@/components/applications/application-st
 import { PublicApplicationUrlCopyButton } from "@/components/applications/public-application-url-card";
 import { DynamicFieldsTable } from "@/components/applications/dynamic-fields";
 import { ApprovalProgressDiagram } from "@/components/applications/application-detail-view";
-import {
-  isPublishedApplicationStatus,
-  isReturnedApplication,
-  isSpaceNeedsActionApplication,
-} from "@/components/applications/application-status-rules";
-import { formatDateTimeJa } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
 import { DescriptionEditModal } from "./description-edit-modal";
+import { buildFormDetailViewModel } from "./form-detail-view-model";
 import type { FormDetailViewProps } from "./types";
 
 export function FormDetailView({
@@ -38,10 +33,12 @@ export function FormDetailView({
   editHref,
   descriptionAction,
 }: FormDetailViewProps) {
-  const returnCount = relatedApplications.filter(isReturnedApplication).length;
-  const waitingCount = relatedApplications.filter(
-    isSpaceNeedsActionApplication,
-  ).length;
+  const viewModel = buildFormDetailViewModel({
+    application,
+    definition,
+    fields,
+    relatedApplications,
+  });
 
   return (
     <div className="space-y-6">
@@ -73,12 +70,12 @@ export function FormDetailView({
                 />
                 <span className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1 text-xs font-medium text-slate-600">
                   <ClipboardList className="h-3.5 w-3.5" aria-hidden="true" />
-                  {fields.length}項目
+                  {viewModel.fieldCount}項目
                 </span>
               </div>
               <div>
                 <CardTitle className="break-words text-2xl leading-tight text-slate-950">
-                  {definition?.name ?? "フォーム"}
+                  {viewModel.name}
                 </CardTitle>
                 <CardDescription className="mt-2">
                   公開フォームとして利用者に表示される内容です
@@ -90,7 +87,7 @@ export function FormDetailView({
                 action={descriptionAction}
                 initialDescription={definition?.description ?? ""}
               />
-              {isPublishedApplicationStatus(application.status) ? (
+              {viewModel.isPublished ? (
                 <PublicApplicationUrlCopyButton path={publicApplicationUrlPath} />
               ) : (
                 <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-muted-foreground">
@@ -104,17 +101,17 @@ export function FormDetailView({
           <div>
             <p className="mb-2 text-sm font-medium text-slate-500">説明</p>
             <p className="whitespace-pre-wrap rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700">
-              {definition?.description?.trim() || "説明は設定されていません。"}
+              {viewModel.descriptionText}
             </p>
           </div>
           <div className="grid gap-3 text-sm sm:grid-cols-2">
             <TimestampPanel
               label="作成日"
-              value={formatDateTime(definition?.createdAt ?? application.createdAt)}
+              value={viewModel.createdAtText}
             />
             <TimestampPanel
               label="更新日"
-              value={formatDateTime(definition?.updatedAt ?? application.updatedAt)}
+              value={viewModel.updatedAtText}
             />
           </div>
         </CardContent>
@@ -122,8 +119,8 @@ export function FormDetailView({
 
       <div className="grid gap-3 sm:grid-cols-3">
         <InfoPanel label="申請件数" value={relatedApplications.length} tone="blue" />
-        <InfoPanel label="差し戻し件数" value={returnCount} tone="amber" />
-        <InfoPanel label="確認待ち件数" value={waitingCount} tone="slate" />
+        <InfoPanel label="差し戻し件数" value={viewModel.returnCount} tone="amber" />
+        <InfoPanel label="確認待ち件数" value={viewModel.waitingCount} tone="slate" />
       </div>
 
       <Card className="overflow-hidden">
@@ -219,8 +216,4 @@ function TimestampPanel({ label, value }: { label: string; value: string }) {
       </div>
     </div>
   );
-}
-
-function formatDateTime(value?: string): string {
-  return value ? formatDateTimeJa(value) : "-";
 }
