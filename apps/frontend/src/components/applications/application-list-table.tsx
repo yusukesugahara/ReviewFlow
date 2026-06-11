@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/table";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
+import { isFormSetupApplication } from "./application-status-rules";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
   dateStyle: "short",
@@ -43,10 +44,7 @@ function getApplicationName(row: ApplicationListRow): string {
 }
 
 function getApplicationKindLabel(row: ApplicationListRow): string {
-  if (
-    row.status === APPLICATION_STATUSES.draft ||
-    row.status === APPLICATION_STATUSES.published
-  ) {
+  if (isFormSetupApplication(row)) {
     return `作成中（${row.status === APPLICATION_STATUSES.draft ? "下書き" : "公開済み"}）`;
   }
   if (row.applicantUserId === null) {
@@ -56,10 +54,7 @@ function getApplicationKindLabel(row: ApplicationListRow): string {
 }
 
 function getApplicationKindClassName(row: ApplicationListRow): string {
-  if (
-    row.status === APPLICATION_STATUSES.draft ||
-    row.status === APPLICATION_STATUSES.published
-  ) {
+  if (isFormSetupApplication(row)) {
     return "border-sky-200 bg-sky-50 text-sky-800";
   }
   if (row.applicantUserId === null) {

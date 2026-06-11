@@ -1,5 +1,18 @@
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
+import {
+  isFormSetupApplication,
+  isPendingApplication,
+  isProcessedApplication,
+  isReturnedApplication,
+  isSpaceNeedsActionApplication,
+} from "@/components/applications/application-status-rules";
 import type { ApplicationRow } from "@/components/space/space-applications.types";
+
+export {
+  isFormSetupApplication,
+  isPendingApplication,
+  isReturnedApplication,
+  isSpaceNeedsActionApplication,
+};
 
 export type SubmissionFilters = {
   applicant: string;
@@ -223,32 +236,6 @@ export function buildSummaryFilterHref(spaceId: string, summary: SummaryFilter):
   return `/space/${encodeURIComponent(spaceId)}/submissions?${params.toString()}`;
 }
 
-export function isFormSetupApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.draft ||
-    row.status === APPLICATION_STATUSES.published
-  );
-}
-
-export function isPendingApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.submitted ||
-    row.status === APPLICATION_STATUSES.inReview ||
-    row.status === APPLICATION_STATUSES.returned
-  );
-}
-
-export function isSpaceNeedsActionApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.submitted ||
-    row.status === APPLICATION_STATUSES.inReview
-  );
-}
-
-export function isReturnedApplication(row: ApplicationRow): boolean {
-  return row.status === APPLICATION_STATUSES.returned;
-}
-
 export function isAssignedToCurrentUser(
   row: ApplicationRow,
   currentUserId?: string | null,
@@ -257,13 +244,6 @@ export function isAssignedToCurrentUser(
     return false;
   }
   return row.currentStepAssigneeUserIds?.includes(currentUserId) ?? false;
-}
-
-export function isProcessedApplication(row: ApplicationRow): boolean {
-  return (
-    row.status === APPLICATION_STATUSES.approved ||
-    row.status === APPLICATION_STATUSES.rejected
-  );
 }
 
 export function isRecentlyProcessedApplication(row: ApplicationRow): boolean {

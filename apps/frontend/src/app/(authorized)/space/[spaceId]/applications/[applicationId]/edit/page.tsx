@@ -7,11 +7,15 @@ import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { normalizeFieldOptions } from "@/components/applications/field-options";
 import {
+  isFormSetupStatus,
+  isPublishedApplicationStatus,
+  isReturnedApplicationStatus,
+} from "@/components/applications/application-status-rules";
+import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   type ApplicationSetupError,
 } from "@/lib/constants/application-setup";
 import { FIELD_TYPES, isFieldType, type FieldType } from "@/lib/constants/form-fields";
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { updateReturnedApplicationAction } from "./actions";
 import type {
   CorrectionTargetItem,
@@ -95,10 +99,8 @@ export default async function SpaceApplicationEditPage({
       headers: authHeaders,
     });
     const app = unwrapResponseData<EditableApplicationDetail>(appRaw);
-    const isSetupEditable =
-      app.status === APPLICATION_STATUSES.draft ||
-      app.status === APPLICATION_STATUSES.published;
-    const isReturnedEditable = app.status === APPLICATION_STATUSES.returned;
+    const isSetupEditable = isFormSetupStatus(app.status);
+    const isReturnedEditable = isReturnedApplicationStatus(app.status);
     if (!isSetupEditable && !isReturnedEditable) {
       return <SpaceApplicationEditUnavailableView />;
     }
@@ -197,7 +199,7 @@ export default async function SpaceApplicationEditPage({
         initialName={definition?.name}
         initialSteps={toInitialSteps(currentFlow)}
         publishedFormDefinitionId={
-          app.status === APPLICATION_STATUSES.published ? definitionId : undefined
+          isPublishedApplicationStatus(app.status) ? definitionId : undefined
         }
         returnPath={editPath}
         spaceId={spaceId}

@@ -1,6 +1,13 @@
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
+import {
+  isApprovedApplicationStatus,
+  isInReviewApplicationStatus,
+  isPublishedApplicationStatus,
+  isRejectedApplicationStatus,
+  isReturnedApplication,
+  isSpaceNeedsActionApplication,
+} from "@/components/applications/application-status-rules";
 import { SpaceEmptyState } from "@/components/space/space-empty-state";
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
 import { isApiFailure } from "@/lib/server/api-failure";
@@ -117,24 +124,23 @@ async function buildSpaceDashboardSummary(
     currentUserRole: space.currentUserRole ?? null,
     memberCount: members.length,
     formCount: forms.length,
-    publishedFormCount: forms.filter((form) => form.status === "published").length,
-    totalApplications,
-    needsActionCount: apps.filter(
-      (app) =>
-        app.status === APPLICATION_STATUSES.submitted ||
-        app.status === APPLICATION_STATUSES.inReview,
+    publishedFormCount: forms.filter((form) =>
+      isPublishedApplicationStatus(form.status),
     ).length,
-    returnedCount: apps.filter((app) => app.status === APPLICATION_STATUSES.returned)
-      .length,
-    approvedCount: apps.filter((app) => app.status === APPLICATION_STATUSES.approved)
-      .length,
-    rejectedCount: apps.filter((app) => app.status === APPLICATION_STATUSES.rejected)
-      .length,
+    totalApplications,
+    needsActionCount: apps.filter(isSpaceNeedsActionApplication).length,
+    returnedCount: apps.filter(isReturnedApplication).length,
+    approvedCount: apps.filter((app) =>
+      isApprovedApplicationStatus(app.status),
+    ).length,
+    rejectedCount: apps.filter((app) =>
+      isRejectedApplicationStatus(app.status),
+    ).length,
     correctionCount,
     resubmitCount: apps.filter(
       (app, index) =>
         (correctionCounts[index] ?? 0) > 0 &&
-        app.status === APPLICATION_STATUSES.inReview,
+        isInReviewApplicationStatus(app.status),
     ).length,
     avgReturns:
       totalApplications > 0 ? (correctionCount / totalApplications).toFixed(2) : "0.00",

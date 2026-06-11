@@ -10,7 +10,7 @@ import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
 } from "@/components/applications/application-detail.types";
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
+import { isFormSetupStatus } from "@/components/applications/application-status-rules";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
@@ -279,13 +279,6 @@ function getMissingRequiredFields(
 ): ApplicationFormField[] {
   return fields.filter(
     (field) => field.required && !hasRequiredValue(values[field.fieldKey]),
-  );
-}
-
-function isFormSetupStatus(status: string): boolean {
-  return (
-    status === APPLICATION_STATUSES.draft ||
-    status === APPLICATION_STATUSES.published
   );
 }
 

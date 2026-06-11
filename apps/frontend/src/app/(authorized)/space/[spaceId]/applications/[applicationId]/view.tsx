@@ -23,9 +23,14 @@ import {
   ApplicationDetailView,
   ApprovalProgressDiagram,
 } from "@/components/applications/application-detail-view";
+import {
+  isPublishedApplicationStatus,
+  isReturnedApplication,
+  isReturnedApplicationStatus,
+  isSpaceNeedsActionApplication,
+} from "@/components/applications/application-status-rules";
 import { ReviewerApplicationActions } from "@/components/applications/reviewer-application-actions";
 import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/application-routes";
-import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { formatDateTimeJa } from "@/lib/date-format";
 import { cn } from "@/lib/utils";
 import { DescriptionEditModal } from "./description-edit-modal";
@@ -68,13 +73,9 @@ export function FormDetailView({
   editHref,
   descriptionAction,
 }: FormDetailViewProps) {
-  const returnCount = relatedApplications.filter(
-    (row) => row.status === APPLICATION_STATUSES.returned,
-  ).length;
+  const returnCount = relatedApplications.filter(isReturnedApplication).length;
   const waitingCount = relatedApplications.filter(
-    (row) =>
-      row.status === APPLICATION_STATUSES.submitted ||
-      row.status === APPLICATION_STATUSES.inReview,
+    isSpaceNeedsActionApplication,
   ).length;
 
   return (
@@ -124,7 +125,7 @@ export function FormDetailView({
                 action={descriptionAction}
                 initialDescription={definition?.description ?? ""}
               />
-              {application.status === APPLICATION_STATUSES.published ? (
+              {isPublishedApplicationStatus(application.status) ? (
                 <PublicApplicationUrlCopyButton path={publicApplicationUrlPath} />
               ) : (
                 <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-muted-foreground">
@@ -247,7 +248,7 @@ export function ApplicationDetailScreen({
       )}?definitionId=${encodeURIComponent(definitionId)}`
     : buildSpaceApplicationEditHrefByIds(spaceId, app.id);
   const canResendReturnEmail =
-    app.status === APPLICATION_STATUSES.returned && openItems.length > 0;
+    isReturnedApplicationStatus(app.status) && openItems.length > 0;
 
   return (
     <ApplicationDetailView
