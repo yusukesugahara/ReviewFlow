@@ -1,8 +1,5 @@
-import { client } from "@/lib/server/backend-fetch";
-import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { getAccessTokenFromCookie } from "@/lib/server/session";
-import type { AuditLogsListSuccessJson } from "@/lib/schema";
+import { getAdminAuditLogsPageData } from "./page-data";
 import { AdminAuditLogsErrorView, AdminAuditLogsView } from "./view";
 
 type AdminAuditLogsPageProps = {
@@ -18,41 +15,9 @@ type AdminAuditLogsPageProps = {
 export default async function AdminAuditLogsPage({
   searchParams,
 }: AdminAuditLogsPageProps) {
-  const params = await searchParams;
-  const createdFrom = normalizeDateValue(params?.createdFrom);
-  const createdTo = normalizeDateValue(params?.createdTo);
-  const outcome = normalizeOption(params?.outcome, ["all", "failed", "success"]);
-  const query = normalizeSearchValue(params?.q);
-  const risk = normalizeOption(params?.risk, ["all", "high", "medium", "low"]);
-
   try {
-    const accessToken = await getAccessTokenFromCookie();
-    if (!accessToken) {
-      throw { status: 401 };
-    }
-
-    const apiQuery = {
-      limit: 200,
-      ...(query ? { q: query } : {}),
-      ...(createdFrom ? { createdFrom: toIsoDateStart(createdFrom) } : {}),
-      ...(createdTo ? { createdTo: toIsoDateEnd(createdTo) } : {}),
-    };
-    const response = await client.GET("/audit-logs", {
-      params: { query: apiQuery },
-      headers: { Authorization: `Bearer ${accessToken}` },
-    });
-    const rows =
-      unwrapResponseData<AuditLogsListSuccessJson["data"]>(response).logs ?? [];
-    return (
-      <AdminAuditLogsView
-        createdFrom={createdFrom}
-        createdTo={createdTo}
-        outcome={outcome}
-        query={query}
-        risk={risk}
-        rows={rows}
-      />
-    );
+    const data = await getAdminAuditLogsPageData(await searchParams);
+    return <AdminAuditLogsView {...data} />;
   } catch (error) {
     return (
       <AdminAuditLogsErrorView
@@ -60,29 +25,4 @@ export default async function AdminAuditLogsPage({
       />
     );
   }
-}
-
-function normalizeSearchValue(value?: string): string {
-  return typeof value === "string" ? value.trim() : "";
-}
-
-function normalizeDateValue(value?: string): string {
-  const normalized = normalizeSearchValue(value);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
-    return "";
-  }
-  const timestamp = new Date(`${normalized}T00:00:00`).getTime();
-  return Number.isNaN(timestamp) ? "" : normalized;
-}
-
-function toIsoDateStart(value: string): string {
-  return new Date(`${value}T00:00:00`).toISOString();
-}
-
-function toIsoDateEnd(value: string): string {
-  return new Date(`${value}T23:59:59.999`).toISOString();
-}
-
-function normalizeOption(value: string | undefined, allowed: string[]): string {
-  return typeof value === "string" && allowed.includes(value) ? value : (allowed[0] ?? "");
 }

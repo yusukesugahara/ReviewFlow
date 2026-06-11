@@ -1,8 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { MoreVertical, Trash2, UserRoundPlus } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Trash2, UserRoundPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -12,57 +11,18 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import {
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { spaceRoleLabel } from "@/lib/constants/role-labels";
-import {
-  SPACE_ROLE_OPTIONS,
-  SPACE_ROLES,
-  TENANT_ROLE_OPTIONS,
-  TENANT_ROLES,
-} from "@/lib/constants/roles";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import type {
-  AvailableUserSummary,
-  GroupMemberSummary,
-  GroupSummary,
-} from "../types";
+import type { GroupMemberSummary, SpaceListItem } from "../types";
 import {
   MemberActionMenu,
   type MemberActionMenuState,
 } from "./member-action-menu";
-
-type SpaceListItem = {
-  group: GroupSummary;
-  members: GroupMemberSummary[];
-  addableUsers: AvailableUserSummary[];
-  canManageSpace: boolean;
-};
+import { SpaceMemberAddDialog } from "./space-member-add-dialog";
+import { SpaceMemberTable } from "./space-member-table";
 
 type SpaceListProps = {
   spaces: SpaceListItem[];
@@ -137,7 +97,6 @@ export function SpaceList({
     <div className="space-y-3">
       {spaces.map(({ group, members, addableUsers, canManageSpace }) => {
         const isOpen = openSpaceId === group.id;
-        const hasAddableUsers = addableUsers.length > 0;
 
         return (
           <Card key={group.id} className="overflow-hidden">
@@ -210,240 +169,24 @@ export function SpaceList({
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-5">
-                  {members.length === 0 ? (
-                    <p className="py-4 text-center text-sm text-muted-foreground">
-                      メンバーを表示できません
-                    </p>
-                  ) : (
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>名前</TableHead>
-                          <TableHead>メール</TableHead>
-                          <TableHead>スペースロール</TableHead>
-                          <TableHead className="text-right">操作</TableHead>
-                        </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {members.map((member) => (
-                          <TableRow key={member.id}>
-                            <TableCell className="font-medium">
-                              {member.name ?? "-"}
-                            </TableCell>
-                            <TableCell className="font-mono text-xs">
-                              {member.email}
-                            </TableCell>
-                            <TableCell>
-                              <Badge
-                                variant={
-                                  member.role === "admin"
-                                    ? "default"
-                                    : "outline"
-                                }
-                              >
-                                {spaceRoleLabel(member.role)}
-                              </Badge>
-                            </TableCell>
-                            <TableCell className="text-right">
-                              {canManageSpace ||
-                              member.userId === currentUserId ? (
-                                <Button
-                                  type="button"
-                                  variant="ghost"
-                                  size="icon"
-                                  aria-haspopup="menu"
-                                  aria-expanded={
-                                    memberActionMenu?.groupId === group.id &&
-                                    memberActionMenu.member.userId ===
-                                      member.userId
-                                  }
-                                  aria-label={`${member.email} の操作`}
-                                  onClick={(event) =>
-                                    toggleMemberActionMenu(
-                                      group.id,
-                                      member,
-                                      event.currentTarget,
-                                    )
-                                  }
-                                >
-                                  <MoreVertical aria-hidden="true" />
-                                </Button>
-                              ) : null}
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
+                  <SpaceMemberTable
+                    canManageSpace={canManageSpace}
+                    currentUserId={currentUserId}
+                    groupId={group.id}
+                    memberActionMenu={memberActionMenu}
+                    members={members}
+                    onMemberActionMenuToggle={toggleMemberActionMenu}
+                  />
                 </CardContent>
                 {memberAddSpaceId === group.id ? (
-                  <DialogContent
-                    titleId={`member-add-title-${group.id}`}
-                    descriptionId={`member-add-description-${group.id}`}
-                    className="max-w-4xl"
+                  <SpaceMemberAddDialog
+                    addableUsers={addableUsers}
+                    addMemberAction={addMemberAction}
+                    group={group}
+                    inviteSpaceMemberAction={inviteSpaceMemberAction}
+                    isSystemAdmin={isSystemAdmin}
                     onClose={() => setMemberAddSpaceId(null)}
-                  >
-                    <DialogHeader>
-                      <DialogTitle id={`member-add-title-${group.id}`}>
-                        メンバーを追加
-                      </DialogTitle>
-                      <DialogDescription id={`member-add-description-${group.id}`}>
-                        {group.name} に既存ユーザを追加、またはメールで招待します。
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid items-stretch gap-3 xl:grid-cols-2">
-                      {isSystemAdmin ? (
-                        <form
-                          action={addMemberAction.bind(null, group.id)}
-                          className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_auto] xl:h-full"
-                        >
-                          <div className="space-y-1 md:col-span-3">
-                            <p className="text-sm font-medium">
-                              既存ユーザを追加
-                            </p>
-                          </div>
-                          <div className="space-y-1">
-                            <Label htmlFor={`add-user-${group.id}`}>
-                              ユーザ
-                            </Label>
-                            <Select
-                              name="userId"
-                              required
-                              disabled={!hasAddableUsers}
-                            >
-                              <SelectTrigger
-                                id={`add-user-${group.id}`}
-                                className="bg-background"
-                              >
-                                <SelectValue
-                                  placeholder={
-                                    hasAddableUsers
-                                      ? "追加するユーザを選択"
-                                      : "追加できるユーザがいません"
-                                  }
-                                />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {addableUsers.map((user) => (
-                                  <SelectItem key={user.id} value={user.id}>
-                                    {user.name ?? user.email} / {user.email}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <Label htmlFor={`add-role-${group.id}`}>
-                              スペースロール
-                            </Label>
-                            <Select name="role" defaultValue={SPACE_ROLES.user}>
-                              <SelectTrigger
-                                id={`add-role-${group.id}`}
-                                className="bg-background"
-                              >
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {SPACE_ROLE_OPTIONS.map((option) => (
-                                  <SelectItem
-                                    key={option.value}
-                                    value={option.value}
-                                  >
-                                    {option.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                          <div className="space-y-1">
-                            <span className="block h-5" aria-hidden="true" />
-                            <Button type="submit" disabled={!hasAddableUsers}>
-                              追加
-                            </Button>
-                          </div>
-                        </form>
-                      ) : null}
-
-                      <form
-                        action={inviteSpaceMemberAction.bind(null, group.id)}
-                        className="grid gap-3 rounded-md border border-slate-200 p-3 md:grid-cols-[minmax(0,1fr)_140px_140px_auto] xl:h-full"
-                      >
-                        <div className="space-y-1 md:col-span-4">
-                          <p className="text-sm font-medium">
-                            メールでスペースへ招待
-                          </p>
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`invite-email-${group.id}`}>
-                            メール
-                          </Label>
-                          <Input
-                            id={`invite-email-${group.id}`}
-                            name="email"
-                            type="email"
-                            required
-                            placeholder="member@example.com"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`tenant-role-${group.id}`}>
-                            全体ロール
-                          </Label>
-                          <Select
-                            name="tenantRole"
-                            defaultValue={TENANT_ROLES.user}
-                          >
-                            <SelectTrigger
-                              id={`tenant-role-${group.id}`}
-                              className="bg-background"
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {TENANT_ROLE_OPTIONS.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <Label htmlFor={`group-role-${group.id}`}>
-                            スペースロール
-                          </Label>
-                          <Select
-                            name="groupRole"
-                            defaultValue={SPACE_ROLES.user}
-                          >
-                            <SelectTrigger
-                              id={`group-role-${group.id}`}
-                              className="bg-background"
-                            >
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {SPACE_ROLE_OPTIONS.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  value={option.value}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-1">
-                          <span className="block h-5" aria-hidden="true" />
-                          <Button type="submit">招待</Button>
-                        </div>
-                      </form>
-                    </div>
-                  </DialogContent>
+                  />
                 ) : null}
                 {memberActionMenu?.groupId === group.id ? (
                   <MemberActionMenu

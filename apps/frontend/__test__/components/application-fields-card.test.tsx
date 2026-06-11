@@ -57,6 +57,30 @@ describe("ApplicationFieldsCard", () => {
     expect(screen.queryByText("選択してください")).not.toBeInTheDocument();
   });
 
+  it("renders return field controls when returning is allowed", () => {
+    render(
+      <ApplicationFieldsCard
+        application={{ ...application, status: "in_review" }}
+        canReturnApplication
+        description="入力された値を確認できます"
+        fields={fields}
+        openCorrectionItems={[
+          {
+            formFieldId: "field-1",
+            fieldKey: "certificate_type",
+            label: "証明書種別",
+          },
+        ]}
+        returnAction={jest.fn()}
+        title="申請内容"
+      />,
+    );
+
+    expect(screen.getByLabelText("差し戻し全体コメント（任意）")).toBeInTheDocument();
+    expect(screen.getAllByText("この項目を差し戻し対象にする")).toHaveLength(2);
+    expect(screen.getByText("差し戻し対象項目です")).toBeInTheDocument();
+  });
+
   it("renders correction history field labels instead of raw field keys", () => {
     const corrections: ApplicationCorrection[] = [
       {

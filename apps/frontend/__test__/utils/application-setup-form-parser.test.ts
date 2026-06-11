@@ -12,6 +12,7 @@ describe("application setup form parser", () => {
         JSON.stringify([
           {
             id: "field-1",
+            fieldKey: "amount",
             label: "金額",
             fieldType: "number",
             required: true,
@@ -31,6 +32,7 @@ describe("application setup form parser", () => {
     ).toEqual([
       {
         id: "field-1",
+        fieldKey: "amount",
         label: "金額",
         fieldType: "number",
         required: true,

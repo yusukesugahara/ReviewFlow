@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createExportJobSchema } from "@/lib/auth-schema";
+import { buildSpaceSubmissionsHref } from "@/components/applications/application-routes";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
 import { isApiFailure } from "@/lib/server/api-failure";
@@ -60,6 +61,5 @@ function redirectToSubmissions(
   spaceId: string,
   params: Record<string, string>,
 ): never {
-  const query = new URLSearchParams(params);
-  redirect(`/space/${encodeURIComponent(spaceId)}/submissions?${query.toString()}`);
+  redirect(buildSpaceSubmissionsHref(spaceId, params));
 }

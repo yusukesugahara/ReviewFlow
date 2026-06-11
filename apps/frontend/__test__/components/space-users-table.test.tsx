@@ -26,6 +26,9 @@ const members = [
   },
 ];
 
+const removeMemberAction = jest.fn();
+const updateMemberRoleAction = jest.fn();
+
 describe("SpaceUsersTable", () => {
   beforeEach(() => {
     jest.spyOn(HTMLElement.prototype, "getBoundingClientRect").mockReturnValue({
@@ -52,7 +55,9 @@ describe("SpaceUsersTable", () => {
       <SpaceUsersTable
         currentUserId="user-current"
         members={members}
+        removeMemberAction={removeMemberAction}
         spaceId="space-1"
+        updateMemberRoleAction={updateMemberRoleAction}
       />,
     );
 
@@ -78,7 +83,9 @@ describe("SpaceUsersTable", () => {
       <SpaceUsersTable
         currentUserId="user-current"
         members={members}
+        removeMemberAction={removeMemberAction}
         spaceId="space-1"
+        updateMemberRoleAction={updateMemberRoleAction}
       />,
     );
 

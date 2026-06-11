@@ -1,5 +1,3 @@
-"use client";
-
 import Link from "next/link";
 import {
   AlertCircle,
@@ -13,11 +11,11 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDateTimeJa } from "@/lib/date-format";
-import type {
-  AdminDashboardViewProps,
-  SpaceDashboardSummary,
-} from "./types";
+import {
+  buildDashboardTotals,
+  buildSpaceDashboardCardModel,
+} from "./dashboard-view-model";
+import type { AdminDashboardViewProps, SpaceDashboardSummary } from "./types";
 
 export function AdminDashboardView({
   fetchErrorStatus,
@@ -70,17 +68,6 @@ export function AdminDashboardView({
   );
 }
 
-function buildDashboardTotals(spaces: SpaceDashboardSummary[]) {
-  return spaces.reduce(
-    (totals, space) => ({
-      totalApplications: totals.totalApplications + space.totalApplications,
-      needsActionCount: totals.needsActionCount + space.needsActionCount,
-      returnedCount: totals.returnedCount + space.returnedCount,
-    }),
-    { totalApplications: 0, needsActionCount: 0, returnedCount: 0 },
-  );
-}
-
 function OverviewStat({
   icon: Icon,
   label,
@@ -110,6 +97,8 @@ function SpaceSummaryCard({
   isSelected: boolean;
   space: SpaceDashboardSummary;
 }) {
+  const viewModel = buildSpaceDashboardCardModel(space);
+
   return (
     <Card
       className={`border-slate-200 bg-white shadow-sm ${
@@ -123,11 +112,11 @@ function SpaceSummaryCard({
               {space.name}
             </CardTitle>
             <p className="text-sm leading-6 text-slate-600">
-              {space.description ?? "説明は未設定です。"}
+              {viewModel.descriptionText}
             </p>
           </div>
           <span className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
-            {space.currentUserRole === "admin" ? "管理者" : "メンバー"}
+            {viewModel.roleLabel}
           </span>
         </div>
       </CardHeader>
@@ -169,9 +158,7 @@ function SpaceSummaryCard({
             <div>
               <p className="text-sm font-medium text-slate-900">直近の動き</p>
               <p className="mt-1 text-sm text-slate-600">
-                {space.latestApplicationAt
-                  ? formatDateTimeJa(space.latestApplicationAt)
-                  : "まだ申請はありません"}
+                {viewModel.latestApplicationText}
               </p>
             </div>
             <div className="text-right text-sm text-slate-600">
