@@ -12,36 +12,28 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { formatDateTimeJa } from "@/lib/date-format";
 import { renderFieldValue } from "@/lib/form-field-value";
 import {
-  formatCorrectionSubmittedValue,
-  getCorrectionItemLabel,
-} from "./application-corrections.helpers";
+  formatApplicationDateTime,
+  getCurrentStep,
+} from "./application-detail-section-helpers";
 import { ApplicationStatusBadge } from "./application-status-badge";
 import { DynamicFieldsTable } from "./dynamic-fields";
 import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
 import type {
-  ApplicationCorrection,
   ApplicationCorrectionTargetItem,
   ApplicationDetailViewModel,
   ApplicationFormField,
 } from "./application-detail.types";
 
-export function descriptionForFields(
-  description: string,
-  fieldsCount: number,
-): string {
-  return `${description}。${fieldsCount}項目の入力内容を確認できます。`;
-}
-
-export function getCurrentStep(application: ApplicationDetailViewModel) {
-  return application.approvalProgress?.find((step) => step.status === "current");
-}
-
-function formatDateTime(value?: string | null): string {
-  return value ? formatDateTimeJa(value) : "-";
-}
+export {
+  descriptionForFields,
+  getCurrentStep,
+} from "./application-detail-section-helpers";
+export {
+  CorrectionHistory,
+  OpenCorrectionSummary,
+} from "./application-correction-sections";
 
 export function ApplicationBasicInfo({
   application,
@@ -86,12 +78,12 @@ export function ApplicationBasicInfo({
           <SummaryRow
             icon={<CalendarClock className="size-4" aria-hidden="true" />}
             label="作成日時"
-            value={formatDateTime(application.createdAt)}
+            value={formatApplicationDateTime(application.createdAt)}
           />
           <SummaryRow
             icon={<CalendarClock className="size-4" aria-hidden="true" />}
             label="更新日時"
-            value={formatDateTime(application.updatedAt)}
+            value={formatApplicationDateTime(application.updatedAt)}
           />
         </div>
       </CardContent>
@@ -128,7 +120,7 @@ export function ApplicationSideSummary({
         <SummaryRow
           icon={<CalendarClock className="size-4" aria-hidden="true" />}
           label="申請日時"
-          value={formatDateTime(submittedAt)}
+          value={formatApplicationDateTime(submittedAt)}
         />
       </CardContent>
     </Card>
@@ -314,129 +306,5 @@ export function ApplicationFieldsCard({
         )}
       </CardContent>
     </Card>
-  );
-}
-
-export function OpenCorrectionSummary({
-  items,
-}: {
-  items: ApplicationCorrectionTargetItem[];
-}) {
-  return (
-    <Card>
-      <CardHeader className="border-b border-slate-200">
-        <CardTitle>現在オープン中の修正対象</CardTitle>
-        <CardDescription>
-          {items.length}個のフィールドが差し戻し対象となっています
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6">
-        <ul className="space-y-2">
-          {items.map((item) => (
-            <li
-              key={`${item.formFieldId}-${item.fieldKey}`}
-              className="flex items-center gap-2 border-l-2 border-amber-400 p-2 pl-3"
-            >
-              <Badge variant="outline">{item.label}</Badge>
-            </li>
-          ))}
-        </ul>
-      </CardContent>
-    </Card>
-  );
-}
-
-export function CorrectionHistory({
-  corrections,
-  fields,
-  values,
-}: {
-  corrections: ApplicationCorrection[];
-  fields: ApplicationFormField[];
-  values: Record<string, unknown>;
-}) {
-  return (
-    <Card>
-      <CardHeader className="border-b border-slate-200">
-        <CardTitle>差し戻し履歴</CardTitle>
-        <CardDescription>
-          {corrections.length === 0
-            ? "差し戻し履歴はありません"
-            : `${corrections.length}件の差し戻しがあります`}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6">
-        {corrections.length === 0 ? (
-          <p className="py-4 text-center text-muted-foreground">
-            差し戻し履歴はありません
-          </p>
-        ) : (
-          <div className="space-y-4">
-            {corrections.map((correction) => (
-              <div
-                key={correction.id}
-                className="space-y-3 rounded-lg border p-4"
-              >
-                <div className="flex items-center justify-between">
-                  <Badge variant="outline">{correction.status}</Badge>
-                  <span className="text-sm text-muted-foreground">
-                    {formatDateTime(correction.createdAt)}
-                  </span>
-                </div>
-                {correction.overallComment ? (
-                  <div className="rounded-md bg-muted/50 p-3">
-                    <p className="mb-1 text-sm font-medium">総合コメント</p>
-                    <p className="text-sm">{correction.overallComment}</p>
-                  </div>
-                ) : null}
-                {correction.items.length > 0 ? (
-                  <div>
-                    <p className="mb-2 text-sm font-medium">個別コメント</p>
-                    <ul className="space-y-1">
-                      {correction.items.map((item) => (
-                        <CorrectionHistoryItem
-                          key={`${correction.id}-${item.fieldKey}`}
-                          fields={fields}
-                          item={item}
-                          values={values}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function CorrectionHistoryItem({
-  fields,
-  item,
-  values,
-}: {
-  fields: ApplicationFormField[];
-  item: ApplicationCorrection["items"][number];
-  values: Record<string, unknown>;
-}) {
-  const label = getCorrectionItemLabel(item, fields);
-  const submittedValue = formatCorrectionSubmittedValue({ fields, item, values });
-
-  return (
-    <li className="space-y-2 border-l-2 border-amber-400 pl-4 text-sm">
-      <p>
-        <span className="font-medium text-slate-900">{label}:</span>{" "}
-        {item.comment || "（コメントなし）"}
-      </p>
-      <div className="rounded-md bg-slate-50 px-3 py-2">
-        <p className="text-xs font-medium text-slate-500">申請内容</p>
-        <p className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-900">
-          {submittedValue}
-        </p>
-      </div>
-    </li>
   );
 }
