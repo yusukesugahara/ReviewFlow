@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 import { buildBreadcrumbItems } from "@/components/app-sidebar-routing";
-import type { AppSidebarSpace } from "./app-sidebar";
+import type { AppSidebarSpace } from "./app-sidebar.types";
 
 export function AppBreadcrumb({ spaces }: { spaces: AppSidebarSpace[] }) {
   const pathname = usePathname();
