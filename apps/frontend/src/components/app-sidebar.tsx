@@ -16,6 +16,12 @@ import {
 } from "lucide-react";
 import { LogoutForm } from "@/app/(authorized)/logout/logout-form";
 import { AppBreadcrumb } from "@/components/app-sidebar-breadcrumb";
+import {
+  buildSidebarLinkRoute,
+  buildSpaceSwitcherHref,
+  getActiveSpaceId,
+  type SidebarSpacePath,
+} from "@/components/app-sidebar-routing";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
@@ -39,7 +45,7 @@ type SidebarNavItem = {
   icon: LucideIcon;
   adminOnly?: boolean;
   spaceAdminOnly?: boolean;
-  spacePath?: "applications" | "applicationsNew" | "submissions";
+  spacePath?: SidebarSpacePath;
 };
 
 const spaceNavItems: SidebarNavItem[] = [
@@ -191,9 +197,11 @@ function SidebarContent({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const pathSpaceId = getPathSpaceId(pathname);
-  const activeSpaceId =
-    pathSpaceId ?? searchParams.get("spaceId") ?? spaces[0]?.id ?? null;
+  const activeSpaceId = getActiveSpaceId({
+    pathname,
+    searchParams,
+    fallbackSpaceId: spaces[0]?.id,
+  });
   const activeSpace = spaces.find((space) => space.id === activeSpaceId);
   const canManageActiveSpace =
     isTenantAdmin || activeSpace?.currentUserRole === "admin";
@@ -281,9 +289,11 @@ function SpaceSwitcher({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const pathSpaceId = getPathSpaceId(pathname);
-  const activeSpaceId =
-    pathSpaceId ?? searchParams.get("spaceId") ?? spaces[0]?.id ?? null;
+  const activeSpaceId = getActiveSpaceId({
+    pathname,
+    searchParams,
+    fallbackSpaceId: spaces[0]?.id,
+  });
 
   if (spaces.length === 0) {
     return (
@@ -297,8 +307,11 @@ function SpaceSwitcher({
     <nav className="grid gap-1">
       {spaces.map((space) => {
         const isActive = activeSpaceId === space.id;
-        const params = new URLSearchParams(searchParams);
-        const href = getSpaceSwitcherHref(pathname, params, space.id);
+        const href = buildSpaceSwitcherHref({
+          pathname,
+          searchParams,
+          spaceId: space.id,
+        });
         return (
           <Link
             key={space.id}
@@ -327,7 +340,7 @@ function SidebarLink({
   onNavigate,
 }: {
   href: string;
-  spacePath?: "applications" | "applicationsNew" | "submissions";
+  spacePath?: SidebarSpacePath;
   fallbackSpaceId?: string;
   icon: LucideIcon;
   children: ReactNode;
@@ -335,39 +348,13 @@ function SidebarLink({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const pathSpaceId = getPathSpaceId(pathname);
-  const activeSpaceId =
-    pathSpaceId ?? searchParams.get("spaceId") ?? fallbackSpaceId;
-  const isSectionRoot = href === "/admin" || href === "/space";
-  const scopedHref =
-    spacePath === "applicationsNew" && activeSpaceId
-      ? `/space/${encodeURIComponent(activeSpaceId)}/applications/new`
-      : spacePath === "submissions" && activeSpaceId
-      ? `/space/${encodeURIComponent(activeSpaceId)}/submissions`
-      : spacePath === "applications" && activeSpaceId
-      ? `/space/${encodeURIComponent(activeSpaceId)}/applications`
-      : href.startsWith("/space") && activeSpaceId
-        ? `${href}?spaceId=${encodeURIComponent(activeSpaceId)}`
-        : href;
-  const isApplicationNewActive =
-    spacePath === "applicationsNew" &&
-    (pathname === scopedHref || pathname === href);
-  const isApplicationsActive =
-    spacePath === "applications" &&
-    (pathname === scopedHref ||
-      (pathname.startsWith(`${scopedHref}/`) &&
-        pathname !== `${scopedHref}/new`) ||
-      pathname === href);
-  const isSubmissionsActive =
-    spacePath === "submissions" &&
-    (pathname === scopedHref ||
-      pathname.startsWith(`${scopedHref}/`) ||
-      pathname === href);
-  const isActive = spacePath === "applications" || spacePath === "applicationsNew" || spacePath === "submissions"
-    ? isApplicationsActive || isApplicationNewActive || isSubmissionsActive
-    : isSectionRoot
-      ? pathname === href
-      : pathname === href || pathname.startsWith(`${href}/`);
+  const { scopedHref, isActive } = buildSidebarLinkRoute({
+    pathname,
+    searchParams,
+    fallbackSpaceId,
+    href,
+    spacePath,
+  });
 
   return (
     <Link
@@ -382,41 +369,4 @@ function SidebarLink({
       <span className="truncate">{children}</span>
     </Link>
   );
-}
-
-function getPathSpaceId(pathname: string): string | null {
-  const segments = pathname.split("/").filter(Boolean);
-  if (segments[0] !== "space" || segments.length < 3) {
-    return null;
-  }
-  const [spaceId, section] = segments.slice(1);
-  if (section !== "applications" && section !== "submissions") {
-    return null;
-  }
-  if (!spaceId) {
-    return null;
-  }
-  return decodeURIComponent(spaceId);
-}
-
-function getSpaceSwitcherHref(
-  pathname: string,
-  params: URLSearchParams,
-  spaceId: string,
-): string {
-  const pathSpaceId = getPathSpaceId(pathname);
-  if (pathSpaceId) {
-    const nextPathname = pathname.replace(
-      `/space/${encodeURIComponent(pathSpaceId)}/`,
-      `/space/${encodeURIComponent(spaceId)}/`,
-    );
-    return params.size > 0 ? `${nextPathname}?${params.toString()}` : nextPathname;
-  }
-
-  if (pathname.startsWith("/admin")) {
-    return `/space/${encodeURIComponent(spaceId)}/submissions`;
-  }
-
-  params.set("spaceId", spaceId);
-  return `${pathname}?${params.toString()}`;
 }
