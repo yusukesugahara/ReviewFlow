@@ -38,6 +38,7 @@ function createSetupFormData(intent: "draft" | "publish"): FormData {
     JSON.stringify([
       {
         id: "field-1",
+        fieldKey: "subject",
         label: "件名",
         fieldType: "text",
         required: true,
@@ -92,41 +93,83 @@ describe("updateApplicationSetupAction", () => {
     mockedRedirect.mockClear();
   });
 
-  // テスト内容: 詳細編集画面で公開を押した場合、申請フォーム管理レコードを published に更新することを確認する
-  it("sends published status when publishing edited setup", async () => {
-    mockedPatch
+  // テスト内容: 詳細編集画面で公開を押した場合、編集後のフォーム定義と承認フローを作り直して申請フォーム管理レコードへ紐付けることを確認する
+  it("recreates form definition and approval flow when publishing edited setup", async () => {
+    mockedPost
       .mockResolvedValueOnce({
-        response: { ok: true, status: 200 },
-        data: { data: { id: "flow-current" } },
+        response: { ok: true, status: 201 },
+        data: { data: { id: "definition-new" } },
+      })
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 201 },
       })
       .mockResolvedValueOnce({
         response: { ok: true, status: 200 },
-        data: { data: { id: "app-1" } },
+      })
+      .mockResolvedValueOnce({
+        response: { ok: true, status: 201 },
+        data: { data: { id: "flow-new" } },
       });
+    mockedPatch.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+      data: { data: { id: "app-1" } },
+    });
 
     await expect(
       updateApplicationSetupAction("app-1", createSetupFormData("publish")),
     ).rejects.toThrow("NEXT_REDIRECT:");
 
-    expect(mockedPost).not.toHaveBeenCalled();
-    expect(mockedPatch).toHaveBeenNthCalledWith(
+    expect(mockedPost).toHaveBeenNthCalledWith(
       1,
-      "/approval-flows/{id}",
+      "/form-definitions",
       expect.objectContaining({
-        params: { path: { id: "flow-current" } },
+        body: expect.objectContaining({
+          groupId: "11111111-1111-1111-1111-111111111111",
+          name: "稟議フォーム",
+        }),
+      }),
+    );
+    expect(mockedPost).toHaveBeenNthCalledWith(
+      2,
+      "/form-definitions/{id}/fields",
+      expect.objectContaining({
+        params: { path: { id: "definition-new" } },
+        body: expect.objectContaining({
+          label: "件名",
+          fieldKey: "subject",
+        }),
+      }),
+    );
+    expect(mockedPost).toHaveBeenNthCalledWith(
+      3,
+      "/form-definitions/{id}/publish",
+      expect.objectContaining({
+        params: { path: { id: "definition-new" } },
+      }),
+    );
+    expect(mockedPost).toHaveBeenNthCalledWith(
+      4,
+      "/approval-flows",
+      expect.objectContaining({
         body: expect.objectContaining({
           name: "稟議フォーム 承認フロー",
         }),
       }),
     );
-    expect(mockedPatch).toHaveBeenNthCalledWith(
-      2,
+    expect(mockedPatch).toHaveBeenCalledWith(
       "/applications/{id}",
       expect.objectContaining({
+        params: { path: { id: "app-1" } },
         body: expect.objectContaining({
+          approvalFlowId: "flow-new",
+          formDefinitionId: "definition-new",
           status: "published",
+          values: {},
         }),
       }),
+    );
+    expect(mockedRedirect.mock.calls.at(-1)?.[0]).toContain(
+      "definitionId=definition-new",
     );
     expect(mockedRedirect.mock.calls.at(-1)?.[0]).toContain(
       "message=%E7%94%B3%E8%AB%8B%E3%83%95%E3%82%A9%E3%83%BC%E3%83%A0%E3%82%92%E5%85%AC%E9%96%8B%E3%81%97%E3%81%BE%E3%81%97%E3%81%9F",

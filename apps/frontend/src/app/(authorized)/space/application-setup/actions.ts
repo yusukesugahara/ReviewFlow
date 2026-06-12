@@ -5,7 +5,6 @@ import { redirect } from "next/navigation";
 import {
   createApplicationSetup,
   updateApplicationSetup,
-  type UpdateApplicationSetupInput,
 } from "./application-setup-api";
 import { readApplicationSetupActionInput } from "./application-setup-action-input";
 import {
@@ -71,19 +70,10 @@ export async function updateApplicationSetupAction(
   }
 
   const input = parsedInput.data;
-
-  if (!input.currentFormDefinitionId || !input.currentApprovalFlowId) {
-    redirect(setupErrorRedirectUrl(redirectBase, null));
-  }
-
-  const updateInput: UpdateApplicationSetupInput = {
-    ...input,
-    currentApprovalFlowId: input.currentApprovalFlowId,
-    currentFormDefinitionId: input.currentFormDefinitionId,
-  };
+  let updated: Awaited<ReturnType<typeof updateApplicationSetup>>;
 
   try {
-    await updateApplicationSetup(applicationId, updateInput);
+    updated = await updateApplicationSetup(applicationId, input);
   } catch (error) {
     redirect(setupErrorRedirectUrl(redirectBase, error));
   }
@@ -91,7 +81,7 @@ export async function updateApplicationSetupAction(
   const detailPath = buildApplicationSetupDetailPath({
     applicationId,
     applicationStatus: input.applicationStatus,
-    definitionId: input.currentFormDefinitionId,
+    definitionId: updated.definitionId,
     spaceId: input.spaceId,
   });
   revalidatePath(redirectBase);

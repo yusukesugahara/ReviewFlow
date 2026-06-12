@@ -23,23 +23,71 @@ type CreateApplicationResponse = {
   id: string;
 };
 
-export type CreatedApplicationSetup = {
+export type ApplicationSetupSaveResult = {
   applicationId: string;
   definitionId: string;
 };
 
-export type UpdateApplicationSetupInput = ApplicationSetupActionInput & {
-  currentApprovalFlowId: string;
-  currentFormDefinitionId: string;
-};
+type AuthHeaders = { Authorization: string };
 
 export async function createApplicationSetup(
   input: ApplicationSetupActionInput,
-): Promise<CreatedApplicationSetup> {
+): Promise<ApplicationSetupSaveResult> {
   const authHeaders = await authHeadersOrRedirect();
+  const definition = await createPublishedFormDefinition(input, authHeaders);
+  const flow = await createApprovalFlow(input, authHeaders);
+
+  const applicationResponse = await client.POST("/applications", {
+    body: {
+      groupId: input.spaceId,
+      formDefinitionId: definition.id,
+      approvalFlowId: flow.id,
+      status: input.applicationStatus,
+      values: {},
+    },
+    headers: authHeaders,
+  });
+  const application =
+    unwrapResponseData<CreateApplicationResponse>(applicationResponse);
+
+  return {
+    applicationId: application.id,
+    definitionId: definition.id,
+  };
+}
+
+export async function updateApplicationSetup(
+  applicationId: string,
+  input: ApplicationSetupActionInput,
+): Promise<ApplicationSetupSaveResult> {
+  const authHeaders = await authHeadersOrRedirect();
+  const definition = await createPublishedFormDefinition(input, authHeaders);
+  const flow = await createApprovalFlow(input, authHeaders);
+
+  const applicationResponse = await client.PATCH("/applications/{id}", {
+    params: { path: { id: applicationId } },
+    body: {
+      formDefinitionId: definition.id,
+      approvalFlowId: flow.id,
+      status: input.applicationStatus,
+      values: {},
+    },
+    headers: authHeaders,
+  });
+  throwIfApiResponseFailed(applicationResponse);
+
+  return {
+    applicationId,
+    definitionId: definition.id,
+  };
+}
+
+async function createPublishedFormDefinition(
+  input: ApplicationSetupActionInput,
+  authHeaders: AuthHeaders,
+): Promise<CreateDefinitionResponse> {
   const name = input.name.trim();
   const fieldPayloads = toFieldPayloads(input.fields);
-
   const createdResponse = await client.POST("/form-definitions", {
     body: {
       groupId: input.spaceId,
@@ -65,6 +113,14 @@ export async function createApplicationSetup(
   });
   throwIfApiResponseFailed(publishResponse);
 
+  return created;
+}
+
+async function createApprovalFlow(
+  input: ApplicationSetupActionInput,
+  authHeaders: AuthHeaders,
+): Promise<CreateApprovalFlowResponse> {
+  const name = input.name.trim();
   const flowResponse = await client.POST("/approval-flows", {
     body: {
       groupId: input.spaceId,
@@ -74,49 +130,5 @@ export async function createApplicationSetup(
     headers: authHeaders,
   });
   const flow = unwrapResponseData<CreateApprovalFlowResponse>(flowResponse);
-
-  const applicationResponse = await client.POST("/applications", {
-    body: {
-      groupId: input.spaceId,
-      formDefinitionId: created.id,
-      approvalFlowId: flow.id,
-      status: input.applicationStatus,
-      values: {},
-    },
-    headers: authHeaders,
-  });
-  const application =
-    unwrapResponseData<CreateApplicationResponse>(applicationResponse);
-
-  return {
-    applicationId: application.id,
-    definitionId: created.id,
-  };
-}
-
-export async function updateApplicationSetup(
-  applicationId: string,
-  input: UpdateApplicationSetupInput,
-): Promise<void> {
-  const authHeaders = await authHeadersOrRedirect();
-  const name = input.name.trim();
-
-  const flowResponse = await client.PATCH("/approval-flows/{id}", {
-    params: { path: { id: input.currentApprovalFlowId } },
-    body: {
-      name: `${name} 承認フロー`,
-      steps: toApprovalStepRequest(input.steps),
-    },
-    headers: authHeaders,
-  });
-  throwIfApiResponseFailed(flowResponse);
-
-  const applicationResponse = await client.PATCH("/applications/{id}", {
-    params: { path: { id: applicationId } },
-    body: {
-      status: input.applicationStatus,
-    },
-    headers: authHeaders,
-  });
-  throwIfApiResponseFailed(applicationResponse);
+  return flow;
 }
