@@ -1043,6 +1043,9 @@ export interface components {
         };
         AuditLogsListResponseDto: {
             logs: components["schemas"]["AuditLogItemDto"][];
+            total: number;
+            limit: number;
+            offset: number;
         };
         CreateInvitationResponseDto: {
             id: string;
@@ -1804,6 +1807,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                offset?: number;
                 /** @description action_type で前方一致絞り込み */
                 actionType?: string;
                 /** @description target_type の完全一致絞り込み */

@@ -116,11 +116,12 @@ describe("audit log helpers", () => {
       buildAuditLogsHref({
         createdFrom: "2026-06-01",
         createdTo: "2026-06-30",
+        page: 3,
         query: "admin@example.com",
         targetType: "user",
       }),
     ).toBe(
-      "/admin/audit-logs?q=admin%40example.com&targetType=user&createdFrom=2026-06-01&createdTo=2026-06-30",
+      "/admin/audit-logs?q=admin%40example.com&targetType=user&createdFrom=2026-06-01&createdTo=2026-06-30&page=3",
     );
   });
 

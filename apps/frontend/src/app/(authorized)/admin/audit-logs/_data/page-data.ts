@@ -9,10 +9,12 @@ import type { AdminAuditLogsViewProps } from "../types";
 type AdminAuditLogSearchParams = {
   createdFrom?: string;
   createdTo?: string;
+  page?: string;
   q?: string;
   targetType?: string;
 };
 
+const AUDIT_LOG_PAGE_SIZE = 50;
 const TARGET_TYPE_FILTERS = [
   "all",
   "application",
@@ -27,6 +29,7 @@ export async function getAdminAuditLogsPageData(
 ): Promise<AdminAuditLogsViewProps> {
   const createdFrom = normalizeDateValue(params?.createdFrom);
   const createdTo = normalizeDateValue(params?.createdTo);
+  const page = normalizePage(params?.page);
   const query = normalizeSearchValue(params?.q);
   const targetType = normalizeOption(params?.targetType, TARGET_TYPE_FILTERS);
 
@@ -35,10 +38,70 @@ export async function getAdminAuditLogsPageData(
     throw { status: 401 };
   }
 
+  const pageData = await fetchAuditLogsPage({
+    accessToken,
+    createdFrom,
+    createdTo,
+    page,
+    query,
+    targetType,
+  });
+  const totalPages = Math.max(1, Math.ceil(pageData.total / pageData.limit));
+  const currentPage = Math.min(page, totalPages);
+  const resolvedPageData =
+    currentPage === page
+      ? pageData
+      : await fetchAuditLogsPage({
+          accessToken,
+          createdFrom,
+          createdTo,
+          page: currentPage,
+          query,
+          targetType,
+        });
+
+  return {
+    createdFrom,
+    createdTo,
+    pagination: {
+      currentPage,
+      limit: resolvedPageData.limit,
+      offset: resolvedPageData.offset,
+      total: resolvedPageData.total,
+      totalPages,
+    },
+    query,
+    targetType,
+    rows: resolvedPageData.logs,
+  };
+}
+
+async function fetchAuditLogsPage({
+  accessToken,
+  createdFrom,
+  createdTo,
+  page,
+  query,
+  targetType,
+}: {
+  accessToken: string;
+  createdFrom: string;
+  createdTo: string;
+  page: number;
+  query: string;
+  targetType: string;
+}): Promise<{
+  logs: AuditLogsListSuccessJson["data"]["logs"];
+  limit: number;
+  offset: number;
+  total: number;
+}> {
+  const offset = (page - 1) * AUDIT_LOG_PAGE_SIZE;
   const response = await client.GET("/audit-logs", {
     params: {
       query: {
-        limit: 200,
+        limit: AUDIT_LOG_PAGE_SIZE,
+        offset,
         ...(query ? { q: query } : {}),
         ...(targetType !== "all" ? { targetType } : {}),
         ...(createdFrom ? { createdFrom: toIsoDateStart(createdFrom) } : {}),
@@ -47,13 +110,13 @@ export async function getAdminAuditLogsPageData(
     },
     headers: { Authorization: `Bearer ${accessToken}` },
   });
+  const data = unwrapResponseData<AuditLogsListSuccessJson["data"]>(response);
 
   return {
-    createdFrom,
-    createdTo,
-    query,
-    targetType,
-    rows: unwrapResponseData<AuditLogsListSuccessJson["data"]>(response).logs ?? [],
+    logs: data.logs ?? [],
+    limit: data.limit ?? AUDIT_LOG_PAGE_SIZE,
+    offset: data.offset ?? offset,
+    total: data.total ?? data.logs?.length ?? 0,
   };
 }
 
@@ -68,6 +131,11 @@ function normalizeDateValue(value?: string): string {
   }
   const timestamp = new Date(`${normalized}T00:00:00`).getTime();
   return Number.isNaN(timestamp) ? "" : normalized;
+}
+
+function normalizePage(value?: string): number {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
 function toIsoDateStart(value: string): string {

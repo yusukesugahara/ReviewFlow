@@ -77,6 +77,13 @@ const rows: AuditLogItem[] = [
 const baseProps = {
   createdFrom: "",
   createdTo: "",
+  pagination: {
+    currentPage: 2,
+    limit: 4,
+    offset: 4,
+    total: 12,
+    totalPages: 3,
+  },
   query: "",
   targetType: "all",
   rows,
@@ -100,6 +107,16 @@ describe("AdminAuditLogsView", () => {
     expect(screen.getByRole("link", { name: "クリア" })).toHaveAttribute(
       "href",
       "/admin/audit-logs",
+    );
+    expect(screen.getByText("5-8件を表示 / 全12件")).toBeInTheDocument();
+    expect(screen.getByText("2 / 3")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: /前へ/ })).toHaveAttribute(
+      "href",
+      "/admin/audit-logs",
+    );
+    expect(screen.getByRole("link", { name: /次へ/ })).toHaveAttribute(
+      "href",
+      "/admin/audit-logs?page=3",
     );
 
     const applicationRow = screen.getByRole("row", {

@@ -32,6 +32,7 @@ export type CreateAuditLogParams = {
 
 export type AuditLogListQuery = {
   limit?: number;
+  offset?: number;
   actionType?: string;
   applicationId?: string;
   groupId?: string;
@@ -40,6 +41,13 @@ export type AuditLogListQuery = {
   q?: string;
   createdFrom?: string;
   createdTo?: string;
+};
+
+export type AuditLogListResult = {
+  rows: AuditLog[];
+  total: number;
+  limit: number;
+  offset: number;
 };
 
 @Injectable()
@@ -80,8 +88,9 @@ export class AuditLogsRepository {
   async listByTenant(
     tenantId: string,
     query: AuditLogListQuery,
-  ): Promise<AuditLog[]> {
+  ): Promise<AuditLogListResult> {
     const limit = query.limit ?? 50;
+    const offset = query.offset ?? 0;
     const actionType = query.actionType?.trim();
     const keyword = query.q?.trim();
     const builder = this.auditLogs
@@ -89,7 +98,8 @@ export class AuditLogsRepository {
       .leftJoinAndSelect('auditLog.actorUser', 'actorUser')
       .where('auditLog.tenantId = :tenantId', { tenantId })
       .orderBy('auditLog.createdAt', 'DESC')
-      .take(limit);
+      .take(limit)
+      .skip(offset);
 
     if (actionType) {
       builder.andWhere('auditLog.actionType LIKE :actionType', {
@@ -146,7 +156,8 @@ export class AuditLogsRepository {
       });
     }
 
-    return builder.getMany();
+    const [rows, total] = await builder.getManyAndCount();
+    return { rows, total, limit, offset };
   }
 }
 

@@ -8,11 +8,12 @@ import {
 import type { EnrichedAuditRow } from "../_view-models/audit-log-view-model";
 import type { AdminAuditLogsViewProps } from "../types";
 import { AuditLogFiltersForm } from "./audit-log-filters-form";
+import { AuditLogPaginationControls } from "./audit-log-pagination-controls";
 import { AuditLogTable } from "./audit-log-table";
 
 type AuditLogListCardProps = Pick<
   AdminAuditLogsViewProps,
-  "createdFrom" | "createdTo" | "query" | "targetType"
+  "createdFrom" | "createdTo" | "pagination" | "query" | "targetType"
 > & {
   filteredRows: EnrichedAuditRow[];
   hasActiveFilters: boolean;
@@ -25,6 +26,7 @@ export function AuditLogListCard({
   filteredRows,
   hasActiveFilters,
   listDescription,
+  pagination,
   query,
   targetType,
 }: AuditLogListCardProps) {
@@ -48,7 +50,16 @@ export function AuditLogListCard({
               : "監査ログはまだありません"}
           </p>
         ) : (
-          <AuditLogTable rows={filteredRows} />
+          <>
+            <AuditLogTable rows={filteredRows} />
+            <AuditLogPaginationControls
+              createdFrom={createdFrom}
+              createdTo={createdTo}
+              pagination={pagination}
+              query={query}
+              targetType={targetType}
+            />
+          </>
         )}
       </CardContent>
     </Card>

@@ -32,7 +32,8 @@ export class AuditLogsController {
     @CurrentUser() actor: AuthUserPayload,
     @Query() query: AuditLogsQueryDto,
   ): Promise<SuccessResponse<AuditLogsListResponseDto>> {
-    const logs = await this.auditLogs.listByTenant(actor.tenantId, query);
-    return successResponse({ logs });
+    return successResponse(
+      await this.auditLogs.listByTenant(actor.tenantId, query),
+    );
   }
 }
