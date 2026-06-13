@@ -37,6 +37,11 @@ export class AuditLogsQueryDto {
   @IsUUID()
   applicationId?: string;
 
+  @ApiPropertyOptional({ description: 'group_id の完全一致絞り込み' })
+  @IsOptional()
+  @IsUUID()
+  groupId?: string;
+
   @ApiPropertyOptional({ description: 'target_user_id の完全一致絞り込み' })
   @IsOptional()
   @IsUUID()

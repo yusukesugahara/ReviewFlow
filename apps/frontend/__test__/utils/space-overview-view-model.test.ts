@@ -3,7 +3,7 @@ import type {
   ApplicationRow,
   FormDefinitionRow,
 } from "@/components/space/space-applications.types";
-import type { AuditLogItem, GroupMemberSummary } from "@/lib/schema";
+import type { GroupMemberSummary } from "@/lib/schema";
 
 const applications: ApplicationRow[] = [
   {
@@ -61,31 +61,14 @@ const members = [
   { id: "member-2", groupId: "space-1", userId: "user-2" },
 ] as GroupMemberSummary[];
 
-const auditLogs: AuditLogItem[] = [
-  {
-    id: "audit-1",
-    groupId: "space-1",
-    actorType: "user",
-    actorEmailSnapshot: "admin@example.com",
-    actionType: "application.approved",
-    targetType: "application",
-    targetId: "app-1",
-    applicationId: "app-1",
-    statusFrom: "in_review",
-    statusTo: "approved",
-    createdAt: "2026-06-06T00:00:00.000Z",
-  },
-];
-
 describe("space overview view model", () => {
   it("builds operational counts and recent items for a space", () => {
     const viewModel = buildSpaceOverviewViewModel({
       applications,
-      auditLogs,
       canManageSpace: true,
-      canViewAuditLogs: true,
       currentUserId: "user-1",
       formDefinitions,
+      isTenantAdmin: true,
       members,
       space: {
         id: "space-1",
@@ -114,17 +97,15 @@ describe("space overview view model", () => {
       href: "/space/space-1/applications/setup-1?definitionId=form-1&view=form",
       name: "住民票交付申請",
     });
-    expect(viewModel.recentAuditRows[0]?.display.actionLabel).toBe("申請を承認");
   });
 
-  it("hides member count and audit rows when the user cannot view them", () => {
+  it("hides member count when the user cannot manage the space", () => {
     const viewModel = buildSpaceOverviewViewModel({
       applications,
-      auditLogs,
       canManageSpace: false,
-      canViewAuditLogs: false,
       currentUserId: null,
       formDefinitions,
+      isTenantAdmin: false,
       members,
       space: {
         id: "space-1",
@@ -135,7 +116,6 @@ describe("space overview view model", () => {
     });
 
     expect(viewModel.stats.memberCount).toBeNull();
-    expect(viewModel.recentAuditRows).toEqual([]);
     expect(viewModel.roleLabel).toBe("スペースユーザ");
   });
 });

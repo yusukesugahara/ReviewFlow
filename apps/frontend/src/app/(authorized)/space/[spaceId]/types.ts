@@ -2,7 +2,7 @@ import type {
   ApplicationRow,
   FormDefinitionRow,
 } from "@/components/space/space-applications.types";
-import type { AuditLogItem, GroupMemberSummary, GroupSummary } from "@/lib/schema";
+import type { GroupMemberSummary, GroupSummary } from "@/lib/schema";
 
 export type SpaceOverviewPageProps = {
   params: Promise<{ spaceId: string }>;
@@ -15,23 +15,21 @@ export type SpaceOverviewSpace = Pick<
 
 export type SpaceOverviewPageData = {
   applications: ApplicationRow[];
-  auditLogs: AuditLogItem[];
   canManageSpace: boolean;
-  canViewAuditLogs: boolean;
   currentUserId: string | null;
   formDefinitions: FormDefinitionRow[];
+  isTenantAdmin: boolean;
   members: GroupMemberSummary[];
   space: SpaceOverviewSpace;
 };
 
 export type SpaceOverviewViewProps = {
   applications: ApplicationRow[];
-  auditLogs: AuditLogItem[];
   canManageSpace: boolean;
-  canViewAuditLogs: boolean;
   currentUserId: string | null;
   fetchErrorStatus?: number;
   formDefinitions: FormDefinitionRow[];
+  isTenantAdmin: boolean;
   members: GroupMemberSummary[];
   space: SpaceOverviewSpace | null;
   spaceId: string;

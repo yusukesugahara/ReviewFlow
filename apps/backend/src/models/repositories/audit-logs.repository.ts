@@ -34,6 +34,7 @@ export type AuditLogListQuery = {
   limit?: number;
   actionType?: string;
   applicationId?: string;
+  groupId?: string;
   targetUserId?: string;
   targetType?: string;
   q?: string;
@@ -105,6 +106,11 @@ export class AuditLogsRepository {
         applicationId: query.applicationId.trim(),
       });
     }
+    if (query.groupId?.trim()) {
+      builder.andWhere('auditLog.groupId = :groupId', {
+        groupId: query.groupId.trim(),
+      });
+    }
     if (query.targetUserId?.trim()) {
       builder.andWhere('auditLog.targetUserId = :targetUserId', {
         targetUserId: query.targetUserId.trim(),
@@ -117,13 +123,13 @@ export class AuditLogsRepository {
           'auditLog.actionType LIKE :q',
           'auditLog.targetType LIKE :q',
           'auditLog.targetId LIKE :q',
-          'auditLog.actorUserId LIKE :q',
+          'CAST(auditLog.actorUserId AS text) LIKE :q',
           'auditLog.actorEmailSnapshot LIKE :q',
-          'auditLog.targetUserId LIKE :q',
+          'CAST(auditLog.targetUserId AS text) LIKE :q',
           'auditLog.targetEmailSnapshot LIKE :q',
-          'auditLog.applicationId LIKE :q',
+          'CAST(auditLog.applicationId AS text) LIKE :q',
           'auditLog.summary LIKE :q',
-          'auditLog.groupId LIKE :q',
+          'CAST(auditLog.groupId AS text) LIKE :q',
           'actorUser.email LIKE :q',
         ].join(' OR ')})`,
         { q },

@@ -4,7 +4,7 @@ import type {
   ApplicationRow,
   FormDefinitionRow,
 } from "@/components/space/space-applications.types";
-import type { AuditLogItem, GroupMemberSummary } from "@/lib/schema";
+import type { GroupMemberSummary } from "@/lib/schema";
 
 const applications: ApplicationRow[] = [
   {
@@ -50,29 +50,12 @@ const members = [
   { id: "member-2", groupId: "space-1", userId: "user-2" },
 ] as GroupMemberSummary[];
 
-const auditLogs: AuditLogItem[] = [
-  {
-    id: "audit-1",
-    groupId: "space-1",
-    actorType: "user",
-    actorEmailSnapshot: "admin@example.com",
-    actionType: "application.approved",
-    targetType: "application",
-    targetId: "app-1",
-    applicationId: "app-1",
-    statusFrom: "in_review",
-    statusTo: "approved",
-    createdAt: "2026-06-06T00:00:00.000Z",
-  },
-];
-
 const baseProps = {
   applications,
-  auditLogs,
   canManageSpace: true,
-  canViewAuditLogs: true,
   currentUserId: "user-1",
   formDefinitions,
+  isTenantAdmin: true,
   members,
   space: {
     id: "space-1",
@@ -96,8 +79,11 @@ describe("SpaceOverviewView", () => {
     expect(screen.getByText("applicant@example.com")).toBeInTheDocument();
     expect(screen.getByText("レビュー中")).toBeInTheDocument();
     expect(screen.getAllByText("住民票交付申請").length).toBeGreaterThan(0);
-    expect(screen.getByText("最近の監査ログ")).toBeInTheDocument();
-    expect(screen.getByText("申請を承認")).toBeInTheDocument();
+    expect(screen.queryByText("最近の監査ログ")).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "CSV出力" })).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: "申請フォームを新規作成" }),
+    ).toHaveAttribute("href", "/space/space-1/applications/new");
     expect(screen.getByRole("link", { name: "メンバー" })).toHaveAttribute(
       "href",
       "/space/users?spaceId=space-1",
@@ -109,7 +95,7 @@ describe("SpaceOverviewView", () => {
       <SpaceOverviewView
         {...baseProps}
         canManageSpace={false}
-        canViewAuditLogs={false}
+        isTenantAdmin={false}
         members={[]}
         space={{
           ...baseProps.space,
@@ -127,12 +113,11 @@ describe("SpaceOverviewView", () => {
     render(
       <SpaceOverviewView
         applications={[]}
-        auditLogs={[]}
         canManageSpace={false}
-        canViewAuditLogs={false}
         currentUserId={null}
         fetchErrorStatus={404}
         formDefinitions={[]}
+        isTenantAdmin={false}
         members={[]}
         space={null}
         spaceId="missing-space"

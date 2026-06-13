@@ -13,17 +13,13 @@ import {
   isReturnedApplication,
   isSpaceNeedsActionApplication,
 } from "@/components/applications/status/application-status-rules";
-import {
-  enrichAuditRow,
-  type EnrichedAuditRow,
-} from "@/components/audit-logs/audit-log-display";
 import type {
   ApplicationRow,
   FormDefinitionRow,
 } from "@/components/space/space-applications.types";
 import { SPACE_ROLES } from "@/lib/constants/roles";
 import { formatDateTimeJa } from "@/lib/date-format";
-import type { AuditLogItem, GroupMemberSummary } from "@/lib/schema";
+import type { GroupMemberSummary } from "@/lib/schema";
 import type { SpaceOverviewSpace } from "../types";
 
 export type SpaceOverviewStats = {
@@ -54,7 +50,6 @@ export type SpaceOverviewFormItem = {
 };
 
 export type SpaceOverviewViewModel = {
-  auditLogsHref: string;
   canShowMembers: boolean;
   descriptionText: string;
   formNewHref: string;
@@ -62,7 +57,6 @@ export type SpaceOverviewViewModel = {
   membersHref: string;
   publishedForms: SpaceOverviewFormItem[];
   recentApplications: SpaceOverviewApplicationItem[];
-  recentAuditRows: EnrichedAuditRow[];
   roleLabel: string;
   stats: SpaceOverviewStats;
   submissionsHref: string;
@@ -70,20 +64,18 @@ export type SpaceOverviewViewModel = {
 
 export function buildSpaceOverviewViewModel({
   applications,
-  auditLogs,
   canManageSpace,
-  canViewAuditLogs,
   currentUserId,
   formDefinitions,
+  isTenantAdmin,
   members,
   space,
 }: {
   applications: ApplicationRow[];
-  auditLogs: AuditLogItem[];
   canManageSpace: boolean;
-  canViewAuditLogs: boolean;
   currentUserId: string | null;
   formDefinitions: FormDefinitionRow[];
+  isTenantAdmin: boolean;
   members: GroupMemberSummary[];
   space: SpaceOverviewSpace;
 }): SpaceOverviewViewModel {
@@ -95,7 +87,6 @@ export function buildSpaceOverviewViewModel({
   );
 
   return {
-    auditLogsHref: `/admin/audit-logs?q=${encodeURIComponent(space.id)}`,
     canShowMembers: canManageSpace,
     descriptionText: space.description ?? "説明は未設定です。",
     formNewHref: buildSpaceApplicationNewHref(space.id),
@@ -110,10 +101,7 @@ export function buildSpaceOverviewViewModel({
       submittedApplications,
       space.id,
     ),
-    recentAuditRows: canViewAuditLogs
-      ? auditLogs.slice(0, 6).map(enrichAuditRow)
-      : [],
-    roleLabel: buildRoleLabel({ canViewAuditLogs, space }),
+    roleLabel: buildRoleLabel({ isTenantAdmin, space }),
     stats: {
       memberCount: canManageSpace ? members.length : null,
       myNeedsActionCount: submittedApplications.filter((row) =>
@@ -188,13 +176,13 @@ function buildPublishedFormItems({
 }
 
 function buildRoleLabel({
-  canViewAuditLogs,
+  isTenantAdmin,
   space,
 }: {
-  canViewAuditLogs: boolean;
+  isTenantAdmin: boolean;
   space: SpaceOverviewSpace;
 }): string {
-  if (canViewAuditLogs) {
+  if (isTenantAdmin) {
     return "テナント管理者";
   }
   if (space.currentUserRole === SPACE_ROLES.admin) {

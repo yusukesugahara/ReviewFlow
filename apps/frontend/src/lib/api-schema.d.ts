@@ -1810,6 +1810,8 @@ export interface operations {
                 targetType?: string;
                 /** @description application_id の完全一致絞り込み */
                 applicationId?: string;
+                /** @description group_id の完全一致絞り込み */
+                groupId?: string;
                 /** @description target_user_id の完全一致絞り込み */
                 targetUserId?: string;
                 /** @description action_type / summary / actor / target / application / group の部分一致検索 */

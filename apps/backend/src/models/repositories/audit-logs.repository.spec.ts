@@ -101,6 +101,7 @@ describe('AuditLogsRepository', () => {
     await repository.listByTenant('tenant-1', {
       limit: 20,
       actionType: 'user_%',
+      groupId: 'group-1',
       q: 'email_%',
       createdFrom: '2026-01-01T00:00:00.000Z',
       createdTo: '2026-01-31T00:00:00.000Z',
@@ -118,7 +119,11 @@ describe('AuditLogsRepository', () => {
       { actionType: 'user\\_\\%%' },
     );
     expect(builder.andWhere).toHaveBeenCalledWith(
-      expect.stringContaining('auditLog.targetType LIKE :q'),
+      'auditLog.groupId = :groupId',
+      { groupId: 'group-1' },
+    );
+    expect(builder.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining('CAST(auditLog.groupId AS text) LIKE :q'),
       { q: '%email\\_\\%%' },
     );
     expect(builder.andWhere).toHaveBeenCalledWith(

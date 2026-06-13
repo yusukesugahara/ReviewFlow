@@ -17,6 +17,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import type { SpaceOverviewFormItem } from "../_view-models/space-overview-view-model";
 
 type SpaceOverviewPublishedFormsProps = {
@@ -49,11 +55,18 @@ export function SpaceOverviewPublishedForms({
               <ArrowRight aria-hidden="true" />
             </Link>
           </Button>
-          <Button asChild variant="outline" size="icon" aria-label="申請フォームを作成">
-            <Link href={formNewHref}>
-              <FilePlusCorner aria-hidden="true" />
-            </Link>
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button asChild variant="outline" size="icon">
+                  <Link href={formNewHref} aria-label="申請フォームを新規作成">
+                    <FilePlusCorner aria-hidden="true" />
+                  </Link>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>申請フォームを新規作成</TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </CardHeader>
       <CardContent className="pt-6">

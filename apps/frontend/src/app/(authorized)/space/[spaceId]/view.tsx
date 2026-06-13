@@ -6,18 +6,16 @@ import { Button } from "@/components/ui/button";
 import type { SpaceOverviewViewProps } from "./types";
 import { SpaceOverviewPublishedForms } from "./_components/space-overview-published-forms";
 import { SpaceOverviewRecentApplications } from "./_components/space-overview-recent-applications";
-import { SpaceOverviewRecentAuditLogs } from "./_components/space-overview-recent-audit-logs";
 import { SpaceOverviewSummaryCards } from "./_components/space-overview-summary-cards";
 import { buildSpaceOverviewViewModel } from "./_view-models/space-overview-view-model";
 
 export function SpaceOverviewView({
   applications,
-  auditLogs,
   canManageSpace,
-  canViewAuditLogs,
   currentUserId,
   fetchErrorStatus,
   formDefinitions,
+  isTenantAdmin,
   members,
   space,
 }: SpaceOverviewViewProps) {
@@ -34,11 +32,10 @@ export function SpaceOverviewView({
 
   const viewModel = buildSpaceOverviewViewModel({
     applications,
-    auditLogs,
     canManageSpace,
-    canViewAuditLogs,
     currentUserId,
     formDefinitions,
+    isTenantAdmin,
     members,
     space,
   });
@@ -94,13 +91,6 @@ export function SpaceOverviewView({
           formsHref={viewModel.formsHref}
         />
       </div>
-
-      {canViewAuditLogs ? (
-        <SpaceOverviewRecentAuditLogs
-          auditLogsHref={viewModel.auditLogsHref}
-          rows={viewModel.recentAuditRows}
-        />
-      ) : null}
     </div>
   );
 }

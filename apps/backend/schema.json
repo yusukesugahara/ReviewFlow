@@ -242,6 +242,15 @@
             }
           },
           {
+            "name": "groupId",
+            "required": false,
+            "in": "query",
+            "description": "group_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "targetUserId",
             "required": false,
             "in": "query",

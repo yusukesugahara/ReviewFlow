@@ -8,14 +8,11 @@ import type {
 import { SPACE_ROLES, TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   ApplicationsListSuccessJson,
-  AuditLogItem,
-  AuditLogsListSuccessJson,
   FormDefinitionsListSuccessJson,
   GroupMemberSummary,
   GroupMembersListSuccessJson,
   GroupsListSuccessJson,
 } from "@/lib/schema";
-import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
 import type { SpaceOverviewPageData, SpaceOverviewSpace } from "../types";
@@ -23,11 +20,12 @@ import type { SpaceOverviewPageData, SpaceOverviewSpace } from "../types";
 type AuthHeaders = { Authorization: string };
 
 export async function getSpaceOverviewPageData({
+  authHeaders,
   spaceId,
 }: {
+  authHeaders: AuthHeaders;
   spaceId: string;
 }): Promise<SpaceOverviewPageData> {
-  const authHeaders = await authHeadersOrRedirect();
   const [spaces, me] = await Promise.all([
     listSpaces(authHeaders),
     getCurrentSessionUser(),
@@ -38,25 +36,21 @@ export async function getSpaceOverviewPageData({
     throw { status: 404 };
   }
 
-  const canViewAuditLogs = me?.roles.includes(TENANT_ROLES.admin) ?? false;
+  const isTenantAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
   const canManageSpace =
-    canViewAuditLogs || space.currentUserRole === SPACE_ROLES.admin;
-  const [applications, formDefinitions, members, auditLogs] = await Promise.all([
+    isTenantAdmin || space.currentUserRole === SPACE_ROLES.admin;
+  const [applications, formDefinitions, members] = await Promise.all([
     listApplications(spaceId, authHeaders),
     listFormDefinitions(spaceId, authHeaders),
     canManageSpace ? listMembers(spaceId, authHeaders) : Promise.resolve([]),
-    canViewAuditLogs
-      ? listSpaceAuditLogs(spaceId, authHeaders)
-      : Promise.resolve([]),
   ]);
 
   return {
     applications,
-    auditLogs,
     canManageSpace,
-    canViewAuditLogs,
     currentUserId: me?.id ?? null,
     formDefinitions,
+    isTenantAdmin,
     members,
     space,
   };
@@ -103,17 +97,4 @@ async function listMembers(
   return unwrapResponseData<GroupMembersListSuccessJson["data"]>(
     response,
   ).members;
-}
-
-async function listSpaceAuditLogs(
-  spaceId: string,
-  headers: AuthHeaders,
-): Promise<AuditLogItem[]> {
-  const response = await client.GET("/audit-logs", {
-    params: { query: { limit: 20, q: spaceId } },
-    headers,
-  });
-  return (
-    unwrapResponseData<AuditLogsListSuccessJson["data"]>(response).logs ?? []
-  ).filter((row) => row.groupId === spaceId);
 }
