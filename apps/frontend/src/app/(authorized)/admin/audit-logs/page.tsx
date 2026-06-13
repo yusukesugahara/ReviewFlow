@@ -1,14 +1,13 @@
 import { isApiFailure } from "@/lib/server/api-failure";
-import { getAdminAuditLogsPageData } from "./page-data";
+import { getAdminAuditLogsPageData } from "./_data/page-data";
 import { AdminAuditLogsErrorView, AdminAuditLogsView } from "./view";
 
 type AdminAuditLogsPageProps = {
   searchParams?: Promise<{
     createdFrom?: string;
     createdTo?: string;
-    outcome?: string;
     q?: string;
-    risk?: string;
+    targetType?: string;
   }>;
 };
 

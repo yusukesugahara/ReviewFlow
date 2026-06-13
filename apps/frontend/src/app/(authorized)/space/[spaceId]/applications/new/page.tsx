@@ -1,5 +1,5 @@
-import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
-import { getSpaceNewApplicationPageData } from "./page-data";
+import { buildSpaceApplicationNewHref } from "@/components/applications/routing/application-routes";
+import { getSpaceNewApplicationPageData } from "./_data/page-data";
 import type { SpaceNewApplicationPageProps } from "./types";
 import { SpaceNewApplicationView } from "./view";
 

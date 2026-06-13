@@ -1,8 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
+import { ApplicationStatus } from '../../../../models/constants/application-status';
 import type { Application } from '../../../../models/entities/application.entity';
 import { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
+import {
+  BusinessAuditAction,
+  BusinessAuditLogService,
+} from '../../audit-logs/services/business-audit-log.service';
 import { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { PatchApplicationDto } from '../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
@@ -19,6 +24,7 @@ export class ApplicationUserSubmissionUseCaseService {
     private readonly flowResolver: ApplicationApprovalFlowResolver,
     private readonly queryService: ApplicationQueryService,
     private readonly submissionService: ApplicationSubmissionService,
+    private readonly auditLogs: BusinessAuditLogService,
   ) {}
 
   async patch(
@@ -35,21 +41,48 @@ export class ApplicationUserSubmissionUseCaseService {
         dto.approvalFlowId,
       );
     }
+    const before = this.snapshot(app);
     await this.fieldValuePatchService.applyPatch(actor.tenantId, app, dto);
+    if (before.status === ApplicationStatus.RETURNED) {
+      await this.auditLogs.recordApplicationEvent({
+        actionType: BusinessAuditAction.APPLICATION_CORRECTED,
+        actor: { id: actor.id ?? null, email: actor.email, type: 'user' },
+        app,
+        before,
+        after: this.snapshot(app),
+        metadataJson: { fieldKeys: Object.keys(dto.values ?? {}) },
+      });
+    }
     return this.queryService.getOneForActor(actor, id);
   }
 
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+    const before = this.snapshot(app);
     await this.submissionService.submit(actor.tenantId, app);
+    await this.auditLogs.recordApplicationEvent({
+      actionType: BusinessAuditAction.APPLICATION_SUBMITTED,
+      actor: { id: actor.id, email: actor.email, type: 'user' },
+      app,
+      before,
+      after: this.snapshot(app),
+    });
     return this.queryService.getOneForActor(actor, id);
   }
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+    const before = this.snapshot(app);
     await this.submissionService.resubmit(actor.tenantId, app);
+    await this.auditLogs.recordApplicationEvent({
+      actionType: BusinessAuditAction.APPLICATION_RESUBMITTED,
+      actor: { id: actor.id, email: actor.email, type: 'user' },
+      app,
+      before,
+      after: this.snapshot(app),
+    });
     return this.queryService.getOneForActor(actor, id);
   }
 
@@ -67,5 +100,12 @@ export class ApplicationUserSubmissionUseCaseService {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
     }
     return app;
+  }
+
+  private snapshot(app: Application) {
+    return {
+      status: app.status,
+      stepOrder: app.currentStepOrder,
+    };
   }
 }

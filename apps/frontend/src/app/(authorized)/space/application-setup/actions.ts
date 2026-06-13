@@ -5,9 +5,8 @@ import { redirect } from "next/navigation";
 import {
   createApplicationSetup,
   updateApplicationSetup,
-  type UpdateApplicationSetupInput,
-} from "./application-setup-api";
-import { readApplicationSetupActionInput } from "./application-setup-action-input";
+} from "./_api/application-setup-api";
+import { readApplicationSetupActionInput } from "./_utils/application-setup-action-input";
 import {
   buildApplicationSetupDetailPath,
   buildApplicationSetupListPath,
@@ -15,7 +14,7 @@ import {
   resolveCreateApplicationSetupRedirectBase,
   resolveUpdateApplicationSetupRedirectBase,
   setupErrorRedirectUrl,
-} from "./application-setup-navigation";
+} from "./_utils/application-setup-navigation";
 
 export async function submitApplicationSetupAction(
   formData: FormData,
@@ -71,19 +70,10 @@ export async function updateApplicationSetupAction(
   }
 
   const input = parsedInput.data;
-
-  if (!input.currentFormDefinitionId || !input.currentApprovalFlowId) {
-    redirect(setupErrorRedirectUrl(redirectBase, null));
-  }
-
-  const updateInput: UpdateApplicationSetupInput = {
-    ...input,
-    currentApprovalFlowId: input.currentApprovalFlowId,
-    currentFormDefinitionId: input.currentFormDefinitionId,
-  };
+  let updated: Awaited<ReturnType<typeof updateApplicationSetup>>;
 
   try {
-    await updateApplicationSetup(applicationId, updateInput);
+    updated = await updateApplicationSetup(applicationId, input);
   } catch (error) {
     redirect(setupErrorRedirectUrl(redirectBase, error));
   }
@@ -91,7 +81,7 @@ export async function updateApplicationSetupAction(
   const detailPath = buildApplicationSetupDetailPath({
     applicationId,
     applicationStatus: input.applicationStatus,
-    definitionId: input.currentFormDefinitionId,
+    definitionId: updated.definitionId,
     spaceId: input.spaceId,
   });
   revalidatePath(redirectBase);

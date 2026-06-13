@@ -19,8 +19,24 @@ product concept.
 - `ui`: low-level reusable UI primitives.
 - `applications`: application display, workflow actions, status, routes, and
   dynamic field UI shared across application-related routes.
+  - `actions`: applicant/reviewer action controls and action capability helpers.
+  - `approval-progress`: approval progress diagram UI and progress helpers.
+  - `corrections`: returned-correction display helpers and sections.
+  - `detail`: application detail view sections and detail view models.
+  - `dynamic-fields`: dynamic form field renderers, schema, and validation.
+  - `list`: shared application list and empty-state UI.
+  - `routing`: application route builders.
+  - `status`: application status labels, rules, and badges.
 - `application-setup`: form-definition and approval-flow builder UI shared by
   application creation and editing.
+  - `approval-flow`: approval step/group builder state and controls.
+  - `dialogs`: setup-specific dialogs.
+  - `fields`: draft field types, field editors, previews, and field controls.
+  - `form-builder`: setup draft form and inline form-builder UI.
+- `audit-logs`: business audit log display labels, target/actor formatting, and
+  metadata helpers shared by audit-related screens.
+- `layout`: shared app shell and sidebar components.
+- `shared`: small cross-feature UI helpers.
 - `space`: shared space-facing presentation components and types.
 
 Keep route orchestration, data fetching, and page-specific layout in `app`.
@@ -32,7 +48,7 @@ structure.
 
 Do not add `index.ts` barrel exports by default. Prefer direct imports from the
 file that owns the component or helper, for example
-`@/components/applications/application-routes`.
+`@/components/applications/routing/application-routes`.
 
 Add a barrel only when a directory has a stable public API and direct imports are
 creating real maintenance cost.

@@ -3,6 +3,10 @@ import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.servi
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import type { Application } from '../../../../models/entities/application.entity';
+import {
+  BusinessAuditAction,
+  BusinessAuditLogService,
+} from '../../audit-logs/services/business-audit-log.service';
 import type {
   CorrectionTargetsResponseDto,
   CreatePublicApplicationDto,
@@ -28,6 +32,7 @@ export class ApplicantApplicationService {
     private readonly flowResolver: ApplicationApprovalFlowResolver,
     private readonly progressService: ApplicationProgressService,
     private readonly submissionService: ApplicationSubmissionService,
+    private readonly auditLogs: BusinessAuditLogService,
   ) {}
 
   async createAndSubmit(
@@ -50,7 +55,24 @@ export class ApplicantApplicationService {
         status: ApplicationStatus.DRAFT,
       },
     );
+    await this.auditLogs.recordApplicationEvent({
+      actionType: BusinessAuditAction.APPLICATION_CREATED,
+      actor: { id: null, email: actor.email, type: 'applicant' },
+      app: created,
+      after: {
+        status: created.status,
+        stepOrder: created.currentStepOrder,
+      },
+    });
+    const before = this.snapshot(created);
     await this.submissionService.submit(actor.tenantId, created);
+    await this.auditLogs.recordApplicationEvent({
+      actionType: BusinessAuditAction.APPLICATION_SUBMITTED,
+      actor: { id: null, email: actor.email, type: 'applicant' },
+      app: created,
+      before,
+      after: this.snapshot(created),
+    });
     const submitted = await this.applicantAccess.loadSubmittedApplication(
       actor.tenantId,
       created.id,
@@ -82,7 +104,16 @@ export class ApplicantApplicationService {
     if (dto.formDefinitionId || dto.approvalFlowId) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
+    const before = this.snapshot(app);
     await this.fieldValuePatchService.applyPatch(actor.tenantId, app, dto);
+    await this.auditLogs.recordApplicationEvent({
+      actionType: BusinessAuditAction.APPLICATION_CORRECTED,
+      actor: { id: null, email: actor.email, type: 'applicant' },
+      app,
+      before,
+      after: this.snapshot(app),
+      metadataJson: { fieldKeys: Object.keys(dto.values ?? {}) },
+    });
     const updated = await this.applicantAccess.loadEditableApplication(
       actor,
       id,
@@ -92,11 +123,26 @@ export class ApplicantApplicationService {
 
   async resubmit(actor: ApplicantSession, id: string): Promise<Application> {
     const app = await this.applicantAccess.loadEditableApplication(actor, id);
+    const before = this.snapshot(app);
     await this.submissionService.resubmit(actor.tenantId, app);
+    await this.auditLogs.recordApplicationEvent({
+      actionType: BusinessAuditAction.APPLICATION_RESUBMITTED,
+      actor: { id: null, email: actor.email, type: 'applicant' },
+      app,
+      before,
+      after: this.snapshot(app),
+    });
     const updated = await this.applicantAccess.loadEditableApplication(
       actor,
       id,
     );
     return this.progressService.hydrate(updated);
+  }
+
+  private snapshot(app: Application) {
+    return {
+      status: app.status,
+      stepOrder: app.currentStepOrder,
+    };
   }
 }

@@ -9,6 +9,7 @@ import {
   InvitationRepositoryError,
   InvitationsRepository,
 } from '../../../../models/repositories/invitations.repository';
+import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { AuthService } from '../../auth/services/auth.service';
 import { MailService } from '../../mail/services/mail.service';
 import { UsersService } from '../../users/services/users.service';
@@ -32,6 +33,10 @@ describe('InvitationsService', () => {
   };
   let authService: { issueTokensForUser: jest.Mock };
   let mailService: { sendInvitationEmail: jest.Mock };
+  let auditLogs: {
+    recordInvitationAccepted: jest.Mock;
+    recordInvitationCreated: jest.Mock;
+  };
 
   beforeEach(async () => {
     invitationsRepository = {
@@ -50,6 +55,10 @@ describe('InvitationsService', () => {
     usersService = { findByTenantAndEmail: jest.fn() };
     authService = { issueTokensForUser: jest.fn() };
     mailService = { sendInvitationEmail: jest.fn() };
+    auditLogs = {
+      recordInvitationAccepted: jest.fn(),
+      recordInvitationCreated: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -58,6 +67,7 @@ describe('InvitationsService', () => {
         { provide: UsersService, useValue: usersService },
         { provide: AuthService, useValue: authService },
         { provide: MailService, useValue: mailService },
+        { provide: BusinessAuditLogService, useValue: auditLogs },
       ],
     }).compile();
 
@@ -132,6 +142,11 @@ describe('InvitationsService', () => {
           role: UserRole.TENANT_USER,
         }),
       );
+      expect(auditLogs.recordInvitationCreated).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actor,
+        }),
+      );
     });
 
     /**
@@ -162,6 +177,7 @@ describe('InvitationsService', () => {
       expect(invitationsRepository.deleteInvitation).toHaveBeenCalledWith(
         'inv-1',
       );
+      expect(auditLogs.recordInvitationCreated).not.toHaveBeenCalled();
     });
   });
 
@@ -186,15 +202,27 @@ describe('InvitationsService', () => {
      */
     it('creates user and returns tokens', async () => {
       let capturedPasswordHash = '';
+      const acceptedInvitation = {
+        id: 'inv-1',
+        tenantId: 'tenant-1',
+        email: 'join@y.com',
+        role: UserRole.TENANT_USER,
+        groupId: null,
+        groupRole: null,
+      } as Invitation;
+      const acceptedUser = {
+        id: 'new-user',
+        tenantId: 'tenant-1',
+        email: 'join@y.com',
+        role: UserRole.TENANT_USER,
+      } as User;
       invitationsRepository.acceptInvitation.mockImplementation(
         ({ passwordHash }: { passwordHash: string }) => {
           capturedPasswordHash = passwordHash;
           return Promise.resolve({
-            id: 'new-user',
-            tenantId: 'tenant-1',
-            email: 'join@y.com',
-            role: UserRole.TENANT_USER,
-          } as User);
+            invitation: acceptedInvitation,
+            user: acceptedUser,
+          });
         },
       );
 
@@ -224,6 +252,12 @@ describe('InvitationsService', () => {
         }),
       );
       expect(out.access_token).toBe('jwt');
+      expect(auditLogs.recordInvitationAccepted).toHaveBeenCalledWith(
+        expect.objectContaining({
+          invitation: acceptedInvitation,
+          user: acceptedUser,
+        }),
+      );
     });
   });
 });

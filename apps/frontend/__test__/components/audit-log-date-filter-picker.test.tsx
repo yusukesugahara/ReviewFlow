@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { AuditLogDateFilterPicker } from "@/app/(authorized)/admin/audit-logs/audit-log-date-filter-picker";
+import { AuditLogDateFilterPicker } from "@/app/(authorized)/admin/audit-logs/_components/audit-log-date-filter-picker";
 
 describe("AuditLogDateFilterPicker", () => {
   // テスト内容: 初期日付を整形表示し、クリアできることを確認する

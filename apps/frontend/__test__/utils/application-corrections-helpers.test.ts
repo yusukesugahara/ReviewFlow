@@ -2,8 +2,8 @@ import {
   formatCorrectionSubmittedValue,
   formatFieldKeyLabel,
   getCorrectionItemLabel,
-} from "@/components/applications/application-corrections.helpers";
-import type { ApplicationFormField } from "@/components/applications/application-detail.types";
+} from "@/components/applications/corrections/application-corrections.helpers";
+import type { ApplicationFormField } from "@/components/applications/detail/application-detail.types";
 
 const fields: ApplicationFormField[] = [
   {

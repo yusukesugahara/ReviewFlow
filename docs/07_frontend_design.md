@@ -20,7 +20,8 @@
 - /admin/export-jobs … `/admin/spaces` へリダイレクト（CSV は submissions 側へ移行）
 
 ## tenant_user / tenant_admin 共通
-- /space … **使用状況ダッシュボード**（申請件数・平均差し戻し数・再提出件数）
+- /space … **使用状況ダッシュボード**（スペース横断の申請件数・平均差し戻し数・再提出件数）
+- /space/[spaceId] … スペース概要（対応が必要な申請、公開フォーム、メンバー数、最近の監査ログへの入口）
 - /space/[spaceId]/applications
 - /space/[spaceId]/applications/new
 - /space/[spaceId]/applications/[applicationId]

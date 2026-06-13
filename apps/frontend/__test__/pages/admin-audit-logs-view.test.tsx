@@ -9,173 +9,136 @@ function metadata(value: Record<string, unknown>): Record<string, never> {
   return value as unknown as Record<string, never>;
 }
 
-const highRiskRow: AuditLogItem = {
-  id: "audit-role",
-  actorEmail: "admin@example.com",
-  actorUserId: "user-1",
-  actionType: "PATCH:users",
-  targetType: "users",
-  targetId: "target-user-1234567890",
-  metadataJson: metadata({
-    durationMs: 120,
-    ip: "127.0.0.1",
-    path: "/users/user-1/role",
-    method: "PATCH",
-    statusCode: 200,
-    success: true,
-    userAgent: "Jest",
-  }),
-  createdAt: "2026-06-06T00:00:00.000Z",
-};
-
 const rows: AuditLogItem[] = [
   {
-    id: "audit-1",
-    actorEmail: "admin@example.com",
-    actorUserId: "user-1",
-    actionType: "DELETE:users",
-    targetType: "users",
-    targetId: "target-user-1234567890",
+    id: "audit-application",
+    actorType: "user",
+    actorUserId: "reviewer-1234567890",
+    actorEmailSnapshot: "reviewer@example.com",
+    actionType: "application.approved",
+    targetType: "application",
+    targetId: "application-1234567890",
+    applicationId: "application-1234567890",
+    statusFrom: "in_review",
+    statusTo: "approved",
+    stepOrderFrom: 1,
+    stepOrderTo: null,
+    summary: "reviewer@example.com approved application",
     metadataJson: metadata({
-      durationMs: 3500,
-      errorCode: "FORBIDDEN",
-      ip: "127.0.0.1",
-      path: "/users/user-1",
-      method: "DELETE",
-      statusCode: 403,
-      success: false,
-      userAgent: "Jest",
+      applicantEmail: "applicant@example.com",
+      comment: "ok",
+      formDefinitionId: "form-1",
     }),
     createdAt: "2026-06-06T00:00:00.000Z",
   },
   {
-    id: "audit-2",
-    actorEmail: "member@example.com",
-    actionType: "GET:applications",
-    targetType: "applications",
-    targetId: "application-1234567890",
-    metadataJson: metadata({
-      durationMs: 120,
-      ip: "10.0.0.1",
-      path: "/applications",
-      method: "GET",
-      statusCode: 200,
-      success: true,
-    }),
+    id: "audit-user",
+    actorType: "user",
+    actorEmailSnapshot: "admin@example.com",
+    actionType: "user.role_changed",
+    targetType: "user",
+    targetId: "target-user-1234567890",
+    targetUserId: "target-user-1234567890",
+    targetEmailSnapshot: "member@example.com",
+    roleFrom: "tenant_user",
+    roleTo: "tenant_admin",
+    summary: "admin@example.com changed member@example.com role",
     createdAt: "2026-06-05T00:00:00.000Z",
   },
-  highRiskRow,
+  {
+    id: "audit-invitation",
+    actorType: "user",
+    actorEmailSnapshot: "admin@example.com",
+    actionType: "invitation.created",
+    targetType: "invitation",
+    targetId: "invitation-1234567890",
+    targetEmailSnapshot: "new@example.com",
+    roleTo: "tenant_user",
+    groupRoleTo: "user",
+    metadataJson: metadata({ expiresAt: "2026-06-13T00:00:00.000Z" }),
+    createdAt: "2026-06-04T00:00:00.000Z",
+  },
+  {
+    id: "audit-member",
+    actorType: "user",
+    actorEmailSnapshot: "space-admin@example.com",
+    actionType: "space.member_removed",
+    targetType: "group_member",
+    targetId: "member-row-1234567890",
+    targetUserId: "member-user-1234567890",
+    targetEmailSnapshot: "removed@example.com",
+    groupId: "group-1234567890",
+    groupRoleFrom: "admin",
+    summary: "space-admin@example.com removed removed@example.com",
+    createdAt: "2026-06-03T00:00:00.000Z",
+  },
 ];
 
 const baseProps = {
   createdFrom: "",
   createdTo: "",
-  outcome: "all",
   query: "",
-  risk: "all",
+  targetType: "all",
   rows,
 };
 
 describe("AdminAuditLogsView", () => {
-  // テスト内容: 監査ログの集計、フィルタ、読みやすい操作説明が表示されることを確認する
-  it("renders summary counts, filters, and enriched audit rows", () => {
+  // テスト内容: 業務監査ログの集計、フィルタ、状態/権限変更が表示されることを確認する
+  it("renders summary counts, filters, and business audit rows", () => {
     render(<AdminAuditLogsView {...baseProps} />);
 
-    expect(screen.getAllByText("高リスク").length).toBeGreaterThan(0);
-    expect(screen.getAllByText("要確認").length).toBeGreaterThan(0);
-    expect(screen.getByText("失敗操作")).toBeInTheDocument();
+    expect(screen.getByText("全イベント")).toBeInTheDocument();
+    expect(screen.getAllByText("申請").length).toBeGreaterThan(0);
+    expect(screen.getByText("ユーザ/招待")).toBeInTheDocument();
+    expect(screen.getByText("スペース/メンバー")).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "監査ログ" })).toBeInTheDocument();
     expect(screen.getByText("誰が、いつ、どんな操作をしたかを確認できます。")).toBeInTheDocument();
     expect(screen.getByLabelText("検索キーワード")).toHaveAttribute(
       "placeholder",
-      "操作者メール、対象ID、操作内容で検索",
+      "操作者、対象メール、申請ID、操作内容で検索",
     );
     expect(screen.getByRole("link", { name: "クリア" })).toHaveAttribute(
       "href",
       "/admin/audit-logs",
     );
 
-    const failedRow = screen.getByRole("row", { name: /admin@example.com.*ユーザを削除しました/ });
-    expect(within(failedRow).getByText("ユーザを削除しました")).toBeInTheDocument();
-    expect(within(failedRow).getByText("要確認")).toBeInTheDocument();
-    expect(within(failedRow).getByText("失敗（FORBIDDEN）")).toBeInTheDocument();
-    expect(within(failedRow).getByText("技術情報")).toBeInTheDocument();
+    const applicationRow = screen.getByRole("row", {
+      name: /reviewer@example.com.*申請を承認/,
+    });
+    expect(within(applicationRow).getByText("状態: レビュー中 -> 承認済み")).toBeInTheDocument();
+    expect(within(applicationRow).getByText("ステップ: 1 -> -")).toBeInTheDocument();
+    expect(within(applicationRow).getByText("詳細")).toBeInTheDocument();
 
-    const highRiskRoleRow = screen.getByRole("row", { name: /admin@example.com.*ユーザの権限を変更しました/ });
-    expect(within(highRiskRoleRow).getByText("高リスク")).toBeInTheDocument();
+    const userRow = screen.getByRole("row", {
+      name: /admin@example.com.*member@example.com.*ユーザ権限を変更/,
+    });
+    expect(within(userRow).getByText("権限: テナントユーザ -> テナント管理者")).toBeInTheDocument();
 
-    const successRow = screen.getByRole("row", { name: /member@example.com/ });
-    expect(within(successRow).getByText("申請を参照しました")).toBeInTheDocument();
-    expect(within(successRow).getByText("通常")).toBeInTheDocument();
-    expect(within(successRow).getByText("成功")).toBeInTheDocument();
+    const invitationRow = screen.getByRole("row", {
+      name: /admin@example.com.*new@example.com.*ユーザを招待/,
+    });
+    expect(within(invitationRow).getByText("権限: - -> テナントユーザ")).toBeInTheDocument();
+    expect(within(invitationRow).getByText("スペース権限: - -> スペースユーザ")).toBeInTheDocument();
+
+    const memberRow = screen.getByRole("row", {
+      name: /space-admin@example.com.*removed@example.com.*スペースからメンバーを削除/,
+    });
+    expect(within(memberRow).getByText("スペース権限: スペース管理者 -> -")).toBeInTheDocument();
   });
 
-  // テスト内容: 高リスクカードから高リスクフィルタ付きURLへ遷移できることを確認する
-  it("links the high risk summary card to the high risk filter", () => {
-    render(<AdminAuditLogsView {...baseProps} />);
+  // テスト内容: 対象種別フィルタで表示行が絞られることを確認する
+  it("filters rows by target type", () => {
+    render(<AdminAuditLogsView {...baseProps} targetType="user" />);
 
-    expect(screen.getByRole("link", { name: "高リスクの操作履歴を表示（1件）" })).toHaveAttribute(
-      "href",
-      "/admin/audit-logs?risk=high",
-    );
-  });
-
-  // テスト内容: 高リスクフィルタ適用時に説明文とカードの選択状態が変わることを確認する
-  it("shows active high risk filter state", () => {
-    render(<AdminAuditLogsView {...baseProps} risk="high" />);
-
-    expect(screen.getByText("高リスクの操作履歴のみを表示しています")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "高リスクの操作履歴を表示（1件）" })).toHaveAttribute(
-      "aria-current",
-      "page",
-    );
-  });
-
-  // テスト内容: 高リスク条件で対象操作だけが絞り込まれることを確認する
-  it("filters rows by high risk operations only", () => {
-    render(<AdminAuditLogsView {...baseProps} risk="high" />);
-
-    expect(screen.getByRole("row", { name: /ユーザの権限を変更しました/ })).toBeInTheDocument();
-    expect(screen.queryByRole("row", { name: /ユーザを削除しました/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("row", { name: /member@example.com/ })).not.toBeInTheDocument();
-  });
-
-  // テスト内容: 申請フォーム変更が高リスクフィルタで取得できることを確認する
-  it("filters form definition changes by high risk", () => {
-    const formChangeRows: AuditLogItem[] = [
-      highRiskRow,
-      {
-        id: "audit-form-publish",
-        actorEmail: "editor@example.com",
-        actionType: "POST:form-definitions",
-        targetType: "form-definitions",
-        targetId: "form-12345678",
-        metadataJson: metadata({
-          success: true,
-          path: "/form-definitions/form-12345678/publish",
-          method: "POST",
-          statusCode: 200,
-        }),
-        createdAt: "2026-06-04T00:00:00.000Z",
-      },
-    ];
-
-    render(<AdminAuditLogsView {...baseProps} rows={formChangeRows} risk="high" />);
-
-    expect(screen.getByRole("row", { name: /editor@example.com/ })).toBeInTheDocument();
-    expect(screen.getByText("申請フォームを公開しました")).toBeInTheDocument();
-    expect(screen.getByRole("row", { name: /ユーザの権限を変更しました/ })).toBeInTheDocument();
+    expect(screen.getByText("ユーザの監査ログを新しい順に表示しています")).toBeInTheDocument();
+    expect(screen.getByRole("row", { name: /ユーザ権限を変更/ })).toBeInTheDocument();
+    expect(screen.queryByRole("row", { name: /申請を承認/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("row", { name: /ユーザを招待/ })).not.toBeInTheDocument();
   });
 
   // テスト内容: 有効なフィルタで一致行がない場合の空状態を確認する
   it("renders an empty state for active filters with no matching rows", () => {
-    render(
-      <AdminAuditLogsView
-        {...baseProps}
-        rows={rows.filter((row) => row.id !== "audit-role")}
-        risk="high"
-      />,
-    );
+    render(<AdminAuditLogsView {...baseProps} rows={[]} targetType="application" />);
 
     expect(screen.getByText("条件に一致する監査ログはありません")).toBeInTheDocument();
   });

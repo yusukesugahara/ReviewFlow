@@ -67,21 +67,33 @@ describe('AuditLogsRepository', () => {
       tenantId: 'tenant-1',
       groupId: undefined,
       actorUserId: 'user-1',
+      actorType: 'user',
+      actorEmailSnapshot: 'actor@example.com',
       actionType: 'user.created',
       targetType: 'user',
       targetId: 'user-2',
+      targetUserId: 'user-2',
+      targetEmailSnapshot: 'target@example.com',
+      summary: 'created user',
       metadataJson: { source: 'test' },
     });
 
-    expect(auditLogs.create).toHaveBeenCalledWith({
-      tenantId: 'tenant-1',
-      groupId: null,
-      actorUserId: 'user-1',
-      actionType: 'user.created',
-      targetType: 'user',
-      targetId: 'user-2',
-      metadataJson: { source: 'test' },
-    });
+    expect(auditLogs.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        groupId: null,
+        actorUserId: 'user-1',
+        actorType: 'user',
+        actorEmailSnapshot: 'actor@example.com',
+        actionType: 'user.created',
+        targetType: 'user',
+        targetId: 'user-2',
+        targetUserId: 'user-2',
+        targetEmailSnapshot: 'target@example.com',
+        summary: 'created user',
+        metadataJson: { source: 'test' },
+      }),
+    );
     expect(auditLogs.save).toHaveBeenCalledWith(row);
   });
 
@@ -89,6 +101,7 @@ describe('AuditLogsRepository', () => {
     await repository.listByTenant('tenant-1', {
       limit: 20,
       actionType: 'user_%',
+      groupId: 'group-1',
       q: 'email_%',
       createdFrom: '2026-01-01T00:00:00.000Z',
       createdTo: '2026-01-31T00:00:00.000Z',
@@ -106,7 +119,11 @@ describe('AuditLogsRepository', () => {
       { actionType: 'user\\_\\%%' },
     );
     expect(builder.andWhere).toHaveBeenCalledWith(
-      expect.stringContaining('auditLog.targetType LIKE :q'),
+      'auditLog.groupId = :groupId',
+      { groupId: 'group-1' },
+    );
+    expect(builder.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining('CAST(auditLog.groupId AS text) LIKE :q'),
       { q: '%email\\_\\%%' },
     );
     expect(builder.andWhere).toHaveBeenCalledWith(

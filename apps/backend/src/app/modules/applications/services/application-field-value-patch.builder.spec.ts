@@ -3,6 +3,7 @@ import type { ApplicationFieldValue } from '../../../../models/entities/applicat
 import type { Application } from '../../../../models/entities/application.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
 import type { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
+import { ApplicationFieldValueTypeValidator } from '../validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationFieldValuePatchBuilder } from './application-field-value-patch.builder';
 import type { ApplicationPatchContext } from './application-patch-context.loader';
@@ -25,9 +26,9 @@ const app = (): Application =>
   }) as Application;
 
 const context = (fields: FormField[]): ApplicationPatchContext => {
-  const fieldsByKey = new ApplicationFormValueValidator().buildFieldsByKey(
-    fields,
-  );
+  const fieldsByKey = new ApplicationFormValueValidator(
+    new ApplicationFieldValueTypeValidator(),
+  ).buildFieldsByKey(fields);
   return { app: app(), fieldsByKey };
 };
 
@@ -45,7 +46,9 @@ describe('ApplicationFieldValuePatchBuilder', () => {
     };
     builder = new ApplicationFieldValuePatchBuilder(
       submissionRepository as unknown as ApplicationSubmissionRepository,
-      new ApplicationFormValueValidator(),
+      new ApplicationFormValueValidator(
+        new ApplicationFieldValueTypeValidator(),
+      ),
     );
   });
 

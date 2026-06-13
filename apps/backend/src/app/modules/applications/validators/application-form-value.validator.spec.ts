@@ -3,6 +3,7 @@ import { ApplicationStatus } from '../../../../models/constants/application-stat
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import type { Application } from '../../../../models/entities/application.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationFieldValueTypeValidator } from './application-field-value-type.validator';
 import { ApplicationFormValueValidator } from './application-form-value.validator';
 
 const field = (overrides: Partial<FormField>): FormField =>
@@ -38,7 +39,9 @@ const expectErrorCode = (act: () => void, errorCode: string): void => {
  * @group application-form-value-validator
  */
 describe('ApplicationFormValueValidator', () => {
-  const validator = new ApplicationFormValueValidator();
+  const validator = new ApplicationFormValueValidator(
+    new ApplicationFieldValueTypeValidator(),
+  );
 
   /**
    * フォーム定義のフィールドに一致する値を受け入れること

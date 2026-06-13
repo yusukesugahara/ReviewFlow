@@ -1,4 +1,4 @@
-import { isDynamicFormField } from "@/app/(authorized)/apply/form/helpers";
+import { isDynamicFormField } from "@/app/(authorized)/apply/form/_utils/helpers";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 
 describe("apply form helpers", () => {

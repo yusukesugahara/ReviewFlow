@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { OrderMoveButtons } from "@/components/application-setup/order-move-buttons";
+import { OrderMoveButtons } from "@/components/application-setup/fields/order-move-buttons";
 
 describe("OrderMoveButtons", () => {
   // テスト内容: 有効/無効状態の並び替えボタンが表示されることを確認する

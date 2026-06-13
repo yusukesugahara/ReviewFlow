@@ -1,17 +1,25 @@
 import { Injectable } from '@nestjs/common';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
+import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import {
   UserRole,
   type UserRoleValue,
 } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
 import { UsersRepository } from '../../../../models/repositories/users.repository';
+import {
+  BusinessAuditAction,
+  BusinessAuditLogService,
+} from '../../audit-logs/services/business-audit-log.service';
 
 const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [UserRole.TENANT_ADMIN];
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly auditLogs: BusinessAuditLogService,
+  ) {}
 
   count(): Promise<number> {
     return this.usersRepository.count();
@@ -49,9 +57,9 @@ export class UsersService {
     tenantId: string,
     targetUserId: string,
     nextRole: UserRoleValue,
-    actorUserId: string,
+    actor: AuthUserPayload,
   ): Promise<User> {
-    if (targetUserId === actorUserId) {
+    if (targetUserId === actor.id) {
       throw clientError(ClientErrorCodes.USER_ROLE_UPDATE_SELF_FORBIDDEN);
     }
 
@@ -70,16 +78,25 @@ export class UsersService {
       }
     }
 
+    const previousRole = target.role;
     target.role = nextRole;
-    return this.usersRepository.save(target);
+    const saved = await this.usersRepository.save(target);
+    await this.auditLogs.recordUserEvent({
+      actionType: BusinessAuditAction.USER_ROLE_CHANGED,
+      actor,
+      target: saved,
+      roleFrom: previousRole,
+      roleTo: saved.role,
+    });
+    return saved;
   }
 
   async deactivateInTenant(
     tenantId: string,
     targetUserId: string,
-    actorUserId: string,
+    actor: AuthUserPayload,
   ): Promise<void> {
-    if (targetUserId === actorUserId) {
+    if (targetUserId === actor.id) {
       throw clientError(ClientErrorCodes.USER_DELETE_SELF_FORBIDDEN);
     }
 
@@ -97,15 +114,32 @@ export class UsersService {
 
     target.isActive = false;
     await this.usersRepository.save(target);
+    await this.auditLogs.recordUserEvent({
+      actionType: BusinessAuditAction.USER_DEACTIVATED,
+      actor,
+      target,
+      metadataJson: { isActiveFrom: true, isActiveTo: false },
+    });
   }
 
-  async restoreInTenant(tenantId: string, targetUserId: string): Promise<User> {
+  async restoreInTenant(
+    tenantId: string,
+    targetUserId: string,
+    actor: AuthUserPayload,
+  ): Promise<User> {
     const target = await this.findByIdAndTenant(targetUserId, tenantId);
     if (!target) {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 
     target.isActive = true;
-    return this.usersRepository.save(target);
+    const saved = await this.usersRepository.save(target);
+    await this.auditLogs.recordUserEvent({
+      actionType: BusinessAuditAction.USER_RESTORED,
+      actor,
+      target: saved,
+      metadataJson: { isActiveFrom: false, isActiveTo: true },
+    });
+    return saved;
   }
 }

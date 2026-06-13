@@ -2,29 +2,25 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AuditLogListCard } from "./_components/audit-log-list-card";
 import { AuditLogSummaryCards } from "./_components/audit-log-summary-cards";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
-import { buildAdminAuditLogsViewModel } from "./audit-log-view-model";
+import { buildAdminAuditLogsViewModel } from "./_view-models/audit-log-view-model";
 
 export function AdminAuditLogsView({
   createdFrom,
   createdTo,
-  outcome,
   query,
-  risk,
+  targetType,
   rows,
 }: AdminAuditLogsViewProps) {
   const {
     filteredRows,
     hasActiveFilters,
-    highRiskHref,
-    isHighRiskFilterActive,
     listDescription,
     summaryCounts,
   } = buildAdminAuditLogsViewModel({
     createdFrom,
     createdTo,
-    outcome,
     query,
-    risk,
+    targetType,
     rows,
   });
 
@@ -37,11 +33,7 @@ export function AdminAuditLogsView({
         </p>
       </div>
 
-      <AuditLogSummaryCards
-        highRiskHref={highRiskHref}
-        isHighRiskFilterActive={isHighRiskFilterActive}
-        summaryCounts={summaryCounts}
-      />
+      <AuditLogSummaryCards summaryCounts={summaryCounts} />
 
       <AuditLogListCard
         createdFrom={createdFrom}
@@ -49,9 +41,8 @@ export function AdminAuditLogsView({
         filteredRows={filteredRows}
         hasActiveFilters={hasActiveFilters}
         listDescription={listDescription}
-        outcome={outcome}
         query={query}
-        risk={risk}
+        targetType={targetType}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { formatNumberDisplayValue } from "@/components/applications/dynamic-scalar-field-input";
+import { formatNumberDisplayValue } from "@/components/applications/dynamic-fields/dynamic-scalar-field-input";
 
 describe("dynamic scalar field input", () => {
   // テスト内容: 読み取り専用の数値表示で桁区切りが適用されることを確認する

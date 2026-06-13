@@ -1,5 +1,5 @@
 import { isApiFailure } from "@/lib/server/api-failure";
-import { getPublicApplicationFormPageData } from "./page-data";
+import { getPublicApplicationFormPageData } from "./_data/page-data";
 import type { PublicApplicationFormPageProps } from "./types";
 import {
   PublicApplicationFormErrorView,

@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
 
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),
@@ -30,11 +30,11 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("link", { name: "市民課" })).toHaveAttribute(
       "href",
-      "/space/citizen-space/submissions",
+      "/space/citizen-space",
     );
     expect(screen.getByRole("link", { name: "道路公園課" })).toHaveAttribute(
       "href",
-      "/space/road-space/submissions",
+      "/space/road-space",
     );
   });
 

@@ -22,6 +22,7 @@ import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
 import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { ApplicationAccessPolicy } from './policies/application-access.policy';
 import { ApplicationApprovalFlowResolver } from './resolvers/application-approval-flow.resolver';
 import { ApplicantApplicationAccessService } from './services/applicant-application-access.service';
@@ -57,6 +58,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
 @Module({
   imports: [
     AuthModule,
+    AuditLogsModule,
     GroupsModule,
     MailModule,
     TypeOrmModule.forFeature([

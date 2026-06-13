@@ -6,7 +6,7 @@ import {
   SpaceApplicationEditView,
 } from "@/app/(authorized)/space/[spaceId]/applications/[applicationId]/edit/view";
 
-jest.mock("@/components/application-setup/application-setup-draft-form", () => ({
+jest.mock("@/components/application-setup/form-builder/application-setup-draft-form", () => ({
   ApplicationSetupDraftForm: ({
     errorMessage,
     initialName,
@@ -24,7 +24,7 @@ jest.mock("@/components/application-setup/application-setup-draft-form", () => (
   ),
 }));
 
-jest.mock("@/components/applications/dynamic-fields", () => ({
+jest.mock("@/components/applications/dynamic-fields/dynamic-fields", () => ({
   DynamicFieldInput: ({ field }: { field: { label: string } }) => (
     <input aria-label={field.label} />
   ),

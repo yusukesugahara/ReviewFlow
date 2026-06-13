@@ -1,4 +1,4 @@
-import { getApplicationCapabilities } from "@/components/applications/application-capabilities";
+import { getApplicationCapabilities } from "@/components/applications/actions/application-capabilities";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 const actor = {

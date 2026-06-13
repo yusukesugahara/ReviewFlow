@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { ApplicationStatusBadge } from "@/components/applications/application-status-badge";
+import { ApplicationStatusBadge } from "@/components/applications/status/application-status-badge";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 describe("ApplicationStatusBadge", () => {

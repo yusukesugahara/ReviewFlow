@@ -1,7 +1,7 @@
 import type {
   SpaceUserActionMenuState,
   SpaceUserTableMember,
-} from "../space-users-table";
+} from "./space-users-table";
 
 type SpaceUserActionMenuProps = {
   currentUserId: string | null;

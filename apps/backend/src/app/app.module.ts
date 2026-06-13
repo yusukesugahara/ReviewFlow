@@ -1,5 +1,5 @@
 import { ExecutionContext, Module } from '@nestjs/common';
-import { APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -14,7 +14,6 @@ import { FormDefinitionsModule } from './modules/form-definitions/form-definitio
 import { GroupsModule } from './modules/groups/groups.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { UsersModule } from './modules/users/users.module';
-import { AuditLogInterceptor } from '../common/logging/audit-log.interceptor';
 import { buildTypeOrmOptions } from './typeorm-options.factory';
 import { MailModule } from './modules/mail/mail.module';
 import { validateEnv } from './config/validate-env';
@@ -101,10 +100,6 @@ const throttlerModule = ThrottlerModule.forRootAsync({
     ApplicationsModule,
     ExportJobsModule,
   ],
-  providers: [
-    AuditLogInterceptor,
-    { provide: APP_INTERCEPTOR, useClass: AuditLogInterceptor },
-    { provide: APP_GUARD, useClass: ThrottlerGuard },
-  ],
+  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
 export class AppModule {}

@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import type { SpaceUserTableMember } from "../space-users-table";
+import type { SpaceUserTableMember } from "./space-users-table";
 
 type SpaceUserDeleteDialogProps = {
   action: () => Promise<void>;

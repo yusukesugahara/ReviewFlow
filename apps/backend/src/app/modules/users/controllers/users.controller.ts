@@ -82,7 +82,7 @@ export class UsersController {
       actor.tenantId,
       id,
       dto.role,
-      actor.id,
+      actor,
     );
     return successResponse(toSummary(updated));
   }
@@ -101,6 +101,7 @@ export class UsersController {
     const restored = await this.usersService.restoreInTenant(
       actor.tenantId,
       id,
+      actor,
     );
     return successResponse(toSummary(restored));
   }
@@ -115,6 +116,6 @@ export class UsersController {
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<void> {
-    await this.usersService.deactivateInTenant(actor.tenantId, id, actor.id);
+    await this.usersService.deactivateInTenant(actor.tenantId, id, actor);
   }
 }

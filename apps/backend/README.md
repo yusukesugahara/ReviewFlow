@@ -74,6 +74,8 @@ docker compose up
 npm run seed:demo -w backend
 ```
 
+既定では Docker Compose の PostgreSQL（`127.0.0.1:5432` / `app_dev`）へ投入します。実行前に既存テーブルを `TRUNCATE ... RESTART IDENTITY CASCADE` で初期化し、現在の実装に合うデモデータを作り直します。
+
 投入先 DB を変える場合は、backend 起動時と同じ PostgreSQL 環境変数を付けて実行してください。
 
 ```bash
@@ -89,7 +91,7 @@ DB_NAME=app_dev \
 npm run seed:demo -w backend
 ```
 
-seed は冪等です。既存の `みどり市 申請受付デモ` / `ReviewFlow Demo` テナントがある場合は削除して作り直します。
+既存データを全削除せず、既存の `みどり市 申請受付デモ` / `ReviewFlow Demo` テナントだけを置き換えたい場合は `SEED_RESET_DATABASE=false` を付けて実行してください。
 
 本番起動スクリプトでは、デプロイ環境変数 `SEED_DEMO_ON_DEPLOY=true` を設定すると、同一デプロイIDにつき1回だけアプリ起動前に `dist/scripts/seed-demo.js` を実行します。デモ環境や検証環境だけで有効化してください。実行済みデプロイIDは DB の `demo_seed_deployments` テーブルに記録されます。
 

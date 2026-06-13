@@ -6,6 +6,10 @@ import { GroupMember } from '../../../../models/entities/group-member.entity';
 import { Group } from '../../../../models/entities/group.entity';
 import { User } from '../../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../../models/repositories/groups.repository';
+import {
+  BusinessAuditAction,
+  BusinessAuditLogService,
+} from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from '../../users/services/users.service';
 import type {
   AddGroupMemberDto,
@@ -20,6 +24,7 @@ export class GroupsService {
     private readonly groupsRepository: GroupsRepository,
     private readonly usersService: UsersService,
     private readonly groupMembers: GroupMembersService,
+    private readonly auditLogs: BusinessAuditLogService,
   ) {}
 
   async list(actor: AuthUserPayload): Promise<Group[]> {
@@ -74,17 +79,36 @@ export class GroupsService {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 
-    return this.groupsRepository.createGroupWithAdmins({
+    const group = await this.groupsRepository.createGroupWithAdmins({
       tenantId: actor.tenantId,
       name,
       description: dto.description ?? null,
       createdByUserId: actor.id,
       adminUserIds,
     });
+
+    await this.auditLogs.recordSpaceEvent({
+      actionType: BusinessAuditAction.SPACE_CREATED,
+      actor,
+      group,
+      metadataJson: {
+        adminUserIds,
+      },
+    });
+
+    return group;
   }
 
   async remove(groupId: string, actor: AuthUserPayload): Promise<void> {
     const group = await this.findGroupInTenant(groupId, actor.tenantId);
+    await this.auditLogs.recordSpaceEvent({
+      actionType: BusinessAuditAction.SPACE_DELETED,
+      actor,
+      group,
+      metadataJson: {
+        groupId: group.id,
+      },
+    });
     await this.groupsRepository.deleteGroup(group.id);
   }
 

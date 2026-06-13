@@ -2,6 +2,7 @@ import { ClientErrorCodes } from '../../../../common/errors';
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { FormField } from '../../../../models/entities/form-field.entity';
+import { ApplicationFieldValueTypeValidator } from '../validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationInitialFieldValueBuilder } from './application-initial-field-value.builder';
 
@@ -31,7 +32,9 @@ describe('ApplicationInitialFieldValueBuilder', () => {
 
   beforeEach(() => {
     builder = new ApplicationInitialFieldValueBuilder(
-      new ApplicationFormValueValidator(),
+      new ApplicationFormValueValidator(
+        new ApplicationFieldValueTypeValidator(),
+      ),
     );
   });
 

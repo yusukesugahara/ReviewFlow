@@ -12,7 +12,7 @@ import {
   isSpaceNeedsActionApplication,
   normalizeSubmissionSearchParams,
   paginateApplications,
-} from "@/app/(authorized)/space/[spaceId]/submissions/_components/space-submissions.helpers";
+} from "@/app/(authorized)/space/[spaceId]/submissions/_utils/space-submissions.helpers";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 const row = {

@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getApplicationSetupRedirectTarget } from "./redirect-target";
+import { getApplicationSetupRedirectTarget } from "./_utils/redirect-target";
 import type { ApplicationSetupRedirectPageProps } from "./types";
 
 export default async function AdminApplicationSetupPage({

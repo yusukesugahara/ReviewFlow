@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { DynamicDateFieldInput } from "@/components/applications/dynamic-date-field-input";
+import { DynamicDateFieldInput } from "@/components/applications/dynamic-fields/dynamic-date-field-input";
 
 const field = {
   id: "date-1",

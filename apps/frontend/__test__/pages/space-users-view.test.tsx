@@ -6,7 +6,7 @@ jest.mock("@/app/(authorized)/space/users/actions", () => ({
   addSpaceMemberAction: jest.fn(),
 }));
 
-jest.mock("@/app/(authorized)/space/users/space-users-table", () => ({
+jest.mock("@/app/(authorized)/space/users/_components/space-users-table", () => ({
   SpaceUsersTable: ({ members }: { members: Array<{ email: string }> }) => (
     <table>
       <tbody>

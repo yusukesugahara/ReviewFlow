@@ -6,6 +6,10 @@ import { UserRole } from '../../../../models/constants/user-role';
 import { GroupMember } from '../../../../models/entities/group-member.entity';
 import { User } from '../../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../../models/repositories/groups.repository';
+import {
+  BusinessAuditAction,
+  BusinessAuditLogService,
+} from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from '../../users/services/users.service';
 import type {
   AddGroupMemberDto,
@@ -19,6 +23,7 @@ export class GroupMembersService {
     private readonly groupsRepository: GroupsRepository,
     private readonly usersService: UsersService,
     private readonly spaceAccess: SpaceAccessService,
+    private readonly auditLogs: BusinessAuditLogService,
   ) {}
 
   async listMembers(
@@ -75,6 +80,13 @@ export class GroupMembersService {
     });
 
     saved.user = user;
+    await this.auditLogs.recordSpaceMemberEvent({
+      actionType: BusinessAuditAction.SPACE_MEMBER_ADDED,
+      actor,
+      member: saved,
+      groupRoleTo: saved.role,
+    });
+
     return saved;
   }
 
@@ -94,8 +106,19 @@ export class GroupMembersService {
       await this.assertAnotherAdminRemains(groupId, actor.tenantId, userId);
     }
 
+    const previousRole = member.role;
     member.role = dto.role;
-    return this.groupsRepository.saveMember(member);
+    const saved = await this.groupsRepository.saveMember(member);
+
+    await this.auditLogs.recordSpaceMemberEvent({
+      actionType: BusinessAuditAction.SPACE_MEMBER_ROLE_CHANGED,
+      actor,
+      member: saved,
+      groupRoleFrom: previousRole,
+      groupRoleTo: saved.role,
+    });
+
+    return saved;
   }
 
   async removeMember(
@@ -111,6 +134,12 @@ export class GroupMembersService {
     }
 
     await this.groupsRepository.deleteMember(member.id);
+    await this.auditLogs.recordSpaceMemberEvent({
+      actionType: BusinessAuditAction.SPACE_MEMBER_REMOVED,
+      actor,
+      member,
+      groupRoleFrom: member.role,
+    });
   }
 
   async leave(groupId: string, actor: AuthUserPayload): Promise<void> {
@@ -122,6 +151,12 @@ export class GroupMembersService {
     }
 
     await this.groupsRepository.deleteMember(member.id);
+    await this.auditLogs.recordSpaceMemberEvent({
+      actionType: BusinessAuditAction.SPACE_MEMBER_LEFT,
+      actor,
+      member,
+      groupRoleFrom: member.role,
+    });
   }
 
   private async assertTenantAdminCanManageGroup(

@@ -5,7 +5,7 @@ import {
   type ApplicationSetupError,
 } from "@/lib/constants/application-setup";
 import { updateReturnedApplicationAction } from "./actions";
-import { getSpaceApplicationEditPageData } from "./application-edit-page-data";
+import { getSpaceApplicationEditPageData } from "./_data/application-edit-page-data";
 import type { SpaceApplicationEditPageProps } from "./types";
 import {
   ReturnedApplicationCorrectionView,

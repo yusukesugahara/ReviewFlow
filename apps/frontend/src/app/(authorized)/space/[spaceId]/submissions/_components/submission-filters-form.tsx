@@ -2,12 +2,12 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { getApplicationStatusLabel } from "@/components/applications/application-status";
+import { getApplicationStatusLabel } from "@/components/applications/status/application-status";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 import { SubmissionDateFilterPicker } from "./submission-date-filter-picker";
 import { SubmissionSearchSubmitButton } from "./submission-search-submit-button";
 import { SubmissionStatusFilterSelect } from "./submission-status-filter-select";
-import type { SubmissionFilters } from "./space-submissions.helpers";
+import type { SubmissionFilters } from "../_utils/space-submissions.helpers";
 
 const SUBMISSION_STATUS_OPTIONS = [
   APPLICATION_STATUSES.submitted,

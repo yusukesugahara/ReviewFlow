@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { Button } from "@/components/ui/button";
-import { ApplicationEmptyState } from "@/components/applications/application-empty-state";
+import { ApplicationEmptyState } from "@/components/applications/list/application-empty-state";
 
 describe("ApplicationEmptyState", () => {
   // テスト内容: メッセージと任意のアクションが表示されることを確認する

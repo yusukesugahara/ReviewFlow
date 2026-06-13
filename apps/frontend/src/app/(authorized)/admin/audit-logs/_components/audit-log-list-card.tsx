@@ -5,14 +5,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import type { EnrichedAuditRow } from "../audit-log-view-model";
+import type { EnrichedAuditRow } from "../_view-models/audit-log-view-model";
 import type { AdminAuditLogsViewProps } from "../types";
 import { AuditLogFiltersForm } from "./audit-log-filters-form";
 import { AuditLogTable } from "./audit-log-table";
 
 type AuditLogListCardProps = Pick<
   AdminAuditLogsViewProps,
-  "createdFrom" | "createdTo" | "outcome" | "query" | "risk"
+  "createdFrom" | "createdTo" | "query" | "targetType"
 > & {
   filteredRows: EnrichedAuditRow[];
   hasActiveFilters: boolean;
@@ -25,9 +25,8 @@ export function AuditLogListCard({
   filteredRows,
   hasActiveFilters,
   listDescription,
-  outcome,
   query,
-  risk,
+  targetType,
 }: AuditLogListCardProps) {
   return (
     <Card>
@@ -39,9 +38,8 @@ export function AuditLogListCard({
         <AuditLogFiltersForm
           createdFrom={createdFrom}
           createdTo={createdTo}
-          outcome={outcome}
           query={query}
-          risk={risk}
+          targetType={targetType}
         />
         {filteredRows.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">

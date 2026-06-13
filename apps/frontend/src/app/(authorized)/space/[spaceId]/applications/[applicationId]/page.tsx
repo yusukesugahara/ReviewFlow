@@ -8,7 +8,7 @@ import {
   submitAction,
   updateDescriptionAction,
 } from "./actions";
-import { getSpaceApplicationDetailPageData } from "./application-detail-page-data";
+import { getSpaceApplicationDetailPageData } from "./_data/application-detail-page-data";
 import type { SpaceApplicationDetailPageProps } from "./types";
 import {
   ApplicationDetailErrorView,
