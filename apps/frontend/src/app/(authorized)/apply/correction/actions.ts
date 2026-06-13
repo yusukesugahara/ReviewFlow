@@ -9,7 +9,7 @@ import { validateRequiredDynamicFields } from "@/components/applications/dynamic
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { applicantHeaders } from "../form/server";
+import { applicantHeaders } from "../form/_utils/server";
 import type { PublicCorrectionSubmitState } from "./types";
 
 const publicCorrectionFormSchema = z.object({

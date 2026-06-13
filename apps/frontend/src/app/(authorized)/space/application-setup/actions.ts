@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 import {
   createApplicationSetup,
   updateApplicationSetup,
-} from "./application-setup-api";
-import { readApplicationSetupActionInput } from "./application-setup-action-input";
+} from "./_api/application-setup-api";
+import { readApplicationSetupActionInput } from "./_utils/application-setup-action-input";
 import {
   buildApplicationSetupDetailPath,
   buildApplicationSetupListPath,
@@ -14,7 +14,7 @@ import {
   resolveCreateApplicationSetupRedirectBase,
   resolveUpdateApplicationSetupRedirectBase,
   setupErrorRedirectUrl,
-} from "./application-setup-navigation";
+} from "./_utils/application-setup-navigation";
 
 export async function submitApplicationSetupAction(
   formData: FormData,

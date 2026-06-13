@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { Users, type LucideIcon } from "lucide-react";
-import { LogoutForm } from "@/app/(authorized)/logout/logout-form";
+import { LogoutForm } from "@/app/(authorized)/logout/_components/logout-form";
 import {
   buildSidebarLinkRoute,
   buildSpaceSwitcherHref,

@@ -1,6 +1,6 @@
 import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { SpaceUsersTable } from "@/app/(authorized)/space/users/space-users-table";
+import { SpaceUsersTable } from "@/app/(authorized)/space/users/_components/space-users-table";
 
 jest.mock("@/app/(authorized)/space/users/actions", () => ({
   removeSpaceMemberAction: jest.fn(),

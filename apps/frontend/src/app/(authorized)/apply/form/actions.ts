@@ -13,7 +13,7 @@ import type {
   CreatePublicApplicationBody,
   CreatePublicApplicationSuccessJson,
 } from "@/lib/schema";
-import { applicantHeaders } from "./server";
+import { applicantHeaders } from "./_utils/server";
 import type { PublicApplicationSubmitState } from "./types";
 
 const publicApplicationFormSchema = z.object({

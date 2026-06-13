@@ -3,7 +3,7 @@ import {
   buildSummaryFilterHref,
   type SubmissionSummaryCounts,
   type SummaryFilter,
-} from "./space-submissions.helpers";
+} from "../_utils/space-submissions.helpers";
 
 type SubmissionSummaryCardsProps = {
   activeSummary: SummaryFilter;

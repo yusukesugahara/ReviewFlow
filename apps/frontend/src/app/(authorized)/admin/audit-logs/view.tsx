@@ -2,7 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { AuditLogListCard } from "./_components/audit-log-list-card";
 import { AuditLogSummaryCards } from "./_components/audit-log-summary-cards";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
-import { buildAdminAuditLogsViewModel } from "./audit-log-view-model";
+import { buildAdminAuditLogsViewModel } from "./_view-models/audit-log-view-model";
 
 export function AdminAuditLogsView({
   createdFrom,

@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PublicApplicationForm } from "./public-application-form";
+import { PublicApplicationForm } from "./_components/public-application-form";
 import type {
   PublicApplicationFormErrorViewProps,
   PublicApplicationFormViewProps,

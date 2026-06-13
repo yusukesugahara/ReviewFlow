@@ -1,5 +1,5 @@
 import { AdminSpacesView } from "./view";
-import { getAdminSpacesPageData } from "./admin-spaces-page-data";
+import { getAdminSpacesPageData } from "./_data/page-data";
 import type { AdminSpacesPageProps } from "./types";
 
 export default async function AdminSpacesPage({ searchParams }: AdminSpacesPageProps) {

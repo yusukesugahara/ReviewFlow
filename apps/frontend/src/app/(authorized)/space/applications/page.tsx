@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { buildSpaceApplicationsHref } from "@/components/applications/routing/application-routes";
-import { getFallbackSpaceContext } from "./page-data";
+import { getFallbackSpaceContext } from "./_data/page-data";
 import type { LegacySpaceApplicationsPageProps } from "./types";
 import { LegacySpaceApplicationsEmptyView } from "./view";
 

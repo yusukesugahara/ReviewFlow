@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SPACE_ROLE_OPTIONS } from "@/lib/constants/roles";
-import type { SpaceUserTableMember } from "../space-users-table";
+import type { SpaceUserTableMember } from "./space-users-table";
 
 type SpaceUserRoleDialogProps = {
   action: (formData: FormData) => Promise<void>;

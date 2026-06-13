@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
-import type { ApplicationFormListRow } from "./space-applications.helpers";
+import type { ApplicationFormListRow } from "../_utils/space-applications.helpers";
 
 type SpaceApplicationFormsTableProps = {
   onArchive: (row: ApplicationFormListRow) => void;

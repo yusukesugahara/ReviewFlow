@@ -14,7 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   buildDashboardTotals,
   buildSpaceDashboardCardModel,
-} from "./dashboard-view-model";
+} from "./_view-models/dashboard-view-model";
 import type { AdminDashboardViewProps, SpaceDashboardSummary } from "./types";
 
 export function AdminDashboardView({

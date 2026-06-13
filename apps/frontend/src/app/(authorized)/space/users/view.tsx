@@ -21,8 +21,8 @@ import {
   updateSpaceMemberRoleAction,
 } from "./actions";
 import { SpaceUserAddDialog } from "./_components/space-user-add-dialog";
-import { SpaceUsersTable } from "./space-users-table";
-import { buildSpaceUserTableMembers } from "./space-users-view-model";
+import { SpaceUsersTable } from "./_components/space-users-table";
+import { buildSpaceUserTableMembers } from "./_view-models/space-users-view-model";
 import type { SpaceUsersErrorViewProps, SpaceUsersViewProps } from "./types";
 
 export function SpaceUsersView({

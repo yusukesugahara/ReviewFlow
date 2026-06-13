@@ -1,6 +1,6 @@
 import { isApiFailure } from "@/lib/server/api-failure";
 import { SpaceEmptyState } from "@/components/space/space-empty-state";
-import { getSpaceUsersPageData } from "./page-data";
+import { getSpaceUsersPageData } from "./_data/page-data";
 import type { SpaceUsersPageProps } from "./types";
 import { SpaceUsersErrorView, SpaceUsersView } from "./view";
 

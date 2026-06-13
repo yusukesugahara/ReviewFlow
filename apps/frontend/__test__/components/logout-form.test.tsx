@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { LogoutForm } from "@/app/(authorized)/logout/logout-form";
+import { LogoutForm } from "@/app/(authorized)/logout/_components/logout-form";
 
 jest.mock("@/app/(authorized)/logout/actions", () => ({
   logout: jest.fn(),

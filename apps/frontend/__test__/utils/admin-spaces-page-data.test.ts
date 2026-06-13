@@ -8,7 +8,7 @@ import {
   normalizeMembers,
   normalizeTenantUsers,
   statusFromResponse,
-} from "@/app/(authorized)/admin/spaces/admin-spaces-page-data";
+} from "@/app/(authorized)/admin/spaces/_data/page-data";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   AdminSpacesAvailableUsersData,

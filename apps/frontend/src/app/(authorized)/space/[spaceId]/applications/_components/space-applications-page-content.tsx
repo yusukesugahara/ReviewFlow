@@ -25,7 +25,7 @@ import type { SpaceApplicationsPageContentProps } from "@/components/space/space
 import {
   buildApplicationFormListRows,
   type ApplicationFormListRow,
-} from "./space-applications.helpers";
+} from "../_utils/space-applications.helpers";
 import { SpaceApplicationFormsTable } from "./space-application-forms-table";
 import {
   FormDefinitionArchiveDialog,

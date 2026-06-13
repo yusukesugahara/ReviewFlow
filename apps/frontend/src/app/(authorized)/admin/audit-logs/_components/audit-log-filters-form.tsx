@@ -10,7 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AuditLogDateFilterPicker } from "../audit-log-date-filter-picker";
+import { AuditLogDateFilterPicker } from "./audit-log-date-filter-picker";
 import type { AdminAuditLogsViewProps } from "../types";
 
 type AuditLogFiltersFormProps = Pick<

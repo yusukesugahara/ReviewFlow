@@ -6,7 +6,7 @@ import {
   enrichAuditRow,
   shortId,
   textValue,
-} from "@/app/(authorized)/admin/audit-logs/audit-log-helpers";
+} from "@/app/(authorized)/admin/audit-logs/_utils/audit-log-helpers";
 import type { AuditLogItem } from "@/lib/schema";
 
 function metadata(value: Record<string, unknown>): Record<string, never> {

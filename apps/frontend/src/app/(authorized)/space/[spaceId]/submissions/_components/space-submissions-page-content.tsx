@@ -24,7 +24,7 @@ import {
   hasSubmissionFilters,
   paginateApplications,
   type SubmissionFilters,
-} from "./space-submissions.helpers";
+} from "../_utils/space-submissions.helpers";
 
 type SpaceSubmissionsPageContentProps = {
   applications: ApplicationRow[];

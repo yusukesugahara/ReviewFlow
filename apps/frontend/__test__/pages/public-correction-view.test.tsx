@@ -5,7 +5,7 @@ import {
   PublicCorrectionView,
 } from "@/app/(authorized)/apply/correction/view";
 
-jest.mock("@/app/(authorized)/apply/correction/public-correction-form", () => ({
+jest.mock("@/app/(authorized)/apply/correction/_components/public-correction-form", () => ({
   PublicCorrectionForm: ({
     applicationId,
     fields,

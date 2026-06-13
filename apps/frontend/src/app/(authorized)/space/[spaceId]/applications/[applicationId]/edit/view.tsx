@@ -15,7 +15,7 @@ import type {
   EditableApplicationInitialState,
   EditableFormField,
 } from "./types";
-import { buildReturnedCorrectionFormModel } from "./returned-correction-view-model";
+import { buildReturnedCorrectionFormModel } from "./_view-models/returned-correction-view-model";
 
 type SpaceApplicationEditViewProps = EditableApplicationInitialState & {
   action: (formData: FormData) => Promise<void>;

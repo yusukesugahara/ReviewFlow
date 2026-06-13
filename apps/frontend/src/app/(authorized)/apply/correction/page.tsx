@@ -1,5 +1,5 @@
 import { isApiFailure } from "@/lib/server/api-failure";
-import { getPublicCorrectionPageData } from "./page-data";
+import { getPublicCorrectionPageData } from "./_data/page-data";
 import type { PublicCorrectionPageProps } from "./types";
 import {
   PublicCorrectionErrorView,

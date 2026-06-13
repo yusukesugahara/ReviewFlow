@@ -1,4 +1,4 @@
-import { getAdminInvitationsPageData } from "./page-data";
+import { getAdminInvitationsPageData } from "./_data/page-data";
 import type { AdminInvitationsPageProps } from "./types";
 import { AdminInvitationsView } from "./view";
 

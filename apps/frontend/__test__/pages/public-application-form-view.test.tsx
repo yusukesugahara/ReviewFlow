@@ -5,7 +5,7 @@ import {
   PublicApplicationSubmittedView,
 } from "@/app/(authorized)/apply/form/view";
 
-jest.mock("@/app/(authorized)/apply/form/public-application-form", () => ({
+jest.mock("@/app/(authorized)/apply/form/_components/public-application-form", () => ({
   PublicApplicationForm: ({
     definition,
     initialFormError,
