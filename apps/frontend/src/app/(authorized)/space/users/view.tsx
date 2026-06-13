@@ -11,33 +11,18 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { SPACE_ROLE_OPTIONS, SPACE_ROLES } from "@/lib/constants/roles";
 import {
-  addSpaceMemberAction,
   removeSpaceMemberAction,
   updateSpaceMemberRoleAction,
 } from "./actions";
-import { SpaceUsersTable } from "./space-users-table";
-import { buildSpaceUserTableMembers } from "./space-users-view-model";
+import { SpaceUserAddDialog } from "./_components/space-user-add-dialog";
+import { SpaceUsersTable } from "./_components/space-users-table";
+import { buildSpaceUserTableMembers } from "./_view-models/space-users-view-model";
 import type { SpaceUsersErrorViewProps, SpaceUsersViewProps } from "./types";
 
 export function SpaceUsersView({
@@ -50,7 +35,6 @@ export function SpaceUsersView({
   spaceId,
 }: SpaceUsersViewProps) {
   const [isAddMemberOpen, setIsAddMemberOpen] = useState(false);
-  const hasAvailableUsers = availableUsers.length > 0;
 
   return (
     <div className="space-y-6">
@@ -104,71 +88,11 @@ export function SpaceUsersView({
       </Card>
 
       {isAddMemberOpen ? (
-        <DialogContent
-          titleId="space-user-add-title"
-          descriptionId="space-user-add-description"
+        <SpaceUserAddDialog
+          availableUsers={availableUsers}
           onClose={() => setIsAddMemberOpen(false)}
-        >
-          <DialogHeader>
-            <DialogTitle id="space-user-add-title">
-              ユーザをスペースに追加
-            </DialogTitle>
-            <DialogDescription id="space-user-add-description">
-              同一テナント内の既存ユーザを選択して、このスペースへ追加します
-            </DialogDescription>
-          </DialogHeader>
-          <form
-            action={addSpaceMemberAction.bind(null, spaceId)}
-            className="grid gap-3 md:grid-cols-[minmax(0,1fr)_160px_auto]"
-          >
-            <div className="space-y-1">
-              <Label htmlFor="space-user-add-user">ユーザ</Label>
-              <Select name="userId" required disabled={!hasAvailableUsers}>
-                <SelectTrigger id="space-user-add-user" className="bg-background">
-                  <SelectValue
-                    placeholder={
-                      hasAvailableUsers
-                        ? "追加するユーザを選択"
-                        : "追加できるユーザがいません"
-                    }
-                  />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableUsers.map((user) => (
-                    <SelectItem key={user.id} value={user.id}>
-                      {user.name ?? user.email} / {user.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <Label htmlFor="space-user-add-role">スペースロール</Label>
-              <Select
-                name="role"
-                defaultValue={SPACE_ROLES.user}
-                disabled={!hasAvailableUsers}
-              >
-                <SelectTrigger id="space-user-add-role" className="bg-background">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {SPACE_ROLE_OPTIONS.map((option) => (
-                    <SelectItem key={option.value} value={option.value}>
-                      {option.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-1">
-              <span className="block h-5" aria-hidden="true" />
-              <Button type="submit" disabled={!hasAvailableUsers}>
-                追加
-              </Button>
-            </div>
-          </form>
-        </DialogContent>
+          spaceId={spaceId}
+        />
       ) : null}
     </div>
   );

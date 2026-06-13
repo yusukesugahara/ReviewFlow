@@ -1021,9 +1021,23 @@ export interface components {
             groupId?: string | null;
             actorUserId?: string | null;
             actorEmail?: string | null;
+            actorType: string;
+            actorEmailSnapshot?: string | null;
             actionType: string;
             targetType: string;
             targetId?: string | null;
+            targetUserId?: string | null;
+            targetEmailSnapshot?: string | null;
+            applicationId?: string | null;
+            statusFrom?: string | null;
+            statusTo?: string | null;
+            stepOrderFrom?: number | null;
+            stepOrderTo?: number | null;
+            roleFrom?: string | null;
+            roleTo?: string | null;
+            groupRoleFrom?: string | null;
+            groupRoleTo?: string | null;
+            summary?: string | null;
             metadataJson?: Record<string, never>;
             createdAt: string;
         };
@@ -1792,7 +1806,15 @@ export interface operations {
                 limit?: number;
                 /** @description action_type で前方一致絞り込み */
                 actionType?: string;
-                /** @description action_type / target_type / target_id / actor_user_id / group_id の部分一致検索 */
+                /** @description target_type の完全一致絞り込み */
+                targetType?: string;
+                /** @description application_id の完全一致絞り込み */
+                applicationId?: string;
+                /** @description group_id の完全一致絞り込み */
+                groupId?: string;
+                /** @description target_user_id の完全一致絞り込み */
+                targetUserId?: string;
+                /** @description action_type / summary / actor / target / application / group の部分一致検索 */
                 q?: string;
                 /** @description created_at の検索開始日時（ISO 8601） */
                 createdFrom?: string;

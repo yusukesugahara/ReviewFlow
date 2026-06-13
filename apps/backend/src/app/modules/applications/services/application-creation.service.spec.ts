@@ -8,6 +8,7 @@ import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationCreationRepository } from '../../../../models/repositories/application-creation.repository';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
+import { ApplicationFieldValueTypeValidator } from '../validators/application-field-value-type.validator';
 import { ApplicationCreationContextLoader } from './application-creation-context.loader';
 import { ApplicationCreationService } from './application-creation.service';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
@@ -77,7 +78,9 @@ describe('ApplicationCreationService', () => {
       flowResolver as unknown as ApplicationApprovalFlowResolver,
     );
     const initialFieldValueBuilder = new ApplicationInitialFieldValueBuilder(
-      new ApplicationFormValueValidator(),
+      new ApplicationFormValueValidator(
+        new ApplicationFieldValueTypeValidator(),
+      ),
     );
     service = new ApplicationCreationService(
       creationRepository as unknown as ApplicationCreationRepository,

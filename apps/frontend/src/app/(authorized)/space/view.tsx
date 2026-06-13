@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock3,
   FileText,
+  LayoutDashboard,
   ListChecks,
   RotateCcw,
   Users,
@@ -14,7 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   buildDashboardTotals,
   buildSpaceDashboardCardModel,
-} from "./dashboard-view-model";
+} from "./_view-models/dashboard-view-model";
 import type { AdminDashboardViewProps, SpaceDashboardSummary } from "./types";
 
 export function AdminDashboardView({
@@ -41,7 +42,7 @@ export function AdminDashboardView({
     <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-semibold tracking-tight text-slate-950">
-          スペース概要
+          スペースダッシュボード
         </h1>
         <p className="text-sm text-slate-600">
           所属スペースごとの申請状況、フォーム、メンバー構成を確認できます。
@@ -171,9 +172,21 @@ function SpaceSummaryCard({
 
         <div className="flex flex-wrap items-center justify-end gap-2">
           <Button asChild size="sm" variant="outline" className="bg-white">
+            <Link href={`/space/${encodeURIComponent(space.id)}`}>
+              <LayoutDashboard className="size-4" aria-hidden="true" />
+              概要
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="bg-white">
             <Link href={`/space/${encodeURIComponent(space.id)}/applications`}>
               <ListChecks className="size-4" aria-hidden="true" />
               フォーム
+            </Link>
+          </Button>
+          <Button asChild size="sm" variant="outline" className="bg-white">
+            <Link href={`/space/${encodeURIComponent(space.id)}/submissions`}>
+              <FileText className="size-4" aria-hidden="true" />
+              申請一覧
             </Link>
           </Button>
         </div>

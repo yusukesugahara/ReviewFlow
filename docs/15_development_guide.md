@@ -73,6 +73,17 @@ npm run dev:frontend
 
 バックエンド単体起動時は `.env.dev` に PostgreSQL 接続情報を設定する。
 
+### デモデータの入れ直し
+
+ローカル確認用のデモデータは次のコマンドで投入する。既定では Docker Compose の PostgreSQL（`app_dev`）に接続し、既存テーブルを全削除してから現在の実装に合うシード値を入れ直す。
+
+```bash
+docker compose up postgres -d
+npm run seed:demo -w backend
+```
+
+既存データを全削除せず、デモテナントだけ置き換える場合は `SEED_RESET_DATABASE=false` を付ける。
+
 ## テスト
 
 ### バックエンド

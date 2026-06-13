@@ -7,9 +7,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { ApplicationEmptyState } from "@/components/applications/application-empty-state";
-import { ApplicationListTable } from "@/components/applications/application-list-table";
-import { buildSpaceSubmissionDetailHref } from "@/components/applications/application-routes";
+import { ApplicationEmptyState } from "@/components/applications/list/application-empty-state";
+import { ApplicationListTable } from "@/components/applications/list/application-list-table";
+import { buildSpaceSubmissionDetailHref } from "@/components/applications/routing/application-routes";
 import type { ExportJobResponse } from "@/lib/schema";
 import { SubmissionCsvExportControls } from "./submission-csv-export-controls";
 import { SubmissionFiltersForm } from "./submission-filters-form";
@@ -24,7 +24,7 @@ import {
   hasSubmissionFilters,
   paginateApplications,
   type SubmissionFilters,
-} from "./space-submissions.helpers";
+} from "../_utils/space-submissions.helpers";
 
 type SpaceSubmissionsPageContentProps = {
   applications: ApplicationRow[];

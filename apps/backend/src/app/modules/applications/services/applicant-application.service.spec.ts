@@ -2,6 +2,7 @@ import { ApplicationStatus } from '../../../../models/constants/application-stat
 import type { Application } from '../../../../models/entities/application.entity';
 import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
+import type { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import type { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
 import { ApplicantApplicationAccessService } from './applicant-application-access.service';
 import type { ApplicationCorrectionService } from './application-correction.service';
@@ -64,6 +65,9 @@ describe('ApplicantApplicationService', () => {
     resubmit: jest.Mock;
     submit: jest.Mock;
   };
+  let auditLogs: {
+    recordApplicationEvent: jest.Mock;
+  };
   let service: ApplicantApplicationService;
 
   beforeEach(() => {
@@ -90,6 +94,9 @@ describe('ApplicantApplicationService', () => {
       resubmit: jest.fn(),
       submit: jest.fn(),
     };
+    auditLogs = {
+      recordApplicationEvent: jest.fn(),
+    };
     const applicantAccess = new ApplicantApplicationAccessService(
       applicationsRepository as unknown as ApplicationQueryRepository,
     );
@@ -101,6 +108,7 @@ describe('ApplicantApplicationService', () => {
       flowResolver as unknown as ApplicationApprovalFlowResolver,
       progressService as unknown as ApplicationProgressService,
       submissionService as unknown as ApplicationSubmissionService,
+      auditLogs as unknown as BusinessAuditLogService,
     );
   });
 
@@ -134,6 +142,18 @@ describe('ApplicantApplicationService', () => {
       }),
     );
     expect(submissionService.submit).toHaveBeenCalledWith('tenant-1', created);
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.created',
+        app: created,
+      }),
+    );
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.submitted',
+        app: created,
+      }),
+    );
     expect(applicationsRepository.findById).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
       id: 'created-app',

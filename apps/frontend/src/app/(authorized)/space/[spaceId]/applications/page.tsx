@@ -1,5 +1,5 @@
 import { isApiFailure } from "@/lib/server/api-failure";
-import { getSpaceApplicationsPageData } from "./page-data";
+import { getSpaceApplicationsPageData } from "./_data/page-data";
 import type { SpaceApplicationsPageProps } from "./types";
 import { SpaceApplicationsView } from "./view";
 

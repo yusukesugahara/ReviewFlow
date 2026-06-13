@@ -2,6 +2,7 @@ import { ApplicationStatus } from '../../../../models/constants/application-stat
 import type { Application } from '../../../../models/entities/application.entity';
 import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
+import type { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import type { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { ApplicationApprovalFlowResolver } from '../resolvers/application-approval-flow.resolver';
 import type { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
@@ -53,6 +54,9 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
     resubmit: jest.Mock;
     submit: jest.Mock;
   };
+  let auditLogs: {
+    recordApplicationEvent: jest.Mock;
+  };
   let service: ApplicationUserSubmissionUseCaseService;
 
   beforeEach(() => {
@@ -75,6 +79,9 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       resubmit: jest.fn(),
       submit: jest.fn(),
     };
+    auditLogs = {
+      recordApplicationEvent: jest.fn(),
+    };
     service = new ApplicationUserSubmissionUseCaseService(
       applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
@@ -82,6 +89,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       flowResolver as unknown as ApplicationApprovalFlowResolver,
       queryService as unknown as ApplicationQueryService,
       submissionService as unknown as ApplicationSubmissionService,
+      auditLogs as unknown as BusinessAuditLogService,
     );
   });
 
@@ -121,6 +129,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       expect.objectContaining({ id: 'applicant-user-1' }),
       'app-1',
     );
+    expect(auditLogs.recordApplicationEvent).not.toHaveBeenCalled();
   });
 
   it('does not resolve an approval flow when patch has no approvalFlowId', async () => {
@@ -144,6 +153,12 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
     await expect(service.submit(actor(), 'app-1')).resolves.toBe(hydrated);
 
     expect(submissionService.submit).toHaveBeenCalledWith('tenant-1', row);
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.submitted',
+        app: row,
+      }),
+    );
   });
 
   it('resubmits an editable returned application', async () => {
@@ -155,6 +170,12 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
     await expect(service.resubmit(actor(), 'app-1')).resolves.toBe(hydrated);
 
     expect(submissionService.resubmit).toHaveBeenCalledWith('tenant-1', row);
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.resubmitted',
+        app: row,
+      }),
+    );
   });
 
   it('rejects operations when the applicant application cannot be loaded', async () => {

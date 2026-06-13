@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { SubmissionFiltersForm } from "@/app/(authorized)/space/[spaceId]/submissions/_components/submission-filters-form";
 import { SubmissionPaginationControls } from "@/app/(authorized)/space/[spaceId]/submissions/_components/submission-pagination-controls";
 import { SubmissionSummaryCards } from "@/app/(authorized)/space/[spaceId]/submissions/_components/submission-summary-cards";
-import type { SubmissionFilters } from "@/app/(authorized)/space/[spaceId]/submissions/_components/space-submissions.helpers";
+import type { SubmissionFilters } from "@/app/(authorized)/space/[spaceId]/submissions/_utils/space-submissions.helpers";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 const filters: SubmissionFilters = {

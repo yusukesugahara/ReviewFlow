@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ApplicationFormSubmitButton } from "@/components/applications/application-form-submit-button";
-import type { DynamicFormField } from "@/components/applications/dynamic-fields";
+import { ApplicationFormSubmitButton } from "@/components/applications/actions/application-form-submit-button";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields/dynamic-fields";
 
 const fields: DynamicFormField[] = [
   {

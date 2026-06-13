@@ -4,11 +4,11 @@ import {
   getFieldCorrectionItems,
   mapCorrectionsToReturnedActions,
   progressStatusMeta,
-} from "@/components/applications/approval-progress.helpers";
+} from "@/components/applications/approval-progress/approval-progress.helpers";
 import type {
   ApplicationCorrection,
   ApplicationProgressStep,
-} from "@/components/applications/application-detail.types";
+} from "@/components/applications/detail/application-detail.types";
 
 const reviewer = {
   id: "user-1",

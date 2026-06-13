@@ -3,7 +3,7 @@
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
-import type { AppSidebarSpace } from "@/components/app-sidebar.types";
+import type { AppSidebarSpace } from "@/components/layout/app-sidebar.types";
 import type { GroupsListSuccessJson } from "@/lib/schema";
 
 export async function getAdminLayoutSpaces(): Promise<AppSidebarSpace[]> {

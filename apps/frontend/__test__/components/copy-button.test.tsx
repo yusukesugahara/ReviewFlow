@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { CopyButton } from "@/components/copy-button";
+import { CopyButton } from "@/components/shared/copy-button";
 
 describe("CopyButton", () => {
   it("copies values with the default labels", async () => {

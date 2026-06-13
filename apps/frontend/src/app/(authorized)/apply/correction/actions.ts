@@ -2,14 +2,14 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import type { DynamicFormField } from "@/components/applications/dynamic-fields";
-import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-field-form-data";
-import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-field-schema";
-import { validateRequiredDynamicFields } from "@/components/applications/dynamic-field-validation";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields/dynamic-fields";
+import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-fields/dynamic-field-form-data";
+import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-fields/dynamic-field-schema";
+import { validateRequiredDynamicFields } from "@/components/applications/dynamic-fields/dynamic-field-validation";
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { applicantHeaders } from "../form/server";
+import { applicantHeaders } from "../form/_utils/server";
 import type { PublicCorrectionSubmitState } from "./types";
 
 const publicCorrectionFormSchema = z.object({

@@ -2,8 +2,8 @@ import {
   canManageSidebarSpace,
   getPrimarySidebarNavItems,
   tenantAdminSidebarNavItems,
-} from "@/components/app-sidebar-navigation";
-import type { AppSidebarSpace } from "@/components/app-sidebar.types";
+} from "@/components/layout/app-sidebar-navigation";
+import type { AppSidebarSpace } from "@/components/layout/app-sidebar.types";
 
 const userSpace: AppSidebarSpace = {
   id: "space-1",
@@ -25,7 +25,7 @@ describe("app sidebar navigation", () => {
         isTenantAdmin: false,
         variant: "workspace",
       }).map((item) => item.label),
-    ).toEqual(["申請フォーム一覧", "申請一覧", "申請フォーム作成"]);
+    ).toEqual(["概要", "申請フォーム一覧", "申請一覧", "申請フォーム作成"]);
 
     expect(
       getPrimarySidebarNavItems({

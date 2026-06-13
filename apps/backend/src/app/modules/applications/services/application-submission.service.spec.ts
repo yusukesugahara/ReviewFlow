@@ -11,6 +11,7 @@ import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
+import { ApplicationFieldValueTypeValidator } from '../validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationSubmissionContextLoader } from './application-submission-context.loader';
 import { ApplicationSubmissionService } from './application-submission.service';
@@ -107,7 +108,9 @@ describe('ApplicationSubmissionService', () => {
     service = new ApplicationSubmissionService(
       contextLoader,
       submissionRepository as unknown as ApplicationSubmissionRepository,
-      new ApplicationFormValueValidator(),
+      new ApplicationFormValueValidator(
+        new ApplicationFieldValueTypeValidator(),
+      ),
       transitionPolicy,
     );
   });

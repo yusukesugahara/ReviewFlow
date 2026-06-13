@@ -1,6 +1,7 @@
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import type { Application } from '../../../../models/entities/application.entity';
 import type { SpaceAccessService } from '../../groups/services/space-access.service';
+import type { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import type { CreateApplicationDto } from '../dto/applications.dto';
 import type { ApplicationCreationService } from './application-creation.service';
 import { ApplicationCreationUseCaseService } from './application-creation-use-case.service';
@@ -45,6 +46,9 @@ describe('ApplicationCreationUseCaseService', () => {
   let creationService: {
     create: jest.Mock;
   };
+  let auditLogs: {
+    recordApplicationEvent: jest.Mock;
+  };
   let service: ApplicationCreationUseCaseService;
 
   beforeEach(() => {
@@ -54,9 +58,13 @@ describe('ApplicationCreationUseCaseService', () => {
     creationService = {
       create: jest.fn(),
     };
+    auditLogs = {
+      recordApplicationEvent: jest.fn(),
+    };
     service = new ApplicationCreationUseCaseService(
       spaceAccess as unknown as SpaceAccessService,
       creationService as unknown as ApplicationCreationService,
+      auditLogs as unknown as BusinessAuditLogService,
     );
   });
 
@@ -79,6 +87,12 @@ describe('ApplicationCreationUseCaseService', () => {
       'user@example.com',
       'user-1',
       input,
+    );
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.created',
+        app: created,
+      }),
     );
   });
 

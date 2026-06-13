@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { toast } from "sonner";
-import { PublicApplicationUrlCopyButton } from "@/components/applications/public-application-url-card";
+import { PublicApplicationUrlCopyButton } from "@/components/applications/detail/public-application-url-card";
 
 jest.mock("sonner", () => ({
   toast: {

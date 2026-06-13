@@ -1,7 +1,7 @@
 import {
   buildApplicationFormListRows,
   isFormSetupApplication,
-} from "@/app/(authorized)/space/[spaceId]/applications/_components/space-applications.helpers";
+} from "@/app/(authorized)/space/[spaceId]/applications/_utils/space-applications.helpers";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 const definition = {

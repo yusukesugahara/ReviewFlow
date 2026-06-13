@@ -13,7 +13,7 @@ import {
   archiveFormDefinitionAction,
   restoreFormDefinitionAction,
 } from "@/app/(authorized)/space/[spaceId]/applications/actions";
-import type { ApplicationFormListRow } from "./space-applications.helpers";
+import type { ApplicationFormListRow } from "../_utils/space-applications.helpers";
 
 type FormDefinitionActionDialogProps = {
   onCancel: () => void;

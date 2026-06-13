@@ -2,10 +2,10 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import type { DynamicFormField } from "@/components/applications/dynamic-fields";
-import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-field-form-data";
-import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-field-schema";
-import { appendQueryParams } from "@/components/applications/application-routes";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields/dynamic-fields";
+import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-fields/dynamic-field-form-data";
+import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-fields/dynamic-field-schema";
+import { appendQueryParams } from "@/components/applications/routing/application-routes";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 

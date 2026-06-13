@@ -6,6 +6,7 @@ import { GroupMember } from '../../../../models/entities/group-member.entity';
 import { Group } from '../../../../models/entities/group.entity';
 import { User } from '../../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../../models/repositories/groups.repository';
+import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from '../../users/services/users.service';
 import { GroupMembersService } from './group-members.service';
 import { GroupsService } from './groups.service';
@@ -43,6 +44,9 @@ describe('GroupsService', () => {
       | 'leave'
     >
   >;
+  let auditLogs: {
+    recordSpaceEvent: jest.Mock;
+  };
 
   const systemAdmin = {
     id: 'sys-1',
@@ -79,6 +83,9 @@ describe('GroupsService', () => {
       removeMember: jest.fn(),
       leave: jest.fn(),
     };
+    auditLogs = {
+      recordSpaceEvent: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -86,6 +93,7 @@ describe('GroupsService', () => {
         { provide: GroupsRepository, useValue: groupsRepository },
         { provide: UsersService, useValue: usersService },
         { provide: GroupMembersService, useValue: groupMembers },
+        { provide: BusinessAuditLogService, useValue: auditLogs },
       ],
     }).compile();
 
@@ -141,14 +149,13 @@ describe('GroupsService', () => {
   });
 
   it('creates a group with initial group admins', async () => {
+    const createdGroup = group({
+      id: 'group-1',
+      name: 'Team A',
+      createdByUserId: 'sys-1',
+    });
     groupsRepository.findGroupByTenantAndName.mockResolvedValue(null);
-    groupsRepository.createGroupWithAdmins.mockResolvedValue(
-      group({
-        id: 'group-1',
-        name: 'Team A',
-        createdByUserId: 'sys-1',
-      }),
-    );
+    groupsRepository.createGroupWithAdmins.mockResolvedValue(createdGroup);
     usersService.findAllByIdsInTenant.mockResolvedValue([
       { id: 'admin-1' } as User,
       { id: 'admin-2' } as User,
@@ -171,6 +178,13 @@ describe('GroupsService', () => {
         adminUserIds: ['admin-1', 'admin-2'],
       }),
     );
+    expect(auditLogs.recordSpaceEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'space.created',
+        actor: systemAdmin,
+        group: createdGroup,
+      }),
+    );
   });
 
   it('rejects initial admins outside the tenant', async () => {
@@ -188,13 +202,19 @@ describe('GroupsService', () => {
   });
 
   it('removes a tenant-scoped group', async () => {
-    groupsRepository.findGroupByIdInTenant.mockResolvedValue(
-      group({ id: 'group-1' }),
-    );
+    const targetGroup = group({ id: 'group-1' });
+    groupsRepository.findGroupByIdInTenant.mockResolvedValue(targetGroup);
 
     await service.remove('group-1', systemAdmin);
 
     expect(groupsRepository.deleteGroup).toHaveBeenCalledWith('group-1');
+    expect(auditLogs.recordSpaceEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'space.deleted',
+        actor: systemAdmin,
+        group: targetGroup,
+      }),
+    );
   });
 
   it('delegates member operations to GroupMembersService', async () => {

@@ -5,7 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { PublicCorrectionForm } from "./public-correction-form";
+import { PublicCorrectionForm } from "./_components/public-correction-form";
 import type {
   PublicCorrectionFormDefinition,
   PublicCorrectionResponse,

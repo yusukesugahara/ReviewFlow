@@ -1,6 +1,6 @@
 "use client";
 
-import { AuthForm } from "../auth-form";
+import { AuthForm } from "../_components/auth/auth-form";
 import { signup } from "./actions";
 import type { SignupViewProps } from "./types";
 

@@ -1,13 +1,13 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ApprovalProgressDiagram } from "@/components/applications/approval-progress-diagram";
+import { ApprovalProgressDiagram } from "@/components/applications/approval-progress/approval-progress-diagram";
 import type {
   ApplicationCorrection,
   ApplicationDetailViewModel,
   ApplicationFormField,
   ApplicationProgressStep,
   ApplicationProgressUser,
-} from "@/components/applications/application-detail.types";
+} from "@/components/applications/detail/application-detail.types";
 
 const reviewer: ApplicationProgressUser = {
   id: "user-1",

@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import {
   buildSubmissionsPageHref,
   type SubmissionFilters,
-} from "./space-submissions.helpers";
+} from "../_utils/space-submissions.helpers";
 
 type SubmissionPaginationControlsProps = {
   currentPage: number;

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createExportJobSchema } from "@/lib/auth-schema";
-import { buildSpaceSubmissionsHref } from "@/components/applications/application-routes";
+import { buildSpaceSubmissionsHref } from "@/components/applications/routing/application-routes";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
 import { isApiFailure } from "@/lib/server/api-failure";

@@ -1,8 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import type { ComponentProps } from "react";
-import { InlineFormBuilder } from "@/components/application-setup/application-setup-inline-form-builder";
-import type { DraftField } from "@/components/application-setup/application-setup-fields";
+import { InlineFormBuilder } from "@/components/application-setup/form-builder/application-setup-inline-form-builder";
+import type { DraftField } from "@/components/application-setup/fields/application-setup-fields";
 
 const field: DraftField = {
   id: "field-1",

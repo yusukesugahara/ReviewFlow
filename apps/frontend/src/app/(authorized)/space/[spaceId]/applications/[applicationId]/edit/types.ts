@@ -1,5 +1,5 @@
-import type { ApprovalStepItem } from "@/components/application-setup/approval-steps-builder";
-import type { DraftField } from "@/components/application-setup/application-setup-draft-form";
+import type { ApprovalStepItem } from "@/components/application-setup/approval-flow/approval-steps-builder";
+import type { DraftField } from "@/components/application-setup/form-builder/application-setup-draft-form";
 import type {
   ApplicationDetail,
   ApprovalFlowResponse,

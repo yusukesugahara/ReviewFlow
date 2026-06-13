@@ -154,13 +154,14 @@ describe('InvitationsRepository', () => {
     txUserRepo.findOne.mockResolvedValue(null);
     txGroupRepo.findOne.mockResolvedValue({ id: 'group-1' });
 
-    const user = await repository.acceptInvitation({
+    const result = await repository.acceptInvitation({
       token: 'token',
       passwordHash: 'hash',
       name: 'New User',
     });
 
-    expect(user.id).toBe('user-1');
+    expect(result.user.id).toBe('user-1');
+    expect(result.invitation.id).toBe('inv-1');
     expect(txUserRepo.create).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId: 'tenant-1',

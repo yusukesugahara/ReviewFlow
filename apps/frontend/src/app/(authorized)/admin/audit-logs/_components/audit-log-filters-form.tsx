@@ -10,24 +10,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AuditLogDateFilterPicker } from "../audit-log-date-filter-picker";
+import { AuditLogDateFilterPicker } from "./audit-log-date-filter-picker";
 import type { AdminAuditLogsViewProps } from "../types";
 
 type AuditLogFiltersFormProps = Pick<
   AdminAuditLogsViewProps,
-  "createdFrom" | "createdTo" | "outcome" | "query" | "risk"
+  "createdFrom" | "createdTo" | "query" | "targetType"
 >;
 
 export function AuditLogFiltersForm({
   createdFrom,
   createdTo,
-  outcome,
   query,
-  risk,
+  targetType,
 }: AuditLogFiltersFormProps) {
   return (
     <form className="space-y-4 rounded-lg border border-slate-200 bg-slate-50 p-4">
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         <div className="space-y-2 xl:col-span-3">
           <Label htmlFor="audit-query">検索キーワード</Label>
           <div className="relative">
@@ -39,35 +38,24 @@ export function AuditLogFiltersForm({
               id="audit-query"
               name="q"
               defaultValue={query}
-              placeholder="操作者メール、対象ID、操作内容で検索"
+              placeholder="操作者、対象メール、申請ID、操作内容で検索"
               className="bg-white pl-9"
             />
           </div>
         </div>
         <div className="space-y-2">
-          <Label htmlFor="audit-risk">リスク</Label>
-          <Select name="risk" defaultValue={risk}>
-            <SelectTrigger id="audit-risk" className="h-10 rounded-lg bg-white text-[15px]">
+          <Label htmlFor="audit-target-type">対象</Label>
+          <Select name="targetType" defaultValue={targetType}>
+            <SelectTrigger id="audit-target-type" className="h-10 rounded-lg bg-white text-[15px]">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">リスクすべて</SelectItem>
-              <SelectItem value="high">高リスク</SelectItem>
-              <SelectItem value="medium">要確認</SelectItem>
-              <SelectItem value="low">通常</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="audit-outcome">結果</Label>
-          <Select name="outcome" defaultValue={outcome}>
-            <SelectTrigger id="audit-outcome" className="h-10 rounded-lg bg-white text-[15px]">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">結果すべて</SelectItem>
-              <SelectItem value="failed">失敗のみ</SelectItem>
-              <SelectItem value="success">成功のみ</SelectItem>
+              <SelectItem value="all">対象すべて</SelectItem>
+              <SelectItem value="application">申請</SelectItem>
+              <SelectItem value="user">ユーザ</SelectItem>
+              <SelectItem value="invitation">招待</SelectItem>
+              <SelectItem value="space">スペース</SelectItem>
+              <SelectItem value="group_member">スペースメンバー</SelectItem>
             </SelectContent>
           </Select>
         </div>

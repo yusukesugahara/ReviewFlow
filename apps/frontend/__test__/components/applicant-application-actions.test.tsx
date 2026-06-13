@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { ApplicantApplicationActions } from "@/components/applications/applicant-application-actions";
+import { ApplicantApplicationActions } from "@/components/applications/actions/applicant-application-actions";
 
 const noopAction = jest.fn(async () => undefined);
 

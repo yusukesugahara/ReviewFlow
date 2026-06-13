@@ -27,6 +27,11 @@ export type AcceptInvitationParams = {
   name: string | null;
 };
 
+export type AcceptInvitationResult = {
+  user: User;
+  invitation: Invitation;
+};
+
 @Injectable()
 export class InvitationsRepository {
   constructor(
@@ -94,7 +99,9 @@ export class InvitationsRepository {
     await this.invitations.delete(id);
   }
 
-  async acceptInvitation(params: AcceptInvitationParams): Promise<User> {
+  async acceptInvitation(
+    params: AcceptInvitationParams,
+  ): Promise<AcceptInvitationResult> {
     return this.dataSource.transaction(async (manager) => {
       const invRepo = manager.getRepository(Invitation);
       const userRepo = manager.getRepository(User);
@@ -153,7 +160,7 @@ export class InvitationsRepository {
       invitation.status = InvitationStatus.ACCEPTED;
       await invRepo.save(invitation);
 
-      return newUser;
+      return { user: newUser, invitation };
     });
   }
 }

@@ -1,9 +1,19 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClientErrorCodes } from '../../../../common/errors';
+import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { UserRole } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
 import { UsersRepository } from '../../../../models/repositories/users.repository';
+import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from './users.service';
+
+const actor = (overrides: Partial<AuthUserPayload> = {}): AuthUserPayload => ({
+  id: 'actor-id',
+  email: 'actor@example.com',
+  tenantId: 't1',
+  roles: [UserRole.TENANT_ADMIN],
+  ...overrides,
+});
 
 /**
  * UsersService のテスト
@@ -23,6 +33,9 @@ describe('UsersService', () => {
       | 'save'
     >
   >;
+  let auditLogs: {
+    recordUserEvent: jest.Mock;
+  };
 
   beforeEach(async () => {
     usersRepository = {
@@ -33,11 +46,15 @@ describe('UsersService', () => {
       countTenantAdmins: jest.fn(),
       save: jest.fn(),
     };
+    auditLogs = {
+      recordUserEvent: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: UsersRepository, useValue: usersRepository },
+        { provide: BusinessAuditLogService, useValue: auditLogs },
       ],
     }).compile();
 
@@ -85,7 +102,7 @@ describe('UsersService', () => {
           't1',
           'same-id',
           UserRole.TENANT_USER,
-          'same-id',
+          actor({ id: 'same-id' }),
         ),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.USER_ROLE_UPDATE_SELF_FORBIDDEN,
@@ -102,7 +119,7 @@ describe('UsersService', () => {
           't1',
           'missing',
           UserRole.TENANT_USER,
-          'actor-id',
+          actor(),
         ),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
@@ -126,7 +143,7 @@ describe('UsersService', () => {
           't1',
           'u-admin',
           UserRole.TENANT_USER,
-          'actor-id',
+          actor(),
         ),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.LAST_TENANT_ADMIN_PROTECTED,
@@ -153,11 +170,19 @@ describe('UsersService', () => {
         't1',
         'u-ap',
         UserRole.TENANT_USER,
-        'actor-id',
+        actor(),
       );
 
       expect(out.role).toBe(UserRole.TENANT_USER);
       expect(usersRepository.save).toHaveBeenCalled();
+      expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'user.role_changed',
+          target: approver,
+          roleFrom: UserRole.TENANT_USER,
+          roleTo: UserRole.TENANT_USER,
+        }),
+      );
     });
 
     /**
@@ -180,7 +205,7 @@ describe('UsersService', () => {
         't1',
         'u-ap',
         UserRole.TENANT_ADMIN,
-        'actor-id',
+        actor(),
       );
 
       expect(out.role).toBe(UserRole.TENANT_ADMIN);
@@ -194,7 +219,7 @@ describe('UsersService', () => {
      */
     it('forbids deleting own account', async () => {
       await expect(
-        service.deactivateInTenant('t1', 'same-id', 'same-id'),
+        service.deactivateInTenant('t1', 'same-id', actor({ id: 'same-id' })),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.USER_DELETE_SELF_FORBIDDEN,
       });
@@ -206,7 +231,7 @@ describe('UsersService', () => {
     it('throws when user not in tenant', async () => {
       usersRepository.findByIdAndTenant.mockResolvedValue(null);
       await expect(
-        service.deactivateInTenant('t1', 'missing', 'actor-id'),
+        service.deactivateInTenant('t1', 'missing', actor()),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
       });
@@ -225,7 +250,7 @@ describe('UsersService', () => {
       usersRepository.countTenantAdmins.mockResolvedValue(1);
 
       await expect(
-        service.deactivateInTenant('t1', 'u-admin', 'actor-id'),
+        service.deactivateInTenant('t1', 'u-admin', actor()),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.LAST_TENANT_ADMIN_PROTECTED,
       });
@@ -244,10 +269,16 @@ describe('UsersService', () => {
       usersRepository.findByIdAndTenant.mockResolvedValue(target);
       usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
 
-      await service.deactivateInTenant('t1', 'u-member', 'actor-id');
+      await service.deactivateInTenant('t1', 'u-member', actor());
 
       expect(target.isActive).toBe(false);
       expect(usersRepository.save).toHaveBeenCalledWith(target);
+      expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'user.deactivated',
+          target,
+        }),
+      );
     });
   });
 
@@ -258,7 +289,7 @@ describe('UsersService', () => {
     it('throws when user not in tenant', async () => {
       usersRepository.findByIdAndTenant.mockResolvedValue(null);
       await expect(
-        service.restoreInTenant('t1', 'missing'),
+        service.restoreInTenant('t1', 'missing', actor()),
       ).rejects.toMatchObject({
         errorCode: ClientErrorCodes.TENANT_USER_NOT_FOUND,
       });
@@ -277,10 +308,16 @@ describe('UsersService', () => {
       usersRepository.findByIdAndTenant.mockResolvedValue(target);
       usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
 
-      const out = await service.restoreInTenant('t1', 'u-member');
+      const out = await service.restoreInTenant('t1', 'u-member', actor());
 
       expect(out.isActive).toBe(true);
       expect(usersRepository.save).toHaveBeenCalledWith(target);
+      expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'user.restored',
+          target,
+        }),
+      );
     });
   });
 });

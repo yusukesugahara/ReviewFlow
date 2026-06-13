@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ApplicationSetupDraftForm } from "@/components/application-setup/application-setup-draft-form";
+import { ApplicationSetupDraftForm } from "@/components/application-setup/form-builder/application-setup-draft-form";
 
 const assignees = [{ id: "user-1", label: "承認者 <approver@example.com>" }];
 

@@ -10,6 +10,11 @@ import {
 import { Tenant } from './tenant.entity';
 import { User } from './user.entity';
 import { Group } from './group.entity';
+import type { ApplicationStatusValue } from '../constants/application-status';
+import type { UserRoleValue } from '../constants/user-role';
+import type { GroupMemberRoleValue } from '../constants/group-member-role';
+
+export type AuditActorType = 'user' | 'applicant' | 'system';
 
 @Entity('audit_logs')
 @Index('IDX_audit_logs_tenant_created', ['tenantId', 'createdAt'])
@@ -47,6 +52,17 @@ export class AuditLog {
   @JoinColumn({ name: 'actor_user_id' })
   actorUser!: User | null;
 
+  @Column({ name: 'actor_type', type: 'varchar', length: 32, default: 'user' })
+  actorType!: AuditActorType;
+
+  @Column({
+    name: 'actor_email_snapshot',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  actorEmailSnapshot!: string | null;
+
   @Column({ name: 'action_type', type: 'varchar', length: 128 })
   actionType!: string;
 
@@ -55,6 +71,71 @@ export class AuditLog {
 
   @Column({ name: 'target_id', type: 'varchar', length: 128, nullable: true })
   targetId!: string | null;
+
+  @Column({ name: 'target_user_id', type: 'uuid', nullable: true })
+  targetUserId!: string | null;
+
+  @ManyToOne(() => User, { onDelete: 'SET NULL', nullable: true })
+  @JoinColumn({ name: 'target_user_id' })
+  targetUser!: User | null;
+
+  @Column({
+    name: 'target_email_snapshot',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  targetEmailSnapshot!: string | null;
+
+  @Column({ name: 'application_id', type: 'uuid', nullable: true })
+  applicationId!: string | null;
+
+  @Column({
+    name: 'status_from',
+    type: 'varchar',
+    length: 32,
+    nullable: true,
+  })
+  statusFrom!: ApplicationStatusValue | null;
+
+  @Column({
+    name: 'status_to',
+    type: 'varchar',
+    length: 32,
+    nullable: true,
+  })
+  statusTo!: ApplicationStatusValue | null;
+
+  @Column({ name: 'step_order_from', type: 'int', nullable: true })
+  stepOrderFrom!: number | null;
+
+  @Column({ name: 'step_order_to', type: 'int', nullable: true })
+  stepOrderTo!: number | null;
+
+  @Column({ name: 'role_from', type: 'varchar', length: 32, nullable: true })
+  roleFrom!: UserRoleValue | null;
+
+  @Column({ name: 'role_to', type: 'varchar', length: 32, nullable: true })
+  roleTo!: UserRoleValue | null;
+
+  @Column({
+    name: 'group_role_from',
+    type: 'varchar',
+    length: 32,
+    nullable: true,
+  })
+  groupRoleFrom!: GroupMemberRoleValue | null;
+
+  @Column({
+    name: 'group_role_to',
+    type: 'varchar',
+    length: 32,
+    nullable: true,
+  })
+  groupRoleTo!: GroupMemberRoleValue | null;
+
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  summary!: string | null;
 
   @Column({ name: 'metadata_json', type: 'json', nullable: true })
   metadataJson!: Record<string, unknown> | null;

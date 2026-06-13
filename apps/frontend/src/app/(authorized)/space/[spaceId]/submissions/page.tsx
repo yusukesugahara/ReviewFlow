@@ -1,6 +1,6 @@
 import { isApiFailure } from "@/lib/server/api-failure";
-import { normalizeSubmissionSearchParams } from "./_components/space-submissions.helpers";
-import { getSpaceSubmissionsPageData } from "./page-data";
+import { normalizeSubmissionSearchParams } from "./_utils/space-submissions.helpers";
+import { getSpaceSubmissionsPageData } from "./_data/page-data";
 import type { SpaceSubmissionsPageProps } from "./types";
 import { SpaceSubmissionsView } from "./view";
 

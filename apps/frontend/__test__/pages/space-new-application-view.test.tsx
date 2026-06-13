@@ -6,7 +6,7 @@ jest.mock("@/app/(authorized)/space/application-setup/actions", () => ({
   submitApplicationSetupAction: jest.fn(),
 }));
 
-jest.mock("@/components/application-setup/application-setup-draft-form", () => ({
+jest.mock("@/components/application-setup/form-builder/application-setup-draft-form", () => ({
   ApplicationSetupDraftForm: ({
     errorMessage,
     publishedFormDefinitionId,

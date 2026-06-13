@@ -7,8 +7,8 @@ import {
   uniqueAssigneeIds,
   updateApprovalGroup,
   updateApprovalStep,
-} from "@/components/application-setup/approval-steps-state";
-import type { ApprovalStepItem } from "@/components/application-setup/approval-steps.types";
+} from "@/components/application-setup/approval-flow/approval-steps-state";
+import type { ApprovalStepItem } from "@/components/application-setup/approval-flow/approval-steps.types";
 
 const steps: ApprovalStepItem[] = [
   {

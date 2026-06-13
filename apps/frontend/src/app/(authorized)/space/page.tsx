@@ -1,6 +1,6 @@
 import { SpaceEmptyState } from "@/components/space/space-empty-state";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { getAdminDashboardPageData } from "./dashboard-page-data";
+import { getAdminDashboardPageData } from "./_data/dashboard-page-data";
 import { AdminDashboardView } from "./view";
 import type { AdminDashboardPageProps } from "./types";
 
