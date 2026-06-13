@@ -30,7 +30,7 @@ function DialogContent({
 }) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <DialogOverlay />
+      <DialogOverlay aria-hidden="true" onClick={onClose} />
       <div
         aria-describedby={descriptionId}
         aria-labelledby={titleId}
