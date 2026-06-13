@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { UserRole } from '../../../../models/constants/user-role';
@@ -320,4 +321,152 @@ describe('UsersService', () => {
       );
     });
   });
+
+  describe('updateOwnProfile', () => {
+    it('updates the current user name and email in tenant scope', async () => {
+      const currentUser = user({
+        id: 'actor-id',
+        email: 'old@example.com',
+        name: 'Old User',
+      });
+      usersRepository.findByIdAndTenant.mockResolvedValue(currentUser);
+      usersRepository.findAllByEmail.mockResolvedValue([]);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.updateOwnProfile(actor(), {
+        email: ' New@Example.com ',
+        name: ' New User ',
+      });
+
+      expect(out.email).toBe('new@example.com');
+      expect(out.name).toBe('New User');
+      expect(usersRepository.findByIdAndTenant).toHaveBeenCalledWith(
+        'actor-id',
+        't1',
+      );
+      expect(usersRepository.findAllByEmail).toHaveBeenCalledWith(
+        'new@example.com',
+      );
+      expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'user.profile_updated',
+          actor: actor(),
+          target: currentUser,
+          metadataJson: {
+            emailFrom: 'old@example.com',
+            emailTo: 'new@example.com',
+            userNameFrom: 'Old User',
+            userNameTo: 'New User',
+          },
+        }),
+      );
+    });
+
+    it('rejects an email already used by another account', async () => {
+      usersRepository.findByIdAndTenant.mockResolvedValue(
+        user({ id: 'actor-id', email: 'old@example.com' }),
+      );
+      usersRepository.findAllByEmail.mockResolvedValue([
+        user({ id: 'other-id', email: 'new@example.com' }),
+      ]);
+
+      await expect(
+        service.updateOwnProfile(actor(), {
+          email: 'new@example.com',
+          name: 'New User',
+        }),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN,
+      });
+
+      expect(usersRepository.save).not.toHaveBeenCalled();
+      expect(auditLogs.recordUserEvent).not.toHaveBeenCalled();
+    });
+
+    it('skips persistence when the current profile is unchanged', async () => {
+      const currentUser = user({
+        id: 'actor-id',
+        email: 'old@example.com',
+        name: 'Old User',
+      });
+      usersRepository.findByIdAndTenant.mockResolvedValue(currentUser);
+
+      await expect(
+        service.updateOwnProfile(actor(), {
+          email: ' old@example.com ',
+          name: ' Old User ',
+        }),
+      ).resolves.toBe(currentUser);
+
+      expect(usersRepository.findAllByEmail).not.toHaveBeenCalled();
+      expect(usersRepository.save).not.toHaveBeenCalled();
+      expect(auditLogs.recordUserEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateOwnPassword', () => {
+    it('updates the current user password after checking the current password', async () => {
+      const currentUser = user({
+        id: 'actor-id',
+        email: 'old@example.com',
+        passwordHash: await bcrypt.hash('password12', 4),
+      });
+      usersRepository.findByIdAndTenant.mockResolvedValue(currentUser);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.updateOwnPassword(actor(), {
+        currentPassword: 'password12',
+        newPassword: 'newpassword12',
+      });
+
+      expect(out).toBe(currentUser);
+      await expect(
+        bcrypt.compare('newpassword12', currentUser.passwordHash),
+      ).resolves.toBe(true);
+      expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'user.password_changed',
+          actor: actor(),
+          target: currentUser,
+          metadataJson: { passwordChanged: true },
+        }),
+      );
+    });
+
+    it('rejects a wrong current password', async () => {
+      usersRepository.findByIdAndTenant.mockResolvedValue(
+        user({
+          id: 'actor-id',
+          passwordHash: await bcrypt.hash('password12', 4),
+        }),
+      );
+
+      await expect(
+        service.updateOwnPassword(actor(), {
+          currentPassword: 'wrongpassword',
+          newPassword: 'newpassword12',
+        }),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.AUTH_INVALID_CREDENTIALS,
+      });
+
+      expect(usersRepository.save).not.toHaveBeenCalled();
+      expect(auditLogs.recordUserEvent).not.toHaveBeenCalled();
+    });
+  });
 });
+
+function user(overrides: Partial<User> = {}): User {
+  return {
+    id: 'user-id',
+    tenantId: 't1',
+    email: 'user@example.com',
+    name: null,
+    passwordHash: 'hash',
+    role: UserRole.TENANT_USER,
+    isActive: true,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    ...overrides,
+  } as User;
+}

@@ -1,15 +1,13 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { cookies } from "next/headers";
 import { z } from "zod";
 import type { FormActionResponse } from "@/lib/baseTypes";
 import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
-import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
-import { isProduction } from "@/lib/env";
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody, toApiFailure } from "@/lib/server/api-failure";
 import { parseAuthLoginSuccess } from "@/lib/server/auth-response-schema";
+import { persistAccessTokenCookie } from "@/lib/server/session";
 import type { LoginRequestBody } from "@/lib/schema";
 
 export type LoginSchema = AuthCredentials & { next?: string };
@@ -84,51 +82,6 @@ async function postAuthLogin(
   }
   return { ok: true, accessToken: data.data.access_token };
 }
-
-const FALLBACK_MAX_AGE_SEC = 60 * 60 * 24 * 7;
-
-/**
- * accessToken の有効期限を秒単位で取得する
- * @param accessToken - 有効期限を取得する accessToken
- * @returns 有効期限（秒）
- */
-function maxAgeSecondsFromJwt(accessToken: string): number {
-  try {
-    const parts = accessToken.split(".");
-    if (parts.length < 2) {
-      return FALLBACK_MAX_AGE_SEC;
-    }
-    const payloadB64 = parts[1];
-    if (payloadB64 === undefined) {
-      return FALLBACK_MAX_AGE_SEC;
-    }
-    const payload = JSON.parse(
-      Buffer.from(payloadB64, "base64url").toString("utf8"),
-    ) as { exp?: number };
-    if (typeof payload.exp !== "number") {
-      return FALLBACK_MAX_AGE_SEC;
-    }
-    return Math.max(60, payload.exp - Math.floor(Date.now() / 1000));
-  } catch {
-    return FALLBACK_MAX_AGE_SEC;
-  }
-}
-
-/**
- * accessToken をクッキーに保存する
- * @param accessToken - 保存する accessToken
- */
-export async function persistAccessTokenCookie(accessToken: string): Promise<void> {
-  const store = await cookies();
-  store.set(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: isProduction,
-    path: "/",
-    maxAge: maxAgeSecondsFromJwt(accessToken),
-  });
-}
-
 
 /**
  * ログインする

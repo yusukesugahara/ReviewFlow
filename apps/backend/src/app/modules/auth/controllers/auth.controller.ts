@@ -4,6 +4,7 @@ import {
   Get,
   HttpCode,
   HttpStatus,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -24,6 +25,8 @@ import {
   PasswordResetAcceptedResponseDto,
   RegisterDto,
   RequestPasswordResetDto,
+  UpdateMePasswordDto,
+  UpdateMeProfileDto,
 } from '../dto/auth.dto';
 import {
   CurrentUser,
@@ -95,9 +98,36 @@ export class AuthController {
     return successResponse({
       id: user.id,
       email: user.email,
+      name: user.name ?? null,
       roles: user.roles,
       tenantId: user.tenantId,
     });
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @Patch('me/profile')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'ログイン中ユーザの名前・メールアドレス更新' })
+  @ApiSuccessResponse(AuthIssueTokensResponseDto)
+  async updateMeProfile(
+    @Body() dto: UpdateMeProfileDto,
+    @CurrentUser() user: AuthUserPayload,
+  ): Promise<SuccessResponse<AuthIssueTokensResponseDto>> {
+    return successResponse(await this.authService.updateMeProfile(dto, user));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Patch('me/password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'ログイン中ユーザのパスワード更新' })
+  @ApiSuccessResponse(AuthIssueTokensResponseDto)
+  async updateMePassword(
+    @Body() dto: UpdateMePasswordDto,
+    @CurrentUser() user: AuthUserPayload,
+  ): Promise<SuccessResponse<AuthIssueTokensResponseDto>> {
+    return successResponse(await this.authService.updateMePassword(dto, user));
   }
 
   @AuthApi()

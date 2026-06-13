@@ -122,3 +122,19 @@ export const createInvitationSchema = z.object({
 export const updateGroupMemberRoleSchema = z.object({
   role: z.enum(["admin", "user"], { error: ROLE_REQUIRED_MESSAGE }),
 });
+
+export const accountProfileSchema = z.object({
+  name: z.string().trim().optional(),
+  email: emailSchema(),
+});
+
+export const accountPasswordSchema = z
+  .object({
+    currentPassword: passwordSchema(),
+    newPassword: passwordSchema(),
+    newPasswordConfirmation: passwordSchema(),
+  })
+  .refine((value) => value.newPassword === value.newPasswordConfirmation, {
+    message: "新しいパスワードが一致しません。",
+    path: ["newPasswordConfirmation"],
+  });

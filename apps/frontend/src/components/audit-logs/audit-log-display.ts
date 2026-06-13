@@ -49,6 +49,8 @@ const ACTION_LABELS: Record<string, string> = {
   "application.rejected": "申請を却下",
   "invitation.created": "ユーザを招待",
   "invitation.accepted": "招待を受諾",
+  "user.profile_updated": "アカウント情報を更新",
+  "user.password_changed": "パスワードを変更",
   "user.role_changed": "ユーザ権限を変更",
   "user.deactivated": "ユーザを無効化",
   "user.restored": "ユーザを復元",
@@ -226,6 +228,17 @@ function describeChanges(
       `有効状態: ${formatActive(metadata.isActiveFrom)} -> ${formatActive(metadata.isActiveTo)}`,
     );
   }
+  const emailChange = formatTextChange(metadata.emailFrom, metadata.emailTo);
+  if (emailChange) {
+    changes.push(`メールアドレス: ${emailChange}`);
+  }
+  const userNameChange = formatTextChange(
+    metadata.userNameFrom,
+    metadata.userNameTo,
+  );
+  if (userNameChange) {
+    changes.push(`名前: ${userNameChange}`);
+  }
   const nameChange = formatTextChange(metadata.nameFrom, metadata.nameTo);
   if (nameChange) {
     changes.push(`スペース名: ${nameChange}`);
@@ -255,10 +268,15 @@ function buildDetailItems(
   addItem(items, "フォームID", metadata.formDefinitionId);
   addItem(items, "承認フローID", metadata.approvalFlowId);
   addItem(items, "スペース名", metadata.groupName);
+  addItem(items, "メールアドレス（変更前）", metadata.emailFrom);
+  addItem(items, "メールアドレス（変更後）", metadata.emailTo);
+  addItem(items, "名前（変更前）", metadata.userNameFrom);
+  addItem(items, "名前（変更後）", metadata.userNameTo);
   addItem(items, "スペース名（変更前）", metadata.nameFrom);
   addItem(items, "スペース名（変更後）", metadata.nameTo);
   addItem(items, "説明（変更前）", metadata.descriptionFrom);
   addItem(items, "説明（変更後）", metadata.descriptionTo);
+  addPasswordChangedItem(items, metadata.passwordChanged);
   addItem(items, "招待期限", metadata.expiresAt);
   addItem(items, "コメント", metadata.comment);
   addItem(items, "全体コメント", metadata.overallComment);
@@ -287,6 +305,15 @@ function addListItem(
   const values = valueList(value);
   if (values.length > 0) {
     items.push({ label, value: values.join(", ") });
+  }
+}
+
+function addPasswordChangedItem(
+  items: AuditLogDisplayEntry[],
+  value: unknown,
+): void {
+  if (value === true) {
+    items.push({ label: "パスワード変更", value: "実施" });
   }
 }
 

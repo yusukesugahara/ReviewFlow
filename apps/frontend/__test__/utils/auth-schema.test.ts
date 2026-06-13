@@ -1,6 +1,8 @@
 import {
   acceptInvitationSchema,
   addGroupMemberSchema,
+  accountPasswordSchema,
+  accountProfileSchema,
   authCredentialsSchema,
   confirmPasswordResetSchema,
   createExportJobSchema,
@@ -49,6 +51,37 @@ describe("auth schemas", () => {
         password: "password123",
       }).success,
     ).toBe(true);
+  });
+
+  // テスト内容: アカウント設定入力の検証を確認する
+  it("validates account settings inputs", () => {
+    expect(
+      accountProfileSchema.parse({
+        name: " User ",
+        email: " user@example.com ",
+      }),
+    ).toEqual({
+      name: "User",
+      email: "user@example.com",
+    });
+
+    expect(
+      accountPasswordSchema.safeParse({
+        currentPassword: "password123",
+        newPassword: "newpassword123",
+        newPasswordConfirmation: "newpassword123",
+      }).success,
+    ).toBe(true);
+
+    const mismatch = accountPasswordSchema.safeParse({
+      currentPassword: "password123",
+      newPassword: "newpassword123",
+      newPasswordConfirmation: "different123",
+    });
+    expect(mismatch.success).toBe(false);
+    expect(mismatch.error?.flatten().fieldErrors.newPasswordConfirmation).toEqual([
+      "新しいパスワードが一致しません。",
+    ]);
   });
 
   // テスト内容: 招待、フォームアクセス、出力入力の検証を確認する

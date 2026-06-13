@@ -16,7 +16,12 @@ import { AuthService } from './auth.service';
  */
 describe('AuthService', () => {
   let service: AuthService;
-  let users: jest.Mocked<Pick<UsersService, 'findAllByEmail'>>;
+  let users: jest.Mocked<
+    Pick<
+      UsersService,
+      'findAllByEmail' | 'updateOwnProfile' | 'updateOwnPassword'
+    >
+  >;
   let jwt: { sign: jest.Mock };
   let authRepository: {
     createTenantAdmin: jest.Mock;
@@ -29,6 +34,8 @@ describe('AuthService', () => {
   beforeEach(async () => {
     users = {
       findAllByEmail: jest.fn(),
+      updateOwnProfile: jest.fn(),
+      updateOwnPassword: jest.fn(),
     };
     jwt = { sign: jest.fn().mockReturnValue('signed-jwt') };
     authRepository = {
@@ -62,9 +69,9 @@ describe('AuthService', () => {
           id: 'u1',
           tenantId: 't1',
           email: 'a@b.com',
+          name: null,
           passwordHash: 'h',
           role: UserRole.TENANT_ADMIN,
-          name: null,
           isActive: true,
           createdAt: new Date(),
           updatedAt: new Date(),
@@ -84,6 +91,7 @@ describe('AuthService', () => {
         id: 'id-admin',
         tenantId: 'tenant-1',
         email: 'first@example.com',
+        name: null,
         role: UserRole.TENANT_ADMIN,
       });
 
@@ -107,6 +115,7 @@ describe('AuthService', () => {
       expect(out.user).toEqual({
         id: 'id-admin',
         email: 'first@example.com',
+        name: null,
         role: UserRole.TENANT_ADMIN,
         tenantId: 'tenant-1',
       });
@@ -177,8 +186,84 @@ describe('AuthService', () => {
       expect(out.user).toEqual({
         id: 'u1',
         email: 'a@b.com',
+        name: null,
         role: UserRole.TENANT_USER,
         tenantId: 't1',
+      });
+    });
+  });
+
+  describe('current user updates', () => {
+    const actor = {
+      id: 'u1',
+      email: 'old@example.com',
+      tenantId: 't1',
+    };
+
+    it('updates current user profile and returns a refreshed token', async () => {
+      users.updateOwnProfile.mockResolvedValue({
+        id: 'u1',
+        tenantId: 't1',
+        email: 'new@example.com',
+        name: 'Updated User',
+        role: UserRole.TENANT_USER,
+      } as User);
+
+      const out = await service.updateMeProfile(
+        { email: 'new@example.com', name: 'Updated User' },
+        actor,
+      );
+
+      expect(users.updateOwnProfile).toHaveBeenCalledWith(actor, {
+        email: 'new@example.com',
+        name: 'Updated User',
+      });
+      expect(jwt.sign).toHaveBeenCalledWith({
+        sub: 'u1',
+        email: 'new@example.com',
+        tenantId: 't1',
+        role: UserRole.TENANT_USER,
+      });
+      expect(out).toEqual({
+        access_token: 'signed-jwt',
+        user: {
+          id: 'u1',
+          email: 'new@example.com',
+          name: 'Updated User',
+          role: UserRole.TENANT_USER,
+          tenantId: 't1',
+        },
+      });
+    });
+
+    it('updates current user password and returns a refreshed token', async () => {
+      users.updateOwnPassword.mockResolvedValue({
+        id: 'u1',
+        tenantId: 't1',
+        email: 'old@example.com',
+        name: null,
+        role: UserRole.TENANT_ADMIN,
+      } as User);
+
+      await expect(
+        service.updateMePassword(
+          { currentPassword: 'password12', newPassword: 'newpassword12' },
+          actor,
+        ),
+      ).resolves.toEqual({
+        access_token: 'signed-jwt',
+        user: {
+          id: 'u1',
+          email: 'old@example.com',
+          name: null,
+          role: UserRole.TENANT_ADMIN,
+          tenantId: 't1',
+        },
+      });
+
+      expect(users.updateOwnPassword).toHaveBeenCalledWith(actor, {
+        currentPassword: 'password12',
+        newPassword: 'newpassword12',
       });
     });
   });

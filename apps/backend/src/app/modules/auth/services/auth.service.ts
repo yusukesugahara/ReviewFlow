@@ -12,6 +12,8 @@ import type {
   LoginDto,
   RegisterDto,
   RequestPasswordResetDto,
+  UpdateMePasswordDto,
+  UpdateMeProfileDto,
 } from '../dto/auth.dto';
 
 export type ApplicantAccessTokenPayload = {
@@ -56,6 +58,30 @@ export class AuthService {
 
   async confirmPasswordReset(dto: ConfirmPasswordResetDto) {
     return this.passwordResetService.confirmPasswordReset(dto);
+  }
+
+  async updateMeProfile(
+    dto: UpdateMeProfileDto,
+    actor: {
+      id: string;
+      email: string;
+      tenantId: string;
+    },
+  ) {
+    const user = await this.usersService.updateOwnProfile(actor, dto);
+    return this.issueTokens(user);
+  }
+
+  async updateMePassword(
+    dto: UpdateMePasswordDto,
+    actor: {
+      id: string;
+      email: string;
+      tenantId: string;
+    },
+  ) {
+    const user = await this.usersService.updateOwnPassword(actor, dto);
+    return this.issueTokens(user);
   }
 
   async login(dto: LoginDto) {
@@ -138,6 +164,7 @@ export class AuthService {
       user: {
         id: user.id,
         email: user.email,
+        name: user.name,
         role: user.role,
         tenantId: user.tenantId,
       },

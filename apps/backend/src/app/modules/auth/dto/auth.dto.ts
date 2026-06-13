@@ -68,6 +68,30 @@ export class ConfirmPasswordResetDto {
   password!: string;
 }
 
+export class UpdateMeProfileDto {
+  @ApiPropertyOptional({ example: '山田 太郎', nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(255)
+  name?: string;
+
+  @ApiProperty({ example: 'user@example.com' })
+  @IsEmail()
+  email!: string;
+}
+
+export class UpdateMePasswordDto {
+  @ApiProperty({ example: 'current-password', minLength: 8, maxLength: 72 })
+  @MinLength(8)
+  @MaxLength(72)
+  currentPassword!: string;
+
+  @ApiProperty({ example: 'new-password12', minLength: 8, maxLength: 72 })
+  @MinLength(8)
+  @MaxLength(72)
+  newPassword!: string;
+}
+
 /**
  * Response DTO
  */
@@ -78,6 +102,9 @@ export class AuthUserSummaryDto {
 
   @ApiProperty({ example: 'user@example.com' })
   email!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  name!: string | null;
 
   @ApiProperty({
     example: UserRole.TENANT_ADMIN,
@@ -103,6 +130,9 @@ export class AuthMeResponseDto {
 
   @ApiProperty()
   email!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  name!: string | null;
 
   @ApiProperty({ type: [String], example: ['tenant_admin'] })
   roles!: string[];

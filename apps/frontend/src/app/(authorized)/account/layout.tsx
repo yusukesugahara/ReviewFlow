@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
-import { AppSidebar } from "@/components/layout/app-sidebar";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { getSpaceLayoutSpaces } from "./actions";
+import { AppSidebar } from "@/components/layout/app-sidebar";
+import { getSpaceLayoutSpaces } from "../space/actions";
 
 export const dynamic = "force-dynamic";
 
-type RootSpaceLayoutProps = {
+type AccountLayoutProps = {
   children: ReactNode;
 };
 
-export default async function RootSpaceLayout({ children }: RootSpaceLayoutProps) {
+export default async function AccountLayout({ children }: AccountLayoutProps) {
   const [spaces, me] = await Promise.all([
     getSpaceLayoutSpaces(),
     getCurrentSessionUser(),

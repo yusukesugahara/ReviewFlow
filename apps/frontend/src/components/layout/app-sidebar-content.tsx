@@ -23,12 +23,14 @@ export function SidebarContent({
   isTenantAdmin,
   spaces,
   userEmail,
+  userName,
   onNavigate,
 }: {
   variant: AppSidebarVariant;
   isTenantAdmin: boolean;
   spaces: AppSidebarSpace[];
   userEmail?: string;
+  userName?: string | null;
   onNavigate?: () => void;
 }) {
   const pathname = usePathname();
@@ -89,17 +91,24 @@ export function SidebarContent({
       ) : null}
       <section className="mt-auto border-t border-slate-200 pt-4">
         <SectionLabel>ユーザ</SectionLabel>
-        <div className="mb-3 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-600">
+        <Link
+          href="/account"
+          className={cn(
+            "mb-3 flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm text-slate-600 transition-colors hover:bg-slate-100 hover:text-slate-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400",
+            pathname === "/account" && "bg-slate-900 text-white hover:bg-slate-900 hover:text-white",
+          )}
+          onClick={onNavigate}
+        >
           <Users className="size-4 shrink-0" aria-hidden="true" />
           <div className="min-w-0">
-            <p className="font-medium text-slate-700">アカウント</p>
+            <p className="font-medium">{userName || "アカウント"}</p>
             {userEmail ? (
-              <p className="truncate text-xs text-slate-500" title={userEmail}>
+              <p className="truncate text-xs opacity-75" title={userEmail}>
                 {userEmail}
               </p>
             ) : null}
           </div>
-        </div>
+        </Link>
         <div className="mt-2 px-1">
           <LogoutForm />
         </div>

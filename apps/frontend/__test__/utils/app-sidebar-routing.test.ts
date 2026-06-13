@@ -118,12 +118,18 @@ describe("app sidebar routing", () => {
     });
   });
 
-  it("builds breadcrumb items for admin and space-scoped pages", () => {
+  it("builds breadcrumb items for admin, account, and space-scoped pages", () => {
     expect(
       buildBreadcrumbItems("/admin/audit-logs", spaces, new URLSearchParams()),
     ).toEqual([
       { href: "/admin", label: "管理" },
       { href: "/admin/audit-logs", label: "監査ログ" },
+    ]);
+    expect(
+      buildBreadcrumbItems("/account", spaces, new URLSearchParams()),
+    ).toEqual([
+      { href: "/space", label: "ホーム" },
+      { href: "/account", label: "アカウント" },
     ]);
     expect(
       buildBreadcrumbItems(

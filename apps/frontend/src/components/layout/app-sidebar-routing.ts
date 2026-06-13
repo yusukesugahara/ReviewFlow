@@ -117,6 +117,13 @@ export function buildBreadcrumbItems(
     return buildAdminBreadcrumbItems(segments);
   }
 
+  if (segments[0] === "account") {
+    return [
+      { href: "/space", label: "ホーム" },
+      { href: "/account", label: "アカウント" },
+    ];
+  }
+
   if (segments[0] === "space") {
     return buildSpaceBreadcrumbItems(segments, spaces, searchParams);
   }

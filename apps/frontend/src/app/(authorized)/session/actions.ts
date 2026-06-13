@@ -7,6 +7,7 @@ import { getAccessTokenFromCookie } from "@/lib/server/session";
 export type CurrentSessionUser = {
   id: string;
   email: string;
+  name?: string | null;
   tenantId: string;
   roles: string[];
 };

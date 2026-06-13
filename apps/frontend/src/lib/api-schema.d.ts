@@ -157,6 +157,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** ログイン中ユーザの名前・メールアドレス更新 */
+        patch: operations["AuthController_updateMeProfile"];
+        trace?: never;
+    };
+    "/auth/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** ログイン中ユーザのパスワード更新 */
+        patch: operations["AuthController_updateMePassword"];
+        trace?: never;
+    };
     "/auth/admin/ping": {
         parameters: {
             query?: never;
@@ -952,6 +986,7 @@ export interface components {
             id: string;
             /** @example user@example.com */
             email: string;
+            name?: string | null;
             /**
              * @example tenant_admin
              * @enum {string}
@@ -1004,6 +1039,7 @@ export interface components {
         AuthMeResponseDto: {
             id: string;
             email: string;
+            name?: string | null;
             /**
              * @example [
              *       "tenant_admin"
@@ -1012,6 +1048,18 @@ export interface components {
             roles: string[];
             /** @description 所属テナント ID */
             tenantId: string;
+        };
+        UpdateMeProfileDto: {
+            /** @example 山田 太郎 */
+            name?: string | null;
+            /** @example user@example.com */
+            email: string;
+        };
+        UpdateMePasswordDto: {
+            /** @example current-password */
+            currentPassword: string;
+            /** @example new-password12 */
+            newPassword: string;
         };
         AdminPingResponseDto: {
             /** @example true */
@@ -1782,6 +1830,66 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["AuthMeResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_updateMeProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["AuthIssueTokensResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_updateMePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMePasswordDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["AuthIssueTokensResponseDto"];
                     };
                 };
             };

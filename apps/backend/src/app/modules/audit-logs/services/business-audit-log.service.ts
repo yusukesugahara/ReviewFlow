@@ -24,6 +24,8 @@ export const BusinessAuditAction = {
   APPLICATION_REJECTED: 'application.rejected',
   INVITATION_CREATED: 'invitation.created',
   INVITATION_ACCEPTED: 'invitation.accepted',
+  USER_PROFILE_UPDATED: 'user.profile_updated',
+  USER_PASSWORD_CHANGED: 'user.password_changed',
   USER_ROLE_CHANGED: 'user.role_changed',
   USER_DEACTIVATED: 'user.deactivated',
   USER_RESTORED: 'user.restored',
@@ -166,7 +168,7 @@ export class BusinessAuditLogService {
 
   async recordUserEvent(params: {
     actionType: BusinessAuditActionValue;
-    actor: AuthUserPayload;
+    actor: Pick<AuthUserPayload, 'id' | 'email'>;
     target: Pick<User, 'id' | 'tenantId' | 'email' | 'role' | 'isActive'>;
     roleFrom?: UserRoleValue | null;
     roleTo?: UserRoleValue | null;

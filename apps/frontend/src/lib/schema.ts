@@ -14,6 +14,14 @@ export type AuthRegisterSuccessJson =
 
 export type AuthMeSuccessJson =
   operations["AuthController_me"]["responses"][200]["content"]["application/json"];
+export type UpdateMeProfileBody =
+  operations["AuthController_updateMeProfile"]["requestBody"]["content"]["application/json"];
+export type UpdateMeProfileSuccessJson =
+  operations["AuthController_updateMeProfile"]["responses"][200]["content"]["application/json"];
+export type UpdateMePasswordBody =
+  operations["AuthController_updateMePassword"]["requestBody"]["content"]["application/json"];
+export type UpdateMePasswordSuccessJson =
+  operations["AuthController_updateMePassword"]["responses"][200]["content"]["application/json"];
 
 export type RequestPasswordResetBody =
   operations["AuthController_requestPasswordReset"]["requestBody"]["content"]["application/json"];
