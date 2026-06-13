@@ -14,6 +14,7 @@ export default async function AccountPage({ searchParams }: AccountPageProps) {
   return (
     <AccountView
       user={user}
+      emailError={params.emailError}
       passwordError={params.passwordError}
       profileError={params.profileError}
     />

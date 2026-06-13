@@ -2,7 +2,9 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import {
+  accountEmailSchema,
   accountPasswordSchema,
   accountProfileSchema,
 } from "@/lib/auth-schema";
@@ -26,7 +28,7 @@ const apiErrorCodeSchema = z.object({
 });
 
 function redirectWithAccountError(
-  key: "passwordError" | "profileError",
+  key: "emailError" | "passwordError" | "profileError",
   message: string,
 ): never {
   const params = new URLSearchParams({ [key]: message });
@@ -64,13 +66,23 @@ function profileErrorMessage(error: unknown): string {
   if (!isApiFailure(error)) {
     return "プロフィールの更新に失敗しました";
   }
+  if (error.status === 400) {
+    return "名前を確認してください";
+  }
+  return errorMessageFromBody(error.body, "プロフィールの更新に失敗しました");
+}
+
+function emailErrorMessage(error: unknown): string {
+  if (!isApiFailure(error)) {
+    return "メールアドレスの更新に失敗しました";
+  }
   if (errorCodeFromBody(error.body) === "AUTH_EMAIL_TAKEN") {
     return "このメールアドレスは既に使用されています";
   }
   if (error.status === 400) {
-    return "名前とメールアドレスを確認してください";
+    return "メールアドレスを確認してください";
   }
-  return errorMessageFromBody(error.body, "プロフィールの更新に失敗しました");
+  return errorMessageFromBody(error.body, "メールアドレスの更新に失敗しました");
 }
 
 function passwordErrorMessage(error: unknown): string {
@@ -91,17 +103,24 @@ export async function updateAccountProfileAction(
 ): Promise<void> {
   const parsed = accountProfileSchema.safeParse({
     name: formData.get("name") || undefined,
-    email: formData.get("email"),
   });
 
   if (!parsed.success) {
     redirectWithAccountError(
       "profileError",
-      firstFieldError(parsed.error, "名前とメールアドレスを確認してください"),
+      firstFieldError(parsed.error, "名前を確認してください"),
     );
   }
 
-  const body: UpdateMeProfileBody = parsed.data;
+  const currentUser = await getCurrentSessionUser();
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const body: UpdateMeProfileBody = {
+    name: parsed.data.name,
+    email: currentUser.email,
+  };
 
   try {
     const response = await client.PATCH("/auth/me/profile", {
@@ -117,6 +136,46 @@ export async function updateAccountProfileAction(
   }
 
   redirectWithAccountSuccess("プロフィールを更新しました");
+}
+
+export async function updateAccountEmailAction(
+  formData: FormData,
+): Promise<void> {
+  const parsed = accountEmailSchema.safeParse({
+    email: formData.get("email"),
+  });
+
+  if (!parsed.success) {
+    redirectWithAccountError(
+      "emailError",
+      firstFieldError(parsed.error, "メールアドレスを確認してください"),
+    );
+  }
+
+  const currentUser = await getCurrentSessionUser();
+  if (!currentUser) {
+    redirect("/login");
+  }
+
+  const body: UpdateMeProfileBody = {
+    name: currentUser.name,
+    email: parsed.data.email,
+  };
+
+  try {
+    const response = await client.PATCH("/auth/me/profile", {
+      body,
+      headers: await authHeadersOrRedirect(),
+    });
+    const data = unwrapResponseData<UpdateMeProfileSuccessJson["data"]>(
+      response,
+    );
+    await persistAccessTokenCookie(data.access_token);
+  } catch (error) {
+    redirectWithAccountError("emailError", emailErrorMessage(error));
+  }
+
+  redirectWithAccountSuccess("メールアドレスを更新しました");
 }
 
 export async function updateAccountPasswordAction(

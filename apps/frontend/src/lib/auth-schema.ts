@@ -125,6 +125,9 @@ export const updateGroupMemberRoleSchema = z.object({
 
 export const accountProfileSchema = z.object({
   name: z.string().trim().optional(),
+});
+
+export const accountEmailSchema = z.object({
   email: emailSchema(),
 });
 

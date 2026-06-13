@@ -1,6 +1,7 @@
 import {
   acceptInvitationSchema,
   addGroupMemberSchema,
+  accountEmailSchema,
   accountPasswordSchema,
   accountProfileSchema,
   authCredentialsSchema,
@@ -58,10 +59,16 @@ describe("auth schemas", () => {
     expect(
       accountProfileSchema.parse({
         name: " User ",
-        email: " user@example.com ",
       }),
     ).toEqual({
       name: "User",
+    });
+
+    expect(
+      accountEmailSchema.parse({
+        email: " user@example.com ",
+      }),
+    ).toEqual({
       email: "user@example.com",
     });
 

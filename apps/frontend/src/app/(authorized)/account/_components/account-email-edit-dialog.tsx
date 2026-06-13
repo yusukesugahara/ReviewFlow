@@ -10,43 +10,44 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { updateAccountProfileAction } from "../actions";
+import { updateAccountEmailAction } from "../actions";
 
-type AccountProfileEditDialogProps = {
+type AccountEmailEditDialogProps = {
   error?: string;
   onClose: () => void;
   user: CurrentSessionUser;
 };
 
-export function AccountProfileEditDialog({
+export function AccountEmailEditDialog({
   error,
   onClose,
   user,
-}: AccountProfileEditDialogProps) {
+}: AccountEmailEditDialogProps) {
   return (
     <DialogContent
-      titleId="account-profile-edit-title"
-      descriptionId="account-profile-edit-description"
+      titleId="account-email-edit-title"
+      descriptionId="account-email-edit-description"
       onClose={onClose}
     >
       <DialogHeader>
-        <DialogTitle id="account-profile-edit-title">
-          プロフィールを編集
+        <DialogTitle id="account-email-edit-title">
+          メールアドレスを編集
         </DialogTitle>
-        <DialogDescription id="account-profile-edit-description">
-          名前を変更します。
+        <DialogDescription id="account-email-edit-description">
+          ログインに使うメールアドレスを変更します。
         </DialogDescription>
       </DialogHeader>
-      <form action={updateAccountProfileAction} className="space-y-4">
+      <form action={updateAccountEmailAction} className="space-y-4">
         {error ? <Alert variant="destructive">{error}</Alert> : null}
         <div className="space-y-2">
-          <Label htmlFor="account-name">名前</Label>
+          <Label htmlFor="account-email">メールアドレス</Label>
           <Input
-            id="account-name"
-            name="name"
-            autoComplete="name"
-            defaultValue={user.name ?? ""}
-            placeholder="名前"
+            id="account-email"
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            defaultValue={user.email}
           />
         </div>
         <DialogFooter>
