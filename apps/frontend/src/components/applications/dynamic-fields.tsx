@@ -12,7 +12,7 @@ import type { ReactNode } from "react";
 import { z } from "zod";
 import type { DynamicFieldInputProps, DynamicFormField } from "./dynamic-fields.types";
 import { normalizeFieldOptions } from "./field-options";
-import { fieldTypeStoresValue } from "@/lib/constants/form-fields";
+import { FIELD_TYPES, fieldTypeStoresValue } from "@/lib/constants/form-fields";
 
 export type { DynamicFormField } from "./dynamic-fields.types";
 
@@ -45,35 +45,24 @@ export function DynamicFieldInput({
     variant,
   };
 
-  if (field.fieldType === "textarea") {
-    return <TextareaFieldInput {...rendererProps} />;
+  switch (field.fieldType) {
+    case FIELD_TYPES.textarea:
+      return <TextareaFieldInput {...rendererProps} />;
+    case FIELD_TYPES.select:
+      return <SelectFieldInput {...rendererProps} />;
+    case FIELD_TYPES.radio:
+      return <RadioFieldInput {...rendererProps} />;
+    case FIELD_TYPES.checkbox:
+      return <CheckboxFieldInput {...rendererProps} />;
+    case FIELD_TYPES.consent:
+      return <ConsentFieldInput {...rendererProps} />;
+    case FIELD_TYPES.description:
+      return <DescriptionFieldDisplay {...rendererProps} />;
+    case FIELD_TYPES.section:
+      return <SectionFieldDisplay {...rendererProps} />;
+    default:
+      return <ScalarFieldInput {...rendererProps} />;
   }
-
-  if (field.fieldType === "select") {
-    return <SelectFieldInput {...rendererProps} />;
-  }
-
-  if (field.fieldType === "radio") {
-    return <RadioFieldInput {...rendererProps} />;
-  }
-
-  if (field.fieldType === "checkbox") {
-    return <CheckboxFieldInput {...rendererProps} />;
-  }
-
-  if (field.fieldType === "consent") {
-    return <ConsentFieldInput {...rendererProps} />;
-  }
-
-  if (field.fieldType === "description") {
-    return <DescriptionFieldDisplay {...rendererProps} />;
-  }
-
-  if (field.fieldType === "section") {
-    return <SectionFieldDisplay {...rendererProps} />;
-  }
-
-  return <ScalarFieldInput {...rendererProps} />;
 }
 
 export function DynamicFieldsTable({
