@@ -9,6 +9,16 @@ import {
 } from "./helpers/auth";
 import { getE2eEnv } from "../src/lib/e2e-env";
 
+type AuditLogList = {
+  logs: Array<{
+    actionType: string;
+    groupId: string | null;
+    targetEmailSnapshot: string | null;
+    targetType: string;
+  }>;
+  total: number;
+};
+
 test.describe("テナント管理のスペース管理", () => {
   test("スペース編集モーダルを外側クリックで閉じ、名前と説明文を更新できる", async ({
     page,
@@ -63,6 +73,66 @@ test.describe("テナント管理のスペース管理", () => {
     expect(updatedSpace.name).toBe(updatedName);
     expect(updatedSpace.description).toBe(updatedDescription);
   });
+
+  test("スペース詳細のメンバー追加ダイアログから招待を送信できる", async ({
+    page,
+    request,
+  }) => {
+    const spaceName = uniqueE2eLabel("スペース招待確認");
+    const spaceDescription = "スペース招待確認用の説明文";
+    const inviteeEmail = `${uniqueE2eLabel("space-invitee")}@example.com`;
+    const { session, space } = await prepareTenantSpace(
+      page.context(),
+      request,
+      {
+        emailPrefix: "space-invite",
+        spaceDescription,
+        spaceName,
+      },
+    );
+
+    await page.goto("/admin/spaces");
+    await page
+      .getByRole("button", { name: `${spaceName} の詳細を開く` })
+      .click();
+    await expect(
+      page.getByRole("heading", { name: "メンバー管理" }),
+    ).toBeVisible();
+
+    await page.getByRole("button", { name: "メンバーを追加または招待" }).click();
+    const dialog = page.getByRole("dialog", { name: "メンバーを追加" });
+    await expect(dialog).toBeVisible();
+    await page.mouse.click(8, 8);
+    await expect(dialog).toBeHidden();
+
+    await page.getByRole("button", { name: "メンバーを追加または招待" }).click();
+    const reopenedDialog = page.getByRole("dialog", {
+      name: "メンバーを追加",
+    });
+    await reopenedDialog.getByLabel("メール").fill(inviteeEmail);
+    await reopenedDialog.getByRole("button", { name: "招待" }).click();
+
+    await expect(page.getByText("招待メールを送信しました")).toBeVisible({
+      timeout: 15_000,
+    });
+
+    const auditLogs = await listInvitationAuditLogs(
+      request,
+      session,
+      inviteeEmail,
+    );
+    expect(auditLogs.total).toBeGreaterThanOrEqual(1);
+    expect(auditLogs.logs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actionType: "invitation.created",
+          groupId: space.id,
+          targetEmailSnapshot: inviteeEmail,
+          targetType: "invitation",
+        }),
+      ]),
+    );
+  });
 });
 
 async function getSpace(
@@ -81,4 +151,22 @@ async function getSpace(
   const space = body.groups?.find((item) => item.id === spaceId);
   expect(space, "updated space was not found").toBeTruthy();
   return space as E2eSpace;
+}
+
+async function listInvitationAuditLogs(
+  request: APIRequestContext,
+  session: E2eSession,
+  inviteeEmail: string,
+): Promise<AuditLogList> {
+  const { apiBase } = getE2eEnv();
+  return unwrapApiData<AuditLogList>(
+    await request.get(`${apiBase}/audit-logs`, {
+      headers: authHeaders(session.accessToken),
+      params: {
+        targetType: "invitation",
+        q: inviteeEmail,
+      },
+    }),
+    "list space invitation audit logs",
+  );
 }
