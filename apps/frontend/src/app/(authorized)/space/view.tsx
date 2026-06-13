@@ -4,7 +4,6 @@ import {
   CheckCircle2,
   Clock3,
   FileText,
-  LayoutDashboard,
   ListChecks,
   RotateCcw,
   Users,
@@ -171,12 +170,6 @@ function SpaceSummaryCard({
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button asChild size="sm" variant="outline" className="bg-white">
-            <Link href={`/space/${encodeURIComponent(space.id)}`}>
-              <LayoutDashboard className="size-4" aria-hidden="true" />
-              概要
-            </Link>
-          </Button>
           <Button asChild size="sm" variant="outline" className="bg-white">
             <Link href={`/space/${encodeURIComponent(space.id)}/applications`}>
               <ListChecks className="size-4" aria-hidden="true" />

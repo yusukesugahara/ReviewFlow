@@ -25,7 +25,7 @@ describe("app sidebar navigation", () => {
         isTenantAdmin: false,
         variant: "workspace",
       }).map((item) => item.label),
-    ).toEqual(["概要", "申請フォーム一覧", "申請一覧", "申請フォーム作成"]);
+    ).toEqual(["申請フォーム一覧", "申請一覧", "申請フォーム作成"]);
 
     expect(
       getPrimarySidebarNavItems({
