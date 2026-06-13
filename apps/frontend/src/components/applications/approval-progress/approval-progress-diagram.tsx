@@ -4,10 +4,9 @@ import { useMemo, useState } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import {
   isSelectableProgressStep,
 } from "./approval-progress.helpers";
@@ -56,8 +55,10 @@ export function ApprovalProgressDiagram({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>承認ステップ</CardTitle>
-        <CardDescription>左から右に向かって承認が進みます</CardDescription>
+        <CardHeading
+          description="左から右に向かって承認が進みます"
+          title="承認ステップ"
+        />
       </CardHeader>
       <CardContent>
         <div className="space-y-6">

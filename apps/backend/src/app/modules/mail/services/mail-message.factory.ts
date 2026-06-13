@@ -42,6 +42,14 @@ export type PasswordResetMailInput = {
   expiresAtIso: string;
 };
 
+export type EmailChangeConfirmationMailInput = {
+  to: string;
+  currentEmail: string;
+  newEmail: string;
+  confirmToken: string;
+  expiresAtIso: string;
+};
+
 @Injectable()
 export class MailMessageFactory {
   constructor(private readonly configService: ConfigService) {}
@@ -155,6 +163,35 @@ export class MailMessageFactory {
       html: [
         '<p>ReviewFlow のパスワード再設定リクエストを受け付けました。</p>',
         `<p><a href="${this.escapeHtml(resetUrl)}">パスワードを再設定する</a></p>`,
+        `<p>有効期限: ${this.escapeHtml(input.expiresAtIso)}</p>`,
+        '<p>心当たりがない場合は、このメールを破棄してください。</p>',
+      ].join(''),
+    };
+  }
+
+  buildEmailChangeConfirmationEmail(
+    input: EmailChangeConfirmationMailInput,
+  ): SendMailInput {
+    const confirmUrl = this.buildFrontendUrl('/account/email-change/confirm', {
+      token: input.confirmToken,
+    });
+
+    return {
+      to: input.to,
+      subject: 'ReviewFlow メールアドレス変更の確認',
+      text: [
+        'ReviewFlow のメールアドレス変更リクエストを受け付けました。',
+        `現在のメールアドレス: ${input.currentEmail}`,
+        `新しいメールアドレス: ${input.newEmail}`,
+        `確認URL: ${confirmUrl}`,
+        `有効期限: ${input.expiresAtIso}`,
+        '心当たりがない場合は、このメールを破棄してください。',
+      ].join('\n'),
+      html: [
+        '<p>ReviewFlow のメールアドレス変更リクエストを受け付けました。</p>',
+        `<p>現在のメールアドレス: ${this.escapeHtml(input.currentEmail)}</p>`,
+        `<p>新しいメールアドレス: ${this.escapeHtml(input.newEmail)}</p>`,
+        `<p><a href="${this.escapeHtml(confirmUrl)}">メールアドレス変更を確認する</a></p>`,
         `<p>有効期限: ${this.escapeHtml(input.expiresAtIso)}</p>`,
         '<p>心当たりがない場合は、このメールを破棄してください。</p>',
       ].join(''),

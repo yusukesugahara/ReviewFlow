@@ -70,7 +70,7 @@ describe("AccountView", () => {
 
     expect(screen.getByRole("heading", { name: "メールアドレスを編集" })).toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toHaveValue("member@example.com");
-    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
+    expect(screen.getByRole("button", { name: "確認メールを送信" })).toBeEnabled();
   });
 
   // テスト内容: パスワード変更をモーダルで開けることを確認する

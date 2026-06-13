@@ -43,3 +43,8 @@ export async function persistAccessTokenCookie(accessToken: string): Promise<voi
     maxAge: maxAgeSecondsFromJwt(accessToken),
   });
 }
+
+export async function clearAccessTokenCookie(): Promise<void> {
+  const store = await cookies();
+  store.delete(ACCESS_TOKEN_COOKIE_NAME);
+}

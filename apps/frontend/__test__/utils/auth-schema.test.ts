@@ -5,6 +5,7 @@ import {
   accountPasswordSchema,
   accountProfileSchema,
   authCredentialsSchema,
+  confirmEmailChangeSchema,
   confirmPasswordResetSchema,
   createExportJobSchema,
   createInvitationSchema,
@@ -52,6 +53,9 @@ describe("auth schemas", () => {
         password: "password123",
       }).success,
     ).toBe(true);
+    expect(confirmEmailChangeSchema.parse({ token: " email-token " })).toEqual({
+      token: "email-token",
+    });
   });
 
   // テスト内容: アカウント設定入力の検証を確認する

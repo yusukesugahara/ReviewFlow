@@ -74,10 +74,18 @@ export class UpdateMeProfileDto {
   @IsString()
   @MaxLength(255)
   name?: string;
+}
 
+export class RequestMeEmailChangeDto {
   @ApiProperty({ example: 'user@example.com' })
   @IsEmail()
   email!: string;
+}
+
+export class ConfirmEmailChangeDto {
+  @ApiProperty({ example: 'email-change-token' })
+  @IsString()
+  token!: string;
 }
 
 export class UpdateMePasswordDto {
@@ -147,6 +155,11 @@ export class AdminPingResponseDto {
 }
 
 export class PasswordResetAcceptedResponseDto {
+  @ApiProperty({ example: true })
+  ok!: boolean;
+}
+
+export class EmailChangeAcceptedResponseDto {
   @ApiProperty({ example: true })
   ok!: boolean;
 }

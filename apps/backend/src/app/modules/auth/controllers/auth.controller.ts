@@ -20,10 +20,13 @@ import {
   AdminPingResponseDto,
   AuthIssueTokensResponseDto,
   AuthMeResponseDto,
+  ConfirmEmailChangeDto,
   ConfirmPasswordResetDto,
+  EmailChangeAcceptedResponseDto,
   LoginDto,
   PasswordResetAcceptedResponseDto,
   RegisterDto,
+  RequestMeEmailChangeDto,
   RequestPasswordResetDto,
   UpdateMePasswordDto,
   UpdateMeProfileDto,
@@ -108,13 +111,42 @@ export class AuthController {
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
   @Patch('me/profile')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'ログイン中ユーザの名前・メールアドレス更新' })
+  @ApiOperation({ summary: 'ログイン中ユーザの名前更新' })
   @ApiSuccessResponse(AuthIssueTokensResponseDto)
   async updateMeProfile(
     @Body() dto: UpdateMeProfileDto,
     @CurrentUser() user: AuthUserPayload,
   ): Promise<SuccessResponse<AuthIssueTokensResponseDto>> {
     return successResponse(await this.authService.updateMeProfile(dto, user));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @Post('me/email-change/request')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'ログイン中ユーザのメールアドレス変更確認メール送信',
+  })
+  @ApiSuccessResponse(EmailChangeAcceptedResponseDto)
+  async requestMeEmailChange(
+    @Body() dto: RequestMeEmailChangeDto,
+    @CurrentUser() user: AuthUserPayload,
+  ): Promise<SuccessResponse<EmailChangeAcceptedResponseDto>> {
+    return successResponse(
+      await this.authService.requestMeEmailChange(dto, user),
+    );
+  }
+
+  @Api()
+  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @Post('email-change/confirm')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'メールアドレス変更の確定' })
+  @ApiSuccessResponse(EmailChangeAcceptedResponseDto)
+  async confirmEmailChange(
+    @Body() dto: ConfirmEmailChangeDto,
+  ): Promise<SuccessResponse<EmailChangeAcceptedResponseDto>> {
+    return successResponse(await this.authService.confirmEmailChange(dto));
   }
 
   @AuthApi()

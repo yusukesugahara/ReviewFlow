@@ -1,10 +1,9 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Badge } from "@/components/ui/badge";
 import {
   formatCorrectionSubmittedValue,
@@ -25,10 +24,10 @@ export function OpenCorrectionSummary({
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
-        <CardTitle>現在オープン中の修正対象</CardTitle>
-        <CardDescription>
-          {items.length}個のフィールドが差し戻し対象となっています
-        </CardDescription>
+        <CardHeading
+          description="フィールドが差し戻し対象となっています"
+          title="現在オープン中の修正対象"
+        />
       </CardHeader>
       <CardContent className="pt-6">
         <ul className="space-y-2">
@@ -58,12 +57,14 @@ export function CorrectionHistory({
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
-        <CardTitle>差し戻し履歴</CardTitle>
-        <CardDescription>
-          {corrections.length === 0
-            ? "差し戻し履歴はありません"
-            : `${corrections.length}件の差し戻しがあります`}
-        </CardDescription>
+        <CardHeading
+          description={
+            corrections.length === 0
+              ? "差し戻し履歴はありません"
+              : "差し戻しの内容と日時を確認できます"
+          }
+          title="差し戻し履歴"
+        />
       </CardHeader>
       <CardContent className="pt-6">
         {corrections.length === 0 ? (

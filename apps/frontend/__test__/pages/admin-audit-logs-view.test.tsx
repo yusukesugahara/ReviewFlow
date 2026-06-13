@@ -98,8 +98,10 @@ describe("AdminAuditLogsView", () => {
     expect(screen.getAllByText("申請").length).toBeGreaterThan(0);
     expect(screen.getByText("ユーザ/招待")).toBeInTheDocument();
     expect(screen.getByText("スペース/メンバー")).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "監査ログ" })).toBeInTheDocument();
-    expect(screen.getByText("誰が、いつ、どんな操作をしたかを確認できます。")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "監査ログ" })).not.toBeInTheDocument();
+    expect(
+      screen.queryByText("誰が、いつ、どんな操作をしたかを確認できます。"),
+    ).not.toBeInTheDocument();
     expect(screen.getByLabelText("検索キーワード")).toHaveAttribute(
       "placeholder",
       "操作者、対象メール、申請ID、操作内容で検索",

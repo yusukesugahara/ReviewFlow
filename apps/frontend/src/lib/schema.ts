@@ -18,6 +18,14 @@ export type UpdateMeProfileBody =
   operations["AuthController_updateMeProfile"]["requestBody"]["content"]["application/json"];
 export type UpdateMeProfileSuccessJson =
   operations["AuthController_updateMeProfile"]["responses"][200]["content"]["application/json"];
+export type RequestMeEmailChangeBody =
+  operations["AuthController_requestMeEmailChange"]["requestBody"]["content"]["application/json"];
+export type RequestMeEmailChangeSuccessJson =
+  operations["AuthController_requestMeEmailChange"]["responses"][200]["content"]["application/json"];
+export type ConfirmEmailChangeBody =
+  operations["AuthController_confirmEmailChange"]["requestBody"]["content"]["application/json"];
+export type ConfirmEmailChangeSuccessJson =
+  operations["AuthController_confirmEmailChange"]["responses"][200]["content"]["application/json"];
 export type UpdateMePasswordBody =
   operations["AuthController_updateMePassword"]["requestBody"]["content"]["application/json"];
 export type UpdateMePasswordSuccessJson =

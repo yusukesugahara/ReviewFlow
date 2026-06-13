@@ -6,10 +6,9 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import {
   Tooltip,
   TooltipContent,
@@ -113,12 +112,12 @@ export function SpaceList({
                 aria-expanded={isOpen}
                 onClick={() => setOpenSpaceId(isOpen ? null : group.id)}
               >
-                <CardTitle className="truncate text-lg">
-                  {group.name}
-                </CardTitle>
-                <CardDescription className="line-clamp-2 text-sm">
-                  {group.description ?? "説明は設定されていません"}
-                </CardDescription>
+                <CardHeading
+                  description={group.description ?? "説明は設定されていません"}
+                  descriptionClassName="line-clamp-2 text-sm"
+                  title={group.name}
+                  titleClassName="min-w-0 truncate text-lg"
+                />
               </button>
               <div className="flex shrink-0 items-center gap-2">
                 {isSystemAdmin ? (
@@ -163,12 +162,11 @@ export function SpaceList({
               <>
                 <CardHeader className="border-t border-slate-200">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <CardTitle className="text-base">メンバー管理</CardTitle>
-                      <CardDescription>
-                        メンバー追加、招待、ロール変更、退出を操作できます
-                      </CardDescription>
-                    </div>
+                    <CardHeading
+                      description="メンバー追加、招待、ロール変更、退出を操作できます"
+                      title="メンバー管理"
+                      titleClassName="text-base"
+                    />
                     <div className="flex items-center gap-2">
                       {canManageSpace ? (
                         <TooltipProvider>

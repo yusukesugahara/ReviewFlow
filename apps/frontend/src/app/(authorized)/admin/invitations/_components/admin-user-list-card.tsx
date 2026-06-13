@@ -2,10 +2,9 @@ import { UserRoundPlus } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -33,12 +32,10 @@ export function AdminUserListCard({
     <Card>
       <CardHeader>
         <div className="flex items-start justify-between gap-3">
-          <div>
-            <CardTitle>ユーザ一覧</CardTitle>
-            <CardDescription>
-              {users.length}名のユーザが登録されています
-            </CardDescription>
-          </div>
+          <CardHeading
+            description="テナントに登録されているユーザを管理します"
+            title="ユーザ一覧"
+          />
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>

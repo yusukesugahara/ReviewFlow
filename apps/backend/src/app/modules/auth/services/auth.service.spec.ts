@@ -6,6 +6,7 @@ import { UserRole } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
 import { AuthRepository } from '../../../../models/repositories/auth.repository';
 import { UsersService } from '../../users/services/users.service';
+import { AuthEmailChangeService } from './auth-email-change.service';
 import { AuthPasswordResetService } from './auth-password-reset.service';
 import { AuthService } from './auth.service';
 
@@ -30,6 +31,10 @@ describe('AuthService', () => {
     requestPasswordReset: jest.Mock;
     confirmPasswordReset: jest.Mock;
   };
+  let emailChangeService: {
+    requestMeEmailChange: jest.Mock;
+    confirmEmailChange: jest.Mock;
+  };
 
   beforeEach(async () => {
     users = {
@@ -45,6 +50,10 @@ describe('AuthService', () => {
       requestPasswordReset: jest.fn().mockResolvedValue({ ok: true }),
       confirmPasswordReset: jest.fn().mockResolvedValue({ ok: true }),
     };
+    emailChangeService = {
+      requestMeEmailChange: jest.fn().mockResolvedValue({ ok: true }),
+      confirmEmailChange: jest.fn().mockResolvedValue({ ok: true }),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -52,6 +61,7 @@ describe('AuthService', () => {
         { provide: AuthRepository, useValue: authRepository },
         { provide: UsersService, useValue: users },
         { provide: AuthPasswordResetService, useValue: passwordResetService },
+        { provide: AuthEmailChangeService, useValue: emailChangeService },
         { provide: JwtService, useValue: jwt },
       ],
     }).compile();
@@ -200,27 +210,26 @@ describe('AuthService', () => {
       tenantId: 't1',
     };
 
-    it('updates current user profile and returns a refreshed token', async () => {
+    it('updates current user profile name and returns a refreshed token', async () => {
       users.updateOwnProfile.mockResolvedValue({
         id: 'u1',
         tenantId: 't1',
-        email: 'new@example.com',
+        email: 'old@example.com',
         name: 'Updated User',
         role: UserRole.TENANT_USER,
       } as User);
 
       const out = await service.updateMeProfile(
-        { email: 'new@example.com', name: 'Updated User' },
+        { name: 'Updated User' },
         actor,
       );
 
       expect(users.updateOwnProfile).toHaveBeenCalledWith(actor, {
-        email: 'new@example.com',
         name: 'Updated User',
       });
       expect(jwt.sign).toHaveBeenCalledWith({
         sub: 'u1',
-        email: 'new@example.com',
+        email: 'old@example.com',
         tenantId: 't1',
         role: UserRole.TENANT_USER,
       });
@@ -228,11 +237,32 @@ describe('AuthService', () => {
         access_token: 'signed-jwt',
         user: {
           id: 'u1',
-          email: 'new@example.com',
+          email: 'old@example.com',
           name: 'Updated User',
           role: UserRole.TENANT_USER,
           tenantId: 't1',
         },
+      });
+    });
+
+    it('delegates email change requests to the email change service', async () => {
+      await expect(
+        service.requestMeEmailChange({ email: 'new@example.com' }, actor),
+      ).resolves.toEqual({ ok: true });
+
+      expect(emailChangeService.requestMeEmailChange).toHaveBeenCalledWith(
+        { email: 'new@example.com' },
+        actor,
+      );
+    });
+
+    it('delegates email change confirmation to the email change service', async () => {
+      await expect(
+        service.confirmEmailChange({ token: 'email-change-token' }),
+      ).resolves.toEqual({ ok: true });
+
+      expect(emailChangeService.confirmEmailChange).toHaveBeenCalledWith({
+        token: 'email-change-token',
       });
     });
 

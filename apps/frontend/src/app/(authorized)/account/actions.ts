@@ -2,7 +2,6 @@
 
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import {
   accountEmailSchema,
   accountPasswordSchema,
@@ -17,6 +16,8 @@ import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { client } from "@/lib/server/backend-fetch";
 import { persistAccessTokenCookie } from "@/lib/server/session";
 import type {
+  RequestMeEmailChangeBody,
+  RequestMeEmailChangeSuccessJson,
   UpdateMePasswordBody,
   UpdateMePasswordSuccessJson,
   UpdateMeProfileBody,
@@ -74,15 +75,18 @@ function profileErrorMessage(error: unknown): string {
 
 function emailErrorMessage(error: unknown): string {
   if (!isApiFailure(error)) {
-    return "メールアドレスの更新に失敗しました";
+    return "確認メールの送信に失敗しました";
   }
   if (errorCodeFromBody(error.body) === "AUTH_EMAIL_TAKEN") {
     return "このメールアドレスは既に使用されています";
   }
+  if (errorCodeFromBody(error.body) === "AUTH_EMAIL_UNCHANGED") {
+    return "現在のメールアドレスとは別のメールアドレスを入力してください";
+  }
   if (error.status === 400) {
     return "メールアドレスを確認してください";
   }
-  return errorMessageFromBody(error.body, "メールアドレスの更新に失敗しました");
+  return errorMessageFromBody(error.body, "確認メールの送信に失敗しました");
 }
 
 function passwordErrorMessage(error: unknown): string {
@@ -112,14 +116,8 @@ export async function updateAccountProfileAction(
     );
   }
 
-  const currentUser = await getCurrentSessionUser();
-  if (!currentUser) {
-    redirect("/login");
-  }
-
   const body: UpdateMeProfileBody = {
     name: parsed.data.name,
-    email: currentUser.email,
   };
 
   try {
@@ -152,30 +150,25 @@ export async function updateAccountEmailAction(
     );
   }
 
-  const currentUser = await getCurrentSessionUser();
-  if (!currentUser) {
-    redirect("/login");
-  }
-
-  const body: UpdateMeProfileBody = {
-    name: currentUser.name,
+  const body: RequestMeEmailChangeBody = {
     email: parsed.data.email,
   };
 
   try {
-    const response = await client.PATCH("/auth/me/profile", {
+    const response = await client.POST("/auth/me/email-change/request", {
       body,
       headers: await authHeadersOrRedirect(),
     });
-    const data = unwrapResponseData<UpdateMeProfileSuccessJson["data"]>(
+    unwrapResponseData<RequestMeEmailChangeSuccessJson["data"]>(
       response,
     );
-    await persistAccessTokenCookie(data.access_token);
   } catch (error) {
     redirectWithAccountError("emailError", emailErrorMessage(error));
   }
 
-  redirectWithAccountSuccess("メールアドレスを更新しました");
+  redirectWithAccountSuccess(
+    "確認メールを送信しました。メール内のURLから変更を確定してください",
+  );
 }
 
 export async function updateAccountPasswordAction(

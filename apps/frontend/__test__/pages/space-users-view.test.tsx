@@ -47,7 +47,9 @@ describe("SpaceUsersView", () => {
       />,
     );
 
-    expect(screen.getByText("1名のユーザが参加しています")).toBeInTheDocument();
+    expect(
+      screen.getByText("スペースに参加しているユーザを管理します"),
+    ).toBeInTheDocument();
     expect(screen.getByText("member@example.com")).toBeInTheDocument();
 
     await user.click(screen.getByRole("button", { name: "ユーザをスペースに追加" }));

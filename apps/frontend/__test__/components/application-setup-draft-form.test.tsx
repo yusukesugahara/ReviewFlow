@@ -28,11 +28,16 @@ describe("ApplicationSetupDraftForm", () => {
     expect(screen.getByText("公開済み")).toBeInTheDocument();
     expect(screen.getByDisplayValue("space-1")).toHaveAttribute("name", "spaceId");
     expect(screen.getByDisplayValue("/return")).toHaveAttribute("name", "returnPath");
-    expect(screen.getByRole("button", { name: "下書き保存" })).toHaveAttribute(
-      "value",
-      "draft",
-    );
-    expect(screen.getByRole("button", { name: "公開" })).toHaveAttribute("value", "publish");
+    const draftButtons = screen.getAllByRole("button", { name: "下書き保存" });
+    const publishButtons = screen.getAllByRole("button", { name: "公開" });
+    expect(draftButtons).toHaveLength(2);
+    expect(publishButtons).toHaveLength(2);
+    draftButtons.forEach((button) => {
+      expect(button).toHaveAttribute("value", "draft");
+    });
+    publishButtons.forEach((button) => {
+      expect(button).toHaveAttribute("value", "publish");
+    });
     expect(screen.getByRole("heading", { name: "申請URLを発行しました" })).toBeInTheDocument();
   });
 
@@ -86,18 +91,29 @@ describe("ApplicationSetupDraftForm", () => {
       />,
     );
 
-    await user.click(screen.getByRole("button", { name: "公開" }));
+    const topPublishButton = screen.getAllByRole("button", { name: "公開" })[0];
+    if (!topPublishButton) {
+      throw new Error("公開ボタンが見つかりません");
+    }
+    await user.click(topPublishButton);
 
     expect(action).toHaveBeenCalledTimes(1);
-    const publishButton = await screen.findByRole("button", { name: "公開中" });
-    expect(publishButton).toBeDisabled();
-    expect(publishButton).toHaveAttribute("aria-busy", "true");
+    const publishButtons = await screen.findAllByRole("button", { name: "公開中" });
+    expect(publishButtons).toHaveLength(2);
+    publishButtons.forEach((button) => {
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute("aria-busy", "true");
+    });
     expect(container.querySelector(".animate-spin")).toBeInTheDocument();
 
     resolveAction();
 
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "公開" })).toBeEnabled();
+      const enabledPublishButton = screen.getAllByRole("button", { name: "公開" })[0];
+      if (!enabledPublishButton) {
+        throw new Error("公開ボタンが見つかりません");
+      }
+      expect(enabledPublishButton).toBeEnabled();
     });
   });
 });

@@ -9,6 +9,7 @@ import {
   CardContent,
   CardHeader,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import {
   Tooltip,
   TooltipContent,
@@ -49,14 +50,11 @@ export function AccountDetailsPanel({
     <>
       <Card>
         <CardHeader className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div>
-            <h2 className="text-lg font-semibold text-slate-950">
-              アカウント詳細
-            </h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              ログイン中のアカウント情報
-            </p>
-          </div>
+          <CardHeading
+            description="ログイン中のアカウント情報"
+            title="アカウント詳細"
+            titleClassName="text-lg"
+          />
           <div className="relative">
             <TooltipProvider>
               <Tooltip>

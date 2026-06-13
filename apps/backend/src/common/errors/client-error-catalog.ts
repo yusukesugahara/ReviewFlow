@@ -10,6 +10,14 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'Email is already registered',
   },
+  AUTH_EMAIL_UNCHANGED: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'New email must be different from the current email',
+  },
+  AUTH_EMAIL_CHANGE_TOKEN_INVALID: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Email change token is invalid or expired',
+  },
   AUTH_TENANT_REQUIRED: {
     status: HttpStatus.BAD_REQUEST,
     message: 'Multiple accounts use this email; specify tenantId to log in',

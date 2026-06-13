@@ -647,7 +647,116 @@
             "nest-jwt": []
           }
         ],
-        "summary": "ログイン中ユーザの名前・メールアドレス更新",
+        "summary": "ログイン中ユーザの名前更新",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me/email-change/request": {
+      "post": {
+        "operationId": "AuthController_requestMeEmailChange",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestMeEmailChangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EmailChangeAcceptedResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "ログイン中ユーザのメールアドレス変更確認メール送信",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/email-change/confirm": {
+      "post": {
+        "operationId": "AuthController_confirmEmailChange",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmEmailChangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EmailChangeAcceptedResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "メールアドレス変更の確定",
         "tags": [
           "auth"
         ]
@@ -3770,7 +3879,24 @@
             "type": "string",
             "example": "山田 太郎",
             "nullable": true
-          },
+          }
+        }
+      },
+      "EmailChangeAcceptedResponseDto": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "RequestMeEmailChangeDto": {
+        "type": "object",
+        "properties": {
           "email": {
             "type": "string",
             "example": "user@example.com"
@@ -3778,6 +3904,18 @@
         },
         "required": [
           "email"
+        ]
+      },
+      "ConfirmEmailChangeDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "email-change-token"
+          }
+        },
+        "required": [
+          "token"
         ]
       },
       "UpdateMePasswordDto": {

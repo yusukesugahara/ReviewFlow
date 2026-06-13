@@ -6,11 +6,14 @@ import { User } from '../../../../models/entities/user.entity';
 import { AuthRepository } from '../../../../models/repositories/auth.repository';
 import type { AccessTokenPayload } from '../../../../strategies/jwt.strategy';
 import { UsersService } from '../../users/services/users.service';
+import { AuthEmailChangeService } from './auth-email-change.service';
 import { AuthPasswordResetService } from './auth-password-reset.service';
 import type {
+  ConfirmEmailChangeDto,
   ConfirmPasswordResetDto,
   LoginDto,
   RegisterDto,
+  RequestMeEmailChangeDto,
   RequestPasswordResetDto,
   UpdateMePasswordDto,
   UpdateMeProfileDto,
@@ -31,6 +34,7 @@ export class AuthService {
     private readonly authRepository: AuthRepository,
     private readonly usersService: UsersService,
     private readonly passwordResetService: AuthPasswordResetService,
+    private readonly emailChangeService: AuthEmailChangeService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -58,6 +62,21 @@ export class AuthService {
 
   async confirmPasswordReset(dto: ConfirmPasswordResetDto) {
     return this.passwordResetService.confirmPasswordReset(dto);
+  }
+
+  async requestMeEmailChange(
+    dto: RequestMeEmailChangeDto,
+    actor: {
+      id: string;
+      email: string;
+      tenantId: string;
+    },
+  ) {
+    return this.emailChangeService.requestMeEmailChange(dto, actor);
+  }
+
+  async confirmEmailChange(dto: ConfirmEmailChangeDto) {
+    return this.emailChangeService.confirmEmailChange(dto);
   }
 
   async updateMeProfile(

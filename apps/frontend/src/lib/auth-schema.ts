@@ -60,6 +60,10 @@ export const confirmPasswordResetSchema = z.object({
 
 export type ConfirmPasswordResetInput = z.infer<typeof confirmPasswordResetSchema>;
 
+export const confirmEmailChangeSchema = z.object({
+  token: nonEmptyString(TOKEN_REQUIRED_MESSAGE),
+});
+
 export const acceptInvitationSchema = z.object({
   token: nonEmptyString(TOKEN_REQUIRED_MESSAGE),
   name: z.string().trim().optional(),

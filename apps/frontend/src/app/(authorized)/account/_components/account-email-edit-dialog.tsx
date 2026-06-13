@@ -34,7 +34,7 @@ export function AccountEmailEditDialog({
           メールアドレスを編集
         </DialogTitle>
         <DialogDescription id="account-email-edit-description">
-          ログインに使うメールアドレスを変更します。
+          入力したメールアドレスに確認URLを送信します。URLを開くまで変更は確定しません。
         </DialogDescription>
       </DialogHeader>
       <form action={updateAccountEmailAction} className="space-y-4">
@@ -54,7 +54,7 @@ export function AccountEmailEditDialog({
           <Button type="button" variant="outline" onClick={onClose}>
             キャンセル
           </Button>
-          <Button type="submit">保存</Button>
+          <Button type="submit">確認メールを送信</Button>
         </DialogFooter>
       </form>
     </DialogContent>

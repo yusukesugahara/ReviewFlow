@@ -94,35 +94,19 @@ export class UsersService {
 
   async updateOwnProfile(
     actor: Pick<AuthUserPayload, 'id' | 'email' | 'tenantId'>,
-    input: { email: string; name?: string },
+    input: { name?: string },
   ): Promise<User> {
     const target = await this.findByIdAndTenant(actor.id, actor.tenantId);
     if (!target) {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 
-    const nextEmail = input.email.trim().toLowerCase();
     const nextName = normalizeNullableText(input.name);
-    if (!nextEmail.length) {
-      throw clientError(ClientErrorCodes.AUTH_EMAIL_TAKEN);
-    }
-
-    if (nextEmail !== target.email) {
-      const usersWithEmail = await this.findAllByEmail(nextEmail);
-      if (usersWithEmail.some((user) => user.id !== target.id)) {
-        throw clientError(ClientErrorCodes.AUTH_EMAIL_TAKEN);
-      }
-    }
-
-    const previous = {
-      email: target.email,
-      name: target.name,
-    };
-    if (previous.email === nextEmail && previous.name === nextName) {
+    const previousName = target.name;
+    if (previousName === nextName) {
       return target;
     }
 
-    target.email = nextEmail;
     target.name = nextName;
     const saved = await this.usersRepository.save(target);
     await this.auditLogs.recordUserEvent({
@@ -130,9 +114,7 @@ export class UsersService {
       actor,
       target: saved,
       metadataJson: {
-        emailFrom: previous.email,
-        emailTo: saved.email,
-        userNameFrom: previous.name,
+        userNameFrom: previousName,
         userNameTo: saved.name,
       },
     });

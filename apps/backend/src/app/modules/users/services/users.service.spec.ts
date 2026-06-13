@@ -323,64 +323,37 @@ describe('UsersService', () => {
   });
 
   describe('updateOwnProfile', () => {
-    it('updates the current user name and email in tenant scope', async () => {
+    it('updates the current user name in tenant scope', async () => {
       const currentUser = user({
         id: 'actor-id',
         email: 'old@example.com',
         name: 'Old User',
       });
       usersRepository.findByIdAndTenant.mockResolvedValue(currentUser);
-      usersRepository.findAllByEmail.mockResolvedValue([]);
       usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
 
       const out = await service.updateOwnProfile(actor(), {
-        email: ' New@Example.com ',
         name: ' New User ',
       });
 
-      expect(out.email).toBe('new@example.com');
+      expect(out.email).toBe('old@example.com');
       expect(out.name).toBe('New User');
       expect(usersRepository.findByIdAndTenant).toHaveBeenCalledWith(
         'actor-id',
         't1',
       );
-      expect(usersRepository.findAllByEmail).toHaveBeenCalledWith(
-        'new@example.com',
-      );
+      expect(usersRepository.findAllByEmail).not.toHaveBeenCalled();
       expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           actionType: 'user.profile_updated',
           actor: actor(),
           target: currentUser,
           metadataJson: {
-            emailFrom: 'old@example.com',
-            emailTo: 'new@example.com',
             userNameFrom: 'Old User',
             userNameTo: 'New User',
           },
         }),
       );
-    });
-
-    it('rejects an email already used by another account', async () => {
-      usersRepository.findByIdAndTenant.mockResolvedValue(
-        user({ id: 'actor-id', email: 'old@example.com' }),
-      );
-      usersRepository.findAllByEmail.mockResolvedValue([
-        user({ id: 'other-id', email: 'new@example.com' }),
-      ]);
-
-      await expect(
-        service.updateOwnProfile(actor(), {
-          email: 'new@example.com',
-          name: 'New User',
-        }),
-      ).rejects.toMatchObject({
-        errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN,
-      });
-
-      expect(usersRepository.save).not.toHaveBeenCalled();
-      expect(auditLogs.recordUserEvent).not.toHaveBeenCalled();
     });
 
     it('skips persistence when the current profile is unchanged', async () => {
@@ -393,7 +366,6 @@ describe('UsersService', () => {
 
       await expect(
         service.updateOwnProfile(actor(), {
-          email: ' old@example.com ',
           name: ' Old User ',
         }),
       ).resolves.toBe(currentUser);

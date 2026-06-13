@@ -54,7 +54,9 @@ describe("AdminInvitationsView", () => {
     expect(screen.getByRole("heading", { name: "招待メールを送信しました" })).toBeInTheDocument();
     expect(screen.getAllByText("テナント管理者").length).toBeGreaterThan(0);
     expect(screen.getByText("invitee@example.com")).toBeInTheDocument();
-    expect(screen.getByText("2名のユーザが登録されています")).toBeInTheDocument();
+    expect(
+      screen.getByText("テナントに登録されているユーザを管理します"),
+    ).toBeInTheDocument();
     expect(screen.getByText("active@example.com")).toBeInTheDocument();
     expect(screen.getByText("deleted@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "復活" })).toBeInTheDocument();

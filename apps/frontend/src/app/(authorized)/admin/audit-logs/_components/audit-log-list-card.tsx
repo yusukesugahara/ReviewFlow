@@ -1,10 +1,9 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import type { EnrichedAuditRow } from "../_view-models/audit-log-view-model";
 import type { AdminAuditLogsViewProps } from "../types";
 import { AuditLogFiltersForm } from "./audit-log-filters-form";
@@ -33,8 +32,10 @@ export function AuditLogListCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>操作履歴</CardTitle>
-        <CardDescription>{listDescription}</CardDescription>
+        <CardHeading
+          description={listDescription}
+          title="操作履歴"
+        />
       </CardHeader>
       <CardContent className="space-y-5 pt-6">
         <AuditLogFiltersForm

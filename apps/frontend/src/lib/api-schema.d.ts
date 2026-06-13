@@ -170,8 +170,42 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        /** ログイン中ユーザの名前・メールアドレス更新 */
+        /** ログイン中ユーザの名前更新 */
         patch: operations["AuthController_updateMeProfile"];
+        trace?: never;
+    };
+    "/auth/me/email-change/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ログイン中ユーザのメールアドレス変更確認メール送信 */
+        post: operations["AuthController_requestMeEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-change/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** メールアドレス変更の確定 */
+        post: operations["AuthController_confirmEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
         trace?: never;
     };
     "/auth/me/password": {
@@ -1052,8 +1086,18 @@ export interface components {
         UpdateMeProfileDto: {
             /** @example 山田 太郎 */
             name?: string | null;
+        };
+        EmailChangeAcceptedResponseDto: {
+            /** @example true */
+            ok: boolean;
+        };
+        RequestMeEmailChangeDto: {
             /** @example user@example.com */
             email: string;
+        };
+        ConfirmEmailChangeDto: {
+            /** @example email-change-token */
+            token: string;
         };
         UpdateMePasswordDto: {
             /** @example current-password */
@@ -1860,6 +1904,66 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["AuthIssueTokensResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_requestMeEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestMeEmailChangeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["EmailChangeAcceptedResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_confirmEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmEmailChangeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["EmailChangeAcceptedResponseDto"];
                     };
                 };
             };
