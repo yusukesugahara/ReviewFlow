@@ -40,7 +40,7 @@ export type E2eTenantSpace = {
   space: E2eSpace;
 };
 
-type ApplicantAccessTokenInput = {
+export type ApplicantAccessTokenInput = {
   applicationId?: string;
   email: string;
   formDefinitionId?: string;
@@ -186,7 +186,9 @@ function getPlaywrightBaseUrl(): string {
   return process.env.PLAYWRIGHT_BASE_URL ?? "http://127.0.0.1:3001";
 }
 
-function createApplicantAccessToken(input: ApplicantAccessTokenInput): string {
+export function createApplicantAccessToken(
+  input: ApplicantAccessTokenInput,
+): string {
   const now = Math.floor(Date.now() / 1000);
   const payload = {
     kind: "applicant_access",
