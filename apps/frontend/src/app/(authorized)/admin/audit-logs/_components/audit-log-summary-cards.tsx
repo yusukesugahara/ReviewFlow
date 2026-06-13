@@ -1,105 +1,69 @@
-import Link from "next/link";
 import type { ReactNode } from "react";
-import { AlertTriangle, ShieldAlert, ShieldCheck } from "lucide-react";
+import { ClipboardList, FileClock, UsersRound } from "lucide-react";
 import type { AuditLogSummaryCounts } from "../_view-models/audit-log-view-model";
 
 type AuditLogSummaryCardsProps = {
-  highRiskHref: string;
-  isHighRiskFilterActive: boolean;
   summaryCounts: AuditLogSummaryCounts;
 };
 
-export function AuditLogSummaryCards({
-  highRiskHref,
-  isHighRiskFilterActive,
-  summaryCounts,
-}: AuditLogSummaryCardsProps) {
+export function AuditLogSummaryCards({ summaryCounts }: AuditLogSummaryCardsProps) {
   return (
-    <div className="grid gap-3 md:grid-cols-3">
+    <div className="grid gap-3 md:grid-cols-4">
       <AuditSummaryCard
-        active={isHighRiskFilterActive}
-        href={highRiskHref}
-        icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
-        label="高リスク"
-        linkLabel={`高リスクの操作履歴を表示（${summaryCounts.highRisk}件）`}
-        tone="red"
-        value={summaryCounts.highRisk}
-      />
-      <AuditSummaryCard
-        icon={<AlertTriangle className="h-5 w-5" aria-hidden="true" />}
-        label="要確認"
-        tone="amber"
-        value={summaryCounts.mediumRisk}
-      />
-      <AuditSummaryCard
-        icon={<ShieldCheck className="h-5 w-5" aria-hidden="true" />}
-        label="失敗操作"
+        icon={<FileClock className="h-5 w-5" aria-hidden="true" />}
+        label="全イベント"
         tone="slate"
-        value={summaryCounts.failed}
+        value={summaryCounts.total}
+      />
+      <AuditSummaryCard
+        icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
+        label="申請"
+        tone="blue"
+        value={summaryCounts.applicationEvents}
+      />
+      <AuditSummaryCard
+        icon={<UsersRound className="h-5 w-5" aria-hidden="true" />}
+        label="ユーザ/招待"
+        tone="emerald"
+        value={summaryCounts.identityEvents}
+      />
+      <AuditSummaryCard
+        icon={<UsersRound className="h-5 w-5" aria-hidden="true" />}
+        label="スペース/メンバー"
+        tone="violet"
+        value={summaryCounts.spaceEvents}
       />
     </div>
   );
 }
 
 function AuditSummaryCard({
-  active = false,
-  href,
   icon,
   label,
-  linkLabel,
   tone,
   value,
 }: {
-  active?: boolean;
-  href?: string;
   icon: ReactNode;
   label: string;
-  linkLabel?: string;
-  tone: "amber" | "red" | "slate";
+  tone: "blue" | "emerald" | "slate" | "violet";
   value: number;
 }) {
   const toneClassName =
-    tone === "red"
-      ? "border-red-200 bg-red-50 text-red-900"
-      : tone === "amber"
-        ? "border-amber-200 bg-amber-50 text-amber-900"
-        : "border-slate-200 bg-slate-50 text-slate-900";
-  const activeClassName =
-    tone === "red"
-      ? "ring-2 ring-red-400 ring-offset-2"
-      : tone === "amber"
-        ? "ring-2 ring-amber-400 ring-offset-2"
-        : "ring-2 ring-slate-400 ring-offset-2";
-  const className = [
-    "block rounded-lg border px-4 py-3",
-    toneClassName,
-    href ? "cursor-pointer transition hover:shadow-sm hover:brightness-[0.98]" : "",
-    active ? activeClassName : "",
-  ]
-    .filter(Boolean)
-    .join(" ");
-  const content = (
-    <>
+    tone === "blue"
+      ? "border-sky-200 bg-sky-50 text-sky-950"
+      : tone === "emerald"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-950"
+        : tone === "violet"
+          ? "border-violet-200 bg-violet-50 text-violet-950"
+          : "border-slate-200 bg-slate-50 text-slate-950";
+
+  return (
+    <div className={`rounded-lg border px-4 py-3 ${toneClassName}`}>
       <div className="flex items-center gap-2 text-sm font-medium">
         {icon}
         {label}
       </div>
       <p className="mt-2 text-2xl font-semibold tabular-nums">{value}</p>
-    </>
+    </div>
   );
-
-  if (href) {
-    return (
-      <Link
-        href={href}
-        className={className}
-        aria-current={active ? "page" : undefined}
-        aria-label={linkLabel ?? label}
-      >
-        {content}
-      </Link>
-    );
-  }
-
-  return <div className={className}>{content}</div>;
 }

@@ -67,21 +67,33 @@ describe('AuditLogsRepository', () => {
       tenantId: 'tenant-1',
       groupId: undefined,
       actorUserId: 'user-1',
+      actorType: 'user',
+      actorEmailSnapshot: 'actor@example.com',
       actionType: 'user.created',
       targetType: 'user',
       targetId: 'user-2',
+      targetUserId: 'user-2',
+      targetEmailSnapshot: 'target@example.com',
+      summary: 'created user',
       metadataJson: { source: 'test' },
     });
 
-    expect(auditLogs.create).toHaveBeenCalledWith({
-      tenantId: 'tenant-1',
-      groupId: null,
-      actorUserId: 'user-1',
-      actionType: 'user.created',
-      targetType: 'user',
-      targetId: 'user-2',
-      metadataJson: { source: 'test' },
-    });
+    expect(auditLogs.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tenantId: 'tenant-1',
+        groupId: null,
+        actorUserId: 'user-1',
+        actorType: 'user',
+        actorEmailSnapshot: 'actor@example.com',
+        actionType: 'user.created',
+        targetType: 'user',
+        targetId: 'user-2',
+        targetUserId: 'user-2',
+        targetEmailSnapshot: 'target@example.com',
+        summary: 'created user',
+        metadataJson: { source: 'test' },
+      }),
+    );
     expect(auditLogs.save).toHaveBeenCalledWith(row);
   });
 

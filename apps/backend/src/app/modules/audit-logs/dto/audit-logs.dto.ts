@@ -5,6 +5,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUUID,
   Max,
   MaxLength,
   Min,
@@ -25,9 +26,25 @@ export class AuditLogsQueryDto {
   @MaxLength(128)
   actionType?: string;
 
+  @ApiPropertyOptional({ description: 'target_type の完全一致絞り込み' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(128)
+  targetType?: string;
+
+  @ApiPropertyOptional({ description: 'application_id の完全一致絞り込み' })
+  @IsOptional()
+  @IsUUID()
+  applicationId?: string;
+
+  @ApiPropertyOptional({ description: 'target_user_id の完全一致絞り込み' })
+  @IsOptional()
+  @IsUUID()
+  targetUserId?: string;
+
   @ApiPropertyOptional({
     description:
-      'action_type / target_type / target_id / actor_user_id / group_id の部分一致検索',
+      'action_type / summary / actor / target / application / group の部分一致検索',
   })
   @IsOptional()
   @IsString()
@@ -63,6 +80,12 @@ export class AuditLogItemDto {
   actorEmail!: string | null;
 
   @ApiProperty()
+  actorType!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  actorEmailSnapshot!: string | null;
+
+  @ApiProperty()
   actionType!: string;
 
   @ApiProperty()
@@ -70,6 +93,42 @@ export class AuditLogItemDto {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   targetId!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  targetUserId!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  targetEmailSnapshot!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  applicationId!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  statusFrom!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  statusTo!: string | null;
+
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  stepOrderFrom!: number | null;
+
+  @ApiPropertyOptional({ type: Number, nullable: true })
+  stepOrderTo!: number | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  roleFrom!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  roleTo!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  groupRoleFrom!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  groupRoleTo!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  summary!: string | null;
 
   @ApiPropertyOptional()
   metadataJson!: Record<string, unknown> | null;

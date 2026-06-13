@@ -4,6 +4,7 @@ import type { Application } from '../../../../models/entities/application.entity
 import type { FormDefinition } from '../../../../models/entities/form-definition.entity';
 import type { ApplicationQueryRepository } from '../../../../models/repositories/application-query.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
+import type { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import type { SpaceAccessService } from '../../groups/services/space-access.service';
 import type { ApplicationAccessPolicy } from '../policies/application-access.policy';
 import type { ApplicationNotificationService } from './application-notification.service';
@@ -66,6 +67,9 @@ describe('ApplicationReviewUseCaseService', () => {
     reject: jest.Mock;
     returnForCorrection: jest.Mock;
   };
+  let auditLogs: {
+    recordApplicationEvent: jest.Mock;
+  };
   let service: ApplicationReviewUseCaseService;
 
   beforeEach(() => {
@@ -90,6 +94,9 @@ describe('ApplicationReviewUseCaseService', () => {
       reject: jest.fn(),
       returnForCorrection: jest.fn(),
     };
+    auditLogs = {
+      recordApplicationEvent: jest.fn(),
+    };
     service = new ApplicationReviewUseCaseService(
       applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
@@ -97,6 +104,7 @@ describe('ApplicationReviewUseCaseService', () => {
       notificationService as unknown as ApplicationNotificationService,
       queryService as unknown as ApplicationQueryService,
       reviewActionService as unknown as ApplicationReviewActionService,
+      auditLogs as unknown as BusinessAuditLogService,
     );
   });
 
@@ -128,6 +136,12 @@ describe('ApplicationReviewUseCaseService', () => {
         comment: 'ok',
       },
     );
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.approved',
+        app: row,
+      }),
+    );
     expect(queryService.getOneForActor).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'reviewer-1' }),
       'app-1',
@@ -147,6 +161,12 @@ describe('ApplicationReviewUseCaseService', () => {
       row,
       'reviewer-1',
       {},
+    );
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.rejected',
+        app: row,
+      }),
     );
   });
 
@@ -187,6 +207,12 @@ describe('ApplicationReviewUseCaseService', () => {
       row,
       form,
       dto,
+    );
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.returned',
+        app: row,
+      }),
     );
   });
 });

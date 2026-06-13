@@ -12,7 +12,7 @@ import { AuditLogTable } from "./audit-log-table";
 
 type AuditLogListCardProps = Pick<
   AdminAuditLogsViewProps,
-  "createdFrom" | "createdTo" | "outcome" | "query" | "risk"
+  "createdFrom" | "createdTo" | "query" | "targetType"
 > & {
   filteredRows: EnrichedAuditRow[];
   hasActiveFilters: boolean;
@@ -25,9 +25,8 @@ export function AuditLogListCard({
   filteredRows,
   hasActiveFilters,
   listDescription,
-  outcome,
   query,
-  risk,
+  targetType,
 }: AuditLogListCardProps) {
   return (
     <Card>
@@ -39,9 +38,8 @@ export function AuditLogListCard({
         <AuditLogFiltersForm
           createdFrom={createdFrom}
           createdTo={createdTo}
-          outcome={outcome}
           query={query}
-          risk={risk}
+          targetType={targetType}
         />
         {filteredRows.length === 0 ? (
           <p className="py-8 text-center text-muted-foreground">

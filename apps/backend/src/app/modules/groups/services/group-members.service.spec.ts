@@ -5,6 +5,7 @@ import { UserRole } from '../../../../models/constants/user-role';
 import { GroupMember } from '../../../../models/entities/group-member.entity';
 import { User } from '../../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../../models/repositories/groups.repository';
+import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from '../../users/services/users.service';
 import { GroupMembersService } from './group-members.service';
 import { SpaceAccessService } from './space-access.service';
@@ -30,6 +31,9 @@ describe('GroupMembersService', () => {
   let spaceAccess: jest.Mocked<
     Pick<SpaceAccessService, 'assertGroupInTenant' | 'assertCanManageGroup'>
   >;
+  let auditLogs: {
+    recordSpaceMemberEvent: jest.Mock;
+  };
 
   const systemAdmin = {
     id: 'sys-1',
@@ -63,6 +67,9 @@ describe('GroupMembersService', () => {
       assertGroupInTenant: jest.fn().mockResolvedValue(undefined),
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
     };
+    auditLogs = {
+      recordSpaceMemberEvent: jest.fn(),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -70,6 +77,7 @@ describe('GroupMembersService', () => {
         { provide: GroupsRepository, useValue: groupsRepository },
         { provide: UsersService, useValue: usersService },
         { provide: SpaceAccessService, useValue: spaceAccess },
+        { provide: BusinessAuditLogService, useValue: auditLogs },
       ],
     }).compile();
 
@@ -138,6 +146,14 @@ describe('GroupMembersService', () => {
         invitedByUserId: 'sys-1',
       }),
     );
+    expect(auditLogs.recordSpaceMemberEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'space.member_added',
+        actor: systemAdmin,
+        member: out,
+        groupRoleTo: GroupMemberRole.USER,
+      }),
+    );
   });
 
   it('rejects adding members by non tenant admins', async () => {
@@ -193,13 +209,12 @@ describe('GroupMembersService', () => {
   });
 
   it('allows a group admin to remove a group member', async () => {
-    groupsRepository.findMember.mockResolvedValue(
-      groupMember({
-        id: 'member-2',
-        userId: 'user-2',
-        role: GroupMemberRole.USER,
-      }),
-    );
+    const member = groupMember({
+      id: 'member-2',
+      userId: 'user-2',
+      role: GroupMemberRole.USER,
+    });
+    groupsRepository.findMember.mockResolvedValue(member);
 
     await service.removeMember('group-1', 'user-2', groupAdmin);
 
@@ -208,6 +223,14 @@ describe('GroupMembersService', () => {
       'group-1',
     );
     expect(groupsRepository.deleteMember).toHaveBeenCalledWith('member-2');
+    expect(auditLogs.recordSpaceMemberEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'space.member_removed',
+        actor: groupAdmin,
+        member,
+        groupRoleFrom: GroupMemberRole.USER,
+      }),
+    );
   });
 
   it('rejects removing members by non group admins', async () => {

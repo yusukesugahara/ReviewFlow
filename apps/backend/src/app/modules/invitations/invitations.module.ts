@@ -5,6 +5,7 @@ import { Group } from '../../../models/entities/group.entity';
 import { Invitation } from '../../../models/entities/invitation.entity';
 import { User } from '../../../models/entities/user.entity';
 import { InvitationsRepository } from '../../../models/repositories/invitations.repository';
+import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
@@ -14,6 +15,7 @@ import { InvitationsService } from './services/invitations.service';
 @Module({
   imports: [
     TypeOrmModule.forFeature([Invitation, User, Group, GroupMember]),
+    AuditLogsModule,
     UsersModule,
     AuthModule,
     MailModule,

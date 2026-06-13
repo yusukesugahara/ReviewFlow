@@ -13,6 +13,7 @@ import {
 } from '../../../../models/repositories/invitations.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { AuthService } from '../../auth/services/auth.service';
+import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { MailService } from '../../mail/services/mail.service';
 import { UsersService } from '../../users/services/users.service';
 import type {
@@ -31,6 +32,7 @@ export class InvitationsService {
     private readonly usersService: UsersService,
     private readonly authService: AuthService,
     private readonly mailService: MailService,
+    private readonly auditLogs: BusinessAuditLogService,
   ) {}
 
   async create(dto: CreateInvitationDto, actor: AuthUserPayload) {
@@ -107,6 +109,11 @@ export class InvitationsService {
       throw new InternalServerErrorException('failed to send invitation email');
     }
 
+    await this.auditLogs.recordInvitationCreated({
+      actor,
+      invitation: saved,
+    });
+
     return {
       id: saved.id,
       email: saved.email,
@@ -121,10 +128,15 @@ export class InvitationsService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const name = dto.name?.trim().length ? dto.name.trim() : null;
 
-    const user = await this.acceptInvitationOrThrow({
+    const { user, invitation } = await this.acceptInvitationOrThrow({
       token: dto.token,
       passwordHash,
       name,
+    });
+
+    await this.auditLogs.recordInvitationAccepted({
+      invitation,
+      user,
     });
 
     return this.authService.issueTokensForUser(user);

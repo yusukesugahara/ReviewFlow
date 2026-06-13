@@ -1,21 +1,41 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { AuditLog } from '../entities/audit-log.entity';
+import { AuditLog, type AuditActorType } from '../entities/audit-log.entity';
+import type { ApplicationStatusValue } from '../constants/application-status';
+import type { GroupMemberRoleValue } from '../constants/group-member-role';
+import type { UserRoleValue } from '../constants/user-role';
 
 export type CreateAuditLogParams = {
   tenantId: string;
   groupId?: string | null;
   actorUserId: string | null;
+  actorType: AuditActorType;
+  actorEmailSnapshot?: string | null;
   actionType: string;
   targetType: string;
   targetId: string | null;
+  targetUserId?: string | null;
+  targetEmailSnapshot?: string | null;
+  applicationId?: string | null;
+  statusFrom?: ApplicationStatusValue | null;
+  statusTo?: ApplicationStatusValue | null;
+  stepOrderFrom?: number | null;
+  stepOrderTo?: number | null;
+  roleFrom?: UserRoleValue | null;
+  roleTo?: UserRoleValue | null;
+  groupRoleFrom?: GroupMemberRoleValue | null;
+  groupRoleTo?: GroupMemberRoleValue | null;
+  summary: string;
   metadataJson: Record<string, unknown> | null;
 };
 
 export type AuditLogListQuery = {
   limit?: number;
   actionType?: string;
+  applicationId?: string;
+  targetUserId?: string;
+  targetType?: string;
   q?: string;
   createdFrom?: string;
   createdTo?: string;
@@ -34,9 +54,23 @@ export class AuditLogsRepository {
         tenantId: params.tenantId,
         groupId: params.groupId ?? null,
         actorUserId: params.actorUserId,
+        actorType: params.actorType,
+        actorEmailSnapshot: params.actorEmailSnapshot ?? null,
         actionType: params.actionType,
         targetType: params.targetType,
         targetId: params.targetId,
+        targetUserId: params.targetUserId ?? null,
+        targetEmailSnapshot: params.targetEmailSnapshot ?? null,
+        applicationId: params.applicationId ?? null,
+        statusFrom: params.statusFrom ?? null,
+        statusTo: params.statusTo ?? null,
+        stepOrderFrom: params.stepOrderFrom ?? null,
+        stepOrderTo: params.stepOrderTo ?? null,
+        roleFrom: params.roleFrom ?? null,
+        roleTo: params.roleTo ?? null,
+        groupRoleFrom: params.groupRoleFrom ?? null,
+        groupRoleTo: params.groupRoleTo ?? null,
+        summary: params.summary,
         metadataJson: params.metadataJson,
       }),
     );
@@ -61,6 +95,21 @@ export class AuditLogsRepository {
         actionType: `${escapeLike(actionType)}%`,
       });
     }
+    if (query.targetType?.trim()) {
+      builder.andWhere('auditLog.targetType = :targetType', {
+        targetType: query.targetType.trim(),
+      });
+    }
+    if (query.applicationId?.trim()) {
+      builder.andWhere('auditLog.applicationId = :applicationId', {
+        applicationId: query.applicationId.trim(),
+      });
+    }
+    if (query.targetUserId?.trim()) {
+      builder.andWhere('auditLog.targetUserId = :targetUserId', {
+        targetUserId: query.targetUserId.trim(),
+      });
+    }
     if (keyword) {
       const q = `%${escapeLike(keyword)}%`;
       builder.andWhere(
@@ -69,6 +118,11 @@ export class AuditLogsRepository {
           'auditLog.targetType LIKE :q',
           'auditLog.targetId LIKE :q',
           'auditLog.actorUserId LIKE :q',
+          'auditLog.actorEmailSnapshot LIKE :q',
+          'auditLog.targetUserId LIKE :q',
+          'auditLog.targetEmailSnapshot LIKE :q',
+          'auditLog.applicationId LIKE :q',
+          'auditLog.summary LIKE :q',
           'auditLog.groupId LIKE :q',
           'actorUser.email LIKE :q',
         ].join(' OR ')})`,

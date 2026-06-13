@@ -6,9 +6,8 @@ type AdminAuditLogsPageProps = {
   searchParams?: Promise<{
     createdFrom?: string;
     createdTo?: string;
-    outcome?: string;
     q?: string;
-    risk?: string;
+    targetType?: string;
   }>;
 };
 

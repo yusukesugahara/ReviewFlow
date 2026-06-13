@@ -9,19 +9,26 @@ import type { AdminAuditLogsViewProps } from "../types";
 type AdminAuditLogSearchParams = {
   createdFrom?: string;
   createdTo?: string;
-  outcome?: string;
   q?: string;
-  risk?: string;
+  targetType?: string;
 };
+
+const TARGET_TYPE_FILTERS = [
+  "all",
+  "application",
+  "user",
+  "invitation",
+  "space",
+  "group_member",
+] as const;
 
 export async function getAdminAuditLogsPageData(
   params?: AdminAuditLogSearchParams,
 ): Promise<AdminAuditLogsViewProps> {
   const createdFrom = normalizeDateValue(params?.createdFrom);
   const createdTo = normalizeDateValue(params?.createdTo);
-  const outcome = normalizeOption(params?.outcome, ["all", "failed", "success"]);
   const query = normalizeSearchValue(params?.q);
-  const risk = normalizeOption(params?.risk, ["all", "high", "medium", "low"]);
+  const targetType = normalizeOption(params?.targetType, TARGET_TYPE_FILTERS);
 
   const accessToken = await getAccessTokenFromCookie();
   if (!accessToken) {
@@ -33,6 +40,7 @@ export async function getAdminAuditLogsPageData(
       query: {
         limit: 200,
         ...(query ? { q: query } : {}),
+        ...(targetType !== "all" ? { targetType } : {}),
         ...(createdFrom ? { createdFrom: toIsoDateStart(createdFrom) } : {}),
         ...(createdTo ? { createdTo: toIsoDateEnd(createdTo) } : {}),
       },
@@ -43,9 +51,8 @@ export async function getAdminAuditLogsPageData(
   return {
     createdFrom,
     createdTo,
-    outcome,
     query,
-    risk,
+    targetType,
     rows: unwrapResponseData<AuditLogsListSuccessJson["data"]>(response).logs ?? [],
   };
 }
@@ -71,7 +78,7 @@ function toIsoDateEnd(value: string): string {
   return new Date(`${value}T23:59:59.999`).toISOString();
 }
 
-function normalizeOption(value: string | undefined, allowed: string[]): string {
+function normalizeOption<T extends readonly string[]>(value: string | undefined, allowed: T): T[number] {
   return typeof value === "string" && allowed.includes(value)
     ? value
     : (allowed[0] ?? "");

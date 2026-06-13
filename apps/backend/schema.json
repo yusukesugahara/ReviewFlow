@@ -528,10 +528,37 @@
             }
           },
           {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "description": "target_type の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "description": "application_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetUserId",
+            "required": false,
+            "in": "query",
+            "description": "target_user_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
             "name": "q",
             "required": false,
             "in": "query",
-            "description": "action_type / target_type / target_id / actor_user_id / group_id の部分一致検索",
+            "description": "action_type / summary / actor / target / application / group の部分一致検索",
             "schema": {
               "type": "string"
             }
@@ -3436,6 +3463,13 @@
             "type": "string",
             "nullable": true
           },
+          "actorType": {
+            "type": "string"
+          },
+          "actorEmailSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
           "actionType": {
             "type": "string"
           },
@@ -3443,6 +3477,54 @@
             "type": "string"
           },
           "targetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetEmailSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "applicationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "stepOrderFrom": {
+            "type": "number",
+            "nullable": true
+          },
+          "stepOrderTo": {
+            "type": "number",
+            "nullable": true
+          },
+          "roleFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "roleTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupRoleFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupRoleTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
             "type": "string",
             "nullable": true
           },
@@ -3455,6 +3537,7 @@
         },
         "required": [
           "id",
+          "actorType",
           "actionType",
           "targetType",
           "createdAt"
