@@ -28,7 +28,7 @@ describe("AdminDashboardView", () => {
       <AdminDashboardView selectedSpaceId="space-1" spaces={[space]} />,
     );
 
-    expect(screen.getByRole("heading", { name: "スペース概要" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "スペースダッシュボード" })).toBeInTheDocument();
     expect(screen.getByText("市民課")).toBeInTheDocument();
     expect(screen.getByText("住民票や戸籍に関する申請を扱います。")).toBeInTheDocument();
     expect(screen.getByText("メンバー")).toBeInTheDocument();
@@ -37,12 +37,19 @@ describe("AdminDashboardView", () => {
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getAllByText("対応が必要").length).toBeGreaterThan(0);
     expect(screen.getByText("再提出レビュー中 2件")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "概要" })).toHaveAttribute(
+      "href",
+      "/space/space-1",
+    );
     expect(screen.getByRole("link", { name: "フォーム" })).toHaveAttribute(
       "href",
       "/space/space-1/applications",
     );
+    expect(screen.getByRole("link", { name: "申請一覧" })).toHaveAttribute(
+      "href",
+      "/space/space-1/submissions",
+    );
     expect(screen.queryByRole("link", { name: "新規申請" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "申請一覧" })).not.toBeInTheDocument();
   });
 
   // テスト内容: 取得エラーが表示されることを確認する

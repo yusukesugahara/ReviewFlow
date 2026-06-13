@@ -33,6 +33,8 @@ product concept.
   - `dialogs`: setup-specific dialogs.
   - `fields`: draft field types, field editors, previews, and field controls.
   - `form-builder`: setup draft form and inline form-builder UI.
+- `audit-logs`: business audit log display labels, target/actor formatting, and
+  metadata helpers shared by audit-related screens.
 - `layout`: shared app shell and sidebar components.
 - `shared`: small cross-feature UI helpers.
 - `space`: shared space-facing presentation components and types.

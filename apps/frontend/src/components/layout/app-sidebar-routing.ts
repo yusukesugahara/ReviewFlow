@@ -9,6 +9,7 @@ export type BreadcrumbItem = {
 };
 
 export type SidebarSpacePath =
+  | "overview"
   | "applications"
   | "applicationsNew"
   | "submissions";
@@ -31,14 +32,19 @@ type SidebarLinkRouteInput = ActiveSpaceIdInput & {
 
 export function getPathSpaceId(pathname: string): string | null {
   const segments = getPathSegments(pathname);
-  if (segments[0] !== "space" || segments.length < 3) {
+  if (segments[0] !== "space" || segments.length < 2) {
     return null;
   }
   const [spaceId, section] = segments.slice(1);
-  if (section !== "applications" && section !== "submissions") {
+  if (!spaceId || isUnscopedSpaceSection(spaceId)) {
     return null;
   }
-  if (!spaceId) {
+
+  if (!section) {
+    return decodeURIComponent(spaceId);
+  }
+
+  if (section !== "applications" && section !== "submissions") {
     return null;
   }
   return decodeURIComponent(spaceId);
@@ -64,15 +70,17 @@ export function buildSpaceSwitcherHref({
   const params = new URLSearchParams(searchParams.toString());
   const pathSpaceId = getPathSpaceId(pathname);
   if (pathSpaceId) {
-    const nextPathname = pathname.replace(
-      `/space/${encodeURIComponent(pathSpaceId)}/`,
-      `/space/${encodeURIComponent(spaceId)}/`,
-    );
+    const currentBase = `/space/${encodeURIComponent(pathSpaceId)}`;
+    const nextBase = `/space/${encodeURIComponent(spaceId)}`;
+    const nextPathname =
+      pathname === currentBase
+        ? nextBase
+        : pathname.replace(`${currentBase}/`, `${nextBase}/`);
     return appendQueryString(nextPathname, params);
   }
 
-  if (pathname.startsWith("/admin")) {
-    return `/space/${encodeURIComponent(spaceId)}/submissions`;
+  if (pathname === "/space" || pathname.startsWith("/admin")) {
+    return `/space/${encodeURIComponent(spaceId)}`;
   }
 
   params.set("spaceId", spaceId);
@@ -126,6 +134,9 @@ function buildSidebarLinkHref({
   spacePath?: SidebarSpacePath;
   activeSpaceId: string | null;
 }): string {
+  if (spacePath === "overview" && activeSpaceId) {
+    return `/space/${encodeURIComponent(activeSpaceId)}`;
+  }
   if (spacePath === "applicationsNew" && activeSpaceId) {
     return `/space/${encodeURIComponent(activeSpaceId)}/applications/new`;
   }
@@ -153,6 +164,8 @@ function isSidebarLinkActive({
   spacePath?: SidebarSpacePath;
 }): boolean {
   const isSectionRoot = href === "/admin" || href === "/space";
+  const isOverviewActive =
+    spacePath === "overview" && (pathname === scopedHref || pathname === href);
   const isApplicationNewActive =
     spacePath === "applicationsNew" &&
     (pathname === scopedHref || pathname === href);
@@ -169,11 +182,17 @@ function isSidebarLinkActive({
       pathname === href);
 
   if (
+    spacePath === "overview" ||
     spacePath === "applications" ||
     spacePath === "applicationsNew" ||
     spacePath === "submissions"
   ) {
-    return isApplicationsActive || isApplicationNewActive || isSubmissionsActive;
+    return (
+      isOverviewActive ||
+      isApplicationsActive ||
+      isApplicationNewActive ||
+      isSubmissionsActive
+    );
   }
 
   return isSectionRoot
@@ -223,13 +242,18 @@ function buildSpaceBreadcrumbItems(
     return items;
   }
 
-  if (third === "applications") {
-    const spaceId = decodeURIComponent(second);
-    const spaceName =
-      spaces.find((space) => space.id === spaceId)?.name ?? "スペース";
-    const encodedSpaceId = encodeURIComponent(spaceId);
+  const spaceId = decodeURIComponent(second);
+  const spaceName =
+    spaces.find((space) => space.id === spaceId)?.name ?? "スペース";
+  const encodedSpaceId = encodeURIComponent(spaceId);
 
-    items.push({ href: `/space/${encodedSpaceId}/applications`, label: spaceName });
+  items.push({ href: `/space/${encodedSpaceId}`, label: spaceName });
+
+  if (!third) {
+    return items;
+  }
+
+  if (third === "applications") {
     items.push({
       href: `/space/${encodedSpaceId}/applications`,
       label: "申請フォーム一覧",
@@ -258,12 +282,6 @@ function buildSpaceBreadcrumbItems(
   }
 
   if (third === "submissions") {
-    const spaceId = decodeURIComponent(second);
-    const spaceName =
-      spaces.find((space) => space.id === spaceId)?.name ?? "スペース";
-    const encodedSpaceId = encodeURIComponent(spaceId);
-
-    items.push({ href: `/space/${encodedSpaceId}/applications`, label: spaceName });
     items.push({ href: `/space/${encodedSpaceId}/submissions`, label: "申請一覧" });
 
     if (fourth) {
@@ -275,6 +293,14 @@ function buildSpaceBreadcrumbItems(
   }
 
   return items;
+}
+
+function isUnscopedSpaceSection(value: string): boolean {
+  return (
+    value === "applications" ||
+    value === "application-setup" ||
+    value === "users"
+  );
 }
 
 function buildApplicationBreadcrumbHref(
