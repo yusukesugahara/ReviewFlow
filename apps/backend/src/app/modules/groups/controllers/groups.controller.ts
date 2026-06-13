@@ -35,6 +35,7 @@ import {
   GroupMembersListResponseDto,
   GroupsListResponseDto,
   GroupSummaryDto,
+  UpdateGroupDto,
   UpdateGroupMemberRoleDto,
 } from '../dto/groups.dto';
 import { GroupsService } from '../services/groups.service';
@@ -110,6 +111,22 @@ export class GroupsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<GroupSummaryDto>> {
     const group = await this.groupsService.create(dto, actor);
+    return successResponse(toGroupSummary(group));
+  }
+
+  @AuthApi()
+  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @Patch(':groupId')
+  @Roles(UserRole.TENANT_ADMIN)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'スペース名・説明更新（tenant_admin）' })
+  @ApiSuccessResponse(GroupSummaryDto)
+  async update(
+    @Param('groupId', ParseUUIDPipe) groupId: string,
+    @Body() dto: UpdateGroupDto,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<GroupSummaryDto>> {
+    const group = await this.groupsService.update(groupId, dto, actor);
     return successResponse(toGroupSummary(group));
   }
 

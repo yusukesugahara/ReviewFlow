@@ -9,7 +9,7 @@ import { GroupsRepository } from './groups.repository';
 describe('GroupsRepository', () => {
   let repository: GroupsRepository;
   let groups: jest.Mocked<
-    Pick<Repository<Group>, 'find' | 'findOne' | 'count' | 'delete'>
+    Pick<Repository<Group>, 'find' | 'findOne' | 'count' | 'save' | 'delete'>
   >;
   let members: jest.Mocked<
     Pick<
@@ -26,6 +26,7 @@ describe('GroupsRepository', () => {
       find: jest.fn(),
       findOne: jest.fn(),
       count: jest.fn(),
+      save: jest.fn(),
       delete: jest.fn(),
     };
     members = {
@@ -124,5 +125,14 @@ describe('GroupsRepository', () => {
         role: GroupMemberRole.ADMIN,
       },
     });
+  });
+
+  it('saves group details', async () => {
+    const group = { id: 'group-1', name: 'Updated' } as Group;
+    groups.save.mockResolvedValue(group);
+
+    await expect(repository.saveGroup(group)).resolves.toBe(group);
+
+    expect(groups.save).toHaveBeenCalledWith(group);
   });
 });

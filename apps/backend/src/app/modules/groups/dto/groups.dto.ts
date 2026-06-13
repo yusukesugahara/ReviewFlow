@@ -35,6 +35,19 @@ export class CreateGroupDto {
   adminUserIds!: string[];
 }
 
+export class UpdateGroupDto {
+  @ApiProperty({ example: '経理部', description: 'スペース名' })
+  @IsString()
+  @MaxLength(255)
+  name!: string;
+
+  @ApiPropertyOptional({ example: '経理部向けの承認・レビュースペース' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  description?: string;
+}
+
 export class AddGroupMemberDto {
   @ApiProperty({ description: 'スペースに追加するテナント内ユーザID' })
   @IsUUID('4')

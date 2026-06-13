@@ -14,6 +14,7 @@ import { UsersService } from '../../users/services/users.service';
 import type {
   AddGroupMemberDto,
   CreateGroupDto,
+  UpdateGroupDto,
   UpdateGroupMemberRoleDto,
 } from '../dto/groups.dto';
 import { GroupMembersService } from './group-members.service';
@@ -99,6 +100,53 @@ export class GroupsService {
     return group;
   }
 
+  async update(
+    groupId: string,
+    dto: UpdateGroupDto,
+    actor: AuthUserPayload,
+  ): Promise<Group> {
+    const group = await this.findGroupInTenant(groupId, actor.tenantId);
+    const name = dto.name.trim();
+    if (!name.length) {
+      throw clientError(ClientErrorCodes.GROUP_NAME_EXISTS);
+    }
+
+    const existing = await this.groupsRepository.findGroupByTenantAndName(
+      actor.tenantId,
+      name,
+    );
+    if (existing && existing.id !== group.id) {
+      throw clientError(ClientErrorCodes.GROUP_NAME_EXISTS);
+    }
+
+    const before = {
+      name: group.name,
+      description: group.description,
+    };
+    const description = normalizeOptionalText(dto.description);
+    if (before.name === name && before.description === description) {
+      return group;
+    }
+
+    group.name = name;
+    group.description = description;
+    const saved = await this.groupsRepository.saveGroup(group);
+
+    await this.auditLogs.recordSpaceEvent({
+      actionType: BusinessAuditAction.SPACE_UPDATED,
+      actor,
+      group: saved,
+      metadataJson: {
+        nameFrom: before.name,
+        nameTo: saved.name,
+        descriptionFrom: before.description,
+        descriptionTo: saved.description,
+      },
+    });
+
+    return saved;
+  }
+
   async remove(groupId: string, actor: AuthUserPayload): Promise<void> {
     const group = await this.findGroupInTenant(groupId, actor.tenantId);
     await this.auditLogs.recordSpaceEvent({
@@ -172,4 +220,9 @@ export class GroupsService {
   private isSystemAdmin(actor: AuthUserPayload): boolean {
     return actor.roles.includes(UserRole.TENANT_ADMIN);
   }
+}
+
+function normalizeOptionalText(value: string | undefined): string | null {
+  const text = value?.trim();
+  return text ? text : null;
 }

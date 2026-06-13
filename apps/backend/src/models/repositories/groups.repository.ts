@@ -104,6 +104,10 @@ export class GroupsRepository {
     });
   }
 
+  saveGroup(group: Group): Promise<Group> {
+    return this.groups.save(group);
+  }
+
   async deleteGroup(groupId: string): Promise<void> {
     await this.groups.delete(groupId);
   }

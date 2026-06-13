@@ -53,6 +53,7 @@ const ACTION_LABELS: Record<string, string> = {
   "user.deactivated": "ユーザを無効化",
   "user.restored": "ユーザを復元",
   "space.created": "スペースを作成",
+  "space.updated": "スペース情報を更新",
   "space.deleted": "スペースを削除",
   "space.member_added": "スペースにメンバーを追加",
   "space.member_removed": "スペースからメンバーを削除",
@@ -225,6 +226,17 @@ function describeChanges(
       `有効状態: ${formatActive(metadata.isActiveFrom)} -> ${formatActive(metadata.isActiveTo)}`,
     );
   }
+  const nameChange = formatTextChange(metadata.nameFrom, metadata.nameTo);
+  if (nameChange) {
+    changes.push(`スペース名: ${nameChange}`);
+  }
+  const descriptionChange = formatTextChange(
+    metadata.descriptionFrom,
+    metadata.descriptionTo,
+  );
+  if (descriptionChange) {
+    changes.push(`説明: ${descriptionChange}`);
+  }
 
   return changes.length > 0 ? changes : ["変更なし"];
 }
@@ -243,6 +255,10 @@ function buildDetailItems(
   addItem(items, "フォームID", metadata.formDefinitionId);
   addItem(items, "承認フローID", metadata.approvalFlowId);
   addItem(items, "スペース名", metadata.groupName);
+  addItem(items, "スペース名（変更前）", metadata.nameFrom);
+  addItem(items, "スペース名（変更後）", metadata.nameTo);
+  addItem(items, "説明（変更前）", metadata.descriptionFrom);
+  addItem(items, "説明（変更後）", metadata.descriptionTo);
   addItem(items, "招待期限", metadata.expiresAt);
   addItem(items, "コメント", metadata.comment);
   addItem(items, "全体コメント", metadata.overallComment);
@@ -302,4 +318,16 @@ function formatActive(value: unknown): string {
     return "無効";
   }
   return "-";
+}
+
+function formatTextChange(from: unknown, to: unknown): string | null {
+  const fromText = textValue(from);
+  const toText = textValue(to);
+  if (!fromText && !toText) {
+    return null;
+  }
+  if (fromText === toText) {
+    return null;
+  }
+  return `${fromText || "-"} -> ${toText || "-"}`;
 }

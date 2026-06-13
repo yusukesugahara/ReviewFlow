@@ -28,6 +28,7 @@ export const BusinessAuditAction = {
   USER_DEACTIVATED: 'user.deactivated',
   USER_RESTORED: 'user.restored',
   SPACE_CREATED: 'space.created',
+  SPACE_UPDATED: 'space.updated',
   SPACE_DELETED: 'space.deleted',
   SPACE_MEMBER_ADDED: 'space.member_added',
   SPACE_MEMBER_REMOVED: 'space.member_removed',

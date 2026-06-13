@@ -520,7 +520,8 @@ export interface paths {
         delete: operations["GroupsController_remove"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** スペース名・説明更新（tenant_admin） */
+        patch: operations["GroupsController_update"];
         trace?: never;
     };
     "/groups/{groupId}/members": {
@@ -1243,6 +1244,15 @@ export interface components {
             description?: string;
             /** @description 初期スペース管理者。1人以上必須。 */
             adminUserIds: string[];
+        };
+        UpdateGroupDto: {
+            /**
+             * @description スペース名
+             * @example 経理部
+             */
+            name: string;
+            /** @example 経理部向けの承認・レビュースペース */
+            description?: string;
         };
         GroupMemberSummaryDto: {
             id: string;
@@ -2488,6 +2498,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    GroupsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGroupDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupSummaryDto"];
+                    };
+                };
             };
         };
     };

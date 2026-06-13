@@ -27,6 +27,7 @@ describe('GroupsService', () => {
       | 'findGroupByTenantAndName'
       | 'findGroupByIdInTenant'
       | 'createGroupWithAdmins'
+      | 'saveGroup'
       | 'deleteGroup'
     >
   >;
@@ -70,6 +71,7 @@ describe('GroupsService', () => {
       findGroupByTenantAndName: jest.fn(),
       findGroupByIdInTenant: jest.fn(),
       createGroupWithAdmins: jest.fn(),
+      saveGroup: jest.fn(),
       deleteGroup: jest.fn(),
     };
     usersService = {
@@ -215,6 +217,88 @@ describe('GroupsService', () => {
         group: targetGroup,
       }),
     );
+  });
+
+  it('updates a tenant-scoped group and records an audit log', async () => {
+    const targetGroup = group({
+      id: 'group-1',
+      name: 'Before',
+      description: 'Old description',
+    });
+    const savedGroup = group({
+      id: 'group-1',
+      name: 'After',
+      description: 'New description',
+    });
+    groupsRepository.findGroupByIdInTenant.mockResolvedValue(targetGroup);
+    groupsRepository.findGroupByTenantAndName.mockResolvedValue(null);
+    groupsRepository.saveGroup.mockResolvedValue(savedGroup);
+
+    const out = await service.update(
+      'group-1',
+      { name: ' After ', description: ' New description ' },
+      systemAdmin,
+    );
+
+    expect(out).toBe(savedGroup);
+    expect(groupsRepository.saveGroup).toHaveBeenCalledWith(
+      expect.objectContaining({
+        id: 'group-1',
+        name: 'After',
+        description: 'New description',
+      }),
+    );
+    expect(auditLogs.recordSpaceEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'space.updated',
+        actor: systemAdmin,
+        group: savedGroup,
+        metadataJson: {
+          nameFrom: 'Before',
+          nameTo: 'After',
+          descriptionFrom: 'Old description',
+          descriptionTo: 'New description',
+        },
+      }),
+    );
+  });
+
+  it('rejects group updates with duplicate names in the tenant', async () => {
+    groupsRepository.findGroupByIdInTenant.mockResolvedValue(
+      group({ id: 'group-1', name: 'Before' }),
+    );
+    groupsRepository.findGroupByTenantAndName.mockResolvedValue(
+      group({ id: 'group-2', name: 'After' }),
+    );
+
+    await expect(
+      service.update('group-1', { name: 'After' }, systemAdmin),
+    ).rejects.toMatchObject({
+      errorCode: ClientErrorCodes.GROUP_NAME_EXISTS,
+    });
+
+    expect(groupsRepository.saveGroup).not.toHaveBeenCalled();
+    expect(auditLogs.recordSpaceEvent).not.toHaveBeenCalled();
+  });
+
+  it('skips persistence when group details are unchanged', async () => {
+    const targetGroup = group({
+      id: 'group-1',
+      name: 'Team A',
+      description: 'Description',
+    });
+    groupsRepository.findGroupByIdInTenant.mockResolvedValue(targetGroup);
+    groupsRepository.findGroupByTenantAndName.mockResolvedValue(targetGroup);
+
+    const out = await service.update(
+      'group-1',
+      { name: ' Team A ', description: ' Description ' },
+      systemAdmin,
+    );
+
+    expect(out).toBe(targetGroup);
+    expect(groupsRepository.saveGroup).not.toHaveBeenCalled();
+    expect(auditLogs.recordSpaceEvent).not.toHaveBeenCalled();
   });
 
   it('delegates member operations to GroupMembersService', async () => {

@@ -54,6 +54,10 @@ export type CreateGroupBody =
   operations["GroupsController_create"]["requestBody"]["content"]["application/json"];
 export type CreateGroupSuccessJson =
   operations["GroupsController_create"]["responses"][201]["content"]["application/json"];
+export type UpdateGroupBody =
+  operations["GroupsController_update"]["requestBody"]["content"]["application/json"];
+export type UpdateGroupSuccessJson =
+  operations["GroupsController_update"]["responses"][200]["content"]["application/json"];
 export type GroupMembersListSuccessJson =
   operations["GroupsController_listMembers"]["responses"][200]["content"]["application/json"];
 export type GroupMemberSummary = components["schemas"]["GroupMemberSummaryDto"];

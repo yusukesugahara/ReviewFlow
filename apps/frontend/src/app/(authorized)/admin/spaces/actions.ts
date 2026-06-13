@@ -15,6 +15,7 @@ import {
   addGroupMemberSchema,
   createSpaceSchema,
   inviteSpaceMemberSchema,
+  updateSpaceSchema,
   updateGroupMemberRoleSchema,
 } from "@/lib/auth-schema";
 import type {
@@ -24,6 +25,8 @@ import type {
   CreateGroupSuccessJson,
   CreateInvitationBody,
   CreateInvitationSuccessJson,
+  UpdateGroupBody,
+  UpdateGroupSuccessJson,
   UpdateGroupMemberRoleBody,
   UpdateGroupMemberRoleSuccessJson,
 } from "@/lib/schema";
@@ -99,6 +102,39 @@ export async function createSpaceAction(formData: FormData): Promise<void> {
 
   revalidatePath("/admin/spaces");
   redirect("/admin/spaces?toast=success&message=スペースを作成しました");
+}
+
+export async function updateSpaceAction(
+  groupId: string,
+  formData: FormData,
+): Promise<void> {
+  const parsed = updateSpaceSchema.safeParse({
+    name: formData.get("name"),
+    description: formData.get("description") || undefined,
+  });
+
+  if (!parsed.success) {
+    redirectWithSpaceValidationError("スペース名を入力してください");
+  }
+
+  const body: UpdateGroupBody = {
+    name: parsed.data.name,
+    description: parsed.data.description,
+  };
+
+  try {
+    const response = await client.PATCH("/groups/{groupId}", {
+      params: { path: { groupId } },
+      body,
+      headers: await authHeadersOrRedirect(),
+    });
+    unwrapResponseData<UpdateGroupSuccessJson["data"]>(response);
+  } catch (error) {
+    redirectWithSpaceError(error, "スペース情報の更新に失敗しました");
+  }
+
+  revalidatePath("/admin/spaces");
+  redirect("/admin/spaces?toast=success&message=スペース情報を更新しました");
 }
 
 export async function addMemberAction(

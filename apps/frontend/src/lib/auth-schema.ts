@@ -84,15 +84,20 @@ export const createExportJobSchema = z.object({
 
 export type CreateExportJobInput = z.infer<typeof createExportJobSchema>;
 
-export const createSpaceSchema = z.object({
+const spaceDetailsSchema = z.object({
   name: nonEmptyString(SPACE_NAME_REQUIRED_MESSAGE),
   description: z.string().trim().optional(),
+});
+
+export const createSpaceSchema = spaceDetailsSchema.extend({
   adminUserIds: z
     .array(nonEmptyString(USER_REQUIRED_MESSAGE), {
       error: SPACE_ADMIN_REQUIRED_MESSAGE,
     })
     .min(1, SPACE_ADMIN_REQUIRED_MESSAGE),
 });
+
+export const updateSpaceSchema = spaceDetailsSchema;
 
 export const addGroupMemberSchema = z.object({
   userId: nonEmptyString(USER_REQUIRED_MESSAGE),
