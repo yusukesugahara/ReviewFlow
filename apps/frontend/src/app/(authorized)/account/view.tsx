@@ -1,5 +1,4 @@
-import { AccountPasswordForm } from "./_components/account-password-form";
-import { AccountProfileForm } from "./_components/account-profile-form";
+import { AccountDetailsPanel } from "./_components/account-details-panel";
 import type { AccountViewProps } from "./types";
 
 export function AccountView({
@@ -17,10 +16,11 @@ export function AccountView({
           ログイン中の名前、メールアドレス、パスワードを管理します。
         </p>
       </div>
-      <div className="grid gap-4 xl:grid-cols-2">
-        <AccountProfileForm error={profileError} user={user} />
-        <AccountPasswordForm error={passwordError} />
-      </div>
+      <AccountDetailsPanel
+        passwordError={passwordError}
+        profileError={profileError}
+        user={user}
+      />
     </div>
   );
 }
