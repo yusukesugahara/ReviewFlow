@@ -23,4 +23,4 @@ E2E_API_URL=http://127.0.0.1:3000 npm run test:e2e
 PLAYWRIGHT_SKIP_WEBSERVER=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 E2E_API_URL=http://127.0.0.1:3000 npm run test:e2e
 ```
 
-`E2E_INTERNAL_API_KEY` で API キーを上書きできる。
+`E2E_INTERNAL_API_KEY` で API キーを上書きできる。公開申請系の E2E は applicant access token を発行するため、Docker 既定値以外の `JWT_SECRET` でバックエンドを起動している場合は `E2E_JWT_SECRET` も同じ値にする。

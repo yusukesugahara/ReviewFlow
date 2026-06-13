@@ -14,19 +14,23 @@ describe("env helpers", () => {
   it("returns e2e defaults and trims configured API URL", async () => {
     delete process.env.E2E_API_URL;
     delete process.env.E2E_INTERNAL_API_KEY;
+    delete process.env.E2E_JWT_SECRET;
     const { getE2eEnv } = await import("@/lib/e2e-env");
 
     expect(getE2eEnv()).toEqual({
       apiBase: "http://127.0.0.1:3000",
       internalApiKey: "dev-internal-key-change-me",
+      jwtSecret: "docker-jwt-secret-at-least-32-characters-long",
     });
 
     process.env.E2E_API_URL = "http://backend.local/";
     process.env.E2E_INTERNAL_API_KEY = "secret";
+    process.env.E2E_JWT_SECRET = "jwt-secret";
 
     expect(getE2eEnv()).toEqual({
       apiBase: "http://backend.local",
       internalApiKey: "secret",
+      jwtSecret: "jwt-secret",
     });
   });
 
