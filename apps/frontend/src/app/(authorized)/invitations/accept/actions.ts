@@ -15,7 +15,10 @@ export async function acceptInvitationAction(formData: FormData): Promise<void> 
   });
 
   if (!parsed.success) {
-    redirect("/invitations/accept?formError=入力内容を確認してください");
+    const params = new URLSearchParams({
+      formError: "入力内容を確認してください",
+    });
+    redirect(`/invitations/accept?${params.toString()}`);
   }
 
   const body: AcceptInvitationBody = {

@@ -15,7 +15,10 @@ export async function requestPasswordResetAction(formData: FormData): Promise<vo
   });
 
   if (!parsed.success) {
-    redirect("/forgot-password?formError=メールアドレスを入力してください");
+    const params = new URLSearchParams({
+      formError: "メールアドレスを入力してください",
+    });
+    redirect(`/forgot-password?${params.toString()}`);
   }
 
   const body: RequestPasswordResetBody = parsed.data;
@@ -24,9 +27,11 @@ export async function requestPasswordResetAction(formData: FormData): Promise<vo
     const response = await client.POST("/auth/password-reset/request", { body });
     unwrapResponseData<RequestPasswordResetSuccessJson["data"]>(response);
   } catch {
-    redirect(
-      "/forgot-password?toast=error&message=パスワード再設定メールの送信に失敗しました",
-    );
+    const params = new URLSearchParams({
+      toast: "error",
+      message: "パスワード再設定メールの送信に失敗しました",
+    });
+    redirect(`/forgot-password?${params.toString()}`);
   }
 
   redirect("/forgot-password?sent=1");

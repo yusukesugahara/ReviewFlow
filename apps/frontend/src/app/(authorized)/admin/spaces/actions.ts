@@ -63,6 +63,11 @@ function redirectWithSpaceError(error: unknown, fallback: string): never {
   redirect(`/admin/spaces?${nextParams.toString()}`);
 }
 
+function redirectWithSpaceSuccess(message: string): never {
+  const nextParams = new URLSearchParams({ toast: "success", message });
+  redirect(`/admin/spaces?${nextParams.toString()}`);
+}
+
 function redirectWithSpaceValidationError(message: string): never {
   const nextParams = new URLSearchParams({ formError: message });
   redirect(`/admin/spaces?${nextParams.toString()}`);
@@ -101,7 +106,7 @@ export async function createSpaceAction(formData: FormData): Promise<void> {
   }
 
   revalidatePath("/admin/spaces");
-  redirect("/admin/spaces?toast=success&message=スペースを作成しました");
+  redirectWithSpaceSuccess("スペースを作成しました");
 }
 
 export async function updateSpaceAction(
@@ -134,7 +139,7 @@ export async function updateSpaceAction(
   }
 
   revalidatePath("/admin/spaces");
-  redirect("/admin/spaces?toast=success&message=スペース情報を更新しました");
+  redirectWithSpaceSuccess("スペース情報を更新しました");
 }
 
 export async function addMemberAction(
@@ -164,9 +169,7 @@ export async function addMemberAction(
   }
 
   revalidatePath("/admin/spaces");
-  redirect(
-    "/admin/spaces?toast=success&message=スペースメンバーを追加しました",
-  );
+  redirectWithSpaceSuccess("スペースメンバーを追加しました");
 }
 
 export async function inviteSpaceMemberAction(
@@ -201,7 +204,7 @@ export async function inviteSpaceMemberAction(
   }
 
   revalidatePath("/admin/spaces");
-  redirect("/admin/spaces?toast=success&message=招待メールを送信しました");
+  redirectWithSpaceSuccess("招待メールを送信しました");
 }
 
 export async function updateMemberRoleAction(
@@ -231,9 +234,7 @@ export async function updateMemberRoleAction(
   }
 
   revalidatePath("/admin/spaces");
-  redirect(
-    "/admin/spaces?toast=success&message=スペースロールを更新しました",
-  );
+  redirectWithSpaceSuccess("スペースロールを更新しました");
 }
 
 export async function removeMemberAction(
@@ -250,9 +251,7 @@ export async function removeMemberAction(
     redirectWithSpaceError(error, "スペースメンバーの削除に失敗しました");
   }
   revalidatePath("/admin/spaces");
-  redirect(
-    "/admin/spaces?toast=success&message=スペースメンバーを削除しました",
-  );
+  redirectWithSpaceSuccess("スペースメンバーを削除しました");
 }
 
 export async function leaveSpaceAction(groupId: string): Promise<void> {
@@ -266,7 +265,7 @@ export async function leaveSpaceAction(groupId: string): Promise<void> {
     redirectWithSpaceError(error, "スペースからの退出に失敗しました");
   }
   revalidatePath("/admin/spaces");
-  redirect("/admin/spaces?toast=success&message=スペースから退出しました");
+  redirectWithSpaceSuccess("スペースから退出しました");
 }
 
 export async function removeSpaceAction(groupId: string): Promise<void> {
@@ -280,5 +279,5 @@ export async function removeSpaceAction(groupId: string): Promise<void> {
     redirectWithSpaceError(error, "スペースの削除に失敗しました");
   }
   revalidatePath("/admin/spaces");
-  redirect("/admin/spaces?toast=success&message=スペースを削除しました");
+  redirectWithSpaceSuccess("スペースを削除しました");
 }

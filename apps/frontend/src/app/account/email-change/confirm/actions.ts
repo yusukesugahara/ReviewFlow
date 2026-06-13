@@ -40,7 +40,12 @@ export async function confirmAccountEmailChangeAction(
     redirect(`/account/email-change/confirm?${params.toString()}`);
   }
 
+  const params = new URLSearchParams({
+    toast: "success",
+    message:
+      "メールアドレスを変更しました。新しいメールアドレスでログインしてください",
+  });
   redirect(
-    "/login?toast=success&message=メールアドレスを変更しました。新しいメールアドレスでログインしてください",
+    `/login?${params.toString()}`,
   );
 }

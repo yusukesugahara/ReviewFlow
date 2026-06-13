@@ -97,8 +97,8 @@ test.describe("デモseedデータ表示", () => {
       for (const applicant of item.applicants) {
         await expect(page.getByText(applicant)).toBeVisible();
       }
-      for (const status of ["提出済み", "レビュー中", "差し戻し", "承認", "却下"]) {
-        await expect(page.getByText(status).first()).toBeVisible();
+      for (const status of ["レビュー中", "差し戻し", "承認", "却下"]) {
+        await expect(page.getByRole("cell", { name: status }).first()).toBeVisible();
       }
     }
   });

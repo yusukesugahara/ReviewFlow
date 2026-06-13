@@ -16,7 +16,10 @@ export async function confirmPasswordResetAction(formData: FormData): Promise<vo
   });
 
   if (!parsed.success) {
-    redirect("/password-reset?formError=入力内容を確認してください");
+    const params = new URLSearchParams({
+      formError: "入力内容を確認してください",
+    });
+    redirect(`/password-reset?${params.toString()}`);
   }
 
   const body: ConfirmPasswordResetBody = parsed.data;
@@ -34,5 +37,9 @@ export async function confirmPasswordResetAction(formData: FormData): Promise<vo
     redirect(`/password-reset?${params.toString()}`);
   }
 
-  redirect("/login?toast=success&message=パスワードを再設定しました");
+  const params = new URLSearchParams({
+    toast: "success",
+    message: "パスワードを再設定しました",
+  });
+  redirect(`/login?${params.toString()}`);
 }
