@@ -2,8 +2,8 @@ import {
   descriptionForFields,
   formatApplicationDateTime,
   getCurrentStep,
-} from "@/components/applications/application-detail-section-helpers";
-import type { ApplicationDetailViewModel } from "@/components/applications/application-detail.types";
+} from "@/components/applications/detail/application-detail-section-helpers";
+import type { ApplicationDetailViewModel } from "@/components/applications/detail/application-detail.types";
 
 describe("application detail section helpers", () => {
   // テスト内容: 申請項目セクションの説明文を件数込みで組み立てることを確認する

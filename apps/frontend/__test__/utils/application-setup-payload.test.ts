@@ -1,4 +1,4 @@
-import { createDefaultField } from "@/components/application-setup/application-setup-fields";
+import { createDefaultField } from "@/components/application-setup/fields/application-setup-fields";
 import { toFieldPayloads } from "@/app/(authorized)/space/application-setup/application-setup-payload";
 
 describe("application setup payload", () => {

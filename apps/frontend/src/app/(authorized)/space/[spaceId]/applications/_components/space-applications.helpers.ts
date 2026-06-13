@@ -2,13 +2,13 @@ import {
   appendQueryParams,
   buildApplyFormHref,
   buildSpaceApplicationDetailHref,
-} from "@/components/applications/application-routes";
+} from "@/components/applications/routing/application-routes";
 import {
   isFormSetupApplication,
   isPendingApplication,
   isProcessedApplication,
   isPublishedApplicationStatus,
-} from "@/components/applications/application-status-rules";
+} from "@/components/applications/status/application-status-rules";
 import type {
   ApplicationRow,
   FormDefinitionRow,

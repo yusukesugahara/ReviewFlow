@@ -19,8 +19,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { ApplicationEmptyState } from "@/components/applications/application-empty-state";
-import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
+import { ApplicationEmptyState } from "@/components/applications/list/application-empty-state";
+import { buildSpaceApplicationNewHref } from "@/components/applications/routing/application-routes";
 import type { SpaceApplicationsPageContentProps } from "@/components/space/space-applications.types";
 import {
   buildApplicationFormListRows,

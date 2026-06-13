@@ -4,7 +4,7 @@ import type {
   ApplicationFormField,
   ApplicationProgressStep,
   ApplicationProgressUser,
-} from "./application-detail.types";
+} from "../detail/application-detail.types";
 
 export type FieldCorrectionItem = {
   correction: ApplicationCorrection;

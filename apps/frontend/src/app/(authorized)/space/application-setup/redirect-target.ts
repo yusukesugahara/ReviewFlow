@@ -1,6 +1,6 @@
 import "server-only";
 
-import { buildSpaceApplicationNewHref } from "@/components/applications/application-routes";
+import { buildSpaceApplicationNewHref } from "@/components/applications/routing/application-routes";
 import type { GroupsListSuccessJson } from "@/lib/schema";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { normalizeFieldOptions } from "@/components/applications/field-options";
+import { normalizeFieldOptions } from "@/components/applications/dynamic-fields/field-options";
 import { formatIsoDateDisplay } from "@/lib/iso-date";
 
 export type FieldOption = { value: string; label: string };

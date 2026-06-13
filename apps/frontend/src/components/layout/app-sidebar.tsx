@@ -4,8 +4,8 @@ import type { ReactNode } from "react";
 import { useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { AppBreadcrumb } from "@/components/app-sidebar-breadcrumb";
-import { SidebarContent } from "@/components/app-sidebar-content";
+import { AppBreadcrumb } from "@/components/layout/app-sidebar-breadcrumb";
+import { SidebarContent } from "@/components/layout/app-sidebar-content";
 import type { AppSidebarSpace, AppSidebarVariant } from "./app-sidebar.types";
 import { Button } from "@/components/ui/button";
 

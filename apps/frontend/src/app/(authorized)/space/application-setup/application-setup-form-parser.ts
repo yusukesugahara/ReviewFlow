@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { DraftField } from "@/components/application-setup/application-setup-fields";
+import type { DraftField } from "@/components/application-setup/fields/application-setup-fields";
 import { FIELD_TYPES } from "@/lib/constants/form-fields";
 
 const applicationSetupFormSchema = z.object({

@@ -5,11 +5,11 @@ import { Badge } from "@/components/ui/badge";
 import {
   ApplicationFormSubmitButton,
   type ApplicationFormClientValidationState,
-} from "@/components/applications/application-form-submit-button";
+} from "@/components/applications/actions/application-form-submit-button";
 import {
   DynamicFieldInput,
   DynamicFieldsTable,
-} from "@/components/applications/dynamic-fields";
+} from "@/components/applications/dynamic-fields/dynamic-fields";
 import { submitPublicCorrectionAction } from "./actions";
 import type {
   PublicCorrectionResponse,

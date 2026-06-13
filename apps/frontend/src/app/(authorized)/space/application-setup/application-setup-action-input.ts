@@ -1,4 +1,4 @@
-import type { DraftField } from "@/components/application-setup/application-setup-fields";
+import type { DraftField } from "@/components/application-setup/fields/application-setup-fields";
 import {
   APPLICATION_SETUP_ERRORS,
   type ApplicationSetupError,

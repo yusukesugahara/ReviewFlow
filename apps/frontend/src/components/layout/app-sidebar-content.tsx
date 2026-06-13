@@ -10,11 +10,11 @@ import {
   buildSpaceSwitcherHref,
   getActiveSpaceId,
   type SidebarSpacePath,
-} from "@/components/app-sidebar-routing";
+} from "@/components/layout/app-sidebar-routing";
 import {
   getPrimarySidebarNavItems,
   tenantAdminSidebarNavItems,
-} from "@/components/app-sidebar-navigation";
+} from "@/components/layout/app-sidebar-navigation";
 import type { AppSidebarSpace, AppSidebarVariant } from "./app-sidebar.types";
 import { cn } from "@/lib/utils";
 

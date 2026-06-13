@@ -9,9 +9,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ApplicationStatusBadge } from "./application-status-badge";
+import { ApplicationStatusBadge } from "../status/application-status-badge";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
-import { isFormSetupApplication } from "./application-status-rules";
+import { isFormSetupApplication } from "../status/application-status-rules";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ja-JP", {
   dateStyle: "short",

@@ -11,9 +11,9 @@ import {
 } from "@/components/ui/dialog";
 import { fieldTypeStoresValue } from "@/lib/constants/form-fields";
 import { renderFieldValue } from "@/lib/form-field-value";
-import { readDynamicValuesFromFormData } from "./dynamic-field-form-data";
-import { validateRequiredDynamicFields } from "./dynamic-field-validation";
-import type { DynamicFormField } from "./dynamic-fields.types";
+import { readDynamicValuesFromFormData } from "../dynamic-fields/dynamic-field-form-data";
+import { validateRequiredDynamicFields } from "../dynamic-fields/dynamic-field-validation";
+import type { DynamicFormField } from "../dynamic-fields/dynamic-fields.types";
 
 export type ApplicationFormClientValidationState = {
   formError?: string;

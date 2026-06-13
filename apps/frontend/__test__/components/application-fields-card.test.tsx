@@ -2,12 +2,12 @@ import { render, screen } from "@testing-library/react";
 import {
   ApplicationFieldsCard,
   CorrectionHistory,
-} from "@/components/applications/application-detail-sections";
+} from "@/components/applications/detail/application-detail-sections";
 import type {
   ApplicationCorrection,
   ApplicationDetailViewModel,
   ApplicationFormField,
-} from "@/components/applications/application-detail.types";
+} from "@/components/applications/detail/application-detail.types";
 
 const application: ApplicationDetailViewModel = {
   id: "app-1",

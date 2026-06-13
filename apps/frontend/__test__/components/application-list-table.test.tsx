@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import {
   ApplicationListTable,
   type ApplicationListRow,
-} from "@/components/applications/application-list-table";
+} from "@/components/applications/list/application-list-table";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 describe("ApplicationListTable", () => {

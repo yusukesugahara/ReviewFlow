@@ -6,7 +6,7 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react";
-import type { SidebarSpacePath } from "@/components/app-sidebar-routing";
+import type { SidebarSpacePath } from "@/components/layout/app-sidebar-routing";
 import type { AppSidebarSpace, AppSidebarVariant } from "./app-sidebar.types";
 
 export type SidebarNavItem = {

@@ -1,1 +1,1 @@
-export { isDynamicFormField } from "@/components/applications/dynamic-field-schema";
+export { isDynamicFormField } from "@/components/applications/dynamic-fields/dynamic-field-schema";

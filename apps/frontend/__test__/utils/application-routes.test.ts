@@ -12,7 +12,7 @@ import {
   buildSpaceSubmissionDetailHrefByIds,
   buildSpaceSubmissionsHref,
   getApplicationSpaceId,
-} from "@/components/applications/application-routes";
+} from "@/components/applications/routing/application-routes";
 
 describe("application-routes", () => {
   // テスト内容: 識別子をエンコードして申請ルートを組み立てることを確認する

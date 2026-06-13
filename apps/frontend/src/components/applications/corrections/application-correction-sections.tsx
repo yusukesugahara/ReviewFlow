@@ -10,12 +10,12 @@ import {
   formatCorrectionSubmittedValue,
   getCorrectionItemLabel,
 } from "./application-corrections.helpers";
-import { formatApplicationDateTime } from "./application-detail-section-helpers";
+import { formatApplicationDateTime } from "../detail/application-detail-section-helpers";
 import type {
   ApplicationCorrection,
   ApplicationCorrectionTargetItem,
   ApplicationFormField,
-} from "./application-detail.types";
+} from "../detail/application-detail.types";
 
 export function OpenCorrectionSummary({
   items,

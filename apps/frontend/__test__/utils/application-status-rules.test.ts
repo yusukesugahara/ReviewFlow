@@ -7,7 +7,7 @@ import {
   isRejectedApplicationStatus,
   isReturnedApplicationStatus,
   isSpaceNeedsActionStatus,
-} from "@/components/applications/application-status-rules";
+} from "@/components/applications/status/application-status-rules";
 import { APPLICATION_STATUSES } from "@/lib/constants/applications";
 
 describe("application status rules", () => {

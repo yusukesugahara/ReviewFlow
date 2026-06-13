@@ -12,7 +12,7 @@ import type {
   ApplicationProgressAction,
   ApplicationProgressStep,
   ApplicationProgressUser,
-} from "./application-detail.types";
+} from "../detail/application-detail.types";
 
 export function ApprovalProgressStartCard({
   application,

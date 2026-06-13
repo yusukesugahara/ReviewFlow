@@ -15,7 +15,7 @@ import {
 import { AssigneeSearchPicker } from "./approval-assignee-search-picker";
 import type { ApprovalAssigneeOption, ApprovalStepItem } from "./approval-steps.types";
 import type { ApprovalGroupItem } from "./approval-steps-state";
-import { OrderMoveButtons } from "./order-move-buttons";
+import { OrderMoveButtons } from "../fields/order-move-buttons";
 
 type ApprovalStepsSectionProps = {
   approvalGroups: ApprovalGroupItem[];

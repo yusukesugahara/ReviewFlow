@@ -1,4 +1,4 @@
-import type { ApprovalAssigneeOption } from "@/components/application-setup/application-setup-draft-form";
+import type { ApprovalAssigneeOption } from "@/components/application-setup/form-builder/application-setup-draft-form";
 import type { GroupMemberSummary, GroupSummary } from "@/lib/schema";
 
 export type SpaceNewApplicationPageProps = {

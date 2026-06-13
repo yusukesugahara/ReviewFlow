@@ -8,7 +8,7 @@ import {
   isRejectedApplicationStatus,
   isReturnedApplication,
   isSpaceNeedsActionApplication,
-} from "@/components/applications/application-status-rules";
+} from "@/components/applications/status/application-status-rules";
 import type {
   ApplicationsListSuccessJson,
   CorrectionsListSuccessJson,

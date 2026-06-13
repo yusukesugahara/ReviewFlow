@@ -14,10 +14,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { ApplicationStatusBadge } from "@/components/applications/application-status-badge";
-import { PublicApplicationUrlCopyButton } from "@/components/applications/public-application-url-card";
-import { DynamicFieldsTable } from "@/components/applications/dynamic-fields";
-import { ApprovalProgressDiagram } from "@/components/applications/application-detail-view";
+import { ApplicationStatusBadge } from "@/components/applications/status/application-status-badge";
+import { PublicApplicationUrlCopyButton } from "@/components/applications/detail/public-application-url-card";
+import { DynamicFieldsTable } from "@/components/applications/dynamic-fields/dynamic-fields";
+import { ApprovalProgressDiagram } from "@/components/applications/detail/application-detail-view";
 import { cn } from "@/lib/utils";
 import { DescriptionEditModal } from "./description-edit-modal";
 import { buildFormDetailViewModel } from "./form-detail-view-model";

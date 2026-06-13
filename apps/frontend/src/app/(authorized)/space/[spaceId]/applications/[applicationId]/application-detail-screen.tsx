@@ -1,18 +1,18 @@
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { ApplicantApplicationActions } from "@/components/applications/applicant-application-actions";
+import { ApplicantApplicationActions } from "@/components/applications/actions/applicant-application-actions";
 import {
   ApplicationDetailView,
-} from "@/components/applications/application-detail-view";
-import { ReviewerApplicationActions } from "@/components/applications/reviewer-application-actions";
-import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/application-routes";
-import { isReturnedApplicationStatus } from "@/components/applications/application-status-rules";
+} from "@/components/applications/detail/application-detail-view";
+import { ReviewerApplicationActions } from "@/components/applications/actions/reviewer-application-actions";
+import { buildSpaceApplicationEditHrefByIds } from "@/components/applications/routing/application-routes";
+import { isReturnedApplicationStatus } from "@/components/applications/status/application-status-rules";
 import type {
   ApplicationCorrection,
   ApplicationCorrectionTargetItem,
   ApplicationDetailViewModel,
   ApplicationFormField,
-} from "@/components/applications/application-detail.types";
-import type { ApplicationCapabilities } from "@/components/applications/application-capabilities";
+} from "@/components/applications/detail/application-detail.types";
+import type { ApplicationCapabilities } from "@/components/applications/actions/application-capabilities";
 
 type ApplicationDetailScreenProps = {
   actionError?: string;

@@ -3,10 +3,10 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { ApplicationSetupFieldContentModal } from "./application-setup-field-content-modal";
+import { ApplicationSetupFieldContentModal } from "../dialogs/application-setup-field-content-modal";
 import { InlineFormFieldRow } from "./application-setup-inline-field-row";
 import { InlineInsertFieldButton } from "./application-setup-inline-insert-button";
-import type { DraftField } from "./application-setup-fields";
+import type { DraftField } from "../fields/application-setup-fields";
 
 export function InlineFormBuilder({
   fieldsWithKeys,

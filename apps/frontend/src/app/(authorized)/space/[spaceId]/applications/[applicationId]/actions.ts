@@ -7,13 +7,13 @@ import { client } from "@/lib/server/backend-fetch";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
-import type { ApplicationDetailViewModel } from "@/components/applications/application-detail.types";
+import type { ApplicationDetailViewModel } from "@/components/applications/detail/application-detail.types";
 import {
   appendQueryParams,
   buildSpaceApplicationFormDetailHref,
   buildSpaceApplicationsHref,
   buildSpaceSubmissionDetailHref,
-} from "@/components/applications/application-routes";
+} from "@/components/applications/routing/application-routes";
 
 const optionalStringFormValueSchema = z.string().optional().catch(undefined);
 const optionalNonEmptyStringFormValueSchema = z

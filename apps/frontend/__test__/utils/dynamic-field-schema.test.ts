@@ -1,7 +1,7 @@
 import {
   isDynamicFormField,
   parseDynamicFormFieldsJson,
-} from "@/components/applications/dynamic-field-schema";
+} from "@/components/applications/dynamic-fields/dynamic-field-schema";
 
 describe("dynamic field schema", () => {
   // テスト内容: 動的フォーム項目 JSON を読み取り、不正項目を除外することを確認する

@@ -2,7 +2,7 @@ import {
   asFieldType,
   linesToOptions,
   optionsToLines,
-} from "@/components/application-setup/form-field-editor.helpers";
+} from "@/components/application-setup/fields/form-field-editor.helpers";
 
 describe("form field editor helpers", () => {
   // テスト内容: 不正な項目タイプをテキスト入力へフォールバックすることを確認する

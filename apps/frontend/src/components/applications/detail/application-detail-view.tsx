@@ -1,5 +1,5 @@
-import { ApprovalProgressDiagram } from "./approval-progress-diagram";
-import { ApplicationStatusBadge } from "./application-status-badge";
+import { ApprovalProgressDiagram } from "../approval-progress/approval-progress-diagram";
+import { ApplicationStatusBadge } from "../status/application-status-badge";
 import {
   ActionPanel,
   ApplicationBasicInfo,
@@ -13,7 +13,7 @@ import {
 import { PublicApplicationUrlCopyButton } from "./public-application-url-card";
 import type { ApplicationDetailViewProps } from "./application-detail.types";
 
-export { ApprovalProgressDiagram } from "./approval-progress-diagram";
+export { ApprovalProgressDiagram } from "../approval-progress/approval-progress-diagram";
 
 export function ApplicationDetailView({
   application,

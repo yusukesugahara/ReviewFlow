@@ -1,5 +1,5 @@
 import { Input } from "@/components/ui/input";
-import type { DynamicFormField } from "./dynamic-fields.types";
+import type { DynamicFormField } from "../dynamic-fields/dynamic-fields.types";
 
 type ReturnApplicationFieldInputProps = {
   field: Pick<DynamicFormField, "id">;

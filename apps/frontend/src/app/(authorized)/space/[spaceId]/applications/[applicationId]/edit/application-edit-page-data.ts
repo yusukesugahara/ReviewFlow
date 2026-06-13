@@ -1,17 +1,17 @@
 import "server-only";
 
-import type { DraftField } from "@/components/application-setup/application-setup-draft-form";
-import type { ApprovalStepItem } from "@/components/application-setup/approval-steps-builder";
+import type { DraftField } from "@/components/application-setup/form-builder/application-setup-draft-form";
+import type { ApprovalStepItem } from "@/components/application-setup/approval-flow/approval-steps-builder";
 import {
   buildSpaceApplicationDetailHrefByIds,
   buildSpaceApplicationEditHrefByIds,
-} from "@/components/applications/application-routes";
-import { normalizeFieldOptions } from "@/components/applications/field-options";
+} from "@/components/applications/routing/application-routes";
+import { normalizeFieldOptions } from "@/components/applications/dynamic-fields/field-options";
 import {
   isFormSetupStatus,
   isPublishedApplicationStatus,
   isReturnedApplicationStatus,
-} from "@/components/applications/application-status-rules";
+} from "@/components/applications/status/application-status-rules";
 import { FIELD_TYPES, isFieldType, type FieldType } from "@/lib/constants/form-fields";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";

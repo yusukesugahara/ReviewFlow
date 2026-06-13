@@ -1,5 +1,5 @@
-import { validateRequiredDynamicFields } from "@/components/applications/dynamic-field-validation";
-import type { DynamicFormField } from "@/components/applications/dynamic-fields";
+import { validateRequiredDynamicFields } from "@/components/applications/dynamic-fields/dynamic-field-validation";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields/dynamic-fields";
 
 describe("dynamic field validation", () => {
   const fields: DynamicFormField[] = [

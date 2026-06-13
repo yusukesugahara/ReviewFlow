@@ -21,7 +21,7 @@ import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
   ApplicationProgressStep,
-} from "./application-detail.types";
+} from "../detail/application-detail.types";
 
 type ApprovalProgressDiagramProps = {
   application: ApplicationDetailViewModel;

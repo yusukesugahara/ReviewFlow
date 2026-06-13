@@ -12,7 +12,7 @@ import {
   formatApplicationDateTime,
   getCurrentStep,
 } from "./application-detail-section-helpers";
-import { ApplicationStatusBadge } from "./application-status-badge";
+import { ApplicationStatusBadge } from "../status/application-status-badge";
 import type { ApplicationDetailViewModel } from "./application-detail.types";
 
 export { ApplicationFieldsCard } from "./application-fields-card";
@@ -23,7 +23,7 @@ export {
 export {
   CorrectionHistory,
   OpenCorrectionSummary,
-} from "./application-correction-sections";
+} from "../corrections/application-correction-sections";
 
 export function ApplicationBasicInfo({
   application,

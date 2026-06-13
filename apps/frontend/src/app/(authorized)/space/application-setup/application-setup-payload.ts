@@ -2,7 +2,7 @@ import {
   fieldOptionsFromText,
   normalizeFieldKey,
   type DraftField,
-} from "@/components/application-setup/application-setup-fields";
+} from "@/components/application-setup/fields/application-setup-fields";
 import {
   fieldTypeNeedsOptions,
   fieldTypeStoresValue,

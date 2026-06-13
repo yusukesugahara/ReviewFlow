@@ -2,7 +2,7 @@ import { renderFieldValue } from "@/lib/form-field-value";
 import type {
   ApplicationCorrection,
   ApplicationFormField,
-} from "./application-detail.types";
+} from "../detail/application-detail.types";
 
 type CorrectionItemIdentity = Pick<
   ApplicationCorrection["items"][number],

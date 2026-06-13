@@ -1,20 +1,20 @@
 import "server-only";
 
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { getApplicationCapabilities } from "@/components/applications/application-capabilities";
-import type { ApplicationCapabilities } from "@/components/applications/application-capabilities";
+import { getApplicationCapabilities } from "@/components/applications/actions/application-capabilities";
+import type { ApplicationCapabilities } from "@/components/applications/actions/application-capabilities";
 import {
   buildApplyFormHref,
   buildSpaceApplicationEditHrefByIds,
   buildSpaceApplicationFormDetailHref,
-} from "@/components/applications/application-routes";
+} from "@/components/applications/routing/application-routes";
 import type {
   ApplicationCorrection,
   ApplicationCorrectionTargetItem,
   ApplicationDetailViewModel,
   ApplicationFormField,
-} from "@/components/applications/application-detail.types";
-import { isFormSetupStatus } from "@/components/applications/application-status-rules";
+} from "@/components/applications/detail/application-detail.types";
+import { isFormSetupStatus } from "@/components/applications/status/application-status-rules";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";

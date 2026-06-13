@@ -25,7 +25,7 @@ import {
   fieldTypeSupportsPlaceholder,
   type FieldType,
 } from "@/lib/constants/form-fields";
-import type { DraftField } from "./application-setup-fields";
+import type { DraftField } from "../fields/application-setup-fields";
 
 type ApplicationSetupFieldContentModalProps = {
   field: DraftField;

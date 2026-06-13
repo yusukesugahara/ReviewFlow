@@ -2,7 +2,7 @@ import {
   isPublishedApplicationStatus,
   isReturnedApplication,
   isSpaceNeedsActionApplication,
-} from "@/components/applications/application-status-rules";
+} from "@/components/applications/status/application-status-rules";
 import { formatDateTimeJa } from "@/lib/date-format";
 import type { FormDetailViewProps } from "./types";
 

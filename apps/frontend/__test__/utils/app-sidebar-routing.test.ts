@@ -4,7 +4,7 @@ import {
   buildSpaceSwitcherHref,
   getActiveSpaceId,
   getPathSpaceId,
-} from "@/components/app-sidebar-routing";
+} from "@/components/layout/app-sidebar-routing";
 
 const spaces = [
   { id: "citizen-space", name: "市民課" },

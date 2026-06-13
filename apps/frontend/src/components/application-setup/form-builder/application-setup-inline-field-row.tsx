@@ -2,11 +2,11 @@
 
 import { Menu, Pencil, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DynamicFieldInput } from "@/components/applications/dynamic-fields";
+import { DynamicFieldInput } from "@/components/applications/dynamic-fields/dynamic-fields";
 import {
   toDynamicField,
   type DraftField,
-} from "./application-setup-fields";
+} from "../fields/application-setup-fields";
 
 type InlineFormFieldRowProps = {
   dragOverFieldId: string | null;

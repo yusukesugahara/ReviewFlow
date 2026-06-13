@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { ApprovalFlowSelector } from "@/components/application-setup/approval-flow-selector";
+import { ApprovalFlowSelector } from "@/components/application-setup/approval-flow/approval-flow-selector";
 
 const flows = [
   {

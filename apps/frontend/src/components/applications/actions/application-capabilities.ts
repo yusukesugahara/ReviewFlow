@@ -1,10 +1,10 @@
 import type { CurrentSessionUser } from "@/app/(authorized)/session/actions";
-import type { ApplicationDetailViewModel } from "./application-detail.types";
+import type { ApplicationDetailViewModel } from "../detail/application-detail.types";
 import {
   isFormSetupStatus,
   isInReviewApplicationStatus,
   isReturnedApplicationStatus,
-} from "./application-status-rules";
+} from "../status/application-status-rules";
 
 export type ApplicationCapabilities = {
   canEditApplication: boolean;

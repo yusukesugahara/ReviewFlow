@@ -2,8 +2,8 @@ import {
   canManageSidebarSpace,
   getPrimarySidebarNavItems,
   tenantAdminSidebarNavItems,
-} from "@/components/app-sidebar-navigation";
-import type { AppSidebarSpace } from "@/components/app-sidebar.types";
+} from "@/components/layout/app-sidebar-navigation";
+import type { AppSidebarSpace } from "@/components/layout/app-sidebar.types";
 
 const userSpace: AppSidebarSpace = {
   id: "space-1",

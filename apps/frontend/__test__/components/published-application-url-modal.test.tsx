@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { PublishedApplicationUrlModal } from "@/components/application-setup/published-application-url-modal";
+import { PublishedApplicationUrlModal } from "@/components/application-setup/dialogs/published-application-url-modal";
 
 Object.assign(navigator, {
   clipboard: {

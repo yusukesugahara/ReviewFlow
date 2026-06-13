@@ -13,13 +13,13 @@ import {
   ApprovalStepsBuilder,
   type ApprovalStepItem,
   type ApprovalAssigneeOption,
-} from "./approval-steps-builder";
-import { PublishedApplicationUrlModal } from "./published-application-url-modal";
+} from "../approval-flow/approval-steps-builder";
+import { PublishedApplicationUrlModal } from "../dialogs/published-application-url-modal";
 import {
   createDefaultField,
   normalizeFieldKey,
   type DraftField,
-} from "./application-setup-fields";
+} from "../fields/application-setup-fields";
 import { InlineFormBuilder } from "./application-setup-inline-form-builder";
 
 export type { ApprovalAssigneeOption };

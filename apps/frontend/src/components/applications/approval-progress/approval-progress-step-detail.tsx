@@ -5,7 +5,7 @@ import {
   DynamicFieldInput,
   DynamicFieldsTable,
   type DynamicFormField,
-} from "./dynamic-fields";
+} from "../dynamic-fields/dynamic-fields";
 import {
   formatDateTime,
   getFieldCorrectionItems,
@@ -19,7 +19,7 @@ import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
   ApplicationProgressStep,
-} from "./application-detail.types";
+} from "../detail/application-detail.types";
 
 type SelectedProgressStepApplicationProps = {
   application: ApplicationDetailViewModel;

@@ -4,8 +4,8 @@ import { useActionState, useState } from "react";
 import {
   ApplicationFormSubmitButton,
   type ApplicationFormClientValidationState,
-} from "@/components/applications/application-form-submit-button";
-import { DynamicFieldsTable } from "@/components/applications/dynamic-fields";
+} from "@/components/applications/actions/application-form-submit-button";
+import { DynamicFieldsTable } from "@/components/applications/dynamic-fields/dynamic-fields";
 import { submitPublicApplicationAction } from "./actions";
 import type { PublicApplicationFormDefinition, PublicApplicationSubmitState } from "./types";
 

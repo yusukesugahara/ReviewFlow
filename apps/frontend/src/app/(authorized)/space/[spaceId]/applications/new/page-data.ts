@@ -1,7 +1,7 @@
 import "server-only";
 
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import type { ApprovalAssigneeOption } from "@/components/application-setup/application-setup-draft-form";
+import type { ApprovalAssigneeOption } from "@/components/application-setup/form-builder/application-setup-draft-form";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   GroupMembersListSuccessJson,

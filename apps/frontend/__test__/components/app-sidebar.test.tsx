@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { usePathname, useSearchParams } from "next/navigation";
-import { AppSidebar } from "@/components/app-sidebar";
+import { AppSidebar } from "@/components/layout/app-sidebar";
 
 jest.mock("next/navigation", () => ({
   usePathname: jest.fn(),

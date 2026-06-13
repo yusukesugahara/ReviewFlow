@@ -4,8 +4,8 @@ import {
   isProcessedApplication,
   isReturnedApplication,
   isSpaceNeedsActionApplication,
-} from "@/components/applications/application-status-rules";
-import { buildSpaceSubmissionsHref } from "@/components/applications/application-routes";
+} from "@/components/applications/status/application-status-rules";
+import { buildSpaceSubmissionsHref } from "@/components/applications/routing/application-routes";
 import type { ApplicationRow } from "@/components/space/space-applications.types";
 
 export {

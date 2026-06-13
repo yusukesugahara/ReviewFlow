@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
-import { DynamicFieldInput } from "@/components/applications/dynamic-fields";
-import type { DynamicFormField } from "@/components/applications/dynamic-fields";
+import { DynamicFieldInput } from "@/components/applications/dynamic-fields/dynamic-fields";
+import type { DynamicFormField } from "@/components/applications/dynamic-fields/dynamic-fields";
 
 function field(overrides: Partial<DynamicFormField>): DynamicFormField {
   return {

@@ -10,9 +10,9 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { renderFieldValue } from "@/lib/form-field-value";
-import { DynamicFieldsTable } from "./dynamic-fields";
-import { ReturnApplicationConfirmButton } from "./return-application-confirm-button";
-import { ReturnApplicationFieldInput } from "./return-application-field-input";
+import { DynamicFieldsTable } from "../dynamic-fields/dynamic-fields";
+import { ReturnApplicationConfirmButton } from "../actions/return-application-confirm-button";
+import { ReturnApplicationFieldInput } from "../actions/return-application-field-input";
 import type {
   ApplicationCorrectionTargetItem,
   ApplicationDetailViewModel,
