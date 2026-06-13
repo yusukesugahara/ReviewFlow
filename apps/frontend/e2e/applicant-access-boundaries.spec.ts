@@ -41,10 +41,12 @@ type CorrectionTargets = {
 };
 
 type FormDefinitionDetail = {
-  fields?: Array<{
-    fieldKey: string;
-    id: string;
-  }>;
+  fields?: FormFieldSummary[];
+};
+
+type FormFieldSummary = {
+  fieldKey: string;
+  id: string;
 };
 
 test.describe("申請者アクセストークンの権限境界", () => {
@@ -136,6 +138,104 @@ test.describe("申請者アクセストークンの権限境界", () => {
     });
     expect(unchangedOtherApplication.values?.[setup.fieldKey]).toBe(otherValue);
   });
+
+  test("差し戻し対象外のフォーム項目は申請者APIでも更新できない", async ({
+    request,
+  }) => {
+    const editableFieldKey = "editable_detail";
+    const lockedFieldKey = "locked_detail";
+    const session = await createTenantAdmin(request, {
+      emailPrefix: "correction-target-boundary",
+    });
+    const space = await createSpace(request, session, {
+      name: uniqueE2eLabel("修正対象境界スペース"),
+    });
+    const setup = await createPublishedFormSetup(request, session, space, {
+      formNamePrefix: "修正対象境界フォーム",
+      fields: [
+        {
+          fieldKey: editableFieldKey,
+          fieldType: "text",
+          label: uniqueE2eLabel("修正対象項目"),
+          required: true,
+          sortOrder: 0,
+        },
+        {
+          fieldKey: lockedFieldKey,
+          fieldType: "text",
+          label: uniqueE2eLabel("修正対象外項目"),
+          required: true,
+          sortOrder: 1,
+        },
+      ],
+    });
+    const editableField = await getFieldByKey(
+      request,
+      session,
+      setup,
+      editableFieldKey,
+    );
+    const applicantEmail = `${uniqueE2eLabel(
+      "correction-target-applicant",
+    )}@example.com`;
+    const editableValue = uniqueE2eLabel("修正前の対象値");
+    const lockedValue = uniqueE2eLabel("修正対象外の値");
+    const application = await createPublicApplication(request, {
+      applicantEmail,
+      session,
+      setup,
+      space,
+      values: {
+        [editableFieldKey]: editableValue,
+        [lockedFieldKey]: lockedValue,
+      },
+    });
+    expect(application.status).toBe("in_review");
+
+    const returned = await returnApplicationForCorrection(request, session, {
+      applicationId: application.id,
+      fieldId: editableField.id,
+    });
+    expect(returned.status).toBe("returned");
+
+    const returnedToken = createApplicantAccessToken({
+      applicationId: application.id,
+      email: applicantEmail,
+      formDefinitionId: setup.definitionId,
+      groupId: space.id,
+      tenantId: session.user.tenantId,
+    });
+    const correction = await getReturnedCorrection(request, returnedToken);
+    expect(correction.openCorrection?.items ?? []).toEqual([
+      expect.objectContaining({
+        currentValue: editableValue,
+        fieldKey: editableFieldKey,
+      }),
+    ]);
+
+    await expectApiError(
+      await request.patch(
+        `${getE2eEnv().apiBase}/public/applications/${application.id}`,
+        {
+          headers: applicantHeaders(returnedToken),
+          data: {
+            values: {
+              [lockedFieldKey]: uniqueE2eLabel("不正な対象外修正"),
+            },
+          },
+        },
+      ),
+      {
+        errorCode: "APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION",
+        status: 400,
+      },
+    );
+
+    const unchanged = await getApplication(request, session, application.id);
+    expect(unchanged.status).toBe("returned");
+    expect(unchanged.values?.[editableFieldKey]).toBe(editableValue);
+    expect(unchanged.values?.[lockedFieldKey]).toBe(lockedValue);
+  });
 });
 
 async function createPublicApplication(
@@ -145,7 +245,8 @@ async function createPublicApplication(
     session: E2eSession;
     setup: PublishedFormSetup;
     space: E2eSpace;
-    value: string;
+    value?: string;
+    values?: Record<string, unknown>;
   },
 ): Promise<ApplicationDetail> {
   const { apiBase } = getE2eEnv();
@@ -161,7 +262,7 @@ async function createPublicApplication(
       data: {
         groupId: input.space.id,
         formDefinitionId: input.setup.definitionId,
-        values: { [input.setup.fieldKey]: input.value },
+        values: input.values ?? { [input.setup.fieldKey]: input.value },
       },
     }),
     "create public boundary application",
@@ -173,6 +274,15 @@ async function getPrimaryField(
   session: E2eSession,
   setup: PublishedFormSetup,
 ): Promise<{ fieldKey: string; id: string }> {
+  return getFieldByKey(request, session, setup, setup.fieldKey);
+}
+
+async function getFieldByKey(
+  request: APIRequestContext,
+  session: E2eSession,
+  setup: PublishedFormSetup,
+  fieldKey: string,
+): Promise<FormFieldSummary> {
   const { apiBase } = getE2eEnv();
   const definition = await unwrapApiData<FormDefinitionDetail>(
     await request.get(`${apiBase}/form-definitions/${setup.definitionId}`, {
@@ -181,10 +291,10 @@ async function getPrimaryField(
     "get public boundary form definition",
   );
   const field = definition.fields?.find(
-    (candidate) => candidate.fieldKey === setup.fieldKey,
+    (candidate) => candidate.fieldKey === fieldKey,
   );
-  expect(field, "primary form field was not found").toBeTruthy();
-  return field as { fieldKey: string; id: string };
+  expect(field, `form field ${fieldKey} was not found`).toBeTruthy();
+  return field as FormFieldSummary;
 }
 
 async function returnApplicationForCorrection(
