@@ -10,7 +10,7 @@ import { InvitationStatus } from '../../models/constants/invitation-status';
 import { UserRole } from '../../models/constants/user-role';
 import { Invitation } from '../../models/entities/invitation.entity';
 import {
-  configurePostgresTestEnv,
+  preparePostgresTestDatabase,
   truncatePostgresTables,
 } from '../test-postgres';
 
@@ -23,7 +23,7 @@ describe('Invitations (integration)', () => {
   beforeEach(async () => {
     process.env.INTERNAL_API_KEY = 'int-api-key';
     process.env.JWT_SECRET = 'int-jwt-secret-at-least-32-characters-long';
-    configurePostgresTestEnv();
+    await preparePostgresTestDatabase();
 
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],

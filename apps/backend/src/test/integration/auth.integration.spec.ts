@@ -5,7 +5,7 @@ import { AuthService } from '../../app/modules/auth/services/auth.service';
 import { ClientErrorCodes } from '../../common/errors';
 import { UserRole } from '../../models/constants/user-role';
 import {
-  configurePostgresTestEnv,
+  preparePostgresTestDatabase,
   truncatePostgresTables,
 } from '../test-postgres';
 
@@ -16,7 +16,7 @@ describe('Auth (integration)', () => {
   beforeEach(async () => {
     process.env.INTERNAL_API_KEY = 'int-api-key';
     process.env.JWT_SECRET = 'int-jwt-secret-at-least-32-characters-long';
-    configurePostgresTestEnv();
+    await preparePostgresTestDatabase();
 
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],
