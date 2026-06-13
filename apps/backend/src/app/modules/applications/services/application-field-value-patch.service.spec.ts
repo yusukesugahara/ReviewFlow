@@ -11,6 +11,7 @@ import { ApplicationCorrectionRepository } from '../../../../models/repositories
 import { ApplicationSubmissionRepository } from '../../../../models/repositories/application-submission.repository';
 import { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationPatchPolicy } from '../policies/application-patch.policy';
+import { ApplicationFieldValueTypeValidator } from '../validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationFieldValuePatchBuilder } from './application-field-value-patch.builder';
 import { ApplicationFieldValuePatchService } from './application-field-value-patch.service';
@@ -91,7 +92,9 @@ describe('ApplicationFieldValuePatchService', () => {
       createFieldValue: jest.fn((value: object) => ({ ...value })),
       saveApplicationPatch: jest.fn(),
     };
-    const formValueValidator = new ApplicationFormValueValidator();
+    const formValueValidator = new ApplicationFormValueValidator(
+      new ApplicationFieldValueTypeValidator(),
+    );
     const patchContextLoader = new ApplicationPatchContextLoader(
       formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,

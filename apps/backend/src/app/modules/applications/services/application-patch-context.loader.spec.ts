@@ -9,6 +9,7 @@ import type { FormField } from '../../../../models/entities/form-field.entity';
 import type { ApplicationCorrectionRepository } from '../../../../models/repositories/application-correction.repository';
 import type { FormDefinitionsRepository } from '../../../../models/repositories/form-definitions.repository';
 import { ApplicationPatchPolicy } from '../policies/application-patch.policy';
+import { ApplicationFieldValueTypeValidator } from '../validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from '../validators/application-form-value.validator';
 import { ApplicationPatchContextLoader } from './application-patch-context.loader';
 
@@ -72,7 +73,9 @@ describe('ApplicationPatchContextLoader', () => {
       formDefinitionsRepository as unknown as FormDefinitionsRepository,
       correctionRepository as unknown as ApplicationCorrectionRepository,
       new ApplicationPatchPolicy(),
-      new ApplicationFormValueValidator(),
+      new ApplicationFormValueValidator(
+        new ApplicationFieldValueTypeValidator(),
+      ),
     );
   });
 

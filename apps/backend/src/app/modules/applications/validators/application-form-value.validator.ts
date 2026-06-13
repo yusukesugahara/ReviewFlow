@@ -8,7 +8,7 @@ import { ApplicationFieldValueTypeValidator } from './application-field-value-ty
 @Injectable()
 export class ApplicationFormValueValidator {
   constructor(
-    private readonly fieldValueTypeValidator = new ApplicationFieldValueTypeValidator(),
+    private readonly fieldValueTypeValidator: ApplicationFieldValueTypeValidator,
   ) {}
 
   buildFieldsByKey(fields: FormField[]): Map<string, FormField> {
