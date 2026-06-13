@@ -30,8 +30,8 @@ describe("ApplicationSetupDraftForm", () => {
     expect(screen.getByDisplayValue("/return")).toHaveAttribute("name", "returnPath");
     const draftButtons = screen.getAllByRole("button", { name: "下書き保存" });
     const publishButtons = screen.getAllByRole("button", { name: "公開" });
-    expect(draftButtons).toHaveLength(2);
-    expect(publishButtons).toHaveLength(2);
+    expect(draftButtons).toHaveLength(1);
+    expect(publishButtons).toHaveLength(1);
     draftButtons.forEach((button) => {
       expect(button).toHaveAttribute("value", "draft");
     });
@@ -99,7 +99,7 @@ describe("ApplicationSetupDraftForm", () => {
 
     expect(action).toHaveBeenCalledTimes(1);
     const publishButtons = await screen.findAllByRole("button", { name: "公開中" });
-    expect(publishButtons).toHaveLength(2);
+    expect(publishButtons).toHaveLength(1);
     publishButtons.forEach((button) => {
       expect(button).toBeDisabled();
       expect(button).toHaveAttribute("aria-busy", "true");
