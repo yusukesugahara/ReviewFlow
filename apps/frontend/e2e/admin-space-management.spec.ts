@@ -13,6 +13,9 @@ type AuditLogList = {
   logs: Array<{
     actionType: string;
     groupId: string | null;
+    metadataJson: Record<string, unknown> | null;
+    summary: string | null;
+    targetId: string | null;
     targetEmailSnapshot: string | null;
     targetType: string;
   }>;
@@ -72,6 +75,30 @@ test.describe("テナント管理のスペース管理", () => {
     const updatedSpace = await getSpace(request, session, space.id);
     expect(updatedSpace.name).toBe(updatedName);
     expect(updatedSpace.description).toBe(updatedDescription);
+
+    const auditLogs = await listSpaceAuditLogs(request, session, space.id);
+    expect(auditLogs.total).toBeGreaterThanOrEqual(1);
+    expect(auditLogs.logs).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          actionType: "space.updated",
+          groupId: space.id,
+          targetId: space.id,
+          targetType: "space",
+        }),
+      ]),
+    );
+    const updateLog = auditLogs.logs.find(
+      (log) =>
+        log.actionType === "space.updated" && log.targetId === space.id,
+    );
+    expect(updateLog?.summary).toContain(updatedName);
+    expect(updateLog?.metadataJson).toMatchObject({
+      descriptionFrom: initialDescription,
+      descriptionTo: updatedDescription,
+      nameFrom: initialName,
+      nameTo: updatedName,
+    });
   });
 
   test("スペース詳細のメンバー追加ダイアログから招待を送信できる", async ({
@@ -168,5 +195,23 @@ async function listInvitationAuditLogs(
       },
     }),
     "list space invitation audit logs",
+  );
+}
+
+async function listSpaceAuditLogs(
+  request: APIRequestContext,
+  session: E2eSession,
+  spaceId: string,
+): Promise<AuditLogList> {
+  const { apiBase } = getE2eEnv();
+  return unwrapApiData<AuditLogList>(
+    await request.get(`${apiBase}/audit-logs`, {
+      headers: authHeaders(session.accessToken),
+      params: {
+        groupId: spaceId,
+        targetType: "space",
+      },
+    }),
+    "list space audit logs",
   );
 }
