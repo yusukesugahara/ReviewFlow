@@ -19,7 +19,10 @@ import { ApplicationFieldValue } from '../models/entities/application-field-valu
 import { Application } from '../models/entities/application.entity';
 import { ApprovalFlow } from '../models/entities/approval-flow.entity';
 import { ApprovalStep } from '../models/entities/approval-step.entity';
-import { AuditLog } from '../models/entities/audit-log.entity';
+import {
+  AuditLog,
+  type AuditActorType,
+} from '../models/entities/audit-log.entity';
 import { CorrectionRequestItem } from '../models/entities/correction-request-item.entity';
 import { CorrectionRequest } from '../models/entities/correction-request.entity';
 import { FormDefinition } from '../models/entities/form-definition.entity';
@@ -28,9 +31,16 @@ import { GroupMember } from '../models/entities/group-member.entity';
 import { Group } from '../models/entities/group.entity';
 import { Tenant } from '../models/entities/tenant.entity';
 import { User } from '../models/entities/user.entity';
+import { BusinessAuditAction } from '../app/modules/audit-logs/services/business-audit-log.service';
+import type { ApplicationStatusValue } from '../models/constants/application-status';
+import type { GroupMemberRoleValue } from '../models/constants/group-member-role';
+import type { UserRoleValue } from '../models/constants/user-role';
 
 const DEMO_TENANT_NAME = 'みどり市 申請受付デモ';
 const DEMO_PASSWORD = 'Password123!';
+const RESET_DATABASE =
+  process.env.SEED_RESET_DATABASE === undefined ||
+  process.env.SEED_RESET_DATABASE !== 'false';
 const RESET_DEMO_TENANT_NAMES = [DEMO_TENANT_NAME, 'ReviewFlow Demo'];
 
 type DemoUserKey =
@@ -226,7 +236,7 @@ const DEMO_SPACES: DemoSpace[] = [
       {
         applicantEmail: 'sato@example.com',
         formName: '住民票写し交付申請',
-        status: ApplicationStatus.SUBMITTED,
+        status: ApplicationStatus.IN_REVIEW,
         currentStepOrder: 1,
         submittedAt: daysAgo(1),
         createdAt: daysAgo(1),
@@ -524,7 +534,7 @@ const DEMO_SPACES: DemoSpace[] = [
       {
         applicantEmail: 'sakura-clean@example.com',
         formName: '公園利用届',
-        status: ApplicationStatus.SUBMITTED,
+        status: ApplicationStatus.IN_REVIEW,
         currentStepOrder: 1,
         submittedAt: daysAgo(1),
         createdAt: daysAgo(1),
@@ -542,21 +552,27 @@ const DEMO_SPACES: DemoSpace[] = [
 ];
 
 async function main() {
+  configureSeedEnv();
   const config = new ConfigService(process.env);
-  const dataSource = new DataSource(
-    buildTypeOrmOptions(config) as DataSourceOptions,
-  );
+  const dataSourceOptions = buildTypeOrmOptions(config) as DataSourceOptions;
+  if (RESET_DATABASE) {
+    await resetDatabase(dataSourceOptions);
+  }
+
+  const dataSource = new DataSource(dataSourceOptions);
   await dataSource.initialize();
 
   try {
     const result = await dataSource.transaction(async (manager) => {
       const tenantRepo = manager.getRepository(Tenant);
-      for (const tenantName of RESET_DEMO_TENANT_NAMES) {
-        const existingTenant = await tenantRepo.findOne({
-          where: { name: tenantName },
-        });
-        if (existingTenant) {
-          await tenantRepo.remove(existingTenant);
+      if (!RESET_DATABASE) {
+        for (const tenantName of RESET_DEMO_TENANT_NAMES) {
+          const existingTenant = await tenantRepo.findOne({
+            where: { name: tenantName },
+          });
+          if (existingTenant) {
+            await tenantRepo.remove(existingTenant);
+          }
         }
       }
 
@@ -644,6 +660,11 @@ async function main() {
     });
 
     console.log('Demo seed completed.');
+    console.log(
+      RESET_DATABASE
+        ? 'Database tables were reset before seeding.'
+        : 'Existing demo tenant was replaced before seeding.',
+    );
     console.log(`Tenant: ${DEMO_TENANT_NAME} (${result.tenantId})`);
     for (const space of result.spaceIds) {
       console.log(`Space: ${space.name} (${space.id})`);
@@ -669,6 +690,50 @@ async function main() {
     );
   } finally {
     await dataSource.destroy();
+  }
+}
+
+function configureSeedEnv(): void {
+  process.env.NODE_ENV ??= 'development';
+  process.env.DB_SYNCHRONIZE ??= 'true';
+
+  if (process.env.DATABASE_URL?.length) {
+    return;
+  }
+
+  process.env.DB_HOST ??= '127.0.0.1';
+  process.env.DB_PORT ??= '5432';
+  process.env.DB_USERNAME ??= 'app';
+  process.env.DB_PASSWORD ??= 'app';
+  process.env.DB_NAME ??= 'app_dev';
+}
+
+async function resetDatabase(options: DataSourceOptions): Promise<void> {
+  const resetDataSource = new DataSource({
+    ...options,
+    migrationsRun: false,
+    synchronize: false,
+  });
+  await resetDataSource.initialize();
+  try {
+    const rows = await resetDataSource.query<{ tablename: string }[]>(`
+      SELECT tablename
+      FROM pg_tables
+      WHERE schemaname = 'public'
+        AND tablename <> 'migrations'
+    `);
+    if (rows.length === 0) {
+      return;
+    }
+
+    const tables = rows
+      .map(({ tablename }) => `"public"."${tablename.replaceAll('"', '""')}"`)
+      .join(', ');
+    await resetDataSource.query(
+      `TRUNCATE TABLE ${tables} RESTART IDENTITY CASCADE`,
+    );
+  } finally {
+    await resetDataSource.destroy();
   }
 }
 
@@ -1057,12 +1122,14 @@ async function saveApprovalHistory(
   const approvalRepo = manager.getRepository(ApplicationApproval);
   const [managerStep, financeStep] = input.steps;
   const rows: ApplicationApproval[] = [];
-
-  if (
-    input.status === ApplicationStatus.IN_REVIEW ||
+  const managerStepAlreadyApproved =
     input.status === ApplicationStatus.APPROVED ||
-    input.status === ApplicationStatus.REJECTED
-  ) {
+    input.status === ApplicationStatus.REJECTED ||
+    (input.status === ApplicationStatus.IN_REVIEW &&
+      input.application.currentStepOrder !== null &&
+      input.application.currentStepOrder > 1);
+
+  if (managerStepAlreadyApproved) {
     rows.push(
       approvalRepo.create({
         tenantId: input.tenantId,
@@ -1178,187 +1245,300 @@ async function createDemoAuditLogs(
   spaces: SeededSpace[],
 ) {
   const auditRepo = manager.getRepository(AuditLog);
-  const rows: Array<{
-    actorUserId: string | null;
-    createdAt: Date;
-    groupId: string | null;
-    method: string;
-    path: string;
-    statusCode?: number;
-    targetId: string | null;
-    targetType: string;
-  }> = [
-    {
-      actorUserId: users.admin.id,
-      createdAt: daysAgo(6),
-      groupId: null,
-      method: 'POST',
-      path: '/auth/login',
-      targetId: null,
-      targetType: 'auth',
-    },
-  ];
+  const memberRepo = manager.getRepository(GroupMember);
+  const rows: DemoAuditLogRow[] = [];
 
   for (const space of spaces) {
+    rows.push({
+      actionType: BusinessAuditAction.SPACE_CREATED,
+      actorEmailSnapshot: users.admin.email,
+      actorType: 'user',
+      actorUserId: users.admin.id,
+      createdAt: daysAgo(14),
+      groupId: space.group.id,
+      metadataJson: {
+        groupName: space.group.name,
+      },
+      summary: `${users.admin.email} が ${space.group.name} を作成しました`,
+      targetId: space.group.id,
+      targetType: 'space',
+      tenantId,
+    });
+
+    const reviewerMember = await memberRepo.findOneBy({
+      groupId: space.group.id,
+      tenantId,
+      userId: users[space.demoSpace.reviewerUserKey].id,
+    });
+    if (reviewerMember) {
+      rows.push({
+        actionType: BusinessAuditAction.SPACE_MEMBER_ADDED,
+        actorEmailSnapshot: users.admin.email,
+        actorType: 'user',
+        actorUserId: users.admin.id,
+        createdAt: daysAgo(14),
+        groupId: space.group.id,
+        groupRoleTo: reviewerMember.role,
+        summary: `${users.admin.email} が ${users[space.demoSpace.reviewerUserKey].email} を ${space.group.name} に追加しました`,
+        targetEmailSnapshot: users[space.demoSpace.reviewerUserKey].email,
+        targetId: reviewerMember.id,
+        targetType: 'group_member',
+        targetUserId: reviewerMember.userId,
+        tenantId,
+      });
+    }
+
     const firstPublishedDefinition = space.formDefinitions.find(
       (definition) => definition.status === FormDefinitionStatus.PUBLISHED,
     );
-    const draftDefinition = space.formDefinitions.find(
-      (definition) => definition.status === FormDefinitionStatus.DRAFT,
-    );
-    const archivedDefinition = space.formDefinitions.find(
-      (definition) => definition.status === FormDefinitionStatus.ARCHIVED,
-    );
-    const returnedApplication = space.applications.find(
-      (application) => application.status === ApplicationStatus.RETURNED,
-    );
-    const approvedApplication = space.applications.find(
-      (application) => application.status === ApplicationStatus.APPROVED,
-    );
-    const rejectedApplication = space.applications.find(
-      (application) => application.status === ApplicationStatus.REJECTED,
-    );
-
     if (firstPublishedDefinition) {
-      rows.push(
-        {
-          actorUserId: users.admin.id,
-          createdAt: daysAgo(5),
-          groupId: space.group.id,
-          method: 'POST',
-          path: '/form-definitions',
-          statusCode: 201,
-          targetId: firstPublishedDefinition.id,
-          targetType: 'form-definitions',
+      rows.push({
+        actionType: BusinessAuditAction.INVITATION_CREATED,
+        actorEmailSnapshot: users.admin.email,
+        actorType: 'user',
+        actorUserId: users.admin.id,
+        createdAt: daysAgo(13),
+        groupId: space.group.id,
+        groupRoleTo: GroupMemberRole.USER,
+        metadataJson: {
+          expiresAt: daysFromNow(7).toISOString(),
         },
-        {
-          actorUserId: users.admin.id,
-          createdAt: daysAgo(5),
-          groupId: space.group.id,
-          method: 'POST',
-          path: `/form-definitions/${firstPublishedDefinition.id}/publish`,
-          targetId: firstPublishedDefinition.id,
-          targetType: 'form-definitions',
-        },
+        roleTo: UserRole.TENANT_USER,
+        summary: `${users.admin.email} が ${space.group.name} の担当者を招待しました`,
+        targetEmailSnapshot: `${space.group.name}-guest@reviewflow.demo`,
+        targetId: null,
+        targetType: 'invitation',
+        tenantId,
+      });
+    }
+
+    for (const application of space.applications) {
+      const formDefinition = space.formDefinitions.find(
+        (definition) => definition.id === application.formDefinitionId,
       );
-    }
-
-    if (draftDefinition) {
       rows.push({
-        actorUserId: users.admin.id,
-        createdAt: daysAgo(4),
+        actionType: BusinessAuditAction.APPLICATION_CREATED,
+        actorEmailSnapshot: application.applicantEmail,
+        actorType: 'applicant',
+        actorUserId: null,
+        applicationId: application.id,
+        createdAt: application.createdAt,
         groupId: space.group.id,
-        method: 'POST',
-        path: `/form-definitions/${draftDefinition.id}/fields`,
-        statusCode: 201,
-        targetId: draftDefinition.id,
-        targetType: 'form-definitions',
+        metadataJson: applicationMetadata(application, formDefinition),
+        statusFrom: null,
+        statusTo: ApplicationStatus.DRAFT,
+        stepOrderFrom: null,
+        stepOrderTo: null,
+        summary: `${application.applicantEmail} が申請を作成しました`,
+        targetId: application.id,
+        targetType: 'application',
+        tenantId,
       });
-    }
-
-    if (returnedApplication) {
       rows.push({
-        actorUserId: users[space.demoSpace.reviewerUserKey].id,
-        createdAt: daysAgo(3),
+        actionType: BusinessAuditAction.APPLICATION_SUBMITTED,
+        actorEmailSnapshot: application.applicantEmail,
+        actorType: 'applicant',
+        actorUserId: null,
+        applicationId: application.id,
+        createdAt: application.submittedAt ?? application.createdAt,
         groupId: space.group.id,
-        method: 'POST',
-        path: `/applications/${returnedApplication.id}/return`,
-        targetId: returnedApplication.id,
-        targetType: 'applications',
+        metadataJson: applicationMetadata(application, formDefinition),
+        statusFrom: ApplicationStatus.DRAFT,
+        statusTo: ApplicationStatus.IN_REVIEW,
+        stepOrderFrom: null,
+        stepOrderTo: 1,
+        summary: `${application.applicantEmail} が申請を提出しました`,
+        targetId: application.id,
+        targetType: 'application',
+        tenantId,
       });
-    }
 
-    if (approvedApplication) {
-      rows.push({
-        actorUserId: users[space.demoSpace.approverUserKey].id,
-        createdAt: daysAgo(2),
-        groupId: space.group.id,
-        method: 'POST',
-        path: `/applications/${approvedApplication.id}/approve`,
-        targetId: approvedApplication.id,
-        targetType: 'applications',
-      });
-    }
+      const hasFirstStepApproved =
+        application.status === ApplicationStatus.APPROVED ||
+        application.status === ApplicationStatus.REJECTED ||
+        (application.status === ApplicationStatus.IN_REVIEW &&
+          application.currentStepOrder !== null &&
+          application.currentStepOrder > 1);
+      if (hasFirstStepApproved) {
+        rows.push({
+          actionType: BusinessAuditAction.APPLICATION_APPROVED,
+          actorEmailSnapshot: users[space.demoSpace.reviewerUserKey].email,
+          actorType: 'user',
+          actorUserId: users[space.demoSpace.reviewerUserKey].id,
+          applicationId: application.id,
+          createdAt: application.updatedAt,
+          groupId: space.group.id,
+          metadataJson: {
+            ...applicationMetadata(application, formDefinition),
+            comment: '申請内容、本人確認、必要項目を確認しました。',
+          },
+          statusFrom: ApplicationStatus.IN_REVIEW,
+          statusTo: ApplicationStatus.IN_REVIEW,
+          stepOrderFrom: 1,
+          stepOrderTo: 2,
+          summary: `${users[space.demoSpace.reviewerUserKey].email} が申請を一次承認しました`,
+          targetId: application.id,
+          targetType: 'application',
+          tenantId,
+        });
+      }
 
-    if (rejectedApplication) {
-      rows.push({
-        actorUserId: users[space.demoSpace.approverUserKey].id,
-        createdAt: daysAgo(2),
-        groupId: space.group.id,
-        method: 'POST',
-        path: `/applications/${rejectedApplication.id}/reject`,
-        targetId: rejectedApplication.id,
-        targetType: 'applications',
-      });
-    }
+      if (application.status === ApplicationStatus.RETURNED) {
+        rows.push({
+          actionType: BusinessAuditAction.APPLICATION_RETURNED,
+          actorEmailSnapshot: users[space.demoSpace.reviewerUserKey].email,
+          actorType: 'user',
+          actorUserId: users[space.demoSpace.reviewerUserKey].id,
+          applicationId: application.id,
+          createdAt: application.updatedAt,
+          groupId: space.group.id,
+          metadataJson: {
+            ...applicationMetadata(application, formDefinition),
+            overallComment: '確認に必要な情報が不足しているため差し戻します。',
+          },
+          statusFrom: ApplicationStatus.IN_REVIEW,
+          statusTo: ApplicationStatus.RETURNED,
+          stepOrderFrom: 1,
+          stepOrderTo: null,
+          summary: `${users[space.demoSpace.reviewerUserKey].email} が申請を差し戻しました`,
+          targetId: application.id,
+          targetType: 'application',
+          tenantId,
+        });
+      }
 
-    if (archivedDefinition) {
-      rows.push({
-        actorUserId: users.admin.id,
-        createdAt: daysAgo(1),
-        groupId: space.group.id,
-        method: 'POST',
-        path: `/form-definitions/${archivedDefinition.id}/archive`,
-        targetId: archivedDefinition.id,
-        targetType: 'form-definitions',
-      });
+      if (application.status === ApplicationStatus.APPROVED) {
+        rows.push({
+          actionType: BusinessAuditAction.APPLICATION_APPROVED,
+          actorEmailSnapshot: users[space.demoSpace.approverUserKey].email,
+          actorType: 'user',
+          actorUserId: users[space.demoSpace.approverUserKey].id,
+          applicationId: application.id,
+          createdAt: application.updatedAt,
+          groupId: space.group.id,
+          metadataJson: {
+            ...applicationMetadata(application, formDefinition),
+            comment: '担当確認結果と添付情報を確認し、承認します。',
+          },
+          statusFrom: ApplicationStatus.IN_REVIEW,
+          statusTo: ApplicationStatus.APPROVED,
+          stepOrderFrom: 2,
+          stepOrderTo: null,
+          summary: `${users[space.demoSpace.approverUserKey].email} が申請を最終承認しました`,
+          targetId: application.id,
+          targetType: 'application',
+          tenantId,
+        });
+      }
+
+      if (application.status === ApplicationStatus.REJECTED) {
+        rows.push({
+          actionType: BusinessAuditAction.APPLICATION_REJECTED,
+          actorEmailSnapshot: users[space.demoSpace.approverUserKey].email,
+          actorType: 'user',
+          actorUserId: users[space.demoSpace.approverUserKey].id,
+          applicationId: application.id,
+          createdAt: application.updatedAt,
+          groupId: space.group.id,
+          metadataJson: {
+            ...applicationMetadata(application, formDefinition),
+            comment: '利用条件と安全管理の確認が不足しているため却下します。',
+          },
+          statusFrom: ApplicationStatus.IN_REVIEW,
+          statusTo: ApplicationStatus.REJECTED,
+          stepOrderFrom: 2,
+          stepOrderTo: null,
+          summary: `${users[space.demoSpace.approverUserKey].email} が申請を却下しました`,
+          targetId: application.id,
+          targetType: 'application',
+          tenantId,
+        });
+      }
     }
   }
 
-  rows.push(
-    {
-      actorUserId: users.admin.id,
-      createdAt: daysAgo(1),
-      groupId: null,
-      method: 'PATCH',
-      path: `/users/${users.citizenOperator.id}/role`,
-      targetId: users.citizenOperator.id,
-      targetType: 'users',
-    },
-    {
-      actorUserId: users.admin.id,
-      createdAt: daysAgo(1),
-      groupId: spaces[0]?.group.id ?? null,
-      method: 'GET',
-      path: '/export-jobs/demo/download',
-      statusCode: 404,
-      targetId: 'demo',
-      targetType: 'export-jobs',
-    },
-  );
+  rows.push({
+    actionType: BusinessAuditAction.USER_ROLE_CHANGED,
+    actorEmailSnapshot: users.admin.email,
+    actorType: 'user',
+    actorUserId: users.admin.id,
+    createdAt: daysAgo(1),
+    groupId: null,
+    roleFrom: UserRole.TENANT_USER,
+    roleTo: UserRole.TENANT_ADMIN,
+    summary: `${users.admin.email} が ${users.citizenOperator.email} の権限を変更しました`,
+    targetEmailSnapshot: users.citizenOperator.email,
+    targetId: users.citizenOperator.id,
+    targetType: 'user',
+    targetUserId: users.citizenOperator.id,
+    tenantId,
+  });
 
-  for (const [index, row] of rows.entries()) {
-    const statusCode = row.statusCode ?? 200;
+  for (const row of rows) {
     const saved = await auditRepo.save(
       auditRepo.create({
-        tenantId,
+        tenantId: row.tenantId,
         groupId: row.groupId,
         actorUserId: row.actorUserId,
-        actionType: `${row.method}:${row.targetType}`,
+        actorType: row.actorType,
+        actorEmailSnapshot: row.actorEmailSnapshot,
+        actionType: row.actionType,
         targetType: row.targetType,
         targetId: row.targetId,
-        metadataJson: {
-          method: row.method,
-          path: row.path,
-          statusCode,
-          durationMs: 80 + index * 17,
-          requestId: `demo-seed-${index + 1}`,
-          role:
-            row.actorUserId === users.admin.id
-              ? UserRole.TENANT_ADMIN
-              : UserRole.TENANT_USER,
-          ip: '203.0.113.10',
-          userAgent: 'ReviewFlow Demo Seed',
-          groupId: row.groupId,
-          success: statusCode < 400,
-          ...(statusCode >= 400
-            ? { errorCode: 'DEMO_EXPORT_FILE_MISSING' }
-            : {}),
-        },
+        targetUserId: row.targetUserId ?? null,
+        targetEmailSnapshot: row.targetEmailSnapshot ?? null,
+        applicationId: row.applicationId ?? null,
+        statusFrom: row.statusFrom ?? null,
+        statusTo: row.statusTo ?? null,
+        stepOrderFrom: row.stepOrderFrom ?? null,
+        stepOrderTo: row.stepOrderTo ?? null,
+        roleFrom: row.roleFrom ?? null,
+        roleTo: row.roleTo ?? null,
+        groupRoleFrom: row.groupRoleFrom ?? null,
+        groupRoleTo: row.groupRoleTo ?? null,
+        summary: row.summary,
+        metadataJson: row.metadataJson ?? null,
       }),
     );
     await auditRepo.update({ id: saved.id }, { createdAt: row.createdAt });
   }
+}
+
+type DemoAuditLogRow = {
+  actionType: string;
+  actorEmailSnapshot: string | null;
+  actorType: AuditActorType;
+  actorUserId: string | null;
+  applicationId?: string | null;
+  createdAt: Date;
+  groupId: string | null;
+  groupRoleFrom?: GroupMemberRoleValue | null;
+  groupRoleTo?: GroupMemberRoleValue | null;
+  metadataJson?: Record<string, unknown> | null;
+  roleFrom?: UserRoleValue | null;
+  roleTo?: UserRoleValue | null;
+  statusFrom?: ApplicationStatusValue | null;
+  statusTo?: ApplicationStatusValue | null;
+  stepOrderFrom?: number | null;
+  stepOrderTo?: number | null;
+  summary: string;
+  targetEmailSnapshot?: string | null;
+  targetId: string | null;
+  targetType: string;
+  targetUserId?: string | null;
+  tenantId: string;
+};
+
+function applicationMetadata(
+  application: Application,
+  formDefinition: FormDefinition | undefined,
+): Record<string, unknown> {
+  return {
+    applicantEmail: application.applicantEmail,
+    approvalFlowId: application.approvalFlowId,
+    formDefinitionId: application.formDefinitionId,
+    formDefinitionName: formDefinition?.name,
+  };
 }
 
 function daysAgo(days: number): Date {
