@@ -3,12 +3,14 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsInt,
   IsIn,
   IsObject,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import {
@@ -122,6 +124,16 @@ export class PatchApplicationDto {
 }
 
 export class ApproveApplicationDto {
+  @ApiProperty({
+    example: 1,
+    description:
+      '画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedStepOrder!: number;
+
   @ApiPropertyOptional({ description: '任意コメント（監査用）' })
   @IsOptional()
   @IsString()
@@ -130,6 +142,16 @@ export class ApproveApplicationDto {
 }
 
 export class RejectApplicationDto {
+  @ApiProperty({
+    example: 1,
+    description:
+      '画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedStepOrder!: number;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -150,6 +172,16 @@ export class ReturnFieldItemDto {
 }
 
 export class ReturnApplicationDto {
+  @ApiProperty({
+    example: 1,
+    description:
+      '画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedStepOrder!: number;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -163,6 +195,11 @@ export class ReturnApplicationDto {
   @Type(() => ReturnFieldItemDto)
   fields!: ReturnFieldItemDto[];
 }
+
+export type ReturnApplicationEmailDto = Pick<
+  ReturnApplicationDto,
+  'overallComment' | 'fields'
+>;
 
 export class CorrectionRequestItemResponseDto {
   @ApiProperty()

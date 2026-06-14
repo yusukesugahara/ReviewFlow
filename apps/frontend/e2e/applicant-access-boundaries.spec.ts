@@ -310,6 +310,7 @@ async function returnApplicationForCorrection(
     await request.post(`${apiBase}/applications/${input.applicationId}/return`, {
       headers: authHeaders(session.accessToken),
       data: {
+        expectedStepOrder: 1,
         overallComment: "E2E 申請者トークン境界の差し戻し",
         fields: [
           {

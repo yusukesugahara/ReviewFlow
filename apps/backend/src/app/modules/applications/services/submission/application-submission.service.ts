@@ -34,7 +34,11 @@ export class ApplicationSubmissionService {
     app: Application,
     manager?: TransactionManager,
   ): Promise<void> {
-    const context = await this.contextLoader.loadResubmittable(tenantId, app);
+    const context = await this.contextLoader.loadResubmittable(
+      tenantId,
+      app,
+      manager,
+    );
     this.validateApplicationReadyToSubmit(context);
     await this.applyResubmitTransition(context, manager);
   }

@@ -5070,11 +5070,19 @@
       "ApproveApplicationDto": {
         "type": "object",
         "properties": {
+          "expectedStepOrder": {
+            "type": "number",
+            "example": 1,
+            "description": "画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。"
+          },
           "comment": {
             "type": "string",
             "description": "任意コメント（監査用）"
           }
-        }
+        },
+        "required": [
+          "expectedStepOrder"
+        ]
       },
       "ReturnFieldItemDto": {
         "type": "object",
@@ -5095,6 +5103,11 @@
       "ReturnApplicationDto": {
         "type": "object",
         "properties": {
+          "expectedStepOrder": {
+            "type": "number",
+            "example": 1,
+            "description": "画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。"
+          },
           "overallComment": {
             "type": "string"
           },
@@ -5106,16 +5119,25 @@
           }
         },
         "required": [
+          "expectedStepOrder",
           "fields"
         ]
       },
       "RejectApplicationDto": {
         "type": "object",
         "properties": {
+          "expectedStepOrder": {
+            "type": "number",
+            "example": 1,
+            "description": "画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。"
+          },
           "comment": {
             "type": "string"
           }
-        }
+        },
+        "required": [
+          "expectedStepOrder"
+        ]
       },
       "CorrectionTargetItemResponseDto": {
         "type": "object",

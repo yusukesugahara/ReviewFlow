@@ -1,6 +1,6 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CorrectionRequestStatus } from '../constants/correction-request-status';
 import { CorrectionRequest } from '../entities/correction-request.entity';
 import { ApplicationCorrectionRepository } from './application-correction.repository';
@@ -30,15 +30,46 @@ describe('ApplicationCorrectionRepository', () => {
   it('finds open correction requests with items', async () => {
     correctionRequests.findOne.mockResolvedValue(null);
 
-    await repository.findOpenCorrection('app-1');
+    await repository.findOpenCorrection({
+      tenantId: 'tenant-1',
+      applicationId: 'app-1',
+    });
 
     expect(correctionRequests.findOne).toHaveBeenCalledWith({
       where: {
+        tenantId: 'tenant-1',
         applicationId: 'app-1',
         status: CorrectionRequestStatus.OPEN,
       },
       relations: ['items'],
     });
+  });
+
+  it('uses the transaction manager when finding open correction requests', async () => {
+    const managerRepository = { findOne: jest.fn().mockResolvedValue(null) };
+    const getRepository = jest.fn().mockReturnValue(managerRepository);
+    const manager = {
+      getRepository,
+    } as unknown as EntityManager;
+
+    await repository.findOpenCorrection(
+      {
+        tenantId: 'tenant-1',
+        applicationId: 'app-1',
+      },
+      manager,
+    );
+
+    expect(getRepository).toHaveBeenCalledWith(CorrectionRequest);
+    expect(managerRepository.findOne).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-1',
+        applicationId: 'app-1',
+        status: CorrectionRequestStatus.OPEN,
+      },
+      relations: ['items'],
+    });
+    expect(correctionRequests.findOne).not.toHaveBeenCalled();
   });
 
   it('lists correction requests with item fields', async () => {

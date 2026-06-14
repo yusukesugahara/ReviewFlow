@@ -127,7 +127,7 @@ test.describe("テナントとスペースの権限境界", () => {
         `${getE2eEnv().apiBase}/applications/${applicationA.id}/approve`,
         {
           headers: authHeaders(tenantB.accessToken),
-          data: { comment: "別テナントからの承認" },
+          data: { comment: "別テナントからの承認", expectedStepOrder: 1 },
         },
       ),
       {

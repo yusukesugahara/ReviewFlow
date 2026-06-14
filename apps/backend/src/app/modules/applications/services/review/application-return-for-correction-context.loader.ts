@@ -5,6 +5,7 @@ import type { ApprovalStep } from '../../../../../models/entities/approval-step.
 import type { FormDefinition } from '../../../../../models/entities/form-definition.entity';
 import { ApplicationCorrectionRepository } from '../../../../../models/repositories/application-correction.repository';
 import { FormDefinitionsRepository } from '../../../../../models/repositories/form-definitions.repository';
+import type { TransactionManager } from '../../../../transaction';
 import type { ReturnApplicationDto } from '../../dto/applications.dto';
 import { ApplicationTransitionPolicy } from '../../policies/application-transition.policy';
 
@@ -24,10 +25,11 @@ export class ApplicationReturnForCorrectionContextLoader {
   async load(
     app: Application,
     dto: ReturnApplicationDto,
+    manager?: TransactionManager,
   ): Promise<ReturnForCorrectionContext> {
     const currentStep = this.transitionPolicy.getCurrentStep(app);
     this.transitionPolicy.assertStepCanReturn(currentStep);
-    await this.assertNoOpenCorrection(app.id);
+    await this.assertNoOpenCorrection(app, manager);
 
     const template = await this.loadTemplate(app);
     this.assertReturnFieldsBelongToTemplate(template, dto);
@@ -35,9 +37,14 @@ export class ApplicationReturnForCorrectionContextLoader {
     return { currentStep, template };
   }
 
-  private async assertNoOpenCorrection(applicationId: string): Promise<void> {
-    const existingOpen =
-      await this.correctionRepository.findOpenCorrection(applicationId);
+  private async assertNoOpenCorrection(
+    app: Application,
+    manager?: TransactionManager,
+  ): Promise<void> {
+    const existingOpen = await this.correctionRepository.findOpenCorrection(
+      { tenantId: app.tenantId, applicationId: app.id },
+      manager,
+    );
     if (existingOpen) {
       throw clientError(ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN);
     }

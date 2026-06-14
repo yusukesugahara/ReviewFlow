@@ -54,11 +54,36 @@ describe('ApplicationSubmissionRepository', () => {
   it('loads existing field values for an application', async () => {
     fieldValues.find.mockResolvedValue([]);
 
-    await repository.findExistingFieldValues('app-1');
+    await repository.findExistingFieldValues({
+      tenantId: 'tenant-1',
+      applicationId: 'app-1',
+    });
 
     expect(fieldValues.find).toHaveBeenCalledWith({
-      where: { applicationId: 'app-1' },
+      where: { tenantId: 'tenant-1', applicationId: 'app-1' },
     });
+  });
+
+  it('loads existing field values through a transaction manager', async () => {
+    const managerRepository = { find: jest.fn().mockResolvedValue([]) };
+    const getRepository = jest.fn().mockReturnValue(managerRepository);
+    const manager = {
+      getRepository,
+    } as unknown as EntityManager;
+
+    await repository.findExistingFieldValues(
+      {
+        tenantId: 'tenant-1',
+        applicationId: 'app-1',
+      },
+      manager,
+    );
+
+    expect(getRepository).toHaveBeenCalledWith(ApplicationFieldValue);
+    expect(managerRepository.find).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', applicationId: 'app-1' },
+    });
+    expect(fieldValues.find).not.toHaveBeenCalled();
   });
 
   it('creates field value entities through TypeORM repository', () => {

@@ -9,7 +9,7 @@ import type {
   CorrectionRequestItemResponseDto,
   CorrectionRequestResponseDto,
   CorrectionsListResponseDto,
-  ReturnApplicationDto,
+  ReturnApplicationEmailDto,
 } from '../dto/applications.dto';
 
 export type ApplicationWithProgress = Application & {
@@ -164,7 +164,7 @@ export function mapCorrectionTargetsResponse(
 
 export function mapCorrectionToReturnApplicationDto(
   openCorrection: CorrectionRequest,
-): ReturnApplicationDto {
+): ReturnApplicationEmailDto {
   return {
     overallComment: openCorrection.overallComment ?? undefined,
     fields: (openCorrection.items ?? []).map((item) => ({

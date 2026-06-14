@@ -208,12 +208,15 @@ describe('ApplicantApplicationService', () => {
       response,
     );
 
-    expect(applicationsRepository.findApplicantEditable).toHaveBeenCalledWith({
-      id: 'app-1',
-      tenantId: 'tenant-1',
-      applicantUserId: undefined,
-      applicantEmail: 'applicant@example.com',
-    });
+    expect(applicationsRepository.findApplicantEditable).toHaveBeenCalledWith(
+      {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: undefined,
+        applicantEmail: 'applicant@example.com',
+      },
+      undefined,
+    );
   });
 
   it('rejects patch when the token is tied to another application', async () => {
@@ -243,6 +246,15 @@ describe('ApplicantApplicationService', () => {
       }),
     ).resolves.toBe(updated);
 
+    expect(applicationsRepository.findApplicantEditable).toHaveBeenCalledWith(
+      {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: undefined,
+        applicantEmail: 'applicant@example.com',
+      },
+      transactionManager,
+    );
     expect(fieldValuePatchService.applyPatch).toHaveBeenCalledWith(
       'tenant-1',
       row,
@@ -265,6 +277,15 @@ describe('ApplicantApplicationService', () => {
 
     await expect(service.resubmit(applicant(), 'app-1')).resolves.toBe(updated);
 
+    expect(applicationsRepository.findApplicantEditable).toHaveBeenCalledWith(
+      {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: undefined,
+        applicantEmail: 'applicant@example.com',
+      },
+      transactionManager,
+    );
     expect(submissionService.resubmit).toHaveBeenCalledWith(
       'tenant-1',
       row,

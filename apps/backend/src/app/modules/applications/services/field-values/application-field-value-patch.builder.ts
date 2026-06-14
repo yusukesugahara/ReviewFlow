@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ApplicationFieldValue } from '../../../../../models/entities/application-field-value.entity';
 import { ApplicationSubmissionRepository } from '../../../../../models/repositories/application-submission.repository';
+import type { TransactionManager } from '../../../../transaction';
 import { ApplicationFormValueValidator } from '../../validators/application-form-value.validator';
 import type { ApplicationPatchContext } from './application-patch-context.loader';
 
@@ -14,6 +15,7 @@ export class ApplicationFieldValuePatchBuilder {
   async build(
     context: ApplicationPatchContext,
     values: Record<string, unknown>,
+    manager?: TransactionManager,
   ): Promise<ApplicationFieldValue[]> {
     this.formValueValidator.assertPatchValuesMatchFields(
       context.fieldsByKey,
@@ -22,7 +24,13 @@ export class ApplicationFieldValuePatchBuilder {
     );
 
     const existingValues =
-      await this.submissionRepository.findExistingFieldValues(context.app.id);
+      await this.submissionRepository.findExistingFieldValues(
+        {
+          tenantId: context.app.tenantId,
+          applicationId: context.app.id,
+        },
+        manager,
+      );
     const existingByFieldId = new Map(
       existingValues.map((value) => [value.formFieldId, value]),
     );

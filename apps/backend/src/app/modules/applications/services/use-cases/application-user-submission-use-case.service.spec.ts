@@ -119,12 +119,15 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
 
     await expect(service.patch(actor(), 'app-1', dto)).resolves.toBe(hydrated);
 
-    expect(applicationsRepository.findApplicantEditable).toHaveBeenCalledWith({
-      id: 'app-1',
-      tenantId: 'tenant-1',
-      applicantUserId: 'applicant-user-1',
-      applicantEmail: 'applicant@example.com',
-    });
+    expect(applicationsRepository.findApplicantEditable).toHaveBeenCalledWith(
+      {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: 'applicant-user-1',
+        applicantEmail: 'applicant@example.com',
+      },
+      transactionManager,
+    );
     expect(spaceAccess.assertCanUseGroup).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'applicant-user-1' }),
       'group-1',

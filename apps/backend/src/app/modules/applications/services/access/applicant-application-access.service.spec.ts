@@ -2,6 +2,7 @@ import { ClientErrorCodes } from '../../../../../common/errors';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
 import type { Application } from '../../../../../models/entities/application.entity';
 import type { ApplicationQueryRepository } from '../../../../../models/repositories/application-query.repository';
+import type { TransactionManager } from '../../../../transaction';
 import type { ApplicantAccessTokenPayload } from '../../../auth/services/facades/auth.service';
 import { ApplicantApplicationAccessService } from './applicant-application-access.service';
 
@@ -84,12 +85,35 @@ describe('ApplicantApplicationAccessService', () => {
       service.loadEditableApplication(applicant(), 'app-1'),
     ).resolves.toBe(row);
 
-    expect(queryRepository.findApplicantEditable).toHaveBeenCalledWith({
-      id: 'app-1',
-      tenantId: 'tenant-1',
-      applicantUserId: undefined,
-      applicantEmail: 'applicant@example.com',
-    });
+    expect(queryRepository.findApplicantEditable).toHaveBeenCalledWith(
+      {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: undefined,
+        applicantEmail: 'applicant@example.com',
+      },
+      undefined,
+    );
+  });
+
+  it('loads editable applications with a transaction lock when manager is provided', async () => {
+    const row = app();
+    const manager = {} as TransactionManager;
+    queryRepository.findApplicantEditable.mockResolvedValue(row);
+
+    await expect(
+      service.loadEditableApplication(applicant(), 'app-1', manager),
+    ).resolves.toBe(row);
+
+    expect(queryRepository.findApplicantEditable).toHaveBeenCalledWith(
+      {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: undefined,
+        applicantEmail: 'applicant@example.com',
+      },
+      manager,
+    );
   });
 
   it('loads detail applications through the repository detail query within token scope', async () => {

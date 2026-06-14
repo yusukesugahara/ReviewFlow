@@ -3,7 +3,7 @@ import type { Application } from '../../../../../models/entities/application.ent
 import type { FormDefinition } from '../../../../../models/entities/form-definition.entity';
 import { AuthService } from '../../../auth/services/facades/auth.service';
 import { MailService } from '../../../mail/services/mail.service';
-import type { ReturnApplicationDto } from '../../dto/applications.dto';
+import type { ReturnApplicationEmailDto } from '../../dto/applications.dto';
 
 @Injectable()
 export class ApplicationNotificationService {
@@ -17,7 +17,7 @@ export class ApplicationNotificationService {
   async notifyApplicantOfReturn(
     app: Application,
     template: FormDefinition,
-    dto: ReturnApplicationDto,
+    dto: ReturnApplicationEmailDto,
   ): Promise<void> {
     const fieldsById = new Map((template.fields ?? []).map((f) => [f.id, f]));
     const accessToken = this.authService.issueApplicantAccessToken({

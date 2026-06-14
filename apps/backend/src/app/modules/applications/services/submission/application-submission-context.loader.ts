@@ -5,6 +5,7 @@ import type { CorrectionRequest } from '../../../../../models/entities/correctio
 import type { FormDefinition } from '../../../../../models/entities/form-definition.entity';
 import { ApplicationCorrectionRepository } from '../../../../../models/repositories/application-correction.repository';
 import { FormDefinitionsRepository } from '../../../../../models/repositories/form-definitions.repository';
+import type { TransactionManager } from '../../../../transaction';
 import { ApplicationTransitionPolicy } from '../../policies/application-transition.policy';
 
 export type SubmittableApplicationContext = {
@@ -37,11 +38,13 @@ export class ApplicationSubmissionContextLoader {
   async loadResubmittable(
     tenantId: string,
     app: Application,
+    manager?: TransactionManager,
   ): Promise<ResubmittableApplicationContext> {
     this.transitionPolicy.assertReturned(app);
 
     const openCorrection = await this.correctionRepository.findOpenCorrection(
-      app.id,
+      { tenantId, applicationId: app.id },
+      manager,
     );
     if (!openCorrection) {
       throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);

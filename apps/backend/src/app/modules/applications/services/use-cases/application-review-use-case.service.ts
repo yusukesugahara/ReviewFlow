@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
+import { ApplicationStatus } from '../../../../../models/constants/application-status';
 import type { Application } from '../../../../../models/entities/application.entity';
 import { ApplicationQueryRepository } from '../../../../../models/repositories/application-query.repository';
 import {
@@ -17,7 +18,10 @@ import { ApplicationAccessPolicy } from '../../policies/application-access.polic
 import { ApplicationNotificationService } from '../notifications/application-notification.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationReviewActionService } from '../review/application-review-action.service';
-import { TransactionService } from '../../../../transaction';
+import {
+  TransactionService,
+  type TransactionManager,
+} from '../../../../transaction';
 
 @Injectable()
 export class ApplicationReviewUseCaseService {
@@ -37,9 +41,10 @@ export class ApplicationReviewUseCaseService {
     id: string,
     dto: ApproveApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadReviewableApplication(actor, id);
-    const before = this.snapshot(app);
     await this.transactions.run(async (manager) => {
+      const app = await this.loadReviewableApplication(actor, id, manager);
+      this.assertExpectedReviewStep(app, dto.expectedStepOrder);
+      const before = this.snapshot(app);
       await this.reviewActionService.approve(app, actor.id, dto, manager);
       await this.auditLogs.recordApplicationEvent(
         {
@@ -61,9 +66,10 @@ export class ApplicationReviewUseCaseService {
     id: string,
     dto: RejectApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadReviewableApplication(actor, id);
-    const before = this.snapshot(app);
     await this.transactions.run(async (manager) => {
+      const app = await this.loadReviewableApplication(actor, id, manager);
+      this.assertExpectedReviewStep(app, dto.expectedStepOrder);
+      const before = this.snapshot(app);
       await this.reviewActionService.reject(app, actor.id, dto, manager);
       await this.auditLogs.recordApplicationEvent(
         {
@@ -85,9 +91,10 @@ export class ApplicationReviewUseCaseService {
     id: string,
     dto: ReturnApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadReviewableApplication(actor, id);
-    const before = this.snapshot(app);
-    const template = await this.transactions.run(async (manager) => {
+    const { app, template } = await this.transactions.run(async (manager) => {
+      const app = await this.loadReviewableApplication(actor, id, manager);
+      this.assertExpectedReviewStep(app, dto.expectedStepOrder);
+      const before = this.snapshot(app);
       const result = await this.reviewActionService.returnForCorrection(
         app,
         actor.id,
@@ -108,7 +115,7 @@ export class ApplicationReviewUseCaseService {
         },
         manager,
       );
-      return result;
+      return { app, template: result };
     });
     await this.notificationService.notifyApplicantOfReturn(app, template, dto);
     return this.queryService.getOneForActor(actor, id);
@@ -117,8 +124,9 @@ export class ApplicationReviewUseCaseService {
   private async loadReviewableApplication(
     actor: AuthUserPayload,
     id: string,
+    manager?: TransactionManager,
   ): Promise<Application> {
-    const app = await this.loadApplicationOrThrow(actor.tenantId, id);
+    const app = await this.loadApplicationOrThrow(actor.tenantId, id, manager);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     const canManageGroup = await this.spaceAccess.actorCanManageGroup(
       actor,
@@ -133,16 +141,28 @@ export class ApplicationReviewUseCaseService {
   private async loadApplicationOrThrow(
     tenantId: string,
     id: string,
+    manager?: TransactionManager,
   ): Promise<Application> {
-    const row = await this.queryRepository.findById({
-      tenantId,
-      id,
-      detail: true,
-    });
+    const row = await this.queryRepository.findById(
+      { tenantId, id, detail: true },
+      manager,
+    );
     if (!row) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
     }
     return row;
+  }
+
+  private assertExpectedReviewStep(
+    app: Application,
+    expectedStepOrder: number,
+  ): void {
+    if (
+      app.status !== ApplicationStatus.IN_REVIEW ||
+      app.currentStepOrder !== expectedStepOrder
+    ) {
+      throw clientError(ClientErrorCodes.APPLICATION_REVIEW_STATE_CONFLICT);
+    }
   }
 
   private snapshot(app: Application) {

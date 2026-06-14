@@ -3,6 +3,7 @@ import type { ApplicationFieldValue } from '../../../../../models/entities/appli
 import type { Application } from '../../../../../models/entities/application.entity';
 import type { FormField } from '../../../../../models/entities/form-field.entity';
 import type { ApplicationSubmissionRepository } from '../../../../../models/repositories/application-submission.repository';
+import type { TransactionManager } from '../../../../transaction';
 import { ApplicationFieldValueTypeValidator } from '../../validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from '../../validators/application-form-value.validator';
 import { ApplicationFieldValuePatchBuilder } from './application-field-value-patch.builder';
@@ -60,10 +61,20 @@ describe('ApplicationFieldValuePatchBuilder', () => {
     } as ApplicationFieldValue;
     submissionRepository.findExistingFieldValues.mockResolvedValue([existing]);
 
-    const values = await builder.build(context([field()]), { title: 'new' });
+    const manager = {} as TransactionManager;
+
+    const values = await builder.build(
+      context([field()]),
+      { title: 'new' },
+      manager,
+    );
 
     expect(existing.valueJson).toBe('new');
     expect(values).toEqual([existing]);
+    expect(submissionRepository.findExistingFieldValues).toHaveBeenCalledWith(
+      { tenantId: 'tenant-1', applicationId: 'app-1' },
+      manager,
+    );
   });
 
   it('creates values for fields without an existing value', async () => {
@@ -71,6 +82,10 @@ describe('ApplicationFieldValuePatchBuilder', () => {
 
     const values = await builder.build(context([field()]), { title: 'new' });
 
+    expect(submissionRepository.findExistingFieldValues).toHaveBeenCalledWith(
+      { tenantId: 'tenant-1', applicationId: 'app-1' },
+      undefined,
+    );
     expect(submissionRepository.createFieldValue).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
       applicationId: 'app-1',

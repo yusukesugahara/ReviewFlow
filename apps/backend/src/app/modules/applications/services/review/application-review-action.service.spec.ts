@@ -106,7 +106,10 @@ describe('ApplicationReviewActionService', () => {
   it('records approval and advances to next step', async () => {
     const target = app();
 
-    await service.approve(target, 'actor-1', { comment: ' ok ' });
+    await service.approve(target, 'actor-1', {
+      comment: ' ok ',
+      expectedStepOrder: 1,
+    });
 
     expect(reviewRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -126,7 +129,10 @@ describe('ApplicationReviewActionService', () => {
   it('records rejection and rejects application', async () => {
     const target = app({ currentStepOrder: 2 });
 
-    await service.reject(target, 'actor-1', { comment: ' no ' });
+    await service.reject(target, 'actor-1', {
+      comment: ' no ',
+      expectedStepOrder: 2,
+    });
 
     expect(reviewRepository.saveApproval).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -152,6 +158,7 @@ describe('ApplicationReviewActionService', () => {
     await expectErrorCode(
       () =>
         service.returnForCorrection(app(), 'actor-1', {
+          expectedStepOrder: 1,
           fields: [{ fieldId: 'field-other' }],
         }),
       ClientErrorCodes.APPLICATION_RETURN_FIELDS_INVALID,
@@ -172,6 +179,7 @@ describe('ApplicationReviewActionService', () => {
       target,
       'actor-1',
       {
+        expectedStepOrder: 1,
         overallComment: ' fix ',
         fields: [{ fieldId: 'field-title', comment: ' title ' }],
       },

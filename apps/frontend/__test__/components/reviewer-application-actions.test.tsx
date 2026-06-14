@@ -15,6 +15,7 @@ describe("ReviewerApplicationActions", () => {
           canRejectApplication: false,
         }}
         approveAction={approveAction}
+        expectedStepOrder={1}
         rejectAction={rejectAction}
       />,
     );
@@ -32,6 +33,7 @@ describe("ReviewerApplicationActions", () => {
           canRejectApplication: true,
         }}
         approveAction={approveAction}
+        expectedStepOrder={1}
         rejectAction={rejectAction}
       />,
     );
@@ -39,6 +41,10 @@ describe("ReviewerApplicationActions", () => {
     await user.click(screen.getByRole("button", { name: "承認する" }));
 
     expect(screen.getByRole("heading", { name: "申請を承認しますか" })).toBeInTheDocument();
+    expect(screen.getByDisplayValue("1")).toHaveAttribute(
+      "name",
+      "expectedStepOrder",
+    );
     expect(screen.getByLabelText("コメント（任意）")).toHaveAttribute(
       "placeholder",
       "承認コメント",
@@ -55,6 +61,7 @@ describe("ReviewerApplicationActions", () => {
           canRejectApplication: true,
         }}
         approveAction={approveAction}
+        expectedStepOrder={1}
         rejectAction={rejectAction}
       />,
     );

@@ -68,11 +68,11 @@ test.describe("申請ワークフローの状態遷移ガード", () => {
         `${getE2eEnv().apiBase}/applications/${submitted.id}/approve`,
         {
           headers: authHeaders(session.accessToken),
-          data: { comment: "承認済みの再承認" },
+          data: { comment: "承認済みの再承認", expectedStepOrder: 1 },
         },
       ),
       {
-        errorCode: "APPLICATION_NOT_IN_REVIEW",
+        errorCode: "APPLICATION_REVIEW_STATE_CONFLICT",
         status: 409,
       },
     );
@@ -81,11 +81,11 @@ test.describe("申請ワークフローの状態遷移ガード", () => {
         `${getE2eEnv().apiBase}/applications/${submitted.id}/reject`,
         {
           headers: authHeaders(session.accessToken),
-          data: { comment: "承認済みの却下" },
+          data: { comment: "承認済みの却下", expectedStepOrder: 1 },
         },
       ),
       {
-        errorCode: "APPLICATION_NOT_IN_REVIEW",
+        errorCode: "APPLICATION_REVIEW_STATE_CONFLICT",
         status: 409,
       },
     );
@@ -95,13 +95,14 @@ test.describe("申請ワークフローの状態遷移ガード", () => {
         {
           headers: authHeaders(session.accessToken),
           data: {
+            expectedStepOrder: 1,
             overallComment: "承認済みの差し戻し",
             fields: [{ fieldId: field.id, comment: "終端状態では不可" }],
           },
         },
       ),
       {
-        errorCode: "APPLICATION_NOT_IN_REVIEW",
+        errorCode: "APPLICATION_REVIEW_STATE_CONFLICT",
         status: 409,
       },
     );
@@ -155,7 +156,7 @@ async function approveApplication(
   return unwrapApiData<ApplicationDetail>(
     await request.post(`${apiBase}/applications/${applicationId}/approve`, {
       headers: authHeaders(session.accessToken),
-      data: { comment: "E2E 承認" },
+      data: { comment: "E2E 承認", expectedStepOrder: 1 },
     }),
     "approve workflow guard application",
   );

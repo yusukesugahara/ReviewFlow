@@ -1184,7 +1184,7 @@ describe('App (e2e)', () => {
       .post(`/applications/${appId}/approve`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({})
+      .send({ expectedStepOrder: 1 })
       .expect(200);
 
     const afterApprove = await request(http)
@@ -1356,6 +1356,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
+        expectedStepOrder: 1,
         overallComment: '修正してください',
         fields: [{ fieldId, comment: '内容を具体化' }],
       })

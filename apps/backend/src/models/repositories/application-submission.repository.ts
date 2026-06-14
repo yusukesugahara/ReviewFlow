@@ -18,9 +18,17 @@ export class ApplicationSubmissionRepository {
   ) {}
 
   findExistingFieldValues(
-    applicationId: string,
+    params: { tenantId: string; applicationId: string },
+    manager?: EntityManager,
   ): Promise<ApplicationFieldValue[]> {
-    return this.fieldValues.find({ where: { applicationId } });
+    const repository =
+      manager?.getRepository(ApplicationFieldValue) ?? this.fieldValues;
+    return repository.find({
+      where: {
+        tenantId: params.tenantId,
+        applicationId: params.applicationId,
+      },
+    });
   }
 
   createFieldValue(params: {

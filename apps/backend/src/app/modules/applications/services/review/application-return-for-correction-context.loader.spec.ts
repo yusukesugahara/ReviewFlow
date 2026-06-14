@@ -83,6 +83,7 @@ describe('ApplicationReturnForCorrectionContextLoader', () => {
     formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(form);
 
     const context = await loader.load(app(), {
+      expectedStepOrder: 1,
       fields: [{ fieldId: 'field-title' }],
     });
 
@@ -103,7 +104,11 @@ describe('ApplicationReturnForCorrectionContextLoader', () => {
     });
 
     await expectErrorCode(
-      () => loader.load(app(), { fields: [{ fieldId: 'field-title' }] }),
+      () =>
+        loader.load(app(), {
+          expectedStepOrder: 1,
+          fields: [{ fieldId: 'field-title' }],
+        }),
       ClientErrorCodes.APPLICATION_CORRECTION_ALREADY_OPEN,
     );
   });
@@ -115,7 +120,11 @@ describe('ApplicationReturnForCorrectionContextLoader', () => {
     );
 
     await expectErrorCode(
-      () => loader.load(app(), { fields: [{ fieldId: 'field-other' }] }),
+      () =>
+        loader.load(app(), {
+          expectedStepOrder: 1,
+          fields: [{ fieldId: 'field-other' }],
+        }),
       ClientErrorCodes.APPLICATION_RETURN_FIELDS_INVALID,
     );
   });
@@ -125,7 +134,11 @@ describe('ApplicationReturnForCorrectionContextLoader', () => {
     formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(null);
 
     await expectErrorCode(
-      () => loader.load(app(), { fields: [{ fieldId: 'field-title' }] }),
+      () =>
+        loader.load(app(), {
+          expectedStepOrder: 1,
+          fields: [{ fieldId: 'field-title' }],
+        }),
       ClientErrorCodes.FORM_DEFINITION_NOT_FOUND,
     );
   });

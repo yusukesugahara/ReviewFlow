@@ -223,6 +223,11 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'Application is in an unexpected state for this operation',
   },
+  APPLICATION_REVIEW_STATE_CONFLICT: {
+    status: HttpStatus.CONFLICT,
+    message:
+      'Application review state has changed. Refresh the page and try again',
+  },
   EXPORT_JOB_NOT_FOUND: {
     status: HttpStatus.NOT_FOUND,
     message: 'Export job not found in this workspace',

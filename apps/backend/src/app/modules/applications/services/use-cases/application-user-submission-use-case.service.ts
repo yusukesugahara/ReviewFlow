@@ -14,7 +14,10 @@ import { ApplicationApprovalFlowResolver } from '../../resolvers/application-app
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationSubmissionService } from '../submission/application-submission.service';
-import { TransactionService } from '../../../../transaction';
+import {
+  TransactionService,
+  type TransactionManager,
+} from '../../../../transaction';
 
 @Injectable()
 export class ApplicationUserSubmissionUseCaseService {
@@ -34,17 +37,21 @@ export class ApplicationUserSubmissionUseCaseService {
     id: string,
     dto: PatchApplicationDto,
   ): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    if (dto.approvalFlowId) {
-      await this.flowResolver.resolveActiveFlow(
-        actor.tenantId,
-        app.groupId,
-        dto.approvalFlowId,
-      );
-    }
-    const before = this.snapshot(app);
     await this.transactions.run(async (manager) => {
+      const app = await this.loadApplicantEditableApplication(
+        actor,
+        id,
+        manager,
+      );
+      await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+      if (dto.approvalFlowId) {
+        await this.flowResolver.resolveActiveFlow(
+          actor.tenantId,
+          app.groupId,
+          dto.approvalFlowId,
+        );
+      }
+      const before = this.snapshot(app);
       await this.fieldValuePatchService.applyPatch(
         actor.tenantId,
         app,
@@ -69,10 +76,14 @@ export class ApplicationUserSubmissionUseCaseService {
   }
 
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const before = this.snapshot(app);
     await this.transactions.run(async (manager) => {
+      const app = await this.loadApplicantEditableApplication(
+        actor,
+        id,
+        manager,
+      );
+      await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+      const before = this.snapshot(app);
       await this.submissionService.submit(actor.tenantId, app, manager);
       await this.auditLogs.recordApplicationEvent(
         {
@@ -89,10 +100,14 @@ export class ApplicationUserSubmissionUseCaseService {
   }
 
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
-    const app = await this.loadApplicantEditableApplication(actor, id);
-    await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
-    const before = this.snapshot(app);
     await this.transactions.run(async (manager) => {
+      const app = await this.loadApplicantEditableApplication(
+        actor,
+        id,
+        manager,
+      );
+      await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
+      const before = this.snapshot(app);
       await this.submissionService.resubmit(actor.tenantId, app, manager);
       await this.auditLogs.recordApplicationEvent(
         {
@@ -111,13 +126,18 @@ export class ApplicationUserSubmissionUseCaseService {
   private async loadApplicantEditableApplication(
     actor: { tenantId: string; id?: string; email: string },
     id: string,
+    manager?: TransactionManager,
   ): Promise<Application> {
-    const app = await this.queryRepository.findApplicantEditable({
+    const params = {
       id,
       tenantId: actor.tenantId,
       applicantUserId: actor.id,
       applicantEmail: actor.email,
-    });
+    };
+    const app = await this.queryRepository.findApplicantEditable(
+      params,
+      manager,
+    );
     if (!app) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
     }

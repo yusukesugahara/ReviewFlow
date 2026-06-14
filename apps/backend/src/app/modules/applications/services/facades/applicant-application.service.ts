@@ -112,12 +112,16 @@ export class ApplicantApplicationService {
     id: string,
     dto: PatchApplicationDto,
   ): Promise<Application> {
-    const app = await this.applicantAccess.loadEditableApplication(actor, id);
     if (dto.formDefinitionId || dto.approvalFlowId) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
-    const before = this.snapshot(app);
     await this.transactions.run(async (manager) => {
+      const app = await this.applicantAccess.loadEditableApplication(
+        actor,
+        id,
+        manager,
+      );
+      const before = this.snapshot(app);
       await this.fieldValuePatchService.applyPatch(
         actor.tenantId,
         app,
@@ -141,9 +145,13 @@ export class ApplicantApplicationService {
   }
 
   async resubmit(actor: ApplicantSession, id: string): Promise<Application> {
-    const app = await this.applicantAccess.loadEditableApplication(actor, id);
-    const before = this.snapshot(app);
     await this.transactions.run(async (manager) => {
+      const app = await this.applicantAccess.loadEditableApplication(
+        actor,
+        id,
+        manager,
+      );
+      const before = this.snapshot(app);
       await this.submissionService.resubmit(actor.tenantId, app, manager);
       await this.auditLogs.recordApplicationEvent(
         {

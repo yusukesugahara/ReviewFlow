@@ -1,6 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, SelectQueryBuilder } from 'typeorm';
+import {
+  EntityManager,
+  Repository,
+  SelectQueryBuilder,
+  type FindOptionsWhere,
+} from 'typeorm';
 import { ApplicationApproval } from '../entities/application-approval.entity';
 import { Application } from '../entities/application.entity';
 import { ApprovalStep } from '../entities/approval-step.entity';
@@ -23,24 +28,19 @@ export class ApplicationQueryRepository {
     });
   }
 
-  async findById(params: {
-    tenantId: string;
-    id: string;
-    detail: boolean;
-  }): Promise<Application | null> {
-    const relations = params.detail
-      ? [
-          'fieldValues',
-          'fieldValues.formField',
-          'formDefinition',
-          'approvalFlow',
-          'approvalFlow.steps',
-        ]
-      : ['formDefinition', 'approvalFlow', 'approvalFlow.steps'];
-    const row = await this.apps.findOne({
-      where: { id: params.id, tenantId: params.tenantId },
-      relations,
-    });
+  async findById(
+    params: {
+      tenantId: string;
+      id: string;
+      detail: boolean;
+    },
+    manager?: EntityManager,
+  ): Promise<Application | null> {
+    const row = await this.findOneApplication(
+      { id: params.id, tenantId: params.tenantId },
+      this.findByIdRelations(params.detail),
+      manager,
+    );
     return prepareApplicationRow(row);
   }
 
@@ -60,21 +60,46 @@ export class ApplicationQueryRepository {
     return prepareApplicationRows(rows);
   }
 
-  findApplicantEditable(params: {
-    tenantId: string;
-    id: string;
-    applicantUserId?: string;
-    applicantEmail: string;
-  }): Promise<Application | null> {
-    return this.apps.findOne({
-      where: {
-        id: params.id,
-        tenantId: params.tenantId,
-        ...(params.applicantUserId
-          ? { applicantUserId: params.applicantUserId }
-          : { applicantEmail: params.applicantEmail }),
-      },
-      relations: ['fieldValues'],
+  findApplicantEditable(
+    params: {
+      tenantId: string;
+      id: string;
+      applicantUserId?: string;
+      applicantEmail: string;
+    },
+    manager?: EntityManager,
+  ): Promise<Application | null> {
+    return this.findOneApplication(
+      this.applicantEditableWhere(params),
+      ['fieldValues'],
+      manager,
+    );
+  }
+
+  /**
+   * manager が渡された場合は、更新系 use case からの取得として扱い、
+   * 対象 application 行を悲観ロックしてから relation を読み込む。
+   * manager がない通常参照ではロックしない。
+   */
+  private async findOneApplication(
+    where: FindOptionsWhere<Application>,
+    relations: string[],
+    manager?: EntityManager,
+  ): Promise<Application | null> {
+    const repo = this.applicationRepository(manager);
+    if (
+      manager &&
+      !(await repo.findOne({
+        where,
+        lock: { mode: 'pessimistic_write' },
+      }))
+    ) {
+      return null;
+    }
+
+    return repo.findOne({
+      where,
+      relations,
     });
   }
 
@@ -99,6 +124,39 @@ export class ApplicationQueryRepository {
       .where('app.tenantId = :tenantId', { tenantId })
       .andWhere('app.groupId = :groupId', { groupId })
       .orderBy('app.createdAt', 'DESC');
+  }
+
+  private findByIdRelations(detail: boolean): string[] {
+    return detail
+      ? [
+          'fieldValues',
+          'fieldValues.formField',
+          'formDefinition',
+          'approvalFlow',
+          'approvalFlow.steps',
+        ]
+      : ['formDefinition', 'approvalFlow', 'approvalFlow.steps'];
+  }
+
+  private applicantEditableWhere(params: {
+    tenantId: string;
+    id: string;
+    applicantUserId?: string;
+    applicantEmail: string;
+  }): FindOptionsWhere<Application> {
+    return {
+      id: params.id,
+      tenantId: params.tenantId,
+      ...(params.applicantUserId
+        ? { applicantUserId: params.applicantUserId }
+        : { applicantEmail: params.applicantEmail }),
+    };
+  }
+
+  private applicationRepository(
+    manager?: EntityManager,
+  ): Repository<Application> {
+    return manager?.getRepository(Application) ?? this.apps;
   }
 }
 

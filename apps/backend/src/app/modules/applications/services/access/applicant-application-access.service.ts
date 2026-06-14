@@ -3,6 +3,7 @@ import type { ApplicantAccessTokenPayload } from '../../../auth/services/facades
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
 import type { Application } from '../../../../../models/entities/application.entity';
 import { ApplicationQueryRepository } from '../../../../../models/repositories/application-query.repository';
+import type { TransactionManager } from '../../../../transaction';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
 
@@ -32,17 +33,26 @@ export class ApplicantApplicationAccessService {
     return row;
   }
 
+  /**
+   * manager が渡された場合、repository 側で対象 application 行を悲観ロックする。
+   * 申請者の修正・再提出などの更新系 use case では transaction manager を渡す。
+   */
   async loadEditableApplication(
     actor: ApplicantSession,
     id: string,
+    manager?: TransactionManager,
   ): Promise<Application> {
     this.assertCanAccessApplication(actor, id);
-    const app = await this.queryRepository.findApplicantEditable({
+    const params = {
       id,
       tenantId: actor.tenantId,
       applicantUserId: undefined,
       applicantEmail: actor.email,
-    });
+    };
+    const app = await this.queryRepository.findApplicantEditable(
+      params,
+      manager,
+    );
     if (!app) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
     }

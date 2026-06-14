@@ -1,6 +1,6 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { ApplicationApproval } from '../entities/application-approval.entity';
 import { Application } from '../entities/application.entity';
 import type { ApprovalFlow } from '../entities/approval-flow.entity';
@@ -118,6 +118,80 @@ describe('ApplicationQueryRepository', () => {
     expect(row.currentApprovalStep?.id).toBe('step-1');
   });
 
+  it('locks an application row before loading detailed relations for update', async () => {
+    const locked = { id: 'app-1' } as Application;
+    const row = {
+      id: 'app-1',
+      currentStepOrder: 1,
+      approvalFlow: {
+        steps: [step(1)],
+      } as ApprovalFlow,
+    } as Application;
+    const managerRepo = {
+      findOne: jest
+        .fn()
+        .mockResolvedValueOnce(locked)
+        .mockResolvedValueOnce(row),
+    };
+    const getRepository = jest.fn().mockReturnValue(managerRepo);
+    const manager = {
+      getRepository,
+    } as unknown as EntityManager;
+
+    await expect(
+      repository.findById(
+        {
+          tenantId: 'tenant-1',
+          id: 'app-1',
+          detail: true,
+        },
+        manager,
+      ),
+    ).resolves.toBe(row);
+
+    expect(getRepository).toHaveBeenCalledWith(Application);
+    expect(managerRepo.findOne).toHaveBeenNthCalledWith(1, {
+      where: { id: 'app-1', tenantId: 'tenant-1' },
+      lock: { mode: 'pessimistic_write' },
+    });
+    expect(managerRepo.findOne).toHaveBeenNthCalledWith(2, {
+      where: { id: 'app-1', tenantId: 'tenant-1' },
+      relations: [
+        'fieldValues',
+        'fieldValues.formField',
+        'formDefinition',
+        'approvalFlow',
+        'approvalFlow.steps',
+      ],
+    });
+  });
+
+  it('does not load relations when the locked application row is missing', async () => {
+    const managerRepo = {
+      findOne: jest.fn().mockResolvedValueOnce(null),
+    };
+    const manager = {
+      getRepository: jest.fn().mockReturnValue(managerRepo),
+    } as unknown as EntityManager;
+
+    await expect(
+      repository.findById(
+        {
+          tenantId: 'tenant-1',
+          id: 'missing-app',
+          detail: true,
+        },
+        manager,
+      ),
+    ).resolves.toBeNull();
+
+    expect(managerRepo.findOne).toHaveBeenCalledTimes(1);
+    expect(managerRepo.findOne).toHaveBeenCalledWith({
+      where: { id: 'missing-app', tenantId: 'tenant-1' },
+      lock: { mode: 'pessimistic_write' },
+    });
+  });
+
   it('lists applications with form definition and current step mapped by the repository', async () => {
     const rows = [
       {
@@ -163,6 +237,45 @@ describe('ApplicationQueryRepository', () => {
     });
 
     expect(apps.findOne).toHaveBeenCalledWith({
+      where: {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: 'user-1',
+      },
+      relations: ['fieldValues'],
+    });
+  });
+
+  it('locks applicant editable applications by applicant user id', async () => {
+    const row = { id: 'app-1' } as Application;
+    const managerRepo = {
+      findOne: jest.fn().mockResolvedValue(row),
+    };
+    const manager = {
+      getRepository: jest.fn().mockReturnValue(managerRepo),
+    } as unknown as EntityManager;
+
+    await expect(
+      repository.findApplicantEditable(
+        {
+          tenantId: 'tenant-1',
+          id: 'app-1',
+          applicantUserId: 'user-1',
+          applicantEmail: 'user@example.com',
+        },
+        manager,
+      ),
+    ).resolves.toBe(row);
+
+    expect(managerRepo.findOne).toHaveBeenNthCalledWith(1, {
+      where: {
+        id: 'app-1',
+        tenantId: 'tenant-1',
+        applicantUserId: 'user-1',
+      },
+      lock: { mode: 'pessimistic_write' },
+    });
+    expect(managerRepo.findOne).toHaveBeenNthCalledWith(2, {
       where: {
         id: 'app-1',
         tenantId: 'tenant-1',

@@ -5,6 +5,7 @@ import { CorrectionRequest } from '../../../../../models/entities/correction-req
 import type { FormField } from '../../../../../models/entities/form-field.entity';
 import { ApplicationCorrectionRepository } from '../../../../../models/repositories/application-correction.repository';
 import { FormDefinitionsRepository } from '../../../../../models/repositories/form-definitions.repository';
+import type { TransactionManager } from '../../../../transaction';
 import type { PatchApplicationDto } from '../../dto/applications.dto';
 import { ApplicationPatchPolicy } from '../../policies/application-patch.policy';
 import { ApplicationFormValueValidator } from '../../validators/application-form-value.validator';
@@ -28,6 +29,7 @@ export class ApplicationPatchContextLoader {
     tenantId: string,
     app: Application,
     dto: PatchApplicationDto,
+    manager?: TransactionManager,
   ): Promise<ApplicationPatchContext> {
     this.patchPolicy.assertPatchTargetEditable(app, dto);
     this.patchPolicy.assertFormDefinitionChangeAllowed(
@@ -49,20 +51,21 @@ export class ApplicationPatchContextLoader {
     const fieldsByKey = this.formValueValidator.buildFieldsByKey(
       template.fields ?? [],
     );
-    const allowedFieldIds = await this.resolveAllowedFieldIds(app);
+    const allowedFieldIds = await this.resolveAllowedFieldIds(app, manager);
 
     return { app, fieldsByKey, allowedFieldIds };
   }
 
   private async resolveAllowedFieldIds(
     app: Application,
+    manager?: TransactionManager,
   ): Promise<Set<string> | undefined> {
     if (!this.patchPolicy.requiresCorrectionFieldScope(app)) {
       this.patchPolicy.assertFieldPatchAllowedWithoutCorrectionScope(app);
       return undefined;
     }
 
-    const open = await this.findOpenCorrection(app.id);
+    const open = await this.findOpenCorrection(app, manager);
     if (!open?.items?.length) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
@@ -71,8 +74,12 @@ export class ApplicationPatchContextLoader {
   }
 
   private async findOpenCorrection(
-    applicationId: string,
+    app: Application,
+    manager?: TransactionManager,
   ): Promise<CorrectionRequest | null> {
-    return this.correctionRepository.findOpenCorrection(applicationId);
+    return this.correctionRepository.findOpenCorrection(
+      { tenantId: app.tenantId, applicationId: app.id },
+      manager,
+    );
   }
 }

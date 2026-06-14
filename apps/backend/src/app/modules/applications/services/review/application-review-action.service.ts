@@ -71,7 +71,7 @@ export class ApplicationReviewActionService {
     dto: ReturnApplicationDto,
     manager?: TransactionManager,
   ): Promise<FormDefinition> {
-    const context = await this.returnContextLoader.load(app, dto);
+    const context = await this.returnContextLoader.load(app, dto, manager);
     const overall = this.trimComment(dto.overallComment);
 
     this.transitionPolicy.applyReturn(app);

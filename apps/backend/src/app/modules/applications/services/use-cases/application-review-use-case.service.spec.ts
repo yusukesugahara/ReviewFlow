@@ -1,3 +1,4 @@
+import { ClientErrorCodes } from '../../../../../common/errors';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
 import { UserRole } from '../../../../../models/constants/user-role';
 import type { Application } from '../../../../../models/entities/application.entity';
@@ -29,6 +30,7 @@ const app = (overrides: Partial<Application> = {}): Application =>
     applicantEmail: 'applicant@example.com',
     formDefinitionId: 'form-1',
     status: ApplicationStatus.IN_REVIEW,
+    currentStepOrder: 1,
     approvalFlow: { steps: [] },
     ...overrides,
   }) as Application;
@@ -131,14 +133,20 @@ describe('ApplicationReviewUseCaseService', () => {
     queryService.getOneForActor.mockResolvedValue(hydrated);
 
     await expect(
-      service.approve(actor(), 'app-1', { comment: 'ok' }),
+      service.approve(actor(), 'app-1', {
+        comment: 'ok',
+        expectedStepOrder: 1,
+      }),
     ).resolves.toBe(hydrated);
 
-    expect(applicationsRepository.findById).toHaveBeenCalledWith({
-      tenantId: 'tenant-1',
-      id: 'app-1',
-      detail: true,
-    });
+    expect(applicationsRepository.findById).toHaveBeenCalledWith(
+      {
+        tenantId: 'tenant-1',
+        id: 'app-1',
+        detail: true,
+      },
+      transactionManager,
+    );
     expect(spaceAccess.assertCanUseGroup).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'reviewer-1' }),
       'group-1',
@@ -148,6 +156,7 @@ describe('ApplicationReviewUseCaseService', () => {
       'reviewer-1',
       {
         comment: 'ok',
+        expectedStepOrder: 1,
       },
       transactionManager,
     );
@@ -170,13 +179,15 @@ describe('ApplicationReviewUseCaseService', () => {
     spaceAccess.actorCanManageGroup.mockResolvedValue(true);
     queryService.getOneForActor.mockResolvedValue(row);
 
-    await expect(service.reject(actor(), 'app-1', {})).resolves.toBe(row);
+    await expect(
+      service.reject(actor(), 'app-1', { expectedStepOrder: 1 }),
+    ).resolves.toBe(row);
 
     expect(accessPolicy.canActOnReview).not.toHaveBeenCalled();
     expect(reviewActionService.reject).toHaveBeenCalledWith(
       row,
       'reviewer-1',
-      {},
+      { expectedStepOrder: 1 },
       transactionManager,
     );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
@@ -193,9 +204,31 @@ describe('ApplicationReviewUseCaseService', () => {
     spaceAccess.actorCanManageGroup.mockResolvedValue(false);
     accessPolicy.canActOnReview.mockReturnValue(false);
 
-    await expect(service.reject(actor(), 'app-1', {})).rejects.toThrow();
+    await expect(
+      service.reject(actor(), 'app-1', { expectedStepOrder: 1 }),
+    ).rejects.toThrow();
 
     expect(reviewActionService.reject).not.toHaveBeenCalled();
+    expect(queryService.getOneForActor).not.toHaveBeenCalled();
+  });
+
+  it('rejects stale review actions when the current step changed after page load', async () => {
+    applicationsRepository.findById.mockResolvedValue(
+      app({ currentStepOrder: 2 }),
+    );
+    spaceAccess.actorCanManageGroup.mockResolvedValue(true);
+
+    await expect(
+      service.approve(actor(), 'app-1', {
+        comment: 'ok',
+        expectedStepOrder: 1,
+      }),
+    ).rejects.toMatchObject({
+      errorCode: ClientErrorCodes.APPLICATION_REVIEW_STATE_CONFLICT,
+    });
+
+    expect(reviewActionService.approve).not.toHaveBeenCalled();
+    expect(auditLogs.recordApplicationEvent).not.toHaveBeenCalled();
     expect(queryService.getOneForActor).not.toHaveBeenCalled();
   });
 
@@ -208,6 +241,7 @@ describe('ApplicationReviewUseCaseService', () => {
     reviewActionService.returnForCorrection.mockResolvedValue(form);
     queryService.getOneForActor.mockResolvedValue(row);
     const dto = {
+      expectedStepOrder: 1,
       overallComment: 'Fix fields',
       fields: [{ fieldId: 'field-1', comment: 'Required' }],
     };

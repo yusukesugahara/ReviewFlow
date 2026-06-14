@@ -7,7 +7,7 @@ import { ApplicationCorrectionRepository } from '../../../../../models/repositor
 import { FormDefinitionsRepository } from '../../../../../models/repositories/form-definitions.repository';
 import type {
   CorrectionTargetsResponseDto,
-  ReturnApplicationDto,
+  ReturnApplicationEmailDto,
 } from '../../dto/applications.dto';
 import {
   mapCorrectionTargetsResponse,
@@ -39,8 +39,8 @@ export class ApplicationCorrectionService {
 
   async getReturnEmailContext(
     app: Application,
-  ): Promise<{ template: FormDefinition; dto: ReturnApplicationDto }> {
-    const openCorrection = await this.findOpenCorrection(app.id);
+  ): Promise<{ template: FormDefinition; dto: ReturnApplicationEmailDto }> {
+    const openCorrection = await this.findOpenCorrection(app);
     if (!openCorrection) {
       throw clientError(ClientErrorCodes.APPLICATION_NO_OPEN_CORRECTION);
     }
@@ -62,9 +62,12 @@ export class ApplicationCorrectionService {
   }
 
   private async findOpenCorrection(
-    applicationId: string,
+    app: Application,
   ): Promise<CorrectionRequest | null> {
-    return this.correctionRepository.findOpenCorrection(applicationId);
+    return this.correctionRepository.findOpenCorrection({
+      tenantId: app.tenantId,
+      applicationId: app.id,
+    });
   }
 
   private async findOpenCorrectionWithItems(

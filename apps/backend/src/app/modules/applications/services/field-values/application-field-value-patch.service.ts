@@ -21,10 +21,16 @@ export class ApplicationFieldValuePatchService {
     dto: PatchApplicationDto,
     manager?: TransactionManager,
   ): Promise<void> {
-    const context = await this.patchContextLoader.load(tenantId, app, dto);
+    const context = await this.patchContextLoader.load(
+      tenantId,
+      app,
+      dto,
+      manager,
+    );
     const fieldValues = await this.fieldValuePatchBuilder.build(
       context,
       dto.values ?? {},
+      manager,
     );
     await this.saveApplicationPatch(app, dto, fieldValues, manager);
   }

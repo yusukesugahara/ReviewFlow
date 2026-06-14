@@ -117,7 +117,8 @@ describe('ApplicationPatchContextLoader', () => {
     );
 
     expect(correctionRepository.findOpenCorrection).toHaveBeenCalledWith(
-      'app-1',
+      { tenantId: 'tenant-1', applicationId: 'app-1' },
+      undefined,
     );
     expect(context.allowedFieldIds).toEqual(new Set(['field-title']));
   });

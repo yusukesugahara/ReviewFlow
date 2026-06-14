@@ -112,7 +112,8 @@ describe('ApplicationSubmissionContextLoader', () => {
     );
 
     expect(correctionRepository.findOpenCorrection).toHaveBeenCalledWith(
-      'app-1',
+      { tenantId: 'tenant-1', applicationId: 'app-1' },
+      undefined,
     );
     expect(context.openCorrection).toBe(openCorrection);
   });

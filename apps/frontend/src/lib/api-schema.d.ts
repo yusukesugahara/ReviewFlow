@@ -1496,6 +1496,11 @@ export interface components {
             };
         };
         ApproveApplicationDto: {
+            /**
+             * @description 画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。
+             * @example 1
+             */
+            expectedStepOrder: number;
             /** @description 任意コメント（監査用） */
             comment?: string;
         };
@@ -1508,10 +1513,20 @@ export interface components {
             comment?: string;
         };
         ReturnApplicationDto: {
+            /**
+             * @description 画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。
+             * @example 1
+             */
+            expectedStepOrder: number;
             overallComment?: string;
             fields: components["schemas"]["ReturnFieldItemDto"][];
         };
         RejectApplicationDto: {
+            /**
+             * @description 画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。
+             * @example 1
+             */
+            expectedStepOrder: number;
             comment?: string;
         };
         CorrectionTargetItemResponseDto: {

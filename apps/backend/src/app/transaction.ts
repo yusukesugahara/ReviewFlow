@@ -10,6 +10,11 @@ export class TransactionService {
     private readonly dataSource?: DataSource,
   ) {}
 
+  /**
+   * 複数テーブルの更新と監査ログを同じ DB transaction にまとめる。
+   * callback に渡される manager を repository/service に引き回すことで、
+   * 取得・更新・監査ログ作成が同一 transaction 上で実行される。
+   */
   async run<T>(
     work: (manager: TransactionManager | undefined) => Promise<T>,
   ): Promise<T> {

@@ -90,6 +90,13 @@ export function ApplicationFieldsCard({
         {canReturn && returnAction ? (
           <div className="space-y-4">
             <form id={returnFormId} action={returnAction} className="space-y-4">
+              {application.currentStepOrder ? (
+                <input
+                  type="hidden"
+                  name="expectedStepOrder"
+                  value={application.currentStepOrder}
+                />
+              ) : null}
               <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
                 <Label htmlFor="overallComment">差し戻し全体コメント（任意）</Label>
                 <Textarea
