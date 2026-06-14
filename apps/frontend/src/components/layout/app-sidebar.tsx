@@ -14,6 +14,7 @@ export type { AppSidebarSpace } from "./app-sidebar.types";
 type AppSidebarProps = {
   children: ReactNode;
   userEmail?: string;
+  userName?: string | null;
   userRoles: string[];
   spaces: AppSidebarSpace[];
   variant?: AppSidebarVariant;
@@ -22,6 +23,7 @@ type AppSidebarProps = {
 export function AppSidebar({
   children,
   userEmail,
+  userName,
   userRoles,
   spaces,
   variant = "workspace",
@@ -72,6 +74,7 @@ export function AppSidebar({
                   isTenantAdmin={isTenantAdmin}
                   spaces={spaces}
                   userEmail={userEmail}
+                  userName={userName}
                   onNavigate={() => setIsOpen(false)}
                 />
               </div>
@@ -93,6 +96,7 @@ export function AppSidebar({
               isTenantAdmin={isTenantAdmin}
               spaces={spaces}
               userEmail={userEmail}
+              userName={userName}
             />
           </div>
         </aside>

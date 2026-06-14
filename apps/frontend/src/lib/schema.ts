@@ -14,6 +14,22 @@ export type AuthRegisterSuccessJson =
 
 export type AuthMeSuccessJson =
   operations["AuthController_me"]["responses"][200]["content"]["application/json"];
+export type UpdateMeProfileBody =
+  operations["AuthController_updateMeProfile"]["requestBody"]["content"]["application/json"];
+export type UpdateMeProfileSuccessJson =
+  operations["AuthController_updateMeProfile"]["responses"][200]["content"]["application/json"];
+export type RequestMeEmailChangeBody =
+  operations["AuthController_requestMeEmailChange"]["requestBody"]["content"]["application/json"];
+export type RequestMeEmailChangeSuccessJson =
+  operations["AuthController_requestMeEmailChange"]["responses"][200]["content"]["application/json"];
+export type ConfirmEmailChangeBody =
+  operations["AuthController_confirmEmailChange"]["requestBody"]["content"]["application/json"];
+export type ConfirmEmailChangeSuccessJson =
+  operations["AuthController_confirmEmailChange"]["responses"][200]["content"]["application/json"];
+export type UpdateMePasswordBody =
+  operations["AuthController_updateMePassword"]["requestBody"]["content"]["application/json"];
+export type UpdateMePasswordSuccessJson =
+  operations["AuthController_updateMePassword"]["responses"][200]["content"]["application/json"];
 
 export type RequestPasswordResetBody =
   operations["AuthController_requestPasswordReset"]["requestBody"]["content"]["application/json"];
@@ -54,6 +70,10 @@ export type CreateGroupBody =
   operations["GroupsController_create"]["requestBody"]["content"]["application/json"];
 export type CreateGroupSuccessJson =
   operations["GroupsController_create"]["responses"][201]["content"]["application/json"];
+export type UpdateGroupBody =
+  operations["GroupsController_update"]["requestBody"]["content"]["application/json"];
+export type UpdateGroupSuccessJson =
+  operations["GroupsController_update"]["responses"][200]["content"]["application/json"];
 export type GroupMembersListSuccessJson =
   operations["GroupsController_listMembers"]["responses"][200]["content"]["application/json"];
 export type GroupMemberSummary = components["schemas"]["GroupMemberSummaryDto"];

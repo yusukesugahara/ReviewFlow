@@ -11,11 +11,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   AuthApi,
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
+  RateLimit,
 } from '../../../decorators';
 import {
   CurrentUser,
@@ -37,7 +37,7 @@ import {
   RejectApplicationDto,
   ReturnApplicationDto,
 } from '../dto/applications.dto';
-import { ApplicationsService } from '../services/applications.service';
+import { ApplicationsService } from '../services/facades/applications.service';
 
 @ApiTags('applications')
 @Controller('applications')
@@ -45,7 +45,7 @@ export class ApplicationsController {
   constructor(private readonly applications: ApplicationsService) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get()
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -62,7 +62,7 @@ export class ApplicationsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
@@ -81,7 +81,7 @@ export class ApplicationsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/submit')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -92,11 +92,13 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.submit(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/approve')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -108,11 +110,13 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.approve(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/return')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -128,11 +132,13 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.returnApplication(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 20, ttl: 60_000 } })
   @Post(':id/return-email/resend')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -147,11 +153,13 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.resendReturnEmail(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/reject')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -163,11 +171,13 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.reject(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/resubmit')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -178,11 +188,13 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.resubmit(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id/correction-targets')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -204,7 +216,7 @@ export class ApplicationsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id/corrections')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -222,7 +234,7 @@ export class ApplicationsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id')
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -233,11 +245,13 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.getOneForActor(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Patch(':id')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -253,6 +267,8 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.patch(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 }

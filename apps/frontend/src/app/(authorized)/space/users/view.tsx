@@ -5,10 +5,9 @@ import { UserRoundPlus } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Button } from "@/components/ui/button";
 import {
   Tooltip,
@@ -44,12 +43,10 @@ export function SpaceUsersView({
       <Card>
         <CardHeader>
           <div className="flex items-start justify-between gap-3">
-            <div>
-              <CardTitle>スペースユーザ一覧</CardTitle>
-              <CardDescription>
-                {members.length}名のユーザが参加しています
-              </CardDescription>
-            </div>
+            <CardHeading
+              description="スペースに参加しているユーザを管理します"
+              title="スペースユーザ一覧"
+            />
             {isTenantAdmin ? (
               <TooltipProvider>
                 <Tooltip>

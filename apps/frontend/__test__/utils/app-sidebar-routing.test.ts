@@ -55,14 +55,14 @@ describe("app sidebar routing", () => {
         searchParams: new URLSearchParams({ tab: "members" }),
         spaceId: "road space",
       }),
-    ).toBe("/space/road%20space");
+    ).toBe("/space/road%20space/applications");
     expect(
       buildSpaceSwitcherHref({
         pathname: "/space/citizen-space",
         searchParams: new URLSearchParams(),
         spaceId: "road space",
       }),
-    ).toBe("/space/road%20space");
+    ).toBe("/space/road%20space/applications");
     expect(
       buildSpaceSwitcherHref({
         pathname: "/space/citizen-space/applications/app-1",
@@ -80,18 +80,6 @@ describe("app sidebar routing", () => {
   });
 
   it("builds scoped sidebar link hrefs and active states", () => {
-    expect(
-      buildSidebarLinkRoute({
-        pathname: "/space/citizen-space",
-        searchParams: new URLSearchParams(),
-        fallbackSpaceId: "citizen-space",
-        href: "/space",
-        spacePath: "overview",
-      }),
-    ).toEqual({
-      scopedHref: "/space/citizen-space",
-      isActive: true,
-    });
     expect(
       buildSidebarLinkRoute({
         pathname: "/space/citizen-space/applications/app-1",
@@ -130,12 +118,18 @@ describe("app sidebar routing", () => {
     });
   });
 
-  it("builds breadcrumb items for admin and space-scoped pages", () => {
+  it("builds breadcrumb items for admin, account, and space-scoped pages", () => {
     expect(
       buildBreadcrumbItems("/admin/audit-logs", spaces, new URLSearchParams()),
     ).toEqual([
       { href: "/admin", label: "管理" },
       { href: "/admin/audit-logs", label: "監査ログ" },
+    ]);
+    expect(
+      buildBreadcrumbItems("/account", spaces, new URLSearchParams()),
+    ).toEqual([
+      { href: "/space", label: "ホーム" },
+      { href: "/account", label: "アカウント" },
     ]);
     expect(
       buildBreadcrumbItems(
@@ -145,7 +139,7 @@ describe("app sidebar routing", () => {
       ),
     ).toEqual([
       { href: "/space", label: "スペース" },
-      { href: "/space/road%20space", label: "道路公園課" },
+      { href: "/space/road%20space/applications", label: "道路公園課" },
     ]);
     expect(
       buildBreadcrumbItems(
@@ -155,7 +149,7 @@ describe("app sidebar routing", () => {
       ),
     ).toEqual([
       { href: "/space", label: "スペース" },
-      { href: "/space/road%20space", label: "道路公園課" },
+      { href: "/space/road%20space/applications", label: "道路公園課" },
       { href: "/space/road%20space/applications", label: "申請フォーム一覧" },
       {
         href: "/space/road%20space/applications/app-1?view=form",
@@ -171,7 +165,7 @@ describe("app sidebar routing", () => {
       ),
     ).toEqual([
       { href: "/space", label: "スペース" },
-      { href: "/space/citizen-space", label: "市民課" },
+      { href: "/space/citizen-space/applications", label: "市民課" },
       { href: "/space/citizen-space/submissions", label: "申請一覧" },
       { href: "/space/citizen-space/submissions/app-1", label: "申請詳細" },
     ]);

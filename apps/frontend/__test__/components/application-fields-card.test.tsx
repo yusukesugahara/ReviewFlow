@@ -60,7 +60,7 @@ describe("ApplicationFieldsCard", () => {
   it("renders return field controls when returning is allowed", () => {
     render(
       <ApplicationFieldsCard
-        application={{ ...application, status: "in_review" }}
+        application={{ ...application, status: "in_review", currentStepOrder: 1 }}
         canReturnApplication
         description="入力された値を確認できます"
         fields={fields}
@@ -77,6 +77,10 @@ describe("ApplicationFieldsCard", () => {
     );
 
     expect(screen.getByLabelText("差し戻し全体コメント（任意）")).toBeInTheDocument();
+    expect(screen.getByDisplayValue("1")).toHaveAttribute(
+      "name",
+      "expectedStepOrder",
+    );
     expect(screen.getAllByText("この項目を差し戻し対象にする")).toHaveLength(2);
     expect(screen.getByText("差し戻し対象項目です")).toBeInTheDocument();
   });

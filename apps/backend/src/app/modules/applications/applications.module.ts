@@ -25,35 +25,37 @@ import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { ApplicationAccessPolicy } from './policies/application-access.policy';
 import { ApplicationApprovalFlowResolver } from './resolvers/application-approval-flow.resolver';
-import { ApplicantApplicationAccessService } from './services/applicant-application-access.service';
-import { ApplicantApplicationService } from './services/applicant-application.service';
-import { ApplicationCorrectionService } from './services/application-correction.service';
-import { ApplicationCreationContextLoader } from './services/application-creation-context.loader';
-import { ApplicationCreationService } from './services/application-creation.service';
-import { ApplicationCreationUseCaseService } from './services/application-creation-use-case.service';
-import { ApplicationFieldValuePatchBuilder } from './services/application-field-value-patch.builder';
-import { ApplicationFieldValuePatchService } from './services/application-field-value-patch.service';
+import { ApplicationActionCapabilitiesService } from './services/access/application-action-capabilities.service';
+import { ApplicantApplicationAccessService } from './services/access/applicant-application-access.service';
+import { ApplicantApplicationService } from './services/facades/applicant-application.service';
+import { ApplicationCorrectionService } from './services/review/application-correction.service';
+import { ApplicationCreationContextLoader } from './services/creation/application-creation-context.loader';
+import { ApplicationCreationService } from './services/creation/application-creation.service';
+import { ApplicationCreationUseCaseService } from './services/use-cases/application-creation-use-case.service';
+import { ApplicationFieldValuePatchBuilder } from './services/field-values/application-field-value-patch.builder';
+import { ApplicationFieldValuePatchService } from './services/field-values/application-field-value-patch.service';
 import { ApplicationFieldValueTypeValidator } from './validators/application-field-value-type.validator';
 import { ApplicationFormValueValidator } from './validators/application-form-value.validator';
-import { ApplicationInitialFieldValueBuilder } from './services/application-initial-field-value.builder';
-import { ApplicationNotificationService } from './services/application-notification.service';
-import { ApplicationPatchContextLoader } from './services/application-patch-context.loader';
+import { ApplicationInitialFieldValueBuilder } from './services/creation/application-initial-field-value.builder';
+import { ApplicationNotificationService } from './services/notifications/application-notification.service';
+import { ApplicationPatchContextLoader } from './services/field-values/application-patch-context.loader';
 import { ApplicationPatchPolicy } from './policies/application-patch.policy';
-import { ApplicationProgressBuilder } from './services/application-progress.builder';
-import { ApplicationProgressService } from './services/application-progress.service';
-import { ApplicationQueryService } from './services/application-query.service';
-import { ApplicationReadAccessService } from './services/application-read-access.service';
-import { ApplicationReturnForCorrectionContextLoader } from './services/application-return-for-correction-context.loader';
-import { ApplicationReviewActionService } from './services/application-review-action.service';
-import { ApplicationReviewUseCaseService } from './services/application-review-use-case.service';
-import { ApplicationReturnEmailUseCaseService } from './services/application-return-email-use-case.service';
-import { ApplicationSubmissionContextLoader } from './services/application-submission-context.loader';
-import { ApplicationSubmissionService } from './services/application-submission.service';
+import { ApplicationProgressBuilder } from './services/progress/application-progress.builder';
+import { ApplicationProgressService } from './services/progress/application-progress.service';
+import { ApplicationQueryService } from './services/query/application-query.service';
+import { ApplicationReadAccessService } from './services/access/application-read-access.service';
+import { ApplicationReturnForCorrectionContextLoader } from './services/review/application-return-for-correction-context.loader';
+import { ApplicationReviewActionService } from './services/review/application-review-action.service';
+import { ApplicationReviewUseCaseService } from './services/use-cases/application-review-use-case.service';
+import { ApplicationReturnEmailUseCaseService } from './services/notifications/application-return-email-use-case.service';
+import { ApplicationSubmissionContextLoader } from './services/submission/application-submission-context.loader';
+import { ApplicationSubmissionService } from './services/submission/application-submission.service';
 import { ApplicationTransitionPolicy } from './policies/application-transition.policy';
-import { ApplicationUserSubmissionUseCaseService } from './services/application-user-submission-use-case.service';
+import { ApplicationUserSubmissionUseCaseService } from './services/use-cases/application-user-submission-use-case.service';
 import { ApplicationsController } from './controllers/applications.controller';
-import { ApplicationsService } from './services/applications.service';
+import { ApplicationsService } from './services/facades/applications.service';
 import { PublicApplicationsController } from './controllers/public-applications.controller';
+import { TransactionService } from '../../transaction';
 
 @Module({
   imports: [
@@ -86,6 +88,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApprovalFlowsRepository,
     FormDefinitionsRepository,
     ApplicantAccessGuard,
+    ApplicationActionCapabilitiesService,
     ApplicantApplicationAccessService,
     ApplicantApplicationService,
     ApplicationAccessPolicy,
@@ -114,6 +117,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
     ApplicationUserSubmissionUseCaseService,
+    TransactionService,
   ],
 })
 export class ApplicationsModule {}

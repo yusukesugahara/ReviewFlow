@@ -3,6 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import type { EntityManager } from 'typeorm';
 import { randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
@@ -12,7 +13,7 @@ import {
   InvitationsRepository,
 } from '../../../../models/repositories/invitations.repository';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
-import { AuthService } from '../../auth/services/auth.service';
+import { AuthService } from '../../auth/services/facades/auth.service';
 import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { MailService } from '../../mail/services/mail.service';
 import { UsersService } from '../../users/services/users.service';
@@ -20,6 +21,7 @@ import type {
   AcceptInvitationDto,
   CreateInvitationDto,
 } from '../dto/invitations.dto';
+import { TransactionService } from '../../../transaction';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -33,6 +35,7 @@ export class InvitationsService {
     private readonly authService: AuthService,
     private readonly mailService: MailService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async create(dto: CreateInvitationDto, actor: AuthUserPayload) {
@@ -109,6 +112,7 @@ export class InvitationsService {
       throw new InternalServerErrorException('failed to send invitation email');
     }
 
+    // メール送信は DB transaction で巻き戻せないため、作成ログは送信成功後に記録する。
     await this.auditLogs.recordInvitationCreated({
       actor,
       invitation: saved,
@@ -128,27 +132,40 @@ export class InvitationsService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const name = dto.name?.trim().length ? dto.name.trim() : null;
 
-    const { user, invitation } = await this.acceptInvitationOrThrow({
-      token: dto.token,
-      passwordHash,
-      name,
-    });
+    const { user } = await this.transactions.run(async (manager) => {
+      const result = await this.acceptInvitationOrThrow(
+        {
+          token: dto.token,
+          passwordHash,
+          name,
+        },
+        manager,
+      );
 
-    await this.auditLogs.recordInvitationAccepted({
-      invitation,
-      user,
+      await this.auditLogs.recordInvitationAccepted(
+        {
+          invitation: result.invitation,
+          user: result.user,
+        },
+        manager,
+      );
+
+      return result;
     });
 
     return this.authService.issueTokensForUser(user);
   }
 
-  private async acceptInvitationOrThrow(params: {
-    token: string;
-    passwordHash: string;
-    name: string | null;
-  }) {
+  private async acceptInvitationOrThrow(
+    params: {
+      token: string;
+      passwordHash: string;
+      name: string | null;
+    },
+    manager?: EntityManager,
+  ) {
     try {
-      return await this.invitationsRepository.acceptInvitation(params);
+      return await this.invitationsRepository.acceptInvitation(params, manager);
     } catch (error) {
       if (!(error instanceof InvitationRepositoryError)) {
         throw error;

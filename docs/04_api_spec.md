@@ -43,8 +43,46 @@ JWT 必須。response（`data` 内）:
 {
   "id": "user_1",
   "tenantId": "tenant_1",
+  "name": "User Name",
   "roles": ["tenant_admin"],
   "email": "user@example.com"
+}
+```
+
+### PATCH /auth/me/profile
+JWT 必須。ログイン中ユーザーの表示名を更新し、新しい JWT を返す。
+request:
+```json
+{
+  "name": "User Name"
+}
+```
+
+### POST /auth/me/email-change/request
+JWT 必須。ログイン中ユーザーのメールアドレス変更確認メールを、新しいメールアドレス宛に送信する。`users.email` はこの時点では変更しない。
+request:
+```json
+{
+  "email": "new@example.com"
+}
+```
+
+### POST /auth/email-change/confirm
+メールアドレス変更確認 URL から呼び出す。`email_change_tokens` の token を検証し、未使用かつ期限内なら `users.email` を更新する。確定後は再ログインを前提にする。
+request:
+```json
+{
+  "token": "email_change_token"
+}
+```
+
+### PATCH /auth/me/password
+JWT 必須。ログイン中ユーザーの現在パスワードを検証してから新しいパスワードへ更新し、新しい JWT を返す。
+request:
+```json
+{
+  "currentPassword": "current_password",
+  "newPassword": "new_password"
 }
 ```
 
@@ -173,6 +211,7 @@ request:
   "options": []
 }
 ```
+`fieldType` は `text` / `textarea` / `number` / `date` / `select` / `radio` / `checkbox` / `consent` / `description` / `section`。`description` と `section` は値を保存しない表示専用項目として扱う。
 
 ### PATCH /form-definitions/:id/description
 権限: tenant_admin, tenant_user（group admin）  
@@ -398,10 +437,32 @@ request (任意フィルタ):
 権限: tenant_admin  
 query:
 - `limit`（任意, 1..200, 既定 50）
+- `offset`（任意, 0..100000, 既定 0）
 - `actionType`（任意, 前方一致）
-- `q`（任意, `actionType` / `targetType` / `targetId` / `actorUserId` / `actorEmail` / `groupId` の部分一致）
+- `targetType`（任意, 完全一致。主な値は `application` / `user` / `invitation` / `space` / `group_member`）
+- `applicationId`（任意, UUID 完全一致）
+- `groupId`（任意, UUID 完全一致）
+- `targetUserId`（任意, UUID 完全一致）
+- `q`（任意, `actionType` / `targetType` / `targetId` / `actorUserId` / `actorEmailSnapshot` / `targetUserId` / `targetEmailSnapshot` / `applicationId` / `summary` / `groupId` の部分一致）
 - `createdFrom`（任意, ISO 8601, `createdAt` の開始日時）
 - `createdTo`（任意, ISO 8601, `createdAt` の終了日時）
 
 レスポンスは `tenant_id` スコープで `created_at` 降順。  
-各要素は `actorUserId` / `actorEmail` / `actionType` / `targetType` / `targetId` / `metadataJson` / `createdAt` を返す。
+レスポンスは `logs`, `total`, `limit`, `offset` を返し、フロントでは 50 件単位でページネーションする。
+
+各要素は、後から「誰が、いつ、どの申請/ユーザー/スペースに対して、何をし、状態やロールがどう変わったか」を追えるように、次を返す。
+
+- actor: `actorUserId`, `actorType`, `actorEmailSnapshot`
+- target: `targetType`, `targetId`, `targetUserId`, `targetEmailSnapshot`, `applicationId`, `groupId`
+- change: `statusFrom`, `statusTo`, `stepOrderFrom`, `stepOrderTo`, `roleFrom`, `roleTo`, `groupRoleFrom`, `groupRoleTo`
+- detail: `actionType`, `summary`, `metadataJson`, `createdAt`
+
+主な `actionType`:
+
+- 申請: `application.created`, `application.submitted`, `application.approved`, `application.returned`, `application.corrected`, `application.resubmitted`, `application.rejected`
+- 招待: `invitation.created`, `invitation.accepted`
+- ユーザー: `user.profile_updated`, `user.password_changed`, `user.role_changed`, `user.deactivated`, `user.restored`
+- スペース: `space.created`, `space.updated`, `space.deleted`
+- スペースメンバー: `space.member_added`, `space.member_removed`, `space.member_left`, `space.member_role_changed`
+
+メールアドレス変更確定は `user.profile_updated` として記録し、`metadataJson.emailFrom` / `metadataJson.emailTo` に変更前後のメールアドレスを保持する。

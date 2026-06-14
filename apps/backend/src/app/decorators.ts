@@ -13,6 +13,7 @@ import {
   ApiExtraModels,
   ApiSecurity,
 } from '@nestjs/swagger';
+import { Throttle } from '@nestjs/throttler';
 import {
   SKIP_JWT_KEY,
   SWAGGER_API_KEY_NAME,
@@ -52,6 +53,24 @@ export function AuthApi() {
  */
 export function ApiRoles(...roles: string[]) {
   return applyDecorators(UseGuards(RolesGuard), SetMetadata(ROLES_KEY, roles));
+}
+
+/**
+ * @see https://github.com/nestjs/throttler/blob/main/src/throttler.decorator.ts
+ *
+ * レート制限デコレータ
+ * @param options レート制限オプション。`limit` と `ttl` は必須。
+ * - `limit`: レート制限値
+ * - `ttl`: レート制限の窓幅（ミリ秒）
+ * - `blockDuration`: ブロック期間（ミリ秒）
+ * - `getTracker`: トラッカー関数
+ * - `generateKey`: キー生成関数
+ * @returns MethodDecorator & ClassDecorator
+ */
+export function RateLimit(
+  options: Parameters<typeof Throttle>[0],
+): ReturnType<typeof Throttle> {
+  return Throttle(options);
 }
 
 /**

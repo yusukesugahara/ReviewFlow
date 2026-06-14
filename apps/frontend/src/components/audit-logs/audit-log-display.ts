@@ -49,10 +49,13 @@ const ACTION_LABELS: Record<string, string> = {
   "application.rejected": "申請を却下",
   "invitation.created": "ユーザを招待",
   "invitation.accepted": "招待を受諾",
+  "user.profile_updated": "アカウント情報を更新",
+  "user.password_changed": "パスワードを変更",
   "user.role_changed": "ユーザ権限を変更",
   "user.deactivated": "ユーザを無効化",
   "user.restored": "ユーザを復元",
   "space.created": "スペースを作成",
+  "space.updated": "スペース情報を更新",
   "space.deleted": "スペースを削除",
   "space.member_added": "スペースにメンバーを追加",
   "space.member_removed": "スペースからメンバーを削除",
@@ -225,6 +228,28 @@ function describeChanges(
       `有効状態: ${formatActive(metadata.isActiveFrom)} -> ${formatActive(metadata.isActiveTo)}`,
     );
   }
+  const emailChange = formatTextChange(metadata.emailFrom, metadata.emailTo);
+  if (emailChange) {
+    changes.push(`メールアドレス: ${emailChange}`);
+  }
+  const userNameChange = formatTextChange(
+    metadata.userNameFrom,
+    metadata.userNameTo,
+  );
+  if (userNameChange) {
+    changes.push(`名前: ${userNameChange}`);
+  }
+  const nameChange = formatTextChange(metadata.nameFrom, metadata.nameTo);
+  if (nameChange) {
+    changes.push(`スペース名: ${nameChange}`);
+  }
+  const descriptionChange = formatTextChange(
+    metadata.descriptionFrom,
+    metadata.descriptionTo,
+  );
+  if (descriptionChange) {
+    changes.push(`説明: ${descriptionChange}`);
+  }
 
   return changes.length > 0 ? changes : ["変更なし"];
 }
@@ -243,6 +268,15 @@ function buildDetailItems(
   addItem(items, "フォームID", metadata.formDefinitionId);
   addItem(items, "承認フローID", metadata.approvalFlowId);
   addItem(items, "スペース名", metadata.groupName);
+  addItem(items, "メールアドレス（変更前）", metadata.emailFrom);
+  addItem(items, "メールアドレス（変更後）", metadata.emailTo);
+  addItem(items, "名前（変更前）", metadata.userNameFrom);
+  addItem(items, "名前（変更後）", metadata.userNameTo);
+  addItem(items, "スペース名（変更前）", metadata.nameFrom);
+  addItem(items, "スペース名（変更後）", metadata.nameTo);
+  addItem(items, "説明（変更前）", metadata.descriptionFrom);
+  addItem(items, "説明（変更後）", metadata.descriptionTo);
+  addPasswordChangedItem(items, metadata.passwordChanged);
   addItem(items, "招待期限", metadata.expiresAt);
   addItem(items, "コメント", metadata.comment);
   addItem(items, "全体コメント", metadata.overallComment);
@@ -274,6 +308,15 @@ function addListItem(
   }
 }
 
+function addPasswordChangedItem(
+  items: AuditLogDisplayEntry[],
+  value: unknown,
+): void {
+  if (value === true) {
+    items.push({ label: "パスワード変更", value: "実施" });
+  }
+}
+
 function targetTypeLabel(value: string): string {
   return TARGET_TYPE_LABELS[value] ?? value;
 }
@@ -302,4 +345,16 @@ function formatActive(value: unknown): string {
     return "無効";
   }
   return "-";
+}
+
+function formatTextChange(from: unknown, to: unknown): string | null {
+  const fromText = textValue(from);
+  const toText = textValue(to);
+  if (!fromText && !toText) {
+    return null;
+  }
+  if (fromText === toText) {
+    return null;
+  }
+  return `${fromText || "-"} -> ${toText || "-"}`;
 }

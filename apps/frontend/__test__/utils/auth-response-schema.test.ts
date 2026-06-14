@@ -21,6 +21,7 @@ describe("auth response schema", () => {
       data: {
         id: "user-1",
         email: "user@example.com",
+        name: "User Name",
         tenantId: "tenant-1",
         roles: ["tenant_admin"],
       },

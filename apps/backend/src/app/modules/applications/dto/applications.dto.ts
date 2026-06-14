@@ -3,12 +3,14 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsInt,
   IsIn,
   IsObject,
   IsOptional,
   IsString,
   IsUUID,
   MaxLength,
+  Min,
   ValidateNested,
 } from 'class-validator';
 import {
@@ -121,7 +123,19 @@ export class PatchApplicationDto {
   values?: Record<string, unknown>;
 }
 
-export class ApproveApplicationDto {
+class ReviewStepExpectationDto {
+  @ApiProperty({
+    example: 1,
+    description:
+      '画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。',
+  })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedStepOrder!: number;
+}
+
+class ReviewDecisionDto extends ReviewStepExpectationDto {
   @ApiPropertyOptional({ description: '任意コメント（監査用）' })
   @IsOptional()
   @IsString()
@@ -129,13 +143,9 @@ export class ApproveApplicationDto {
   comment?: string;
 }
 
-export class RejectApplicationDto {
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(4000)
-  comment?: string;
-}
+export class ApproveApplicationDto extends ReviewDecisionDto {}
+
+export class RejectApplicationDto extends ReviewDecisionDto {}
 
 export class ReturnFieldItemDto {
   @ApiProperty({ format: 'uuid', description: 'form_fields.id' })
@@ -149,7 +159,7 @@ export class ReturnFieldItemDto {
   comment?: string;
 }
 
-export class ReturnApplicationDto {
+export class ReturnApplicationDto extends ReviewStepExpectationDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -163,6 +173,11 @@ export class ReturnApplicationDto {
   @Type(() => ReturnFieldItemDto)
   fields!: ReturnFieldItemDto[];
 }
+
+export type ReturnApplicationEmailDto = {
+  overallComment?: string;
+  fields: ReturnFieldItemDto[];
+};
 
 export class CorrectionRequestItemResponseDto {
   @ApiProperty()
@@ -376,7 +391,30 @@ export class ApplicationSummaryDto {
   updatedAt!: string;
 }
 
+export class ApplicationCapabilitiesDto {
+  @ApiProperty()
+  canEditApplication!: boolean;
+
+  @ApiProperty()
+  canSubmitApplication!: boolean;
+
+  @ApiProperty()
+  canResubmitApplication!: boolean;
+
+  @ApiProperty()
+  canApproveApplication!: boolean;
+
+  @ApiProperty()
+  canRejectApplication!: boolean;
+
+  @ApiProperty()
+  canReturnApplication!: boolean;
+}
+
 export class ApplicationDetailDto extends ApplicationSummaryDto {
+  @ApiProperty({ type: ApplicationCapabilitiesDto })
+  capabilities!: ApplicationCapabilitiesDto;
+
   @ApiPropertyOptional({
     description:
       '現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。',

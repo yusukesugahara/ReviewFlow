@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import {
@@ -11,6 +12,7 @@ import {
   BusinessAuditAction,
   BusinessAuditLogService,
 } from '../../audit-logs/services/business-audit-log.service';
+import { TransactionService } from '../../../transaction';
 
 const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [UserRole.TENANT_ADMIN];
 
@@ -19,6 +21,7 @@ export class UsersService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   count(): Promise<number> {
@@ -33,6 +36,25 @@ export class UsersService {
     return this.usersRepository.findAllByEmail(email);
   }
 
+  findAllByEmailAndTenant(email: string, tenantId: string): Promise<User[]> {
+    return this.usersRepository.findAllByEmailAndTenant(email, tenantId);
+  }
+
+  findActiveByEmail(email: string): Promise<User[]> {
+    return this.usersRepository.findActiveByEmail(email);
+  }
+
+  emailExists(email: string): Promise<boolean> {
+    return this.usersRepository.emailExists(email);
+  }
+
+  emailExistsForAnotherUser(
+    email: string,
+    currentUserId: string,
+  ): Promise<boolean> {
+    return this.usersRepository.emailExistsForAnotherUser(email, currentUserId);
+  }
+
   findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.usersRepository.findByTenantAndEmail(tenantId, email);
   }
@@ -45,8 +67,8 @@ export class UsersService {
     return this.usersRepository.findAllByTenant(tenantId);
   }
 
-  findAllByIdsInTenant(tenantId: string, ids: string[]): Promise<User[]> {
-    return this.usersRepository.findAllByIdsInTenant(tenantId, ids);
+  countByIdsInTenant(tenantId: string, ids: string[]): Promise<number> {
+    return this.usersRepository.countByIdsInTenant(tenantId, ids);
   }
 
   countTenantAdmins(tenantId: string): Promise<number> {
@@ -80,15 +102,87 @@ export class UsersService {
 
     const previousRole = target.role;
     target.role = nextRole;
-    const saved = await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_ROLE_CHANGED,
-      actor,
-      target: saved,
-      roleFrom: previousRole,
-      roleTo: saved.role,
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_ROLE_CHANGED,
+          actor,
+          target: saved,
+          roleFrom: previousRole,
+          roleTo: saved.role,
+        },
+        manager,
+      );
+      return saved;
     });
-    return saved;
+  }
+
+  async updateOwnProfile(
+    actor: Pick<AuthUserPayload, 'id' | 'email' | 'tenantId'>,
+    input: { name?: string },
+  ): Promise<User> {
+    const target = await this.findByIdAndTenant(actor.id, actor.tenantId);
+    if (!target) {
+      throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
+    }
+
+    const nextName = normalizeNullableText(input.name);
+    const previousName = target.name;
+    if (previousName === nextName) {
+      return target;
+    }
+
+    target.name = nextName;
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_PROFILE_UPDATED,
+          actor,
+          target: saved,
+          metadataJson: {
+            userNameFrom: previousName,
+            userNameTo: saved.name,
+          },
+        },
+        manager,
+      );
+      return saved;
+    });
+  }
+
+  async updateOwnPassword(
+    actor: Pick<AuthUserPayload, 'id' | 'email' | 'tenantId'>,
+    input: { currentPassword: string; newPassword: string },
+  ): Promise<User> {
+    const target = await this.findByIdAndTenant(actor.id, actor.tenantId);
+    if (!target) {
+      throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
+    }
+
+    const currentPasswordMatches = await bcrypt.compare(
+      input.currentPassword,
+      target.passwordHash,
+    );
+    if (!currentPasswordMatches) {
+      throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
+    }
+
+    target.passwordHash = await bcrypt.hash(input.newPassword, 10);
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_PASSWORD_CHANGED,
+          actor,
+          target: saved,
+          metadataJson: { passwordChanged: true },
+        },
+        manager,
+      );
+      return saved;
+    });
   }
 
   async deactivateInTenant(
@@ -113,12 +207,17 @@ export class UsersService {
     }
 
     target.isActive = false;
-    await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_DEACTIVATED,
-      actor,
-      target,
-      metadataJson: { isActiveFrom: true, isActiveTo: false },
+    await this.transactions.run(async (manager) => {
+      await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_DEACTIVATED,
+          actor,
+          target,
+          metadataJson: { isActiveFrom: true, isActiveTo: false },
+        },
+        manager,
+      );
     });
   }
 
@@ -133,13 +232,23 @@ export class UsersService {
     }
 
     target.isActive = true;
-    const saved = await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_RESTORED,
-      actor,
-      target: saved,
-      metadataJson: { isActiveFrom: false, isActiveTo: true },
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_RESTORED,
+          actor,
+          target: saved,
+          metadataJson: { isActiveFrom: false, isActiveTo: true },
+        },
+        manager,
+      );
+      return saved;
     });
-    return saved;
   }
+}
+
+function normalizeNullableText(value: string | undefined): string | null {
+  const text = value?.trim();
+  return text ? text : null;
 }

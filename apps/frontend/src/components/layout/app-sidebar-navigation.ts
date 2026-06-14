@@ -2,7 +2,6 @@ import {
   ClipboardList,
   FilePlusCorner,
   Inbox,
-  LayoutDashboard,
   ShieldCheck,
   Users,
   type LucideIcon,
@@ -20,12 +19,6 @@ export type SidebarNavItem = {
 };
 
 const workspaceSidebarNavItems: SidebarNavItem[] = [
-  {
-    href: "/space",
-    label: "概要",
-    icon: LayoutDashboard,
-    spacePath: "overview",
-  },
   {
     href: "/space/applications",
     label: "申請フォーム一覧",

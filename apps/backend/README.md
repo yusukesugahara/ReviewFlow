@@ -143,6 +143,8 @@ yarn lint:check
 npm run seed:demo -w backend
 ```
 
+統合テスト・E2E テストは PostgreSQL が必要です。ローカルでは `docker compose up postgres -d` の後に実行してください。テストは既定で `app_test` DB を自動作成し、DB 名に `test` を含まない接続先は schema reset を拒否します。
+
 ## 認証の考え方
 
 1. **ほぼすべての HTTP API**（OPTIONS 除く）に **`X-API-Key: <INTERNAL_API_KEY>`** が必要です。**例外:** **`GET /health`** と **`GET /ready`**（ロードバランサ・Kubernetes 用。API Key / JWT / レート制限の対象外。Swagger には出しません）。

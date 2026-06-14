@@ -2,8 +2,8 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
 import { ApprovalFlowsRepository } from '../../../../models/repositories/approval-flows.repository';
-import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/facades/auth.service';
+import { SpaceAccessService } from '../../groups/services/access/space-access.service';
 import { ApprovalFlowMutationService } from './approval-flow-mutation.service';
 import { ApprovalFlowsService } from './approval-flows.service';
 

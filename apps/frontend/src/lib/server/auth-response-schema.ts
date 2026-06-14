@@ -19,6 +19,7 @@ const authMeSuccessSchema = z.object({
   data: z.object({
     id: z.string(),
     email: z.string(),
+    name: z.string().nullable().optional(),
     tenantId: z.string(),
     roles: z.array(z.string()),
   }),

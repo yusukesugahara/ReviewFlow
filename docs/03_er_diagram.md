@@ -50,6 +50,18 @@ erDiagram
     datetime created_at "created timestamp"
   }
 
+  email_change_tokens {
+    uuid id PK "email change token identifier"
+    uuid tenant_id FK "tenant scope"
+    uuid user_id FK "target user"
+    varchar current_email "email at request time"
+    varchar new_email "requested new email"
+    varchar token UK "single-use confirmation token"
+    datetime expires_at "expiration deadline"
+    datetime used_at "nullable consumed timestamp"
+    datetime created_at "created timestamp"
+  }
+
   groups {
     uuid id PK "space identifier"
     uuid tenant_id FK "tenant scope"
@@ -90,7 +102,7 @@ erDiagram
     uuid form_definition_id FK "owning form"
     varchar field_key "stable key, unique within form"
     varchar label "display label"
-    varchar field_type "text, textarea, number, date, select, radio, checkbox"
+    varchar field_type "text, textarea, number, date, select, radio, checkbox, consent, description, section"
     boolean required "required input flag"
     varchar placeholder "nullable input hint"
     varchar help_text "nullable guidance"
@@ -201,9 +213,23 @@ erDiagram
     uuid tenant_id FK "tenant scope"
     uuid group_id FK "nullable related space"
     uuid actor_user_id FK "nullable actor"
+    varchar actor_type "user, applicant, system"
+    varchar actor_email_snapshot "nullable actor email at event time"
     varchar action_type "business event name"
     varchar target_type "audited resource type"
     varchar target_id "nullable audited resource id"
+    uuid target_user_id FK "nullable target user"
+    varchar target_email_snapshot "nullable target email at event time"
+    uuid application_id "nullable related application"
+    varchar status_from "nullable previous application status"
+    varchar status_to "nullable next application status"
+    int step_order_from "nullable previous approval step"
+    int step_order_to "nullable next approval step"
+    varchar role_from "nullable previous tenant role"
+    varchar role_to "nullable next tenant role"
+    varchar group_role_from "nullable previous space role"
+    varchar group_role_to "nullable next space role"
+    varchar summary "human readable event summary"
     json metadata_json "nullable event metadata"
     datetime created_at "event timestamp"
   }
@@ -212,11 +238,13 @@ erDiagram
   tenants ||--o{ groups : owns
   tenants ||--o{ invitations : owns
   tenants ||--o{ password_reset_tokens : scopes
+  tenants ||--o{ email_change_tokens : scopes
   tenants ||--o{ audit_logs : records
 
   users ||--o{ group_members : joins
   users ||--o{ invitations : invites
   users ||--o{ password_reset_tokens : resets
+  users ||--o{ email_change_tokens : changes_email
   users ||--o{ applications : submits
   users ||--o{ application_approvals : acts
 
@@ -245,10 +273,10 @@ erDiagram
 
 | 分類 | テーブル | 役割 |
 | --- | --- | --- |
-| テナント基盤 | `tenants`, `users`, `invitations`, `password_reset_tokens` | 組織、ユーザー、招待、パスワード再設定を管理する。 |
+| テナント基盤 | `tenants`, `users`, `invitations`, `password_reset_tokens`, `email_change_tokens` | 組織、ユーザー、招待、パスワード再設定、メールアドレス変更確認を管理する。 |
 | スペース管理 | `groups`, `group_members` | スペースとスペース単位のロールを管理する。 |
 | フォーム定義 | `form_definitions`, `form_fields` | 申請フォームの構造を管理する。 |
-| 承認定義 | `approval_flows`, `approval_steps` | フォームごとの承認ルートを管理する。 |
+| 承認定義 | `approval_flows`, `approval_steps` | スペース単位の承認ルートを管理する。 |
 | 申請実行 | `applications`, `application_field_values`, `application_approvals` | 申請データ、入力値、承認操作を保持する。 |
 | 差し戻し | `correction_requests`, `correction_request_items` | 差し戻し理由と修正対象フィールドを保持する。 |
 | 運用 | `export_jobs`, `audit_logs` | CSV出力ジョブと監査ログを管理する。 |
@@ -295,6 +323,19 @@ erDiagram
 - created_at: datetime
 
 パスワード再設定はテナントとユーザーに紐づけ、`token` は一意な単回利用トークンとして扱う。`used_at` が入ったトークンは再利用できない。
+
+## email_change_tokens
+- id: string (PK)
+- tenant_id: string (FK -> tenants.id)
+- user_id: string (FK -> users.id)
+- current_email: string
+- new_email: string
+- token: string (unique)
+- expires_at: datetime
+- used_at: datetime nullable
+- created_at: datetime
+
+メールアドレス変更は、ログイン中ユーザーが新しいメールアドレスへ確認メールを送信し、確認 URL の token を確定した時点で `users.email` を更新する。`used_at` が入った token は再利用できない。
 
 ## invitations
 - id: string (PK)
@@ -348,7 +389,7 @@ erDiagram
 - form_definition_id: string (FK -> form_definitions.id)
 - field_key: string
 - label: string
-- field_type: enum(text, textarea, number, date, select, radio, checkbox)
+- field_type: enum(text, textarea, number, date, select, radio, checkbox, consent, description, section)
 - required: boolean
 - placeholder: string nullable
 - help_text: string nullable
@@ -452,15 +493,32 @@ erDiagram
 - tenant_id: string (FK -> tenants.id)
 - group_id: string nullable (FK -> groups.id)
 - actor_user_id: string nullable (FK -> users.id)
+- actor_type: enum(user, applicant, system)
+- actor_email_snapshot: string nullable
 - action_type: string
 - target_type: string
 - target_id: string nullable
+- target_user_id: string nullable (FK -> users.id)
+- target_email_snapshot: string nullable
+- application_id: string nullable
+- status_from: enum(draft, published, in_review, returned, approved, rejected) nullable
+- status_to: enum(draft, published, in_review, returned, approved, rejected) nullable
+- step_order_from: number nullable
+- step_order_to: number nullable
+- role_from: enum(tenant_admin, tenant_user) nullable
+- role_to: enum(tenant_admin, tenant_user) nullable
+- group_role_from: enum(admin, user) nullable
+- group_role_to: enum(admin, user) nullable
+- summary: string nullable
 - metadata_json: json nullable
 - created_at: datetime
+
+監査ログは request log ではなく business audit log として扱う。申請操作、招待、ユーザー変更、スペース変更、スペースメンバー変更を対象に、actor/target のスナップショットと状態・ロール変更を記録する。
 
 ## インデックス方針
 - users: unique(tenant_id, email)
 - password_reset_tokens: unique(token), index(email)
+- email_change_tokens: unique(token), index(new_email)
 - groups: unique(tenant_id, name)
 - group_members: unique(group_id, user_id), index(tenant_id, user_id)
 - form_definitions: index(tenant_id, group_id)

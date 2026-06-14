@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AppModule } from '../../app/app.module';
-import { AuthService } from '../../app/modules/auth/services/auth.service';
+import { AuthService } from '../../app/modules/auth/services/facades/auth.service';
 import { InvitationsService } from '../../app/modules/invitations/services/invitations.service';
 import { UsersService } from '../../app/modules/users/services/users.service';
 import { ClientErrorCodes } from '../../common/errors';
@@ -10,7 +10,7 @@ import { InvitationStatus } from '../../models/constants/invitation-status';
 import { UserRole } from '../../models/constants/user-role';
 import { Invitation } from '../../models/entities/invitation.entity';
 import {
-  configurePostgresTestEnv,
+  preparePostgresTestDatabase,
   truncatePostgresTables,
 } from '../test-postgres';
 
@@ -23,7 +23,7 @@ describe('Invitations (integration)', () => {
   beforeEach(async () => {
     process.env.INTERNAL_API_KEY = 'int-api-key';
     process.env.JWT_SECRET = 'int-jwt-secret-at-least-32-characters-long';
-    configurePostgresTestEnv();
+    await preparePostgresTestDatabase();
 
     moduleRef = await Test.createTestingModule({
       imports: [AppModule],

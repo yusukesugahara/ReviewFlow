@@ -1,69 +1,17 @@
-import { expect, test, type APIRequestContext, type Page } from "@playwright/test";
-import { getE2eEnv } from "../src/lib/e2e-env";
-
-const DEMO_PASSWORD = "Password123!";
-
-type SpaceSummary = {
-  id: string;
-  name: string;
-};
-
-async function login(page: Page, email: string) {
-  const token = await getAccessToken(page.request, email);
-  await page.context().addCookies([
-    {
-      name: "access_token",
-      value: token,
-      url: "http://127.0.0.1:3001",
-      httpOnly: true,
-      sameSite: "Lax",
-    },
-  ]);
-  await page.goto("/space");
-  await expect(page).toHaveURL(/\/(?:admin\/spaces|space)(?:\?.*)?$/);
-}
-
-async function getAccessToken(request: APIRequestContext, email: string) {
-  const { apiBase, internalApiKey } = getE2eEnv();
-  const response = await request.post(`${apiBase}/auth/login`, {
-    headers: { "X-API-Key": internalApiKey },
-    data: { email, password: DEMO_PASSWORD },
-  });
-  if (!response.ok()) {
-    throw new Error(`demo login failed: ${response.status()} ${await response.text()}`);
-  }
-  const body = (await response.json()) as { data?: { access_token?: string } };
-  const token = body.data?.access_token;
-  if (!token) {
-    throw new Error("demo login response did not include access_token");
-  }
-  return token;
-}
-
-async function getDemoSpaces(request: APIRequestContext) {
-  const { apiBase, internalApiKey } = getE2eEnv();
-  const token = await getAccessToken(request, "admin@reviewflow.demo");
-  const response = await request.get(`${apiBase}/groups`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "X-API-Key": internalApiKey,
-    },
-  });
-  if (!response.ok()) {
-    throw new Error(`groups fetch failed: ${response.status()} ${await response.text()}`);
-  }
-  const body = (await response.json()) as { data?: { groups?: SpaceSummary[] } };
-  const spaces = body.data?.groups ?? [];
-  return new Map(spaces.map((space) => [space.name, space]));
-}
+import { expect, test } from "@playwright/test";
+import {
+  DEMO_ADMIN_EMAIL,
+  getDemoSpaces,
+  loginAsDemoUser,
+} from "./helpers/demo";
 
 test.describe("デモseedデータ表示", () => {
   test("市民課と道路公園課の申請一覧に通常申請データが表示される", async ({
     page,
     request,
   }) => {
-    const spaces = await getDemoSpaces(request);
-    await login(page, "admin@reviewflow.demo");
+    const accessToken = await loginAsDemoUser(page);
+    const spaces = await getDemoSpaces(request, accessToken);
 
     const expected = [
       {
@@ -97,8 +45,8 @@ test.describe("デモseedデータ表示", () => {
       for (const applicant of item.applicants) {
         await expect(page.getByText(applicant)).toBeVisible();
       }
-      for (const status of ["提出済み", "レビュー中", "差し戻し", "承認", "却下"]) {
-        await expect(page.getByText(status).first()).toBeVisible();
+      for (const status of ["レビュー中", "差し戻し", "承認", "却下"]) {
+        await expect(page.getByRole("cell", { name: status }).first()).toBeVisible();
       }
     }
   });
@@ -107,14 +55,14 @@ test.describe("デモseedデータ表示", () => {
     page,
     request,
   }) => {
-    const spaces = await getDemoSpaces(request);
-    await login(page, "admin@reviewflow.demo");
+    const accessToken = await loginAsDemoUser(page);
+    const spaces = await getDemoSpaces(request, accessToken);
 
     const expected = [
       {
         spaceName: "市民課",
         users: [
-          "admin@reviewflow.demo",
+          DEMO_ADMIN_EMAIL,
           "citizen-reviewer@reviewflow.demo",
           "citizen-approver@reviewflow.demo",
           "citizen-operator@reviewflow.demo",
@@ -123,7 +71,7 @@ test.describe("デモseedデータ表示", () => {
       {
         spaceName: "道路公園課",
         users: [
-          "admin@reviewflow.demo",
+          DEMO_ADMIN_EMAIL,
           "road-reviewer@reviewflow.demo",
           "road-approver@reviewflow.demo",
           "road-inspector@reviewflow.demo",

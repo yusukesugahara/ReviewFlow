@@ -4,12 +4,18 @@ import type { AuthUserPayload } from '../../../../decorators/current-user.decora
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { UserRole } from '../../../../models/constants/user-role';
 import type { Application } from '../../../../models/entities/application.entity';
+import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 
 type CountApprovalsByActor = (
   applicationId: string,
   actorId: string,
 ) => Promise<number>;
 
+/**
+ * 申請に対する閲覧・レビュー操作の認可判断を集約する policy。
+ *
+ * controller / use case に role・申請者・現在承認ステップの判定を散らさないために使う。
+ */
 @Injectable()
 export class ApplicationAccessPolicy {
   isSetupApplication(app: Application): boolean {
@@ -45,9 +51,7 @@ export class ApplicationAccessPolicy {
     if (app.status !== ApplicationStatus.IN_REVIEW) {
       return false;
     }
-    const step = app.approvalFlow?.steps?.find(
-      (s) => s.stepOrder === app.currentStepOrder,
-    );
+    const step = this.getCurrentApprovalStep(app);
     if (!step) {
       return false;
     }
@@ -68,6 +72,11 @@ export class ApplicationAccessPolicy {
     return this.actorIsAssignedToCurrentStep(actor, app);
   }
 
+  /**
+   * 申請詳細の閲覧可否を検証する。
+   *
+   * 管理者、申請者、現在 step の担当者、過去に承認へ参加したユーザーのみ許可する。
+   */
   async assertCanRead(
     actor: AuthUserPayload,
     app: Application,
@@ -89,5 +98,18 @@ export class ApplicationAccessPolicy {
       }
     }
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+  }
+
+  private getCurrentApprovalStep(app: Application): ApprovalStep | null {
+    if (app.currentStepOrder == null) {
+      return null;
+    }
+    return (
+      app.currentApprovalStep ??
+      app.approvalFlow?.steps?.find(
+        (step) => step.stepOrder === app.currentStepOrder,
+      ) ??
+      null
+    );
   }
 }

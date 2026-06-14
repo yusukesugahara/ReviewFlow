@@ -1,6 +1,7 @@
 "use client";
 
-import { AdminInvitationFormCard } from "./_components/admin-invitation-form-card";
+import { useState } from "react";
+import { AdminInvitationFormDialog } from "./_components/admin-invitation-form-dialog";
 import { AdminInvitationErrorCard } from "./_components/admin-invitation-error-card";
 import { AdminInvitationSentCard } from "./_components/admin-invitation-sent-card";
 import { AdminUserListCard } from "./_components/admin-user-list-card";
@@ -18,11 +19,12 @@ export function AdminInvitationsView({
   users,
 }: AdminInvitationsViewProps) {
   const isInvitationSent = sent === "1";
+  const [isInvitationDialogOpen, setIsInvitationDialogOpen] = useState(
+    Boolean(formError),
+  );
 
   return (
     <div className="space-y-6">
-      <AdminInvitationFormCard formError={formError} />
-
       {error ? (
         <AdminInvitationErrorCard error={error} />
       ) : null}
@@ -33,9 +35,17 @@ export function AdminInvitationsView({
 
       <AdminUserListCard
         currentUserId={currentUserId}
+        onOpenInvitationDialog={() => setIsInvitationDialogOpen(true)}
         userListError={userListError}
         users={users}
       />
+
+      {isInvitationDialogOpen ? (
+        <AdminInvitationFormDialog
+          formError={formError}
+          onClose={() => setIsInvitationDialogOpen(false)}
+        />
+      ) : null}
     </div>
   );
 }

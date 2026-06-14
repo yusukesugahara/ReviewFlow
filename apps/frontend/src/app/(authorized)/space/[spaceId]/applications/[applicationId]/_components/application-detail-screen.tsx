@@ -123,6 +123,7 @@ export function ApplicationDetailScreen({
         <ReviewerApplicationActions
           capabilities={capabilities}
           approveAction={approveAction}
+          expectedStepOrder={app.currentStepOrder}
           rejectAction={rejectAction}
         />
       }

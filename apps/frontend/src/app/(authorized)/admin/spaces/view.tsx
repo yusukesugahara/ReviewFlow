@@ -11,6 +11,7 @@ import {
   removeMemberAction,
   removeSpaceAction,
   updateMemberRoleAction,
+  updateSpaceAction,
 } from "./actions";
 import type { SpaceListItem, TenantUserSummary } from "./types";
 
@@ -84,6 +85,7 @@ export function AdminSpacesView({
           isSystemAdmin={isSystemAdmin}
           addMemberAction={addMemberAction}
           inviteSpaceMemberAction={inviteSpaceMemberAction}
+          updateSpaceAction={updateSpaceAction}
           updateMemberRoleAction={updateMemberRoleAction}
           removeMemberAction={removeMemberAction}
           leaveSpaceAction={leaveSpaceAction}

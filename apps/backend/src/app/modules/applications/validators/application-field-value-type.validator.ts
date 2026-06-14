@@ -3,8 +3,14 @@ import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import type { FormField } from '../../../../models/entities/form-field.entity';
 
+/**
+ * FormFieldType ごとの値型を検証する validator。
+ *
+ * class-validator では扱えない動的 field 定義と JSON 値の整合性をここに集約する。
+ */
 @Injectable()
 export class ApplicationFieldValueTypeValidator {
+  /** 必須 field の入力有無判定。空文字・空配列・非有限数は未入力として扱う。 */
   valuePresent(value: unknown): boolean {
     if (value === null || value === undefined) {
       return false;
@@ -24,6 +30,7 @@ export class ApplicationFieldValueTypeValidator {
     return true;
   }
 
+  /** field type に対応する JSON 値の型だけを検証する。必須判定は呼び出し側で行う。 */
   assertValueMatchesFieldType(field: FormField, value: unknown): void {
     switch (field.fieldType) {
       case FormFieldType.TEXT:

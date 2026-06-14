@@ -5,6 +5,11 @@ import type { Application } from '../../../../models/entities/application.entity
 import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationFieldValueTypeValidator } from './application-field-value-type.validator';
 
+/**
+ * フォーム定義に対する申請入力値の存在・型・修正対象制限を検証する。
+ *
+ * DTO validation では分からない、動的 form field と申請状態に依存する検証を扱う。
+ */
 @Injectable()
 export class ApplicationFormValueValidator {
   constructor(
@@ -36,6 +41,9 @@ export class ApplicationFormValueValidator {
     }
   }
 
+  /**
+   * patch 入力値が既知 field に対応し、必要なら差し戻し修正対象 field に限定されているかを検証する。
+   */
   assertPatchValuesMatchFields(
     fieldsByKey: ReadonlyMap<string, FormField>,
     values: Record<string, unknown>,
@@ -52,6 +60,9 @@ export class ApplicationFormValueValidator {
     }
   }
 
+  /**
+   * 申請を提出できるだけの必須 field が揃っており、保存済み値も field type と整合するか検証する。
+   */
   assertApplicationValuesSubmittable(
     app: Application,
     fields: FormField[],

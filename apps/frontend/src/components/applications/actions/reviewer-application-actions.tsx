@@ -20,12 +20,14 @@ type ReviewerApplicationActionsProps = {
     "canApproveApplication" | "canRejectApplication"
   >;
   approveAction: (formData: FormData) => Promise<void>;
+  expectedStepOrder?: number | null;
   rejectAction: (formData: FormData) => Promise<void>;
 };
 
 export function ReviewerApplicationActions({
   capabilities,
   approveAction,
+  expectedStepOrder,
   rejectAction,
 }: ReviewerApplicationActionsProps) {
   const [confirmAction, setConfirmAction] = useState<"approve" | "reject" | null>(null);
@@ -59,6 +61,7 @@ export function ReviewerApplicationActions({
       <ApplicationDecisionDialog
         action={confirmAction}
         approveAction={approveAction}
+        expectedStepOrder={expectedStepOrder}
         rejectAction={rejectAction}
         onClose={() => setConfirmAction(null)}
       />
@@ -69,11 +72,13 @@ export function ReviewerApplicationActions({
 function ApplicationDecisionDialog({
   action,
   approveAction,
+  expectedStepOrder,
   rejectAction,
   onClose,
 }: {
   action: "approve" | "reject" | null;
   approveAction: (formData: FormData) => Promise<void>;
+  expectedStepOrder?: number | null;
   rejectAction: (formData: FormData) => Promise<void>;
   onClose: () => void;
 }) {
@@ -99,6 +104,13 @@ function ApplicationDecisionDialog({
         <DialogDescription>{description}</DialogDescription>
       </DialogHeader>
         <form action={isApprove ? approveAction : rejectAction} className="space-y-4">
+          {expectedStepOrder ? (
+            <input
+              type="hidden"
+              name="expectedStepOrder"
+              value={expectedStepOrder}
+            />
+          ) : null}
           <div className="space-y-2">
             <Label htmlFor={textareaId}>コメント（任意）</Label>
             <Textarea

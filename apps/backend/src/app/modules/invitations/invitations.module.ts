@@ -8,6 +8,7 @@ import { InvitationsRepository } from '../../../models/repositories/invitations.
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
+import { TransactionService } from '../../transaction';
 import { UsersModule } from '../users/users.module';
 import { InvitationsController } from './controllers/invitations.controller';
 import { InvitationsService } from './services/invitations.service';
@@ -21,6 +22,6 @@ import { InvitationsService } from './services/invitations.service';
     MailModule,
   ],
   controllers: [InvitationsController],
-  providers: [InvitationsService, InvitationsRepository],
+  providers: [InvitationsService, InvitationsRepository, TransactionService],
 })
 export class InvitationsModule {}

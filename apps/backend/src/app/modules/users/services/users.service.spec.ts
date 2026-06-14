@@ -1,9 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { UserRole } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
 import { UsersRepository } from '../../../../models/repositories/users.repository';
+import {
+  TransactionService,
+  type TransactionManager,
+} from '../../../transaction';
 import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from './users.service';
 
@@ -26,7 +31,12 @@ describe('UsersService', () => {
     Pick<
       UsersRepository,
       | 'count'
+      | 'countByIdsInTenant'
+      | 'emailExists'
+      | 'emailExistsForAnotherUser'
       | 'findAllByEmail'
+      | 'findAllByEmailAndTenant'
+      | 'findActiveByEmail'
       | 'findByTenantAndEmail'
       | 'findByIdAndTenant'
       | 'countTenantAdmins'
@@ -36,11 +46,20 @@ describe('UsersService', () => {
   let auditLogs: {
     recordUserEvent: jest.Mock;
   };
+  let transactionManager: TransactionManager;
+  let transactions: {
+    run: jest.Mock;
+  };
 
   beforeEach(async () => {
     usersRepository = {
       count: jest.fn(),
+      countByIdsInTenant: jest.fn(),
+      emailExists: jest.fn(),
+      emailExistsForAnotherUser: jest.fn(),
       findAllByEmail: jest.fn(),
+      findAllByEmailAndTenant: jest.fn(),
+      findActiveByEmail: jest.fn(),
       findByTenantAndEmail: jest.fn(),
       findByIdAndTenant: jest.fn(),
       countTenantAdmins: jest.fn(),
@@ -49,12 +68,19 @@ describe('UsersService', () => {
     auditLogs = {
       recordUserEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: UsersRepository, useValue: usersRepository },
         { provide: BusinessAuditLogService, useValue: auditLogs },
+        { provide: TransactionService, useValue: transactions },
       ],
     }).compile();
 
@@ -69,6 +95,17 @@ describe('UsersService', () => {
     await expect(service.count()).resolves.toBe(3);
   });
 
+  it('countByIdsInTenant delegates to repository', async () => {
+    usersRepository.countByIdsInTenant.mockResolvedValue(2);
+    await expect(
+      service.countByIdsInTenant('tenant-1', ['user-1', 'user-2']),
+    ).resolves.toBe(2);
+    expect(usersRepository.countByIdsInTenant).toHaveBeenCalledWith(
+      'tenant-1',
+      ['user-1', 'user-2'],
+    );
+  });
+
   /**
    * findAllByEmail は小文字のメールアドレスをクエリすること
    */
@@ -77,6 +114,42 @@ describe('UsersService', () => {
     await service.findAllByEmail('User@Example.COM');
     expect(usersRepository.findAllByEmail).toHaveBeenCalledWith(
       'User@Example.COM',
+    );
+  });
+
+  it('findAllByEmailAndTenant delegates to repository', async () => {
+    usersRepository.findAllByEmailAndTenant.mockResolvedValue([]);
+    await service.findAllByEmailAndTenant('User@Example.COM', 'tenant-1');
+    expect(usersRepository.findAllByEmailAndTenant).toHaveBeenCalledWith(
+      'User@Example.COM',
+      'tenant-1',
+    );
+  });
+
+  it('findActiveByEmail delegates to repository', async () => {
+    usersRepository.findActiveByEmail.mockResolvedValue([]);
+    await service.findActiveByEmail('User@Example.COM');
+    expect(usersRepository.findActiveByEmail).toHaveBeenCalledWith(
+      'User@Example.COM',
+    );
+  });
+
+  it('emailExists delegates to repository', async () => {
+    usersRepository.emailExists.mockResolvedValue(true);
+    await expect(service.emailExists('User@Example.COM')).resolves.toBe(true);
+    expect(usersRepository.emailExists).toHaveBeenCalledWith(
+      'User@Example.COM',
+    );
+  });
+
+  it('emailExistsForAnotherUser delegates to repository', async () => {
+    usersRepository.emailExistsForAnotherUser.mockResolvedValue(true);
+    await expect(
+      service.emailExistsForAnotherUser('User@Example.COM', 'user-1'),
+    ).resolves.toBe(true);
+    expect(usersRepository.emailExistsForAnotherUser).toHaveBeenCalledWith(
+      'User@Example.COM',
+      'user-1',
     );
   });
 
@@ -182,6 +255,7 @@ describe('UsersService', () => {
           roleFrom: UserRole.TENANT_USER,
           roleTo: UserRole.TENANT_USER,
         }),
+        transactionManager,
       );
     });
 
@@ -272,12 +346,16 @@ describe('UsersService', () => {
       await service.deactivateInTenant('t1', 'u-member', actor());
 
       expect(target.isActive).toBe(false);
-      expect(usersRepository.save).toHaveBeenCalledWith(target);
+      expect(usersRepository.save).toHaveBeenCalledWith(
+        target,
+        transactionManager,
+      );
       expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           actionType: 'user.deactivated',
           target,
         }),
+        transactionManager,
       );
     });
   });
@@ -311,13 +389,139 @@ describe('UsersService', () => {
       const out = await service.restoreInTenant('t1', 'u-member', actor());
 
       expect(out.isActive).toBe(true);
-      expect(usersRepository.save).toHaveBeenCalledWith(target);
+      expect(usersRepository.save).toHaveBeenCalledWith(
+        target,
+        transactionManager,
+      );
       expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           actionType: 'user.restored',
           target,
         }),
+        transactionManager,
       );
     });
   });
+
+  describe('updateOwnProfile', () => {
+    it('updates the current user name in tenant scope', async () => {
+      const currentUser = user({
+        id: 'actor-id',
+        email: 'old@example.com',
+        name: 'Old User',
+      });
+      usersRepository.findByIdAndTenant.mockResolvedValue(currentUser);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.updateOwnProfile(actor(), {
+        name: ' New User ',
+      });
+
+      expect(out.email).toBe('old@example.com');
+      expect(out.name).toBe('New User');
+      expect(usersRepository.findByIdAndTenant).toHaveBeenCalledWith(
+        'actor-id',
+        't1',
+      );
+      expect(usersRepository.findAllByEmail).not.toHaveBeenCalled();
+      expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'user.profile_updated',
+          actor: actor(),
+          target: currentUser,
+          metadataJson: {
+            userNameFrom: 'Old User',
+            userNameTo: 'New User',
+          },
+        }),
+        transactionManager,
+      );
+    });
+
+    it('skips persistence when the current profile is unchanged', async () => {
+      const currentUser = user({
+        id: 'actor-id',
+        email: 'old@example.com',
+        name: 'Old User',
+      });
+      usersRepository.findByIdAndTenant.mockResolvedValue(currentUser);
+
+      await expect(
+        service.updateOwnProfile(actor(), {
+          name: ' Old User ',
+        }),
+      ).resolves.toBe(currentUser);
+
+      expect(usersRepository.findAllByEmail).not.toHaveBeenCalled();
+      expect(usersRepository.save).not.toHaveBeenCalled();
+      expect(auditLogs.recordUserEvent).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateOwnPassword', () => {
+    it('updates the current user password after checking the current password', async () => {
+      const currentUser = user({
+        id: 'actor-id',
+        email: 'old@example.com',
+        passwordHash: await bcrypt.hash('password12', 4),
+      });
+      usersRepository.findByIdAndTenant.mockResolvedValue(currentUser);
+      usersRepository.save.mockImplementation((u: User) => Promise.resolve(u));
+
+      const out = await service.updateOwnPassword(actor(), {
+        currentPassword: 'password12',
+        newPassword: 'newpassword12',
+      });
+
+      expect(out).toBe(currentUser);
+      await expect(
+        bcrypt.compare('newpassword12', currentUser.passwordHash),
+      ).resolves.toBe(true);
+      expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          actionType: 'user.password_changed',
+          actor: actor(),
+          target: currentUser,
+          metadataJson: { passwordChanged: true },
+        }),
+        transactionManager,
+      );
+    });
+
+    it('rejects a wrong current password', async () => {
+      usersRepository.findByIdAndTenant.mockResolvedValue(
+        user({
+          id: 'actor-id',
+          passwordHash: await bcrypt.hash('password12', 4),
+        }),
+      );
+
+      await expect(
+        service.updateOwnPassword(actor(), {
+          currentPassword: 'wrongpassword',
+          newPassword: 'newpassword12',
+        }),
+      ).rejects.toMatchObject({
+        errorCode: ClientErrorCodes.AUTH_INVALID_CREDENTIALS,
+      });
+
+      expect(usersRepository.save).not.toHaveBeenCalled();
+      expect(auditLogs.recordUserEvent).not.toHaveBeenCalled();
+    });
+  });
 });
+
+function user(overrides: Partial<User> = {}): User {
+  return {
+    id: 'user-id',
+    tenantId: 't1',
+    email: 'user@example.com',
+    name: null,
+    passwordHash: 'hash',
+    role: UserRole.TENANT_USER,
+    isActive: true,
+    createdAt: new Date('2026-01-01T00:00:00.000Z'),
+    updatedAt: new Date('2026-01-01T00:00:00.000Z'),
+    ...overrides,
+  } as User;
+}

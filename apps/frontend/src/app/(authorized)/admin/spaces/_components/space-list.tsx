@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { Trash2, UserRoundPlus } from "lucide-react";
+import { Pencil, Trash2, UserRoundPlus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import {
   Tooltip,
   TooltipContent,
@@ -21,6 +20,7 @@ import {
   MemberActionMenu,
   type MemberActionMenuState,
 } from "./member-action-menu";
+import { SpaceDetailsEditDialog } from "./space-details-edit-dialog";
 import { SpaceMemberAddDialog } from "./space-member-add-dialog";
 import { SpaceMemberTable } from "./space-member-table";
 
@@ -33,6 +33,7 @@ type SpaceListProps = {
     groupId: string,
     formData: FormData,
   ) => Promise<void>;
+  updateSpaceAction: (groupId: string, formData: FormData) => Promise<void>;
   updateMemberRoleAction: (
     groupId: string,
     userId: string,
@@ -49,12 +50,16 @@ export function SpaceList({
   isSystemAdmin,
   addMemberAction,
   inviteSpaceMemberAction,
+  updateSpaceAction,
   updateMemberRoleAction,
   removeMemberAction,
   leaveSpaceAction,
   removeSpaceAction,
 }: SpaceListProps) {
   const [openSpaceId, setOpenSpaceId] = useState<string | null>(null);
+  const [detailsEditSpaceId, setDetailsEditSpaceId] = useState<string | null>(
+    null,
+  );
   const [memberAddSpaceId, setMemberAddSpaceId] = useState<string | null>(null);
   const [memberActionMenu, setMemberActionMenu] =
     useState<MemberActionMenuState | null>(null);
@@ -100,33 +105,68 @@ export function SpaceList({
 
         return (
           <Card key={group.id} className="overflow-hidden">
-            <button
-              type="button"
-              className="flex w-full items-start justify-between gap-4 px-6 py-5 text-left transition-colors hover:bg-violet-50/70 focus-visible:bg-violet-50/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
-              aria-expanded={isOpen}
-              onClick={() => setOpenSpaceId(isOpen ? null : group.id)}
-            >
-              <div className="min-w-0 space-y-1">
-                <CardTitle className="truncate text-lg">{group.name}</CardTitle>
-                <CardDescription className="line-clamp-2">
-                  {group.description ?? "説明は設定されていません"}
-                </CardDescription>
+            <div className="flex items-start justify-between gap-4 px-6 py-5 transition-colors hover:bg-violet-50/70">
+              <button
+                type="button"
+                className="min-w-0 flex-1 space-y-1 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                aria-expanded={isOpen}
+                onClick={() => setOpenSpaceId(isOpen ? null : group.id)}
+              >
+                <CardHeading
+                  description={group.description ?? "説明は設定されていません"}
+                  descriptionClassName="line-clamp-2 text-sm"
+                  title={group.name}
+                  titleClassName="min-w-0 truncate text-lg"
+                />
+              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {isSystemAdmin ? (
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="icon"
+                          aria-label={`${group.name}を編集`}
+                          onClick={() => setDetailsEditSpaceId(group.id)}
+                        >
+                          <Pencil aria-hidden="true" />
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>スペースを編集</TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
+                ) : null}
+                <button
+                  type="button"
+                  className="rounded-md px-2 py-1 text-sm text-muted-foreground transition-colors hover:bg-white/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-400"
+                  aria-label={`${group.name} の詳細を${isOpen ? "閉じる" : "開く"}`}
+                  aria-expanded={isOpen}
+                  onClick={() => setOpenSpaceId(isOpen ? null : group.id)}
+                >
+                  {isOpen ? "閉じる" : "詳細"}
+                </button>
               </div>
-              <span className="shrink-0 text-sm text-muted-foreground">
-                {isOpen ? "閉じる" : "詳細"}
-              </span>
-            </button>
+            </div>
+
+            {detailsEditSpaceId === group.id ? (
+              <SpaceDetailsEditDialog
+                group={group}
+                onClose={() => setDetailsEditSpaceId(null)}
+                updateSpaceAction={updateSpaceAction}
+              />
+            ) : null}
 
             {isOpen ? (
               <>
                 <CardHeader className="border-t border-slate-200">
                   <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
-                    <div>
-                      <CardTitle className="text-base">メンバー管理</CardTitle>
-                      <CardDescription>
-                        メンバー追加、招待、ロール変更、退出を操作できます
-                      </CardDescription>
-                    </div>
+                    <CardHeading
+                      description="メンバー追加、招待、ロール変更、退出を操作できます"
+                      title="メンバー管理"
+                      titleClassName="text-base"
+                    />
                     <div className="flex items-center gap-2">
                       {canManageSpace ? (
                         <TooltipProvider>

@@ -5,6 +5,14 @@ import {
 } from "./src/lib/e2e-env";
 
 const p = getPlaywrightConfigEnv();
+const frontendUrl = new URL(p.baseURL);
+const frontendPort =
+  frontendUrl.port || (frontendUrl.protocol === "https:" ? "443" : "80");
+const standaloneServerCommand = [
+  "npm run build",
+  "cp -R .next/static .next/standalone/apps/frontend/.next/static",
+  "node .next/standalone/apps/frontend/server.js",
+].join(" && ");
 
 export default defineConfig({
   testDir: "./e2e",
@@ -20,7 +28,7 @@ export default defineConfig({
   webServer: p.skipWebServer
     ? undefined
     : {
-        command: "npm run build && npx next start --port 3001",
+        command: standaloneServerCommand,
         url: p.baseURL,
         reuseExistingServer: !p.ci,
         cwd: __dirname,
@@ -28,8 +36,10 @@ export default defineConfig({
         env: {
           ...getInheritedProcessEnv(),
           NODE_ENV: "production",
+          HOSTNAME: frontendUrl.hostname,
           NEXT_PUBLIC_API_URL: p.e2eApiUrl,
           INTERNAL_API_KEY: p.e2eApiKey,
+          PORT: frontendPort,
         },
       },
 });

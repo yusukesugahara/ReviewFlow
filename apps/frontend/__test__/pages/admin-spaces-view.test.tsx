@@ -9,6 +9,7 @@ jest.mock("@/app/(authorized)/admin/spaces/actions", () => ({
   removeMemberAction: jest.fn(),
   removeSpaceAction: jest.fn(),
   updateMemberRoleAction: jest.fn(),
+  updateSpaceAction: jest.fn(),
 }));
 
 jest.mock("@/app/(authorized)/admin/spaces/_components/space-management-header", () => ({

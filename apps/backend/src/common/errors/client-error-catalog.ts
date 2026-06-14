@@ -10,6 +10,14 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'Email is already registered',
   },
+  AUTH_EMAIL_UNCHANGED: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'New email must be different from the current email',
+  },
+  AUTH_EMAIL_CHANGE_TOKEN_INVALID: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Email change token is invalid or expired',
+  },
   AUTH_TENANT_REQUIRED: {
     status: HttpStatus.BAD_REQUEST,
     message: 'Multiple accounts use this email; specify tenantId to log in',
@@ -215,6 +223,11 @@ export const ClientErrorCatalog = {
     status: HttpStatus.CONFLICT,
     message: 'Application is in an unexpected state for this operation',
   },
+  APPLICATION_REVIEW_STATE_CONFLICT: {
+    status: HttpStatus.CONFLICT,
+    message:
+      'Application review state has changed. Refresh the page and try again',
+  },
   EXPORT_JOB_NOT_FOUND: {
     status: HttpStatus.NOT_FOUND,
     message: 'Export job not found in this workspace',
@@ -246,6 +259,12 @@ export const ClientErrorMessages = Object.fromEntries(
   ]),
 ) as Record<ClientErrorCode, string>;
 
+/**
+ * 業務・入力・認可エラーを `BaseError` に変換する。
+ *
+ * HTTP 例外へ直接依存しないため、service / policy / repository からも同じ error code
+ * で投げられる。
+ */
 export function clientError(
   code: ClientErrorCode,
   message?: string,
