@@ -17,7 +17,7 @@ npx playwright install chromium   # 初回のみ
 E2E_API_URL=http://127.0.0.1:3000 npm run test:e2e
 ```
 
-`playwright.config` の webServer は **`npm run build` → `next start --port 3001`** です（Server Action が参照する `INTERNAL_API_KEY` / `NEXT_PUBLIC_API_URL` をビルド・起動の両方で確実に渡すため）。既に Next を手動で 3001 で動かしている場合:
+`playwright.config` の webServer は **`npm run build` → standalone 配下へ `.next/static` をコピー → `.next/standalone/apps/frontend/server.js`** です（Server Action が参照する `INTERNAL_API_KEY` / `NEXT_PUBLIC_API_URL` をビルド・起動の両方で確実に渡すため）。既に Next を手動で 3001 で動かしている場合:
 
 ```bash
 PLAYWRIGHT_SKIP_WEBSERVER=1 PLAYWRIGHT_BASE_URL=http://127.0.0.1:3001 E2E_API_URL=http://127.0.0.1:3000 npm run test:e2e
