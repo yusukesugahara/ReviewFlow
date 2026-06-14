@@ -92,7 +92,9 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.submit(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
@@ -108,7 +110,9 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.approve(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
@@ -128,7 +132,9 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.returnApplication(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
@@ -147,7 +153,9 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.resendReturnEmail(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
@@ -163,7 +171,9 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.reject(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
@@ -178,7 +188,9 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.resubmit(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
@@ -233,7 +245,9 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.getOneForActor(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   @AuthApi()
@@ -253,6 +267,8 @@ export class ApplicationsController {
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.patch(actor, id, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 }

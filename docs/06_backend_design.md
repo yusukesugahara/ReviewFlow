@@ -48,6 +48,7 @@
 | フォーム定義 | `FormDefinitionsService` |
 | 承認フロー | `ApprovalFlowsService` |
 | 申請（統合） | `ApplicationsService` |
+| 申請操作可否 | `ApplicationActionCapabilitiesService` |
 | 申請作成 | `ApplicationCreationService` |
 | 申請提出 | `ApplicationSubmissionService` |
 | 承認操作 | `ApplicationReviewActionService` |
@@ -66,6 +67,7 @@
 | `ApplicationAccessPolicy` | 申請の閲覧・レビュー操作可否 |
 | `ApplicationTransitionPolicy` | 申請状態の前提チェックと状態遷移 |
 | `ApplicationFormValueValidator` | フォーム入力値の検証 |
+| `ApplicationActionCapabilitiesService` | API レスポンス用の申請操作可否（編集・提出・承認・差戻・却下） |
 
 ## 重要な業務ロジック
 

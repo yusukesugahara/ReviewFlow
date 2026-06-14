@@ -1,6 +1,7 @@
 import type { Application } from '../../../../models/entities/application.entity';
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type {
+  ApplicationCapabilitiesDto,
   ApplicationDetailDto,
   ApplicationProgressStepDto,
   ApplicationSummaryDto,
@@ -14,6 +15,17 @@ import type {
 export type ApplicationWithProgress = Application & {
   approvalProgress?: ApplicationProgressStepDto[];
 };
+
+export function disabledApplicationCapabilities(): ApplicationCapabilitiesDto {
+  return {
+    canEditApplication: false,
+    canSubmitApplication: false,
+    canResubmitApplication: false,
+    canApproveApplication: false,
+    canRejectApplication: false,
+    canReturnApplication: false,
+  };
+}
 
 export function mapApplicationToSummary(
   row: Application,
@@ -55,6 +67,7 @@ function getCurrentStepAssigneeUserIds(row: Application): string[] {
 
 export function mapApplicationToDetail(
   row: ApplicationWithProgress,
+  capabilities: ApplicationCapabilitiesDto = disabledApplicationCapabilities(),
 ): ApplicationDetailDto {
   const values: Record<string, unknown> = {};
   for (const v of row.fieldValues ?? []) {
@@ -71,6 +84,7 @@ export function mapApplicationToDetail(
         );
   return {
     ...mapApplicationToSummary(row),
+    capabilities,
     currentStepCanReturn: currentStep?.canReturn ?? null,
     approvalProgress: row.approvalProgress ?? [],
     values,

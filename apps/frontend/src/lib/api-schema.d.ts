@@ -1440,6 +1440,14 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        ApplicationCapabilitiesDto: {
+            canEditApplication: boolean;
+            canSubmitApplication: boolean;
+            canResubmitApplication: boolean;
+            canApproveApplication: boolean;
+            canRejectApplication: boolean;
+            canReturnApplication: boolean;
+        };
         ApplicationProgressUserDto: {
             id: string;
             email: string;
@@ -1478,6 +1486,7 @@ export interface components {
             submittedAt?: Record<string, never> | null;
             createdAt: string;
             updatedAt: string;
+            capabilities: components["schemas"]["ApplicationCapabilitiesDto"];
             /** @description 現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。 */
             currentStepCanReturn?: Record<string, never> | null;
             approvalProgress: components["schemas"]["ApplicationProgressStepDto"][];

@@ -85,11 +85,4 @@ CSV出力はテナント管理ではなく、スペース配下の申請一覧 `
 field_type ごとにコンポーネントを分ける。入力値を保存する項目（text, textarea, number, date, select, radio, checkbox, consent）と、表示専用項目（description, section）を区別する。
 
 ### 編集可能判定
-```ts
-const editable =
-  application.status === "draft" ||
-  application.status === "published" ||
-  (application.status === "returned" && correctionFieldIds.includes(field.id));
-```
-
-この判定は UX のための表示制御であり、セキュリティ境界ではない。`returned` 時の更新可能フィールド制限、申請者本人判定、承認者判定はバックエンドでも必ず検証する。
+申請詳細画面の操作ボタンは backend の `ApplicationDetailDto.capabilities` を表示制御として使う。frontend は未入力項目の案内や returned 項目の活性/非活性など UX 補助だけを行い、申請者本人判定、承認者判定、space 管理者判定、状態遷移可否は backend の policy / service で検証する。

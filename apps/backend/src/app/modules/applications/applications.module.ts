@@ -25,6 +25,7 @@ import { ApplicantAccessGuard } from '../../guards/applicant-access.guard';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { ApplicationAccessPolicy } from './policies/application-access.policy';
 import { ApplicationApprovalFlowResolver } from './resolvers/application-approval-flow.resolver';
+import { ApplicationActionCapabilitiesService } from './services/access/application-action-capabilities.service';
 import { ApplicantApplicationAccessService } from './services/access/applicant-application-access.service';
 import { ApplicantApplicationService } from './services/facades/applicant-application.service';
 import { ApplicationCorrectionService } from './services/review/application-correction.service';
@@ -86,6 +87,7 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApprovalFlowsRepository,
     FormDefinitionsRepository,
     ApplicantAccessGuard,
+    ApplicationActionCapabilitiesService,
     ApplicantApplicationAccessService,
     ApplicantApplicationService,
     ApplicationAccessPolicy,

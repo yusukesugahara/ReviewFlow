@@ -3,6 +3,7 @@ import type { AuthUserPayload } from '../../../../../decorators/current-user.dec
 import type { ApplicantAccessTokenPayload } from '../../../auth/services/facades/auth.service';
 import { Application } from '../../../../../models/entities/application.entity';
 import type {
+  ApplicationDetailDto,
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
   CreateApplicationDto,
@@ -16,6 +17,7 @@ import {
   mapApplicationToSummary,
 } from '../../mappers/applications.mapper';
 import { ApplicantApplicationService } from './applicant-application.service';
+import { ApplicationActionCapabilitiesService } from '../access/application-action-capabilities.service';
 import { ApplicationCreationUseCaseService } from '../use-cases/application-creation-use-case.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationReviewUseCaseService } from '../use-cases/application-review-use-case.service';
@@ -27,6 +29,7 @@ type ApplicantSession = ApplicantAccessTokenPayload;
 @Injectable()
 export class ApplicationsService {
   constructor(
+    private readonly actionCapabilities: ApplicationActionCapabilitiesService,
     private readonly applicantApplicationService: ApplicantApplicationService,
     private readonly creationUseCaseService: ApplicationCreationUseCaseService,
     private readonly queryService: ApplicationQueryService,
@@ -148,5 +151,25 @@ export class ApplicationsService {
 
   toDetail(row: Application) {
     return mapApplicationToDetail(row);
+  }
+
+  async toDetailForActor(
+    row: Application,
+    actor: AuthUserPayload,
+  ): Promise<ApplicationDetailDto> {
+    return mapApplicationToDetail(
+      row,
+      await this.actionCapabilities.buildForUser(actor, row),
+    );
+  }
+
+  toDetailForApplicant(
+    row: Application,
+    actor: ApplicantSession,
+  ): ApplicationDetailDto {
+    return mapApplicationToDetail(
+      row,
+      this.actionCapabilities.buildForApplicant(actor, row),
+    );
   }
 }

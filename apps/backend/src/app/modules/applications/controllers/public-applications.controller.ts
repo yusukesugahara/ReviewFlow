@@ -43,7 +43,7 @@ export class PublicApplicationsController {
     @Body() dto: CreatePublicApplicationDto,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.createAndSubmitForApplicant(actor, dto);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 
   @Throttle({ default: { limit: 60, ttl: 60_000 } })
@@ -80,7 +80,7 @@ export class PublicApplicationsController {
       id,
       dto,
     );
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 
   @Throttle({ default: { limit: 30, ttl: 60_000 } })
@@ -93,6 +93,6 @@ export class PublicApplicationsController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.resubmitForApplicant(actor, id);
-    return successResponse(this.applications.toDetail(row));
+    return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 }

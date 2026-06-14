@@ -1,6 +1,5 @@
 import "server-only";
 
-import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { getApplicationCapabilities } from "@/components/applications/actions/application-capabilities";
 import type { ApplicationCapabilities } from "@/components/applications/actions/application-capabilities";
 import {
@@ -63,13 +62,10 @@ export async function getSpaceApplicationDetailPageData({
   spaceId: string;
 }): Promise<SpaceApplicationDetailPageData> {
   const authHeaders = await authHeadersOrRedirect();
-  const [applicationRaw, actor] = await Promise.all([
-    client.GET("/applications/{id}", {
-      params: { path: { id: applicationId } },
-      headers: authHeaders,
-    }),
-    getCurrentSessionUser(),
-  ]);
+  const applicationRaw = await client.GET("/applications/{id}", {
+    params: { path: { id: applicationId } },
+    headers: authHeaders,
+  });
   const application = unwrapResponseData<ApplicationDetailViewModel>(applicationRaw);
   const definitionId = application.formDefinitionId ?? queryDefinitionId;
 
@@ -105,7 +101,7 @@ export async function getSpaceApplicationDetailPageData({
   return {
     kind: "application",
     application,
-    capabilities: getApplicationCapabilities(application, actor),
+    capabilities: getApplicationCapabilities(application),
     corrections,
     definitionId,
     fieldMap: fields.map((field) => ({ id: field.id, key: field.fieldKey })),

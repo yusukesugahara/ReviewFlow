@@ -376,7 +376,30 @@ export class ApplicationSummaryDto {
   updatedAt!: string;
 }
 
+export class ApplicationCapabilitiesDto {
+  @ApiProperty()
+  canEditApplication!: boolean;
+
+  @ApiProperty()
+  canSubmitApplication!: boolean;
+
+  @ApiProperty()
+  canResubmitApplication!: boolean;
+
+  @ApiProperty()
+  canApproveApplication!: boolean;
+
+  @ApiProperty()
+  canRejectApplication!: boolean;
+
+  @ApiProperty()
+  canReturnApplication!: boolean;
+}
+
 export class ApplicationDetailDto extends ApplicationSummaryDto {
+  @ApiProperty({ type: ApplicationCapabilitiesDto })
+  capabilities!: ApplicationCapabilitiesDto;
+
   @ApiPropertyOptional({
     description:
       '現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。',
