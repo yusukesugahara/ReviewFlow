@@ -49,6 +49,11 @@ export const ServerErrorMessages = Object.fromEntries(
   ]),
 ) as Record<ServerErrorCode, string>;
 
+/**
+ * 設定不備・外部サービス失敗など、サーバー側要因のエラーを `BaseError` に変換する。
+ *
+ * client error と同じ形式に揃え、`GlobalExceptionFilter` で API response へ正規化する。
+ */
 export function serverError(
   code: ServerErrorCode,
   message?: string,

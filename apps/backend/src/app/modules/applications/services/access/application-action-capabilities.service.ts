@@ -8,6 +8,11 @@ import type { ApplicationCapabilitiesDto } from '../../dto/applications.dto';
 import { disabledApplicationCapabilities } from '../../mappers/applications.mapper';
 import { ApplicationAccessPolicy } from '../../policies/application-access.policy';
 
+/**
+ * 申請詳細で返す操作可能フラグを backend の認可・状態ルールから組み立てる。
+ *
+ * frontend の表示制御用だが、実際の操作可否は各 use case / policy でも必ず検証する。
+ */
 @Injectable()
 export class ApplicationActionCapabilitiesService {
   constructor(
@@ -35,6 +40,11 @@ export class ApplicationActionCapabilitiesService {
     };
   }
 
+  /**
+   * 申請者 access token 用の操作可能フラグを組み立てる。
+   *
+   * token と申請の tenant / space / application / email が一致しない場合は全操作不可にする。
+   */
   buildForApplicant(
     actor: ApplicantAccessTokenPayload,
     app: Application,

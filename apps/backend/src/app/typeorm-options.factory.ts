@@ -20,6 +20,12 @@ import { PasswordResetToken } from '../models/entities/password-reset-token.enti
 import { Tenant } from '../models/entities/tenant.entity';
 import { User } from '../models/entities/user.entity';
 
+/**
+ * Nest ConfigService から TypeORM 接続設定を組み立てる。
+ *
+ * `DATABASE_URL` があれば URL 接続を優先し、なければ個別の DB_* 設定を使う。
+ * 開発環境は synchronize、production は migration 実行を既定にする。
+ */
 export function buildTypeOrmOptions(
   config: ConfigService,
 ): TypeOrmModuleOptions {

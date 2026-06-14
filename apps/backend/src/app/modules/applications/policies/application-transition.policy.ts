@@ -4,6 +4,11 @@ import { ApplicationStatus } from '../../../../models/constants/application-stat
 import type { Application } from '../../../../models/entities/application.entity';
 import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 
+/**
+ * 申請 status と current step の状態遷移ルールを所有する policy。
+ *
+ * service は use case の orchestration に集中し、状態の書き換えはこの policy 経由にする。
+ */
 @Injectable()
 export class ApplicationTransitionPolicy {
   assertDraft(app: Application): void {
@@ -55,6 +60,7 @@ export class ApplicationTransitionPolicy {
     }
   }
 
+  /** 下書きまたは公開済み申請を審査中へ進め、最初の承認 step を設定する。 */
   startReview(app: Application, submittedAt = new Date()): void {
     this.assertDraft(app);
     app.status = ApplicationStatus.IN_REVIEW;
@@ -62,6 +68,7 @@ export class ApplicationTransitionPolicy {
     app.submittedAt = submittedAt;
   }
 
+  /** 現在 step の承認後、次 step がなければ申請を承認済みにする。 */
   applyApproval(app: Application, nextStep: ApprovalStep | null): void {
     this.assertInReview(app);
     if (!nextStep) {
@@ -72,18 +79,21 @@ export class ApplicationTransitionPolicy {
     app.currentStepOrder = nextStep.stepOrder;
   }
 
+  /** 審査中の申請を却下済みにする。 */
   applyReject(app: Application): void {
     this.assertInReview(app);
     app.status = ApplicationStatus.REJECTED;
     app.currentStepOrder = null;
   }
 
+  /** 審査中の申請を差し戻し済みにし、現在 step を解除する。 */
   applyReturn(app: Application): void {
     this.assertInReview(app);
     app.status = ApplicationStatus.RETURNED;
     app.currentStepOrder = null;
   }
 
+  /** 差し戻し済みの申請を再提出し、最初の承認 step から審査を再開する。 */
   applyResubmit(app: Application): void {
     this.assertReturned(app);
     app.status = ApplicationStatus.IN_REVIEW;

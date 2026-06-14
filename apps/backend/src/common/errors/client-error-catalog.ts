@@ -254,6 +254,12 @@ export const ClientErrorMessages = Object.fromEntries(
   ]),
 ) as Record<ClientErrorCode, string>;
 
+/**
+ * 業務・入力・認可エラーを `BaseError` に変換する。
+ *
+ * HTTP 例外へ直接依存しないため、service / policy / repository からも同じ error code
+ * で投げられる。
+ */
 export function clientError(
   code: ClientErrorCode,
   message?: string,

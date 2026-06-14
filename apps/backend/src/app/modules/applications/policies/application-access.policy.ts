@@ -11,6 +11,11 @@ type CountApprovalsByActor = (
   actorId: string,
 ) => Promise<number>;
 
+/**
+ * 申請に対する閲覧・レビュー操作の認可判断を集約する policy。
+ *
+ * controller / use case に role・申請者・現在承認ステップの判定を散らさないために使う。
+ */
 @Injectable()
 export class ApplicationAccessPolicy {
   isSetupApplication(app: Application): boolean {
@@ -67,6 +72,11 @@ export class ApplicationAccessPolicy {
     return this.actorIsAssignedToCurrentStep(actor, app);
   }
 
+  /**
+   * 申請詳細の閲覧可否を検証する。
+   *
+   * 管理者、申請者、現在 step の担当者、過去に承認へ参加したユーザーのみ許可する。
+   */
   async assertCanRead(
     actor: AuthUserPayload,
     app: Application,

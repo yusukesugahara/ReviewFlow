@@ -14,6 +14,11 @@ import {
   type CreateAuditLogParams,
 } from '../../../../models/repositories/audit-logs.repository';
 
+/**
+ * 業務監査ログに記録する action type。
+ *
+ * 操作種別は dot notation に揃え、画面表示・検索・分析で同じ値を使えるようにする。
+ */
 export const BusinessAuditAction = {
   APPLICATION_CREATED: 'application.created',
   APPLICATION_SUBMITTED: 'application.submitted',
@@ -52,10 +57,20 @@ type ApplicationSnapshot = {
   stepOrder: number | null;
 };
 
+/**
+ * 申請・招待・ユーザー・スペース操作の業務監査ログを記録する service。
+ *
+ * request logging とは別に、誰が何を変更したかを業務イベントとして残す。
+ */
 @Injectable()
 export class BusinessAuditLogService {
   constructor(private readonly auditLogsRepository: AuditLogsRepository) {}
 
+  /**
+   * 申請 workflow の状態変化を監査ログに記録する。
+   *
+   * before / after が省略された場合は、作成イベント向けの初期値と現在の申請状態から補完する。
+   */
   async recordApplicationEvent(params: {
     actionType: BusinessAuditActionValue;
     actor: AuditActor;

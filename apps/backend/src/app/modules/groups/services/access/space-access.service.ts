@@ -4,6 +4,11 @@ import type { AuthUserPayload } from '../../../../../decorators/current-user.dec
 import { UserRole } from '../../../../../models/constants/user-role';
 import { GroupsRepository } from '../../../../../models/repositories/groups.repository';
 
+/**
+ * スペース（DB 上の group）に対する利用・管理権限を検証する service。
+ *
+ * tenant 境界の確認と group member role の確認をまとめ、各 module に判定を重複させない。
+ */
 @Injectable()
 export class SpaceAccessService {
   constructor(private readonly groupsRepository: GroupsRepository) {}
