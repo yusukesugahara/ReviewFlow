@@ -76,7 +76,6 @@ describe('ApplicationFieldValuePatchService', () => {
   };
   let submissionRepository: {
     findExistingFieldValues: jest.Mock;
-    createFieldValue: jest.Mock;
     saveApplicationPatch: jest.Mock;
   };
 
@@ -89,7 +88,6 @@ describe('ApplicationFieldValuePatchService', () => {
     };
     submissionRepository = {
       findExistingFieldValues: jest.fn(),
-      createFieldValue: jest.fn((value: object) => ({ ...value })),
       saveApplicationPatch: jest.fn(),
     };
     const formValueValidator = new ApplicationFormValueValidator(
@@ -102,7 +100,6 @@ describe('ApplicationFieldValuePatchService', () => {
       formValueValidator,
     );
     const fieldValuePatchBuilder = new ApplicationFieldValuePatchBuilder(
-      submissionRepository as unknown as ApplicationSubmissionRepository,
       formValueValidator,
     );
     service = new ApplicationFieldValuePatchService(

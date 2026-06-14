@@ -1527,6 +1527,7 @@ export interface components {
              * @example 1
              */
             expectedStepOrder: number;
+            /** @description 任意コメント（監査用） */
             comment?: string;
         };
         CorrectionTargetItemResponseDto: {

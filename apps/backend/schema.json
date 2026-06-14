@@ -5132,7 +5132,8 @@
             "description": "画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。"
           },
           "comment": {
-            "type": "string"
+            "type": "string",
+            "description": "任意コメント（監査用）"
           }
         },
         "required": [

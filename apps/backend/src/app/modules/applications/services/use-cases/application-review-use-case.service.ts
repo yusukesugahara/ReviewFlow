@@ -42,8 +42,12 @@ export class ApplicationReviewUseCaseService {
     dto: ApproveApplicationDto,
   ): Promise<Application> {
     await this.transactions.run(async (manager) => {
-      const app = await this.loadReviewableApplication(actor, id, manager);
-      this.assertExpectedReviewStep(app, dto.expectedStepOrder);
+      const app = await this.loadReviewableApplicationForExpectedStep(
+        actor,
+        id,
+        dto.expectedStepOrder,
+        manager,
+      );
       const before = this.snapshot(app);
       await this.reviewActionService.approve(app, actor.id, dto, manager);
       await this.auditLogs.recordApplicationEvent(
@@ -67,8 +71,12 @@ export class ApplicationReviewUseCaseService {
     dto: RejectApplicationDto,
   ): Promise<Application> {
     await this.transactions.run(async (manager) => {
-      const app = await this.loadReviewableApplication(actor, id, manager);
-      this.assertExpectedReviewStep(app, dto.expectedStepOrder);
+      const app = await this.loadReviewableApplicationForExpectedStep(
+        actor,
+        id,
+        dto.expectedStepOrder,
+        manager,
+      );
       const before = this.snapshot(app);
       await this.reviewActionService.reject(app, actor.id, dto, manager);
       await this.auditLogs.recordApplicationEvent(
@@ -92,8 +100,12 @@ export class ApplicationReviewUseCaseService {
     dto: ReturnApplicationDto,
   ): Promise<Application> {
     const { app, template } = await this.transactions.run(async (manager) => {
-      const app = await this.loadReviewableApplication(actor, id, manager);
-      this.assertExpectedReviewStep(app, dto.expectedStepOrder);
+      const app = await this.loadReviewableApplicationForExpectedStep(
+        actor,
+        id,
+        dto.expectedStepOrder,
+        manager,
+      );
       const before = this.snapshot(app);
       const result = await this.reviewActionService.returnForCorrection(
         app,
@@ -121,9 +133,10 @@ export class ApplicationReviewUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
-  private async loadReviewableApplication(
+  private async loadReviewableApplicationForExpectedStep(
     actor: AuthUserPayload,
     id: string,
+    expectedStepOrder: number,
     manager?: TransactionManager,
   ): Promise<Application> {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id, manager);
@@ -135,6 +148,7 @@ export class ApplicationReviewUseCaseService {
     if (!canManageGroup && !this.accessPolicy.canActOnReview(actor, app)) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_FORBIDDEN);
     }
+    this.assertExpectedReviewStep(app, expectedStepOrder);
     return app;
   }
 

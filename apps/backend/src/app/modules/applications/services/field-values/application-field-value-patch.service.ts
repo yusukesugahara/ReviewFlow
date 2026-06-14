@@ -27,10 +27,18 @@ export class ApplicationFieldValuePatchService {
       dto,
       manager,
     );
-    const fieldValues = await this.fieldValuePatchBuilder.build(
+    const existingValues =
+      await this.submissionRepository.findExistingFieldValues(
+        {
+          tenantId: app.tenantId,
+          applicationId: app.id,
+        },
+        manager,
+      );
+    const fieldValues = this.fieldValuePatchBuilder.build(
       context,
       dto.values ?? {},
-      manager,
+      existingValues,
     );
     await this.saveApplicationPatch(app, dto, fieldValues, manager);
   }

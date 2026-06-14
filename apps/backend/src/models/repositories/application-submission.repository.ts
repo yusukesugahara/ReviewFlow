@@ -31,15 +31,6 @@ export class ApplicationSubmissionRepository {
     });
   }
 
-  createFieldValue(params: {
-    tenantId: string;
-    applicationId: string;
-    formFieldId: string;
-    valueJson: unknown;
-  }): ApplicationFieldValue {
-    return this.fieldValues.create(params);
-  }
-
   async saveApplicationPatch(
     params: {
       app: Application;

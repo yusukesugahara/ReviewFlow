@@ -16,10 +16,7 @@ describe('ApplicationSubmissionRepository', () => {
       transaction: jest.Mock;
     };
   };
-  let fieldValues: {
-    create: jest.Mock;
-    find: jest.Mock;
-  };
+  let fieldValues: { find: jest.Mock };
 
   beforeEach(async () => {
     apps = {
@@ -27,12 +24,7 @@ describe('ApplicationSubmissionRepository', () => {
         transaction: jest.fn(),
       },
     };
-    fieldValues = {
-      create: jest.fn((value: Partial<ApplicationFieldValue>) => ({
-        ...value,
-      })),
-      find: jest.fn(),
-    };
+    fieldValues = { find: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -84,22 +76,6 @@ describe('ApplicationSubmissionRepository', () => {
       where: { tenantId: 'tenant-1', applicationId: 'app-1' },
     });
     expect(fieldValues.find).not.toHaveBeenCalled();
-  });
-
-  it('creates field value entities through TypeORM repository', () => {
-    repository.createFieldValue({
-      tenantId: 'tenant-1',
-      applicationId: 'app-1',
-      formFieldId: 'field-1',
-      valueJson: 'Expense',
-    });
-
-    expect(fieldValues.create).toHaveBeenCalledWith({
-      tenantId: 'tenant-1',
-      applicationId: 'app-1',
-      formFieldId: 'field-1',
-      valueJson: 'Expense',
-    });
   });
 
   it('saves an application patch in a transaction', async () => {

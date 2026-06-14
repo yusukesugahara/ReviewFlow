@@ -123,7 +123,7 @@ export class PatchApplicationDto {
   values?: Record<string, unknown>;
 }
 
-export class ApproveApplicationDto {
+class ReviewStepExpectationDto {
   @ApiProperty({
     example: 1,
     description:
@@ -133,7 +133,9 @@ export class ApproveApplicationDto {
   @IsInt()
   @Min(1)
   expectedStepOrder!: number;
+}
 
+class ReviewDecisionDto extends ReviewStepExpectationDto {
   @ApiPropertyOptional({ description: '任意コメント（監査用）' })
   @IsOptional()
   @IsString()
@@ -141,23 +143,9 @@ export class ApproveApplicationDto {
   comment?: string;
 }
 
-export class RejectApplicationDto {
-  @ApiProperty({
-    example: 1,
-    description:
-      '画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。',
-  })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedStepOrder!: number;
+export class ApproveApplicationDto extends ReviewDecisionDto {}
 
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsString()
-  @MaxLength(4000)
-  comment?: string;
-}
+export class RejectApplicationDto extends ReviewDecisionDto {}
 
 export class ReturnFieldItemDto {
   @ApiProperty({ format: 'uuid', description: 'form_fields.id' })
@@ -171,17 +159,7 @@ export class ReturnFieldItemDto {
   comment?: string;
 }
 
-export class ReturnApplicationDto {
-  @ApiProperty({
-    example: 1,
-    description:
-      '画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。',
-  })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  expectedStepOrder!: number;
-
+export class ReturnApplicationDto extends ReviewStepExpectationDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
@@ -196,10 +174,10 @@ export class ReturnApplicationDto {
   fields!: ReturnFieldItemDto[];
 }
 
-export type ReturnApplicationEmailDto = Pick<
-  ReturnApplicationDto,
-  'overallComment' | 'fields'
->;
+export type ReturnApplicationEmailDto = {
+  overallComment?: string;
+  fields: ReturnFieldItemDto[];
+};
 
 export class CorrectionRequestItemResponseDto {
   @ApiProperty()

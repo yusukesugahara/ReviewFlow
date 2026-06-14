@@ -1,36 +1,27 @@
 import { Injectable } from '@nestjs/common';
 import { ApplicationFieldValue } from '../../../../../models/entities/application-field-value.entity';
-import { ApplicationSubmissionRepository } from '../../../../../models/repositories/application-submission.repository';
-import type { TransactionManager } from '../../../../transaction';
+import type { Application } from '../../../../../models/entities/application.entity';
+import type { FormField } from '../../../../../models/entities/form-field.entity';
 import { ApplicationFormValueValidator } from '../../validators/application-form-value.validator';
 import type { ApplicationPatchContext } from './application-patch-context.loader';
 
 @Injectable()
 export class ApplicationFieldValuePatchBuilder {
   constructor(
-    private readonly submissionRepository: ApplicationSubmissionRepository,
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
 
-  async build(
+  build(
     context: ApplicationPatchContext,
     values: Record<string, unknown>,
-    manager?: TransactionManager,
-  ): Promise<ApplicationFieldValue[]> {
+    existingValues: ApplicationFieldValue[],
+  ): ApplicationFieldValue[] {
     this.formValueValidator.assertPatchValuesMatchFields(
       context.fieldsByKey,
       values,
       context.allowedFieldIds,
     );
 
-    const existingValues =
-      await this.submissionRepository.findExistingFieldValues(
-        {
-          tenantId: context.app.tenantId,
-          applicationId: context.app.id,
-        },
-        manager,
-      );
     const existingByFieldId = new Map(
       existingValues.map((value) => [value.formFieldId, value]),
     );
@@ -46,17 +37,23 @@ export class ApplicationFieldValuePatchBuilder {
         existing.valueJson = val;
         patchedValues.push(existing);
       } else {
-        patchedValues.push(
-          this.submissionRepository.createFieldValue({
-            tenantId: context.app.tenantId,
-            applicationId: context.app.id,
-            formFieldId: field.id,
-            valueJson: val,
-          }),
-        );
+        patchedValues.push(this.createFieldValue(context.app, field, val));
       }
     }
 
     return patchedValues;
+  }
+
+  private createFieldValue(
+    app: Application,
+    field: FormField,
+    valueJson: unknown,
+  ): ApplicationFieldValue {
+    const value = new ApplicationFieldValue();
+    value.tenantId = app.tenantId;
+    value.applicationId = app.id;
+    value.formFieldId = field.id;
+    value.valueJson = valueJson;
+    return value;
   }
 }
