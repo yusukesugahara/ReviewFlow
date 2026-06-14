@@ -120,16 +120,17 @@ export class ApprovalFlowMutationService {
     groupId: string;
     assigneeIds: string[];
   }): Promise<void> {
-    const assignees = await this.approvalFlowsRepository.findAssignees(
-      params.tenantId,
-      params.assigneeIds,
-    );
-    if (assignees.length !== params.assigneeIds.length) {
+    const assigneeCount =
+      await this.approvalFlowsRepository.countAssigneesInTenant(
+        params.tenantId,
+        params.assigneeIds,
+      );
+    if (assigneeCount !== params.assigneeIds.length) {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
-    const assigneeMemberships =
-      await this.approvalFlowsRepository.findAssigneeMemberships(params);
-    if (assigneeMemberships.length !== params.assigneeIds.length) {
+    const assigneeMembershipCount =
+      await this.approvalFlowsRepository.countAssigneeMemberships(params);
+    if (assigneeMembershipCount !== params.assigneeIds.length) {
       throw clientError(ClientErrorCodes.GROUP_MEMBER_NOT_FOUND);
     }
   }

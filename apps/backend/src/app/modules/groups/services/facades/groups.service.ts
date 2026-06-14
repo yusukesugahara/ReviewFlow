@@ -57,11 +57,11 @@ export class GroupsService {
     }
 
     const adminUserIds = Array.from(new Set(dto.adminUserIds));
-    const users = await this.usersService.findAllByIdsInTenant(
+    const tenantUserCount = await this.usersService.countByIdsInTenant(
       actor.tenantId,
       adminUserIds,
     );
-    if (users.length !== adminUserIds.length) {
+    if (tenantUserCount !== adminUserIds.length) {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 

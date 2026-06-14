@@ -40,8 +40,7 @@ export class AuthService {
 
   async register(dto: RegisterDto) {
     const email = dto.email.toLowerCase();
-    const taken = await this.usersService.findAllByEmail(email);
-    if (taken.length > 0) {
+    if (await this.usersService.emailExists(email)) {
       throw clientError(ClientErrorCodes.AUTH_EMAIL_TAKEN);
     }
     const passwordHash = await bcrypt.hash(dto.password, 10);

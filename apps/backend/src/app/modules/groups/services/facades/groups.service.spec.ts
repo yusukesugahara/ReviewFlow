@@ -31,7 +31,7 @@ describe('GroupsService', () => {
     >
   >;
   let usersService: {
-    findAllByIdsInTenant: jest.Mock;
+    countByIdsInTenant: jest.Mock;
   };
   let groupMembers: jest.Mocked<
     Pick<
@@ -73,7 +73,7 @@ describe('GroupsService', () => {
       deleteGroup: jest.fn(),
     };
     usersService = {
-      findAllByIdsInTenant: jest.fn(),
+      countByIdsInTenant: jest.fn(),
     };
     groupMembers = {
       listMembers: jest.fn(),
@@ -164,10 +164,7 @@ describe('GroupsService', () => {
     });
     groupsRepository.findGroupByTenantAndName.mockResolvedValue(null);
     groupsRepository.createGroupWithAdmins.mockResolvedValue(createdGroup);
-    usersService.findAllByIdsInTenant.mockResolvedValue([
-      { id: 'admin-1' } as User,
-      { id: 'admin-2' } as User,
-    ]);
+    usersService.countByIdsInTenant.mockResolvedValue(2);
 
     const out = await service.create(
       {
@@ -197,7 +194,7 @@ describe('GroupsService', () => {
 
   it('rejects initial admins outside the tenant', async () => {
     groupsRepository.findGroupByTenantAndName.mockResolvedValue(null);
-    usersService.findAllByIdsInTenant.mockResolvedValue([{ id: 'admin-1' }]);
+    usersService.countByIdsInTenant.mockResolvedValue(1);
 
     await expect(
       service.create(

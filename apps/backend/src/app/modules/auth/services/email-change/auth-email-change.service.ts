@@ -108,8 +108,9 @@ export class AuthEmailChangeService {
     email: string,
     currentUserId: string,
   ): Promise<void> {
-    const usersWithEmail = await this.usersService.findAllByEmail(email);
-    if (usersWithEmail.some((user) => user.id !== currentUserId)) {
+    if (
+      await this.usersService.emailExistsForAnotherUser(email, currentUserId)
+    ) {
       throw clientError(ClientErrorCodes.AUTH_EMAIL_TAKEN);
     }
   }

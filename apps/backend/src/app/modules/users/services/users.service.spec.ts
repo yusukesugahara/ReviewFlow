@@ -27,6 +27,9 @@ describe('UsersService', () => {
     Pick<
       UsersRepository,
       | 'count'
+      | 'countByIdsInTenant'
+      | 'emailExists'
+      | 'emailExistsForAnotherUser'
       | 'findAllByEmail'
       | 'findAllByEmailAndTenant'
       | 'findActiveByEmail'
@@ -43,6 +46,9 @@ describe('UsersService', () => {
   beforeEach(async () => {
     usersRepository = {
       count: jest.fn(),
+      countByIdsInTenant: jest.fn(),
+      emailExists: jest.fn(),
+      emailExistsForAnotherUser: jest.fn(),
       findAllByEmail: jest.fn(),
       findAllByEmailAndTenant: jest.fn(),
       findActiveByEmail: jest.fn(),
@@ -74,6 +80,17 @@ describe('UsersService', () => {
     await expect(service.count()).resolves.toBe(3);
   });
 
+  it('countByIdsInTenant delegates to repository', async () => {
+    usersRepository.countByIdsInTenant.mockResolvedValue(2);
+    await expect(
+      service.countByIdsInTenant('tenant-1', ['user-1', 'user-2']),
+    ).resolves.toBe(2);
+    expect(usersRepository.countByIdsInTenant).toHaveBeenCalledWith(
+      'tenant-1',
+      ['user-1', 'user-2'],
+    );
+  });
+
   /**
    * findAllByEmail は小文字のメールアドレスをクエリすること
    */
@@ -99,6 +116,25 @@ describe('UsersService', () => {
     await service.findActiveByEmail('User@Example.COM');
     expect(usersRepository.findActiveByEmail).toHaveBeenCalledWith(
       'User@Example.COM',
+    );
+  });
+
+  it('emailExists delegates to repository', async () => {
+    usersRepository.emailExists.mockResolvedValue(true);
+    await expect(service.emailExists('User@Example.COM')).resolves.toBe(true);
+    expect(usersRepository.emailExists).toHaveBeenCalledWith(
+      'User@Example.COM',
+    );
+  });
+
+  it('emailExistsForAnotherUser delegates to repository', async () => {
+    usersRepository.emailExistsForAnotherUser.mockResolvedValue(true);
+    await expect(
+      service.emailExistsForAnotherUser('User@Example.COM', 'user-1'),
+    ).resolves.toBe(true);
+    expect(usersRepository.emailExistsForAnotherUser).toHaveBeenCalledWith(
+      'User@Example.COM',
+      'user-1',
     );
   });
 

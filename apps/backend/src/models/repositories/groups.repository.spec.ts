@@ -40,7 +40,7 @@ describe('GroupsRepository', () => {
   let groups: jest.Mocked<
     Pick<
       Repository<Group>,
-      'createQueryBuilder' | 'find' | 'findOne' | 'count' | 'save' | 'delete'
+      'createQueryBuilder' | 'findOne' | 'count' | 'save' | 'delete'
     >
   >;
   let members: jest.Mocked<
@@ -61,7 +61,6 @@ describe('GroupsRepository', () => {
     userBuilder = createQueryBuilderMock();
     groups = {
       createQueryBuilder: jest.fn().mockReturnValue(groupBuilder),
-      find: jest.fn(),
       findOne: jest.fn(),
       count: jest.fn(),
       save: jest.fn(),
@@ -106,17 +105,6 @@ describe('GroupsRepository', () => {
     }).compile();
 
     repository = module.get(GroupsRepository);
-  });
-
-  it('finds tenant groups ordered by creation time', async () => {
-    groups.find.mockResolvedValue([]);
-
-    await repository.findGroupsByTenant('tenant-1');
-
-    expect(groups.find).toHaveBeenCalledWith({
-      where: { tenantId: 'tenant-1' },
-      order: { createdAt: 'ASC' },
-    });
   });
 
   it('finds tenant groups with the current user role mapped in the query', async () => {

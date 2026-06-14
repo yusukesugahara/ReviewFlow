@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { ClientErrorCodes } from '../../../../common/errors';
 import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
-import { GroupMember } from '../../../../models/entities/group-member.entity';
-import { User } from '../../../../models/entities/user.entity';
 import { ApprovalFlowsRepository } from '../../../../models/repositories/approval-flows.repository';
 import { SpaceAccessService } from '../../groups/services/access/space-access.service';
 import { ApprovalFlowMutationService } from './approval-flow-mutation.service';
@@ -12,8 +10,8 @@ describe('ApprovalFlowMutationService', () => {
   let approvalFlowsRepository: jest.Mocked<
     Pick<
       ApprovalFlowsRepository,
-      | 'findAssignees'
-      | 'findAssigneeMemberships'
+      | 'countAssigneesInTenant'
+      | 'countAssigneeMemberships'
       | 'createFlowWithSteps'
       | 'replaceFlowSteps'
       | 'findOneById'
@@ -31,10 +29,8 @@ describe('ApprovalFlowMutationService', () => {
 
   beforeEach(async () => {
     approvalFlowsRepository = {
-      findAssignees: jest.fn().mockResolvedValue([{ id: 'user-1' }]),
-      findAssigneeMemberships: jest
-        .fn()
-        .mockResolvedValue([{ userId: 'user-1' }]),
+      countAssigneesInTenant: jest.fn().mockResolvedValue(1),
+      countAssigneeMemberships: jest.fn().mockResolvedValue(1),
       createFlowWithSteps: jest.fn().mockResolvedValue('flow-new'),
       replaceFlowSteps: jest.fn().mockResolvedValue(undefined),
       findOneById: jest.fn(),
@@ -95,14 +91,8 @@ describe('ApprovalFlowMutationService', () => {
   });
 
   it('create accepts multiple assignees for a single approval step', async () => {
-    approvalFlowsRepository.findAssignees.mockResolvedValue([
-      { id: 'user-1' },
-      { id: 'user-2' },
-    ] as User[]);
-    approvalFlowsRepository.findAssigneeMemberships.mockResolvedValue([
-      { userId: 'user-1' },
-      { userId: 'user-2' },
-    ] as GroupMember[]);
+    approvalFlowsRepository.countAssigneesInTenant.mockResolvedValue(2);
+    approvalFlowsRepository.countAssigneeMemberships.mockResolvedValue(2);
     approvalFlowsRepository.findOneById.mockResolvedValue(
       approvalFlow({
         steps: [
@@ -142,12 +132,8 @@ describe('ApprovalFlowMutationService', () => {
   });
 
   it('update replaces steps on an existing approval flow', async () => {
-    approvalFlowsRepository.findAssignees.mockResolvedValue([
-      { id: 'user-1' },
-    ] as User[]);
-    approvalFlowsRepository.findAssigneeMemberships.mockResolvedValue([
-      { userId: 'user-1' },
-    ] as GroupMember[]);
+    approvalFlowsRepository.countAssigneesInTenant.mockResolvedValue(1);
+    approvalFlowsRepository.countAssigneeMemberships.mockResolvedValue(1);
     approvalFlowsRepository.findOneById
       .mockResolvedValueOnce(approvalFlow({ id: 'flow-1', name: 'Before' }))
       .mockResolvedValueOnce(approvalFlow({ id: 'flow-1', name: 'After' }));
@@ -213,7 +199,7 @@ describe('ApprovalFlowMutationService', () => {
   });
 
   it('create rejects assignees outside the tenant', async () => {
-    approvalFlowsRepository.findAssignees.mockResolvedValue([]);
+    approvalFlowsRepository.countAssigneesInTenant.mockResolvedValue(0);
 
     await expect(
       service.create(actor, {
@@ -234,10 +220,8 @@ describe('ApprovalFlowMutationService', () => {
   });
 
   it('create rejects assignees outside the group', async () => {
-    approvalFlowsRepository.findAssignees.mockResolvedValue([
-      { id: 'user-1' },
-    ] as User[]);
-    approvalFlowsRepository.findAssigneeMemberships.mockResolvedValue([]);
+    approvalFlowsRepository.countAssigneesInTenant.mockResolvedValue(1);
+    approvalFlowsRepository.countAssigneeMemberships.mockResolvedValue(0);
 
     await expect(
       service.create(actor, {

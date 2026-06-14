@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ApprovalFlow } from '../entities/approval-flow.entity';
 import { ApprovalStep } from '../entities/approval-step.entity';
 import { GroupMember } from '../entities/group-member.entity';
@@ -36,23 +36,34 @@ export class ApprovalFlowsRepository {
     return sortFlowSteps(rows);
   }
 
-  findAssignees(tenantId: string, assigneeIds: string[]): Promise<User[]> {
-    return this.users.find({
-      where: assigneeIds.map((id) => ({ id, tenantId })),
+  countAssigneesInTenant(
+    tenantId: string,
+    assigneeIds: string[],
+  ): Promise<number> {
+    if (assigneeIds.length === 0) {
+      return Promise.resolve(0);
+    }
+
+    return this.users.count({
+      where: { tenantId, id: In(assigneeIds) },
     });
   }
 
-  findAssigneeMemberships(params: {
+  countAssigneeMemberships(params: {
     tenantId: string;
     groupId: string;
     assigneeIds: string[];
-  }): Promise<GroupMember[]> {
-    return this.members.find({
-      where: params.assigneeIds.map((userId) => ({
+  }): Promise<number> {
+    if (params.assigneeIds.length === 0) {
+      return Promise.resolve(0);
+    }
+
+    return this.members.count({
+      where: {
         tenantId: params.tenantId,
         groupId: params.groupId,
-        userId,
-      })),
+        userId: In(params.assigneeIds),
+      },
     });
   }
 

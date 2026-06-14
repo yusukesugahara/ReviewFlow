@@ -20,6 +20,7 @@ describe('AuthService', () => {
   let users: jest.Mocked<
     Pick<
       UsersService,
+      | 'emailExists'
       | 'findAllByEmail'
       | 'findAllByEmailAndTenant'
       | 'updateOwnProfile'
@@ -41,6 +42,7 @@ describe('AuthService', () => {
 
   beforeEach(async () => {
     users = {
+      emailExists: jest.fn(),
       findAllByEmail: jest.fn(),
       findAllByEmailAndTenant: jest.fn(),
       updateOwnProfile: jest.fn(),
@@ -78,29 +80,18 @@ describe('AuthService', () => {
      * email が既に使用されている場合にエラーを返すこと
      */
     it('throws when email is already taken', async () => {
-      users.findAllByEmail.mockResolvedValue([
-        {
-          id: 'u1',
-          tenantId: 't1',
-          email: 'a@b.com',
-          name: null,
-          passwordHash: 'h',
-          role: UserRole.TENANT_ADMIN,
-          isActive: true,
-          createdAt: new Date(),
-          updatedAt: new Date(),
-        } as User,
-      ]);
+      users.emailExists.mockResolvedValue(true);
 
       await expect(
         service.register({ email: 'a@b.com', password: 'password12' }),
       ).rejects.toMatchObject({ errorCode: ClientErrorCodes.AUTH_EMAIL_TAKEN });
+      expect(users.emailExists).toHaveBeenCalledWith('a@b.com');
     });
     /**
      * tenant + tenant_admin を作成し、tenantId を JWT に含めること
      */
     it('creates tenant + tenant_admin and signs JWT with tenantId', async () => {
-      users.findAllByEmail.mockResolvedValue([]);
+      users.emailExists.mockResolvedValue(false);
       authRepository.createTenantAdmin.mockResolvedValue({
         id: 'id-admin',
         tenantId: 'tenant-1',

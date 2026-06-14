@@ -17,8 +17,8 @@ describe('AuthEmailChangeService', () => {
     updateEmailAndMarkEmailChangeTokenUsed: jest.Mock;
   };
   let users: {
+    emailExistsForAnotherUser: jest.Mock;
     findByIdAndTenant: jest.Mock;
-    findAllByEmail: jest.Mock;
   };
   let mailService: {
     sendEmailChangeConfirmationEmail: jest.Mock;
@@ -56,8 +56,8 @@ describe('AuthEmailChangeService', () => {
       updateEmailAndMarkEmailChangeTokenUsed: jest.fn(),
     };
     users = {
+      emailExistsForAnotherUser: jest.fn(),
       findByIdAndTenant: jest.fn(),
-      findAllByEmail: jest.fn(),
     };
     mailService = {
       sendEmailChangeConfirmationEmail: jest.fn(),
@@ -81,14 +81,17 @@ describe('AuthEmailChangeService', () => {
 
   it('creates a pending email change token and sends confirmation email', async () => {
     users.findByIdAndTenant.mockResolvedValue(currentUser());
-    users.findAllByEmail.mockResolvedValue([]);
+    users.emailExistsForAnotherUser.mockResolvedValue(false);
 
     await expect(
       service.requestMeEmailChange({ email: ' New@Example.com ' }, actor),
     ).resolves.toEqual({ ok: true });
 
     expect(users.findByIdAndTenant).toHaveBeenCalledWith('user-1', 'tenant-1');
-    expect(users.findAllByEmail).toHaveBeenCalledWith('new@example.com');
+    expect(users.emailExistsForAnotherUser).toHaveBeenCalledWith(
+      'new@example.com',
+      'user-1',
+    );
     expect(authRepository.createEmailChangeToken).toHaveBeenCalledWith(
       expect.objectContaining({
         tenantId: 'tenant-1',
@@ -125,9 +128,7 @@ describe('AuthEmailChangeService', () => {
 
   it('rejects email requests for emails used by another account', async () => {
     users.findByIdAndTenant.mockResolvedValue(currentUser());
-    users.findAllByEmail.mockResolvedValue([
-      currentUser({ id: 'other-user', email: 'new@example.com' }),
-    ]);
+    users.emailExistsForAnotherUser.mockResolvedValue(true);
 
     await expect(
       service.requestMeEmailChange({ email: 'new@example.com' }, actor),
@@ -156,7 +157,7 @@ describe('AuthEmailChangeService', () => {
       saved,
     );
     users.findByIdAndTenant.mockResolvedValue(currentUser());
-    users.findAllByEmail.mockResolvedValue([]);
+    users.emailExistsForAnotherUser.mockResolvedValue(false);
 
     await expect(
       service.confirmEmailChange({ token: 'token' }),

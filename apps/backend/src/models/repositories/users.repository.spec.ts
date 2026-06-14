@@ -1,6 +1,6 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { In, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { UserRole } from '../constants/user-role';
 import { User } from '../entities/user.entity';
 import { UsersRepository } from './users.repository';
@@ -59,6 +59,30 @@ describe('UsersRepository', () => {
     });
   });
 
+  it('emailExists checks lowercase email by count', async () => {
+    users.count.mockResolvedValue(1);
+
+    await expect(repository.emailExists('User@Example.COM')).resolves.toBe(
+      true,
+    );
+
+    expect(users.count).toHaveBeenCalledWith({
+      where: { email: 'user@example.com' },
+    });
+  });
+
+  it('emailExistsForAnotherUser excludes the current user by count', async () => {
+    users.count.mockResolvedValue(0);
+
+    await expect(
+      repository.emailExistsForAnotherUser('User@Example.COM', 'user-1'),
+    ).resolves.toBe(false);
+
+    expect(users.count).toHaveBeenCalledWith({
+      where: { email: 'user@example.com', id: Not('user-1') },
+    });
+  });
+
   it('findByTenantAndEmail queries lowercase email in tenant', async () => {
     users.findOne.mockResolvedValue(null);
 
@@ -69,12 +93,24 @@ describe('UsersRepository', () => {
     });
   });
 
-  it('findAllByIdsInTenant returns empty list without querying for empty ids', async () => {
-    await expect(
-      repository.findAllByIdsInTenant('tenant-1', []),
-    ).resolves.toEqual([]);
+  it('countByIdsInTenant returns zero without querying for empty ids', async () => {
+    await expect(repository.countByIdsInTenant('tenant-1', [])).resolves.toBe(
+      0,
+    );
 
-    expect(users.find).not.toHaveBeenCalled();
+    expect(users.count).not.toHaveBeenCalled();
+  });
+
+  it('countByIdsInTenant counts users in the tenant', async () => {
+    users.count.mockResolvedValue(2);
+
+    await expect(
+      repository.countByIdsInTenant('tenant-1', ['user-1', 'user-2']),
+    ).resolves.toBe(2);
+
+    expect(users.count).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', id: In(['user-1', 'user-2']) },
+    });
   });
 
   it('countTenantAdmins counts active tenant admins', async () => {

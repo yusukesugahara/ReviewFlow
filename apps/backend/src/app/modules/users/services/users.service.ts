@@ -42,6 +42,17 @@ export class UsersService {
     return this.usersRepository.findActiveByEmail(email);
   }
 
+  emailExists(email: string): Promise<boolean> {
+    return this.usersRepository.emailExists(email);
+  }
+
+  emailExistsForAnotherUser(
+    email: string,
+    currentUserId: string,
+  ): Promise<boolean> {
+    return this.usersRepository.emailExistsForAnotherUser(email, currentUserId);
+  }
+
   findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.usersRepository.findByTenantAndEmail(tenantId, email);
   }
@@ -54,8 +65,8 @@ export class UsersService {
     return this.usersRepository.findAllByTenant(tenantId);
   }
 
-  findAllByIdsInTenant(tenantId: string, ids: string[]): Promise<User[]> {
-    return this.usersRepository.findAllByIdsInTenant(tenantId, ids);
+  countByIdsInTenant(tenantId: string, ids: string[]): Promise<number> {
+    return this.usersRepository.countByIdsInTenant(tenantId, ids);
   }
 
   countTenantAdmins(tenantId: string): Promise<number> {

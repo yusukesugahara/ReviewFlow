@@ -30,13 +30,6 @@ export class GroupsRepository {
     private readonly dataSource: DataSource,
   ) {}
 
-  findGroupsByTenant(tenantId: string): Promise<Group[]> {
-    return this.groups.find({
-      where: { tenantId },
-      order: { createdAt: 'ASC' },
-    });
-  }
-
   async findGroupsByTenantWithCurrentUserRole(
     tenantId: string,
     userId: string,
@@ -148,13 +141,6 @@ export class GroupsRepository {
       relations: { user: true },
       order: { createdAt: 'ASC' },
     });
-  }
-
-  findMembershipsByGroup(
-    tenantId: string,
-    groupId: string,
-  ): Promise<GroupMember[]> {
-    return this.members.find({ where: { tenantId, groupId } });
   }
 
   findAvailableUsersForGroup(

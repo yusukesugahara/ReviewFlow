@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Not, Repository } from 'typeorm';
 import { UserRole } from '../constants/user-role';
 import type { UserRoleValue } from '../constants/user-role';
 import { User } from '../entities/user.entity';
@@ -40,6 +40,23 @@ export class UsersRepository {
     });
   }
 
+  async emailExists(email: string): Promise<boolean> {
+    const count = await this.users.count({
+      where: { email: email.toLowerCase() },
+    });
+    return count > 0;
+  }
+
+  async emailExistsForAnotherUser(
+    email: string,
+    currentUserId: string,
+  ): Promise<boolean> {
+    const count = await this.users.count({
+      where: { email: email.toLowerCase(), id: Not(currentUserId) },
+    });
+    return count > 0;
+  }
+
   findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.users.findOne({
       where: { tenantId, email: email.toLowerCase() },
@@ -57,14 +74,13 @@ export class UsersRepository {
     });
   }
 
-  findAllByIdsInTenant(tenantId: string, ids: string[]): Promise<User[]> {
+  countByIdsInTenant(tenantId: string, ids: string[]): Promise<number> {
     if (!ids.length) {
-      return Promise.resolve([]);
+      return Promise.resolve(0);
     }
 
-    return this.users.find({
+    return this.users.count({
       where: { tenantId, id: In(ids) },
-      order: { createdAt: 'ASC' },
     });
   }
 
