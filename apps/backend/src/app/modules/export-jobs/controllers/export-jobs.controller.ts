@@ -10,11 +10,11 @@ import {
   StreamableFile,
 } from '@nestjs/common';
 import { ApiOperation, ApiProduces, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
   AuthApi,
+  RateLimit,
 } from '../../../decorators';
 import {
   CurrentUser,
@@ -36,7 +36,7 @@ export class ExportJobsController {
   constructor(private readonly exportJobs: ExportJobsService) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 30, ttl: 60_000 } })
   @Post()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
@@ -51,7 +51,7 @@ export class ExportJobsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -65,7 +65,7 @@ export class ExportJobsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Get(':id/download')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)

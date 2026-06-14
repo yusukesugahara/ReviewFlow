@@ -1,7 +1,6 @@
 import { Controller, Get, HttpCode, HttpStatus, Query } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { AuthApi, ApiSuccessResponse } from '../../../decorators';
+import { AuthApi, ApiSuccessResponse, RateLimit } from '../../../decorators';
 import {
   CurrentUser,
   type AuthUserPayload,
@@ -22,7 +21,7 @@ export class AuditLogsController {
   constructor(private readonly auditLogs: AuditLogsService) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get()
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)

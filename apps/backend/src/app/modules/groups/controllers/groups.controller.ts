@@ -11,11 +11,11 @@ import {
   Post,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   AuthApi,
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
+  RateLimit,
 } from '../../../decorators';
 import {
   CurrentUser,
@@ -85,7 +85,7 @@ export class GroupsController {
   constructor(private readonly groupsService: GroupsService) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -100,7 +100,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post()
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.CREATED)
@@ -115,7 +115,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Patch(':groupId')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -131,7 +131,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Delete(':groupId')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
@@ -144,7 +144,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get(':groupId/members')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -160,7 +160,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get(':groupId/available-users')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -176,7 +176,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':groupId/members')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.CREATED)
@@ -194,7 +194,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Patch(':groupId/members/:userId/role')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -217,7 +217,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Delete(':groupId/members/me')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({
@@ -231,7 +231,7 @@ export class GroupsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Delete(':groupId/members/:userId')
   @HttpCode(HttpStatus.NO_CONTENT)
   @ApiOperation({

@@ -11,8 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { Api, ApiSuccessResponseCreated } from '../../../decorators';
+import { Api, ApiSuccessResponseCreated, RateLimit } from '../../../decorators';
 import { ApplicantAccessGuard } from '../../../guards/applicant-access.guard';
 import { CurrentApplicantSession } from '../../../../decorators/current-applicant-session.decorator';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/facades/auth.service';
@@ -33,7 +32,7 @@ import { ApplicationsService } from '../services/facades/applications.service';
 export class PublicApplicationsController {
   constructor(private readonly applications: ApplicationsService) {}
 
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 30, ttl: 60_000 } })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({ summary: '公開申請フォーム送信' })
@@ -46,7 +45,7 @@ export class PublicApplicationsController {
     return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Get('returned/current')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -62,7 +61,7 @@ export class PublicApplicationsController {
     );
   }
 
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 30, ttl: 60_000 } })
   @Patch(':id')
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'id', format: 'uuid' })
@@ -83,7 +82,7 @@ export class PublicApplicationsController {
     return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 30, ttl: 60_000 } })
   @Post(':id/resubmit')
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'id', format: 'uuid' })
