@@ -4,6 +4,7 @@ import type { AuthUserPayload } from '../../../../decorators/current-user.decora
 import { ApplicationStatus } from '../../../../models/constants/application-status';
 import { UserRole } from '../../../../models/constants/user-role';
 import type { Application } from '../../../../models/entities/application.entity';
+import type { ApprovalStep } from '../../../../models/entities/approval-step.entity';
 
 type CountApprovalsByActor = (
   applicationId: string,
@@ -45,9 +46,7 @@ export class ApplicationAccessPolicy {
     if (app.status !== ApplicationStatus.IN_REVIEW) {
       return false;
     }
-    const step = app.approvalFlow?.steps?.find(
-      (s) => s.stepOrder === app.currentStepOrder,
-    );
+    const step = this.getCurrentApprovalStep(app);
     if (!step) {
       return false;
     }
@@ -89,5 +88,18 @@ export class ApplicationAccessPolicy {
       }
     }
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+  }
+
+  private getCurrentApprovalStep(app: Application): ApprovalStep | null {
+    if (app.currentStepOrder == null) {
+      return null;
+    }
+    return (
+      app.currentApprovalStep ??
+      app.approvalFlow?.steps?.find(
+        (step) => step.stepOrder === app.currentStepOrder,
+      ) ??
+      null
+    );
   }
 }

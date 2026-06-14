@@ -92,6 +92,21 @@ describe('ApplicantApplicationAccessService', () => {
     });
   });
 
+  it('loads detail applications through the repository detail query within token scope', async () => {
+    const row = app({ status: ApplicationStatus.IN_REVIEW });
+    queryRepository.findById.mockResolvedValue(row);
+
+    await expect(
+      service.loadApplicationDetail(applicant(), 'app-1'),
+    ).resolves.toBe(row);
+
+    expect(queryRepository.findById).toHaveBeenCalledWith({
+      id: 'app-1',
+      tenantId: 'tenant-1',
+      detail: true,
+    });
+  });
+
   it('rejects editable loads outside the token application', async () => {
     await expect(
       service.loadEditableApplication(
@@ -112,6 +127,18 @@ describe('ApplicantApplicationAccessService', () => {
 
     await expect(
       service.loadEditableApplication(applicant(), 'app-1'),
+    ).rejects.toMatchObject({
+      errorCode: ClientErrorCodes.APPLICATION_ACCESS_DENIED,
+    });
+  });
+
+  it('rejects detail loads for another applicant email', async () => {
+    queryRepository.findById.mockResolvedValue(
+      app({ applicantEmail: 'other@example.com' }),
+    );
+
+    await expect(
+      service.loadApplicationDetail(applicant(), 'app-1'),
     ).rejects.toMatchObject({
       errorCode: ClientErrorCodes.APPLICATION_ACCESS_DENIED,
     });

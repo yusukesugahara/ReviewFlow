@@ -123,6 +123,7 @@ ReviewFlow 固有の画面では、以下の業務文脈が分かるようにす
 - Policy は authorization と workflow permission を判定する。
 - Validator は input / state の妥当性を判定する。
 - Repository は database access を担当する。
+- Repository は用途に必要な relation や read-model 用の値を取得時点で揃える。Service で不足 relation の追加 hydrate や response 用の過剰な成形をしない。
 - Entity は永続化 shape を表す。
 - Audit log service / interceptor は business event を記録する。
 

@@ -25,6 +25,7 @@
 - Controller には業務ロジックを書かない
 - Service がユースケースをオーケストレーションする
 - 永続化は Repository 層に寄せる（`models/repositories/`）
+- Repository は画面/API が必要とする relation や read-model 用の値をできるだけ取得時点で揃え、Service で追加 hydrate や不要な成形を行わない
 - DTO を必須にする
 - `tenant_id` 条件は認証コンテキストと Repository クエリで強制する
 - `form_definitions` / `approval_flows` / `approval_steps` / `applications` / `export_jobs` は `tenant_id` と `group_id` の両方で scope する

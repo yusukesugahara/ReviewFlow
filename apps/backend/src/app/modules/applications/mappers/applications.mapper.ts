@@ -51,12 +51,7 @@ export function mapApplicationToSummary(
 }
 
 function getCurrentStepAssigneeUserIds(row: Application): string[] {
-  if (row.currentStepOrder == null) {
-    return [];
-  }
-  const step = (row.approvalFlow?.steps ?? []).find(
-    (s) => s.stepOrder === row.currentStepOrder,
-  );
+  const step = row.currentApprovalStep ?? null;
   if (!step) {
     return [];
   }
@@ -76,12 +71,7 @@ export function mapApplicationToDetail(
       values[key] = v.valueJson;
     }
   }
-  const currentStep =
-    row.currentStepOrder == null
-      ? null
-      : (row.approvalFlow?.steps ?? []).find(
-          (step) => step.stepOrder === row.currentStepOrder,
-        );
+  const currentStep = row.currentApprovalStep ?? null;
   return {
     ...mapApplicationToSummary(row),
     capabilities,

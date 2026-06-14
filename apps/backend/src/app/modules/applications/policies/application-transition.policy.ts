@@ -29,9 +29,9 @@ export class ApplicationTransitionPolicy {
 
   getCurrentStep(app: Application): ApprovalStep {
     this.assertInReview(app);
-    const cur = this.orderedSteps(app).find(
-      (s) => s.stepOrder === app.currentStepOrder,
-    );
+    const cur =
+      app.currentApprovalStep ??
+      this.orderedSteps(app).find((s) => s.stepOrder === app.currentStepOrder);
     if (!cur) {
       throw clientError(ClientErrorCodes.APPLICATION_APPROVAL_STATE_INVALID);
     }

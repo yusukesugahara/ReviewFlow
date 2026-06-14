@@ -27,8 +27,15 @@ const applicantActor = (
   ...overrides,
 });
 
-const app = (overrides: Partial<Application> = {}): Application =>
-  ({
+const app = (overrides: Partial<Application> = {}): Application => {
+  const currentApprovalStep = {
+    id: 'step-1',
+    stepOrder: 1,
+    assigneeUserId: 'reviewer-1',
+    assigneeUserIds: ['reviewer-1'],
+    canReturn: true,
+  };
+  return {
     id: 'app-1',
     tenantId: 'tenant-1',
     groupId: 'group-1',
@@ -36,19 +43,13 @@ const app = (overrides: Partial<Application> = {}): Application =>
     applicantEmail: 'applicant@example.com',
     status: ApplicationStatus.IN_REVIEW,
     currentStepOrder: 1,
+    currentApprovalStep,
     approvalFlow: {
-      steps: [
-        {
-          id: 'step-1',
-          stepOrder: 1,
-          assigneeUserId: 'reviewer-1',
-          assigneeUserIds: ['reviewer-1'],
-          canReturn: true,
-        },
-      ],
+      steps: [currentApprovalStep],
     },
     ...overrides,
-  }) as Application;
+  } as Application;
+};
 
 describe('ApplicationActionCapabilitiesService', () => {
   let spaceAccess: { actorCanManageGroup: jest.Mock };

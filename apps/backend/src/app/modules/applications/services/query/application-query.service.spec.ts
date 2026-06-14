@@ -41,7 +41,6 @@ describe('ApplicationQueryService', () => {
   let applicationsRepository: {
     countApprovalsByActor: jest.Mock;
     findById: jest.Mock;
-    hydrateFormDefinitions: jest.Mock;
     listForGroup: jest.Mock;
     listForTenantAdmin: jest.Mock;
   };
@@ -70,9 +69,6 @@ describe('ApplicationQueryService', () => {
     applicationsRepository = {
       countApprovalsByActor: jest.fn(),
       findById: jest.fn(),
-      hydrateFormDefinitions: jest.fn((_, rows: Application[]) =>
-        Promise.resolve(rows),
-      ),
       listForGroup: jest.fn(),
       listForTenantAdmin: jest.fn(),
     };
@@ -168,11 +164,6 @@ describe('ApplicationQueryService', () => {
       own,
       assigned,
     ]);
-
-    expect(applicationsRepository.hydrateFormDefinitions).toHaveBeenCalledWith(
-      'tenant-1',
-      [own, assigned],
-    );
   });
 
   it('loads detail applications through read access before hydrating progress', async () => {

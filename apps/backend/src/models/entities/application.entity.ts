@@ -13,6 +13,7 @@ import type { ApplicationStatusValue } from '../constants/application-status';
 import { Tenant } from './tenant.entity';
 import { FormDefinition } from './form-definition.entity';
 import { ApprovalFlow } from './approval-flow.entity';
+import type { ApprovalStep } from './approval-step.entity';
 import { ApplicationFieldValue } from './application-field-value.entity';
 import { User } from './user.entity';
 import { Group } from './group.entity';
@@ -77,6 +78,8 @@ export class Application {
 
   @Column({ name: 'current_step_order', type: 'int', nullable: true })
   currentStepOrder!: number | null;
+
+  currentApprovalStep?: ApprovalStep | null;
 
   @Column({ type: 'varchar', length: 32 })
   status!: ApplicationStatusValue;

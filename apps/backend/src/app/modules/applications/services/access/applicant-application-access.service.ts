@@ -50,6 +50,24 @@ export class ApplicantApplicationAccessService {
     return app;
   }
 
+  async loadApplicationDetail(
+    actor: ApplicantSession,
+    id: string,
+  ): Promise<Application> {
+    this.assertCanAccessApplication(actor, id);
+    const app = await this.queryRepository.findById({
+      id,
+      tenantId: actor.tenantId,
+      detail: true,
+    });
+    if (!app) {
+      throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
+    }
+    this.assertApplicantGroupMatches(actor, app);
+    this.assertApplicantEmailMatches(actor, app);
+    return app;
+  }
+
   getTokenApplicationIdOrThrow(actor: ApplicantSession): string {
     if (!actor.applicationId) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_FOUND);
@@ -71,6 +89,15 @@ export class ApplicantApplicationAccessService {
     app: Application,
   ): void {
     if (app.groupId !== actor.groupId) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+  }
+
+  private assertApplicantEmailMatches(
+    actor: ApplicantSession,
+    app: Application,
+  ): void {
+    if (app.applicantEmail.toLowerCase() !== actor.email.toLowerCase()) {
       throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
     }
   }

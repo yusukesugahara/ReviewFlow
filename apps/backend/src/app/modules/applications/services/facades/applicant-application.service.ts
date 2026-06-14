@@ -114,10 +114,7 @@ export class ApplicantApplicationService {
       after: this.snapshot(app),
       metadataJson: { fieldKeys: Object.keys(dto.values ?? {}) },
     });
-    const updated = await this.applicantAccess.loadEditableApplication(
-      actor,
-      id,
-    );
+    const updated = await this.applicantAccess.loadApplicationDetail(actor, id);
     return this.progressService.hydrate(updated);
   }
 
@@ -132,10 +129,7 @@ export class ApplicantApplicationService {
       before,
       after: this.snapshot(app),
     });
-    const updated = await this.applicantAccess.loadEditableApplication(
-      actor,
-      id,
-    );
+    const updated = await this.applicantAccess.loadApplicationDetail(actor, id);
     return this.progressService.hydrate(updated);
   }
 

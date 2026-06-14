@@ -72,9 +72,11 @@ export class ApplicationActionCapabilitiesService {
     if (app.status !== ApplicationStatus.IN_REVIEW) {
       return false;
     }
-    const currentStep = (app.approvalFlow?.steps ?? []).find(
-      (step) => step.stepOrder === app.currentStepOrder,
-    );
+    const currentStep =
+      app.currentApprovalStep ??
+      app.approvalFlow?.steps?.find(
+        (step) => step.stepOrder === app.currentStepOrder,
+      );
     return currentStep?.canReturn === true;
   }
 

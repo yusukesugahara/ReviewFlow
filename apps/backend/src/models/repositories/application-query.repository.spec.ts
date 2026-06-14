@@ -4,9 +4,17 @@ import { Repository } from 'typeorm';
 import { ApplicationApproval } from '../entities/application-approval.entity';
 import { Application } from '../entities/application.entity';
 import type { ApprovalFlow } from '../entities/approval-flow.entity';
-import type { ApprovalStep } from '../entities/approval-step.entity';
-import { FormDefinition } from '../entities/form-definition.entity';
+import { ApprovalStep } from '../entities/approval-step.entity';
 import { ApplicationQueryRepository } from './application-query.repository';
+
+type ApplicationListQueryBuilderMock = {
+  andWhere: jest.Mock;
+  getMany: jest.Mock;
+  leftJoinAndMapOne: jest.Mock;
+  leftJoinAndSelect: jest.Mock;
+  orderBy: jest.Mock;
+  where: jest.Mock;
+};
 
 const step = (
   stepOrder: number,
@@ -18,19 +26,38 @@ const step = (
     ...overrides,
   }) as ApprovalStep;
 
+function createListQueryBuilderMock(): ApplicationListQueryBuilderMock {
+  const builder: ApplicationListQueryBuilderMock = {
+    andWhere: jest.fn(),
+    getMany: jest.fn(),
+    leftJoinAndMapOne: jest.fn(),
+    leftJoinAndSelect: jest.fn(),
+    orderBy: jest.fn(),
+    where: jest.fn(),
+  };
+  builder.andWhere.mockReturnValue(builder);
+  builder.leftJoinAndMapOne.mockReturnValue(builder);
+  builder.leftJoinAndSelect.mockReturnValue(builder);
+  builder.orderBy.mockReturnValue(builder);
+  builder.where.mockReturnValue(builder);
+  return builder;
+}
+
 describe('ApplicationQueryRepository', () => {
   let repository: ApplicationQueryRepository;
-  let apps: jest.Mocked<Pick<Repository<Application>, 'find' | 'findOne'>>;
+  let apps: jest.Mocked<
+    Pick<Repository<Application>, 'createQueryBuilder' | 'findOne'>
+  >;
   let approvals: jest.Mocked<Pick<Repository<ApplicationApproval>, 'count'>>;
-  let templates: jest.Mocked<Pick<Repository<FormDefinition>, 'find'>>;
+  let builder: ApplicationListQueryBuilderMock;
 
   beforeEach(async () => {
+    builder = createListQueryBuilderMock();
     apps = {
-      find: jest.fn(),
+      createQueryBuilder: jest.fn().mockReturnValue(builder),
       findOne: jest.fn(),
     };
     approvals = { count: jest.fn() };
-    templates = { find: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -40,7 +67,6 @@ describe('ApplicationQueryRepository', () => {
           provide: getRepositoryToken(ApplicationApproval),
           useValue: approvals,
         },
-        { provide: getRepositoryToken(FormDefinition), useValue: templates },
       ],
     }).compile();
 
@@ -71,6 +97,7 @@ describe('ApplicationQueryRepository', () => {
   it('sorts approval flow steps when loading applications', async () => {
     const row = {
       id: 'app-1',
+      currentStepOrder: 1,
       approvalFlow: {
         steps: [step(2), step(1)],
       } as ApprovalFlow,
@@ -88,30 +115,41 @@ describe('ApplicationQueryRepository', () => {
     expect(
       row.approvalFlow.steps.map((approvalStep) => approvalStep.id),
     ).toEqual(['step-1', 'step-2']);
+    expect(row.currentApprovalStep?.id).toBe('step-1');
   });
 
-  it('hydrates missing form definitions by tenant', async () => {
-    const existingDefinition = { id: 'template-existing' } as FormDefinition;
-    const missingDefinition = { id: 'template-missing' } as FormDefinition;
+  it('lists applications with form definition and current step mapped by the repository', async () => {
     const rows = [
       {
-        id: 'app-existing',
-        formDefinitionId: 'template-existing',
-        formDefinition: existingDefinition,
-      },
-      {
-        id: 'app-missing',
-        formDefinitionId: 'template-missing',
+        id: 'app-1',
+        currentStepOrder: 1,
+        currentApprovalStep: step(1),
       },
     ] as Application[];
-    templates.find.mockResolvedValue([missingDefinition]);
+    builder.getMany.mockResolvedValue(rows);
 
-    await expect(
-      repository.hydrateFormDefinitions('tenant-1', rows),
-    ).resolves.toBe(rows);
+    await expect(repository.listForGroup('tenant-1', 'group-1')).resolves.toBe(
+      rows,
+    );
 
-    expect(templates.find).toHaveBeenCalledTimes(1);
-    expect(rows[1]?.formDefinition).toBe(missingDefinition);
+    expect(apps.createQueryBuilder).toHaveBeenCalledWith('app');
+    expect(builder.leftJoinAndSelect).toHaveBeenCalledWith(
+      'app.formDefinition',
+      'formDefinition',
+    );
+    expect(builder.leftJoinAndMapOne).toHaveBeenCalledWith(
+      'app.currentApprovalStep',
+      ApprovalStep,
+      'currentStep',
+      expect.stringContaining('currentStep.stepOrder = app.currentStepOrder'),
+    );
+    expect(builder.where).toHaveBeenCalledWith('app.tenantId = :tenantId', {
+      tenantId: 'tenant-1',
+    });
+    expect(builder.andWhere).toHaveBeenCalledWith('app.groupId = :groupId', {
+      groupId: 'group-1',
+    });
+    expect(builder.orderBy).toHaveBeenCalledWith('app.createdAt', 'DESC');
   });
 
   it('finds applicant editable applications by user id when available', async () => {

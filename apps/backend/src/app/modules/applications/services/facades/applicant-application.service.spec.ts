@@ -212,29 +212,43 @@ describe('ApplicantApplicationService', () => {
 
   it('patches returned values and hydrates the updated application', async () => {
     const row = app();
+    const updated = app({ id: 'app-1', status: ApplicationStatus.RETURNED });
     applicationsRepository.findApplicantEditable.mockResolvedValue(row);
+    applicationsRepository.findById.mockResolvedValue(updated);
 
     await expect(
       service.patchReturned(applicant(), 'app-1', {
         values: { title: 'Fixed' },
       }),
-    ).resolves.toBe(row);
+    ).resolves.toBe(updated);
 
     expect(fieldValuePatchService.applyPatch).toHaveBeenCalledWith(
       'tenant-1',
       row,
       { values: { title: 'Fixed' } },
     );
-    expect(progressService.hydrate).toHaveBeenCalledWith(row);
+    expect(applicationsRepository.findById).toHaveBeenCalledWith({
+      id: 'app-1',
+      tenantId: 'tenant-1',
+      detail: true,
+    });
+    expect(progressService.hydrate).toHaveBeenCalledWith(updated);
   });
 
   it('resubmits the token application and hydrates the updated application', async () => {
     const row = app();
+    const updated = app({ id: 'app-1', status: ApplicationStatus.IN_REVIEW });
     applicationsRepository.findApplicantEditable.mockResolvedValue(row);
+    applicationsRepository.findById.mockResolvedValue(updated);
 
-    await expect(service.resubmit(applicant(), 'app-1')).resolves.toBe(row);
+    await expect(service.resubmit(applicant(), 'app-1')).resolves.toBe(updated);
 
     expect(submissionService.resubmit).toHaveBeenCalledWith('tenant-1', row);
-    expect(progressService.hydrate).toHaveBeenCalledWith(row);
+    expect(applicationsRepository.findById).toHaveBeenCalledWith({
+      id: 'app-1',
+      tenantId: 'tenant-1',
+      detail: true,
+    });
+    expect(progressService.hydrate).toHaveBeenCalledWith(updated);
   });
 });

@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { Repository, SelectQueryBuilder } from 'typeorm';
 import { ApplicationApproval } from '../entities/application-approval.entity';
 import { Application } from '../entities/application.entity';
-import { FormDefinition } from '../entities/form-definition.entity';
+import { ApprovalStep } from '../entities/approval-step.entity';
 
 @Injectable()
 export class ApplicationQueryRepository {
@@ -12,8 +12,6 @@ export class ApplicationQueryRepository {
     private readonly apps: Repository<Application>,
     @InjectRepository(ApplicationApproval)
     private readonly approvals: Repository<ApplicationApproval>,
-    @InjectRepository(FormDefinition)
-    private readonly templates: Repository<FormDefinition>,
   ) {}
 
   countApprovalsByActor(
@@ -43,61 +41,23 @@ export class ApplicationQueryRepository {
       where: { id: params.id, tenantId: params.tenantId },
       relations,
     });
-    sortApprovalFlowSteps(row);
-    return row;
+    return prepareApplicationRow(row);
   }
 
-  listForTenantAdmin(
+  async listForTenantAdmin(
     tenantId: string,
     groupId: string,
   ): Promise<Application[]> {
-    return this.apps.find({
-      where: { tenantId, groupId },
-      relations: ['approvalFlow', 'approvalFlow.steps', 'formDefinition'],
-      order: { createdAt: 'DESC' },
-    });
+    const rows = await this.createListQuery(tenantId, groupId).getMany();
+    return prepareApplicationRows(rows);
   }
 
   async listForGroup(
     tenantId: string,
     groupId: string,
   ): Promise<Application[]> {
-    const rows = await this.apps.find({
-      where: { tenantId, groupId },
-      relations: ['approvalFlow', 'approvalFlow.steps', 'formDefinition'],
-      order: { createdAt: 'DESC' },
-    });
-    rows.forEach(sortApprovalFlowSteps);
-    return rows;
-  }
-
-  async hydrateFormDefinitions(
-    tenantId: string,
-    rows: Application[],
-  ): Promise<Application[]> {
-    const missingDefinitionIds = Array.from(
-      new Set(
-        rows
-          .filter((row) => !row.formDefinition)
-          .map((row) => row.formDefinitionId),
-      ),
-    );
-    if (missingDefinitionIds.length === 0) {
-      return rows;
-    }
-    const definitions = await this.templates.find({
-      where: { tenantId, id: In(missingDefinitionIds) },
-    });
-    const definitionById = new Map(
-      definitions.map((definition) => [definition.id, definition]),
-    );
-    for (const row of rows) {
-      const definition = definitionById.get(row.formDefinitionId);
-      if (definition) {
-        row.formDefinition = definition;
-      }
-    }
-    return rows;
+    const rows = await this.createListQuery(tenantId, groupId).getMany();
+    return prepareApplicationRows(rows);
   }
 
   findApplicantEditable(params: {
@@ -117,10 +77,61 @@ export class ApplicationQueryRepository {
       relations: ['fieldValues'],
     });
   }
+
+  private createListQuery(
+    tenantId: string,
+    groupId: string,
+  ): SelectQueryBuilder<Application> {
+    return this.apps
+      .createQueryBuilder('app')
+      .leftJoinAndSelect('app.formDefinition', 'formDefinition')
+      .leftJoinAndMapOne(
+        'app.currentApprovalStep',
+        ApprovalStep,
+        'currentStep',
+        [
+          'currentStep.tenantId = app.tenantId',
+          'currentStep.groupId = app.groupId',
+          'currentStep.approvalFlowId = app.approvalFlowId',
+          'currentStep.stepOrder = app.currentStepOrder',
+        ].join(' AND '),
+      )
+      .where('app.tenantId = :tenantId', { tenantId })
+      .andWhere('app.groupId = :groupId', { groupId })
+      .orderBy('app.createdAt', 'DESC');
+  }
 }
 
-function sortApprovalFlowSteps(row: Application | null): void {
+function prepareApplicationRows(rows: Application[]): Application[] {
+  rows.forEach(prepareApplicationRow);
+  return rows;
+}
+
+function prepareApplicationRow<T extends Application | null>(row: T): T {
+  if (!row) {
+    return row;
+  }
+  sortApprovalFlowSteps(row);
+  resolveCurrentApprovalStep(row);
+  return row;
+}
+
+function sortApprovalFlowSteps(row: Application): void {
   if (row?.approvalFlow?.steps?.length) {
     row.approvalFlow.steps.sort((a, b) => a.stepOrder - b.stepOrder);
   }
+}
+
+function resolveCurrentApprovalStep(row: Application): void {
+  if (row.currentStepOrder == null) {
+    row.currentApprovalStep = null;
+    return;
+  }
+  if (row.currentApprovalStep !== undefined) {
+    return;
+  }
+  row.currentApprovalStep =
+    row.approvalFlow?.steps?.find(
+      (step) => step.stepOrder === row.currentStepOrder,
+    ) ?? null;
 }

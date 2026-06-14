@@ -31,7 +31,7 @@ export class ApplicationQueryService {
         actor.tenantId,
         groupId,
       );
-      return this.hydrateListFormDefinitions(actor.tenantId, rows);
+      return rows;
     }
 
     const rows = await this.queryRepository.listForGroup(
@@ -45,7 +45,7 @@ export class ApplicationQueryService {
     const visibleRows = rows.filter((app) =>
       this.accessPolicy.canListForActor(actor, app, canManageGroup),
     );
-    return this.hydrateListFormDefinitions(actor.tenantId, visibleRows);
+    return visibleRows;
   }
 
   async getOneForActor(
@@ -76,12 +76,5 @@ export class ApplicationQueryService {
     });
 
     return this.correctionService.buildTargetsResponse(app);
-  }
-
-  private async hydrateListFormDefinitions(
-    tenantId: string,
-    rows: Application[],
-  ): Promise<Application[]> {
-    return this.queryRepository.hydrateFormDefinitions(tenantId, rows);
   }
 }
