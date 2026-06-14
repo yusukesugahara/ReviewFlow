@@ -13,6 +13,7 @@ import {
   AuditLogsRepository,
   type CreateAuditLogParams,
 } from '../../../../models/repositories/audit-logs.repository';
+import type { TransactionManager } from '../../../transaction';
 
 /**
  * 業務監査ログに記録する action type。
@@ -71,25 +72,28 @@ export class BusinessAuditLogService {
    *
    * before / after が省略された場合は、作成イベント向けの初期値と現在の申請状態から補完する。
    */
-  async recordApplicationEvent(params: {
-    actionType: BusinessAuditActionValue;
-    actor: AuditActor;
-    app: Pick<
-      Application,
-      | 'id'
-      | 'tenantId'
-      | 'groupId'
-      | 'applicantEmail'
-      | 'status'
-      | 'currentStepOrder'
-      | 'formDefinitionId'
-      | 'approvalFlowId'
-    >;
-    before?: ApplicationSnapshot;
-    after?: ApplicationSnapshot;
-    metadataJson?: Record<string, unknown>;
-    summary?: string;
-  }): Promise<void> {
+  async recordApplicationEvent(
+    params: {
+      actionType: BusinessAuditActionValue;
+      actor: AuditActor;
+      app: Pick<
+        Application,
+        | 'id'
+        | 'tenantId'
+        | 'groupId'
+        | 'applicantEmail'
+        | 'status'
+        | 'currentStepOrder'
+        | 'formDefinitionId'
+        | 'approvalFlowId'
+      >;
+      before?: ApplicationSnapshot;
+      after?: ApplicationSnapshot;
+      metadataJson?: Record<string, unknown>;
+      summary?: string;
+    },
+    manager?: TransactionManager,
+  ): Promise<void> {
     const before = params.before ?? {
       status: null,
       stepOrder: null,
@@ -98,185 +102,225 @@ export class BusinessAuditLogService {
       status: params.app.status,
       stepOrder: params.app.currentStepOrder,
     };
-    await this.record({
-      tenantId: params.app.tenantId,
-      groupId: params.app.groupId,
-      actorUserId: params.actor.id,
-      actorType: params.actor.type,
-      actorEmailSnapshot: params.actor.email,
-      actionType: params.actionType,
-      targetType: 'application',
-      targetId: params.app.id,
-      applicationId: params.app.id,
-      statusFrom: before.status,
-      statusTo: after.status,
-      stepOrderFrom: before.stepOrder,
-      stepOrderTo: after.stepOrder,
-      summary:
-        params.summary ??
-        this.applicationSummary(params.actionType, params.app, before, after),
-      metadataJson: {
-        applicantEmail: params.app.applicantEmail,
-        formDefinitionId: params.app.formDefinitionId,
-        approvalFlowId: params.app.approvalFlowId,
-        ...(params.metadataJson ?? {}),
+    await this.record(
+      {
+        tenantId: params.app.tenantId,
+        groupId: params.app.groupId,
+        actorUserId: params.actor.id,
+        actorType: params.actor.type,
+        actorEmailSnapshot: params.actor.email,
+        actionType: params.actionType,
+        targetType: 'application',
+        targetId: params.app.id,
+        applicationId: params.app.id,
+        statusFrom: before.status,
+        statusTo: after.status,
+        stepOrderFrom: before.stepOrder,
+        stepOrderTo: after.stepOrder,
+        summary:
+          params.summary ??
+          this.applicationSummary(params.actionType, params.app, before, after),
+        metadataJson: {
+          applicantEmail: params.app.applicantEmail,
+          formDefinitionId: params.app.formDefinitionId,
+          approvalFlowId: params.app.approvalFlowId,
+          ...(params.metadataJson ?? {}),
+        },
       },
-    });
+      manager,
+    );
   }
 
-  async recordInvitationCreated(params: {
-    actor: AuthUserPayload;
-    invitation: Pick<
-      Invitation,
-      | 'id'
-      | 'tenantId'
-      | 'email'
-      | 'role'
-      | 'groupId'
-      | 'groupRole'
-      | 'expiresAt'
-    >;
-  }): Promise<void> {
-    await this.record({
-      tenantId: params.invitation.tenantId,
-      groupId: params.invitation.groupId,
-      actorUserId: params.actor.id,
-      actorType: 'user',
-      actorEmailSnapshot: params.actor.email,
-      actionType: BusinessAuditAction.INVITATION_CREATED,
-      targetType: 'invitation',
-      targetId: params.invitation.id,
-      targetEmailSnapshot: params.invitation.email,
-      roleTo: params.invitation.role,
-      groupRoleTo: params.invitation.groupRole,
-      summary: `${params.actor.email} invited ${params.invitation.email}`,
-      metadataJson: {
-        expiresAt: params.invitation.expiresAt.toISOString(),
+  async recordInvitationCreated(
+    params: {
+      actor: AuthUserPayload;
+      invitation: Pick<
+        Invitation,
+        | 'id'
+        | 'tenantId'
+        | 'email'
+        | 'role'
+        | 'groupId'
+        | 'groupRole'
+        | 'expiresAt'
+      >;
+    },
+    manager?: TransactionManager,
+  ): Promise<void> {
+    await this.record(
+      {
+        tenantId: params.invitation.tenantId,
+        groupId: params.invitation.groupId,
+        actorUserId: params.actor.id,
+        actorType: 'user',
+        actorEmailSnapshot: params.actor.email,
+        actionType: BusinessAuditAction.INVITATION_CREATED,
+        targetType: 'invitation',
+        targetId: params.invitation.id,
+        targetEmailSnapshot: params.invitation.email,
+        roleTo: params.invitation.role,
+        groupRoleTo: params.invitation.groupRole,
+        summary: `${params.actor.email} invited ${params.invitation.email}`,
+        metadataJson: {
+          expiresAt: params.invitation.expiresAt.toISOString(),
+        },
       },
-    });
+      manager,
+    );
   }
 
-  async recordInvitationAccepted(params: {
-    invitation: Pick<
-      Invitation,
-      'id' | 'tenantId' | 'email' | 'role' | 'groupId' | 'groupRole'
-    >;
-    user: Pick<User, 'id' | 'email'>;
-  }): Promise<void> {
-    await this.record({
-      tenantId: params.invitation.tenantId,
-      groupId: params.invitation.groupId,
-      actorUserId: params.user.id,
-      actorType: 'user',
-      actorEmailSnapshot: params.user.email,
-      actionType: BusinessAuditAction.INVITATION_ACCEPTED,
-      targetType: 'invitation',
-      targetId: params.invitation.id,
-      targetUserId: params.user.id,
-      targetEmailSnapshot: params.user.email,
-      roleTo: params.invitation.role,
-      groupRoleTo: params.invitation.groupRole,
-      summary: `${params.user.email} accepted invitation`,
-      metadataJson: null,
-    });
-  }
-
-  async recordUserEvent(params: {
-    actionType: BusinessAuditActionValue;
-    actor: Pick<AuthUserPayload, 'id' | 'email'>;
-    target: Pick<User, 'id' | 'tenantId' | 'email' | 'role' | 'isActive'>;
-    roleFrom?: UserRoleValue | null;
-    roleTo?: UserRoleValue | null;
-    metadataJson?: Record<string, unknown>;
-    summary?: string;
-  }): Promise<void> {
-    await this.record({
-      tenantId: params.target.tenantId,
-      groupId: null,
-      actorUserId: params.actor.id,
-      actorType: 'user',
-      actorEmailSnapshot: params.actor.email,
-      actionType: params.actionType,
-      targetType: 'user',
-      targetId: params.target.id,
-      targetUserId: params.target.id,
-      targetEmailSnapshot: params.target.email,
-      roleFrom: params.roleFrom ?? null,
-      roleTo: params.roleTo ?? null,
-      summary:
-        params.summary ??
-        this.userSummary(params.actionType, params.actor.email, params.target),
-      metadataJson: params.metadataJson ?? null,
-    });
-  }
-
-  async recordSpaceEvent(params: {
-    actionType: BusinessAuditActionValue;
-    actor: AuthUserPayload;
-    group: Pick<Group, 'id' | 'tenantId' | 'name'>;
-    metadataJson?: Record<string, unknown>;
-    summary?: string;
-  }): Promise<void> {
-    await this.record({
-      tenantId: params.group.tenantId,
-      groupId: params.group.id,
-      actorUserId: params.actor.id,
-      actorType: 'user',
-      actorEmailSnapshot: params.actor.email,
-      actionType: params.actionType,
-      targetType: 'space',
-      targetId: params.group.id,
-      summary:
-        params.summary ??
-        `${params.actor.email} ${params.actionType} ${params.group.name}`,
-      metadataJson: {
-        groupName: params.group.name,
-        ...(params.metadataJson ?? {}),
+  async recordInvitationAccepted(
+    params: {
+      invitation: Pick<
+        Invitation,
+        'id' | 'tenantId' | 'email' | 'role' | 'groupId' | 'groupRole'
+      >;
+      user: Pick<User, 'id' | 'email'>;
+    },
+    manager?: TransactionManager,
+  ): Promise<void> {
+    await this.record(
+      {
+        tenantId: params.invitation.tenantId,
+        groupId: params.invitation.groupId,
+        actorUserId: params.user.id,
+        actorType: 'user',
+        actorEmailSnapshot: params.user.email,
+        actionType: BusinessAuditAction.INVITATION_ACCEPTED,
+        targetType: 'invitation',
+        targetId: params.invitation.id,
+        targetUserId: params.user.id,
+        targetEmailSnapshot: params.user.email,
+        roleTo: params.invitation.role,
+        groupRoleTo: params.invitation.groupRole,
+        summary: `${params.user.email} accepted invitation`,
+        metadataJson: null,
       },
-    });
+      manager,
+    );
   }
 
-  async recordSpaceMemberEvent(params: {
-    actionType: BusinessAuditActionValue;
-    actor: AuthUserPayload;
-    member: Pick<
-      GroupMember,
-      'id' | 'tenantId' | 'groupId' | 'userId' | 'role'
-    > & {
-      user?: Pick<User, 'email'> | null;
-    };
-    groupRoleFrom?: GroupMemberRoleValue | null;
-    groupRoleTo?: GroupMemberRoleValue | null;
-    metadataJson?: Record<string, unknown>;
-    summary?: string;
-  }): Promise<void> {
+  async recordUserEvent(
+    params: {
+      actionType: BusinessAuditActionValue;
+      actor: Pick<AuthUserPayload, 'id' | 'email'>;
+      target: Pick<User, 'id' | 'tenantId' | 'email' | 'role' | 'isActive'>;
+      roleFrom?: UserRoleValue | null;
+      roleTo?: UserRoleValue | null;
+      metadataJson?: Record<string, unknown>;
+      summary?: string;
+    },
+    manager?: TransactionManager,
+  ): Promise<void> {
+    await this.record(
+      {
+        tenantId: params.target.tenantId,
+        groupId: null,
+        actorUserId: params.actor.id,
+        actorType: 'user',
+        actorEmailSnapshot: params.actor.email,
+        actionType: params.actionType,
+        targetType: 'user',
+        targetId: params.target.id,
+        targetUserId: params.target.id,
+        targetEmailSnapshot: params.target.email,
+        roleFrom: params.roleFrom ?? null,
+        roleTo: params.roleTo ?? null,
+        summary:
+          params.summary ??
+          this.userSummary(
+            params.actionType,
+            params.actor.email,
+            params.target,
+          ),
+        metadataJson: params.metadataJson ?? null,
+      },
+      manager,
+    );
+  }
+
+  async recordSpaceEvent(
+    params: {
+      actionType: BusinessAuditActionValue;
+      actor: AuthUserPayload;
+      group: Pick<Group, 'id' | 'tenantId' | 'name'>;
+      metadataJson?: Record<string, unknown>;
+      summary?: string;
+    },
+    manager?: TransactionManager,
+  ): Promise<void> {
+    await this.record(
+      {
+        tenantId: params.group.tenantId,
+        groupId: params.group.id,
+        actorUserId: params.actor.id,
+        actorType: 'user',
+        actorEmailSnapshot: params.actor.email,
+        actionType: params.actionType,
+        targetType: 'space',
+        targetId: params.group.id,
+        summary:
+          params.summary ??
+          `${params.actor.email} ${params.actionType} ${params.group.name}`,
+        metadataJson: {
+          groupName: params.group.name,
+          ...(params.metadataJson ?? {}),
+        },
+      },
+      manager,
+    );
+  }
+
+  async recordSpaceMemberEvent(
+    params: {
+      actionType: BusinessAuditActionValue;
+      actor: AuthUserPayload;
+      member: Pick<
+        GroupMember,
+        'id' | 'tenantId' | 'groupId' | 'userId' | 'role'
+      > & {
+        user?: Pick<User, 'email'> | null;
+      };
+      groupRoleFrom?: GroupMemberRoleValue | null;
+      groupRoleTo?: GroupMemberRoleValue | null;
+      metadataJson?: Record<string, unknown>;
+      summary?: string;
+    },
+    manager?: TransactionManager,
+  ): Promise<void> {
     const targetEmail = params.member.user?.email ?? null;
-    await this.record({
-      tenantId: params.member.tenantId,
-      groupId: params.member.groupId,
-      actorUserId: params.actor.id,
-      actorType: 'user',
-      actorEmailSnapshot: params.actor.email,
-      actionType: params.actionType,
-      targetType: 'group_member',
-      targetId: params.member.id,
-      targetUserId: params.member.userId,
-      targetEmailSnapshot: targetEmail,
-      groupRoleFrom: params.groupRoleFrom ?? null,
-      groupRoleTo: params.groupRoleTo ?? null,
-      summary:
-        params.summary ??
-        this.spaceMemberSummary(
-          params.actionType,
-          params.actor.email,
-          targetEmail ?? params.member.userId,
-        ),
-      metadataJson: params.metadataJson ?? null,
-    });
+    await this.record(
+      {
+        tenantId: params.member.tenantId,
+        groupId: params.member.groupId,
+        actorUserId: params.actor.id,
+        actorType: 'user',
+        actorEmailSnapshot: params.actor.email,
+        actionType: params.actionType,
+        targetType: 'group_member',
+        targetId: params.member.id,
+        targetUserId: params.member.userId,
+        targetEmailSnapshot: targetEmail,
+        groupRoleFrom: params.groupRoleFrom ?? null,
+        groupRoleTo: params.groupRoleTo ?? null,
+        summary:
+          params.summary ??
+          this.spaceMemberSummary(
+            params.actionType,
+            params.actor.email,
+            targetEmail ?? params.member.userId,
+          ),
+        metadataJson: params.metadataJson ?? null,
+      },
+      manager,
+    );
   }
 
-  private async record(params: CreateAuditLogParams): Promise<void> {
-    await this.auditLogsRepository.create(params);
+  private async record(
+    params: CreateAuditLogParams,
+    manager?: TransactionManager,
+  ): Promise<void> {
+    await this.auditLogsRepository.create(params, manager);
   }
 
   private applicationSummary(

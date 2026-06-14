@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ApplicationFieldValue } from '../../../../../models/entities/application-field-value.entity';
 import { Application } from '../../../../../models/entities/application.entity';
 import { ApplicationSubmissionRepository } from '../../../../../models/repositories/application-submission.repository';
+import type { TransactionManager } from '../../../../transaction';
 import type { PatchApplicationDto } from '../../dto/applications.dto';
 import { ApplicationFieldValuePatchBuilder } from './application-field-value-patch.builder';
 import { ApplicationPatchContextLoader } from './application-patch-context.loader';
@@ -18,19 +19,21 @@ export class ApplicationFieldValuePatchService {
     tenantId: string,
     app: Application,
     dto: PatchApplicationDto,
+    manager?: TransactionManager,
   ): Promise<void> {
     const context = await this.patchContextLoader.load(tenantId, app, dto);
     const fieldValues = await this.fieldValuePatchBuilder.build(
       context,
       dto.values ?? {},
     );
-    await this.saveApplicationPatch(app, dto, fieldValues);
+    await this.saveApplicationPatch(app, dto, fieldValues, manager);
   }
 
   private async saveApplicationPatch(
     app: Application,
     dto: PatchApplicationDto,
     values: ApplicationFieldValue[],
+    manager?: TransactionManager,
   ): Promise<void> {
     if (
       !dto.formDefinitionId &&
@@ -40,12 +43,15 @@ export class ApplicationFieldValuePatchService {
     ) {
       return;
     }
-    await this.submissionRepository.saveApplicationPatch({
-      app,
-      formDefinitionId: dto.formDefinitionId,
-      approvalFlowId: dto.approvalFlowId,
-      status: dto.status,
-      values,
-    });
+    await this.submissionRepository.saveApplicationPatch(
+      {
+        app,
+        formDefinitionId: dto.formDefinitionId,
+        approvalFlowId: dto.approvalFlowId,
+        status: dto.status,
+        values,
+      },
+      manager,
+    );
   }
 }

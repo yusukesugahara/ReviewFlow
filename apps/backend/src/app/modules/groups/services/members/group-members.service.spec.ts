@@ -7,6 +7,10 @@ import { User } from '../../../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../../../models/repositories/groups.repository';
 import { BusinessAuditLogService } from '../../../audit-logs/services/business-audit-log.service';
 import { UsersService } from '../../../users/services/users.service';
+import {
+  TransactionService,
+  type TransactionManager,
+} from '../../../../transaction';
 import { GroupMembersService } from './group-members.service';
 import { SpaceAccessService } from '../access/space-access.service';
 
@@ -32,6 +36,10 @@ describe('GroupMembersService', () => {
   >;
   let auditLogs: {
     recordSpaceMemberEvent: jest.Mock;
+  };
+  let transactionManager: TransactionManager;
+  let transactions: {
+    run: jest.Mock;
   };
 
   const systemAdmin = {
@@ -68,6 +76,12 @@ describe('GroupMembersService', () => {
     auditLogs = {
       recordSpaceMemberEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -76,6 +90,7 @@ describe('GroupMembersService', () => {
         { provide: UsersService, useValue: usersService },
         { provide: SpaceAccessService, useValue: spaceAccess },
         { provide: BusinessAuditLogService, useValue: auditLogs },
+        { provide: TransactionService, useValue: transactions },
       ],
     }).compile();
 
@@ -143,6 +158,7 @@ describe('GroupMembersService', () => {
         userId: 'user-1',
         invitedByUserId: 'sys-1',
       }),
+      transactionManager,
     );
     expect(auditLogs.recordSpaceMemberEvent).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -151,6 +167,7 @@ describe('GroupMembersService', () => {
         member: out,
         groupRoleTo: GroupMemberRole.USER,
       }),
+      transactionManager,
     );
   });
 
@@ -220,7 +237,10 @@ describe('GroupMembersService', () => {
       groupAdmin,
       'group-1',
     );
-    expect(groupsRepository.deleteMember).toHaveBeenCalledWith('member-2');
+    expect(groupsRepository.deleteMember).toHaveBeenCalledWith(
+      'member-2',
+      transactionManager,
+    );
     expect(auditLogs.recordSpaceMemberEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'space.member_removed',
@@ -228,6 +248,7 @@ describe('GroupMembersService', () => {
         member,
         groupRoleFrom: GroupMemberRole.USER,
       }),
+      transactionManager,
     );
   });
 

@@ -4,6 +4,7 @@ import type { SpaceAccessService } from '../../../groups/services/access/space-a
 import type { BusinessAuditLogService } from '../../../audit-logs/services/business-audit-log.service';
 import type { CreateApplicationDto } from '../../dto/applications.dto';
 import type { ApplicationCreationService } from '../creation/application-creation.service';
+import type { TransactionManager } from '../../../../transaction';
 import { ApplicationCreationUseCaseService } from './application-creation-use-case.service';
 
 const actor = (overrides: Partial<AuthUserPayload> = {}): AuthUserPayload => ({
@@ -49,6 +50,10 @@ describe('ApplicationCreationUseCaseService', () => {
   let auditLogs: {
     recordApplicationEvent: jest.Mock;
   };
+  let transactionManager: TransactionManager;
+  let transactions: ConstructorParameters<
+    typeof ApplicationCreationUseCaseService
+  >[3];
   let service: ApplicationCreationUseCaseService;
 
   beforeEach(() => {
@@ -61,10 +66,19 @@ describe('ApplicationCreationUseCaseService', () => {
     auditLogs = {
       recordApplicationEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    } as unknown as ConstructorParameters<
+      typeof ApplicationCreationUseCaseService
+    >[3];
     service = new ApplicationCreationUseCaseService(
       spaceAccess as unknown as SpaceAccessService,
       creationService as unknown as ApplicationCreationService,
       auditLogs as unknown as BusinessAuditLogService,
+      transactions,
     );
   });
 
@@ -87,12 +101,14 @@ describe('ApplicationCreationUseCaseService', () => {
       'user@example.com',
       'user-1',
       input,
+      transactionManager,
     );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'application.created',
         app: created,
       }),
+      transactionManager,
     );
   });
 

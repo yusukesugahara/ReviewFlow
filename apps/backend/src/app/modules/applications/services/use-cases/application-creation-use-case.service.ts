@@ -8,6 +8,7 @@ import {
 import { SpaceAccessService } from '../../../groups/services/access/space-access.service';
 import type { CreateApplicationDto } from '../../dto/applications.dto';
 import { ApplicationCreationService } from '../creation/application-creation.service';
+import { TransactionService } from '../../../../transaction';
 
 @Injectable()
 export class ApplicationCreationUseCaseService {
@@ -15,6 +16,7 @@ export class ApplicationCreationUseCaseService {
     private readonly spaceAccess: SpaceAccessService,
     private readonly creationService: ApplicationCreationService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async create(
@@ -22,21 +24,27 @@ export class ApplicationCreationUseCaseService {
     dto: CreateApplicationDto,
   ): Promise<Application> {
     await this.spaceAccess.assertCanUseGroup(actor, dto.groupId);
-    const created = await this.creationService.create(
-      actor.tenantId,
-      actor.email,
-      actor.id,
-      dto,
-    );
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_CREATED,
-      actor: { id: actor.id, email: actor.email, type: 'user' },
-      app: created,
-      after: {
-        status: created.status,
-        stepOrder: created.currentStepOrder,
-      },
+    return this.transactions.run(async (manager) => {
+      const created = await this.creationService.create(
+        actor.tenantId,
+        actor.email,
+        actor.id,
+        dto,
+        manager,
+      );
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_CREATED,
+          actor: { id: actor.id, email: actor.email, type: 'user' },
+          app: created,
+          after: {
+            status: created.status,
+            stepOrder: created.currentStepOrder,
+          },
+        },
+        manager,
+      );
+      return created;
     });
-    return created;
   }
 }

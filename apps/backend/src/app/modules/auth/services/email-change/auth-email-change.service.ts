@@ -12,6 +12,7 @@ import type {
   ConfirmEmailChangeDto,
   RequestMeEmailChangeDto,
 } from '../../dto/auth.dto';
+import { TransactionService } from '../../../../transaction';
 
 const EMAIL_CHANGE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -22,6 +23,7 @@ export class AuthEmailChangeService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async requestMeEmailChange(
@@ -85,20 +87,28 @@ export class AuthEmailChangeService {
 
     await this.assertEmailAvailable(row.newEmail, target.id);
 
-    const saved =
-      await this.authRepository.updateEmailAndMarkEmailChangeTokenUsed({
-        tokenRow: row,
-        email: row.newEmail,
-      });
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_PROFILE_UPDATED,
-      actor: { id: target.id, email: row.currentEmail },
-      target: saved,
-      summary: `${row.currentEmail} confirmed email change to ${saved.email}`,
-      metadataJson: {
-        emailFrom: row.currentEmail,
-        emailTo: saved.email,
-      },
+    await this.transactions.run(async (manager) => {
+      const saved =
+        await this.authRepository.updateEmailAndMarkEmailChangeTokenUsed(
+          {
+            tokenRow: row,
+            email: row.newEmail,
+          },
+          manager,
+        );
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_PROFILE_UPDATED,
+          actor: { id: target.id, email: row.currentEmail },
+          target: saved,
+          summary: `${row.currentEmail} confirmed email change to ${saved.email}`,
+          metadataJson: {
+            emailFrom: row.currentEmail,
+            emailTo: saved.email,
+          },
+        },
+        manager,
+      );
     });
 
     return { ok: true };

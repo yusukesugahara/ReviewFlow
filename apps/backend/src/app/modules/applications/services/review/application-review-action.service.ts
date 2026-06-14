@@ -3,6 +3,7 @@ import { ApplicationApprovalAction } from '../../../../../models/constants/appli
 import { Application } from '../../../../../models/entities/application.entity';
 import { FormDefinition } from '../../../../../models/entities/form-definition.entity';
 import { ApplicationReviewRepository } from '../../../../../models/repositories/application-review.repository';
+import type { TransactionManager } from '../../../../transaction';
 import type {
   ApproveApplicationDto,
   RejectApplicationDto,
@@ -23,58 +24,70 @@ export class ApplicationReviewActionService {
     app: Application,
     actorId: string,
     dto: ApproveApplicationDto,
+    manager?: TransactionManager,
   ): Promise<void> {
     const cur = this.transitionPolicy.getCurrentStep(app);
     const next = this.transitionPolicy.getNextStep(app, cur);
     const comment = this.trimComment(dto.comment);
 
     this.transitionPolicy.applyApproval(app, next);
-    await this.reviewRepository.saveApproval({
-      app,
-      approvalStepId: cur.id,
-      actorId,
-      action: ApplicationApprovalAction.APPROVED,
-      comment,
-    });
+    await this.reviewRepository.saveApproval(
+      {
+        app,
+        approvalStepId: cur.id,
+        actorId,
+        action: ApplicationApprovalAction.APPROVED,
+        comment,
+      },
+      manager,
+    );
   }
 
   async reject(
     app: Application,
     actorId: string,
     dto: RejectApplicationDto,
+    manager?: TransactionManager,
   ): Promise<void> {
     const cur = this.transitionPolicy.getCurrentStep(app);
     const comment = this.trimComment(dto.comment);
 
     this.transitionPolicy.applyReject(app);
-    await this.reviewRepository.saveApproval({
-      app,
-      approvalStepId: cur.id,
-      actorId,
-      action: ApplicationApprovalAction.REJECTED,
-      comment,
-    });
+    await this.reviewRepository.saveApproval(
+      {
+        app,
+        approvalStepId: cur.id,
+        actorId,
+        action: ApplicationApprovalAction.REJECTED,
+        comment,
+      },
+      manager,
+    );
   }
 
   async returnForCorrection(
     app: Application,
     actorId: string,
     dto: ReturnApplicationDto,
+    manager?: TransactionManager,
   ): Promise<FormDefinition> {
     const context = await this.returnContextLoader.load(app, dto);
     const overall = this.trimComment(dto.overallComment);
 
     this.transitionPolicy.applyReturn(app);
-    await this.reviewRepository.saveReturnForCorrection({
-      app,
-      approvalStepId: context.currentStep.id,
-      actorId,
-      overallComment: overall,
-      fields: dto.fields.map((field) => ({
-        fieldId: field.fieldId,
-        comment: this.trimComment(field.comment),
-      })),
-    });
+    await this.reviewRepository.saveReturnForCorrection(
+      {
+        app,
+        approvalStepId: context.currentStep.id,
+        actorId,
+        overallComment: overall,
+        fields: dto.fields.map((field) => ({
+          fieldId: field.fieldId,
+          comment: this.trimComment(field.comment),
+        })),
+      },
+      manager,
+    );
 
     return context.template;
   }

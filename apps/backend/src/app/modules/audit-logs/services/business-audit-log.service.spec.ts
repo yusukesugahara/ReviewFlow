@@ -70,6 +70,7 @@ describe('BusinessAuditLogService', () => {
         targetType: 'application',
         tenantId: 'tenant-1',
       }),
+      undefined,
     );
     expect(auditLogsRepository.create).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -80,6 +81,7 @@ describe('BusinessAuditLogService', () => {
           formDefinitionId: 'form-1',
         }) as Record<string, unknown>,
       }),
+      undefined,
     );
   });
 
@@ -131,6 +133,7 @@ describe('BusinessAuditLogService', () => {
         targetType: 'user',
         targetUserId: 'user-1',
       }),
+      undefined,
     );
     expect(auditLogsRepository.create).toHaveBeenNthCalledWith(
       2,
@@ -142,6 +145,7 @@ describe('BusinessAuditLogService', () => {
         targetType: 'group_member',
         targetUserId: 'user-1',
       }),
+      undefined,
     );
   });
 });

@@ -18,6 +18,7 @@ import type {
   UpdateGroupMemberRoleDto,
 } from '../../dto/groups.dto';
 import { GroupMembersService } from '../members/group-members.service';
+import { TransactionService } from '../../../../transaction';
 
 @Injectable()
 export class GroupsService {
@@ -26,6 +27,7 @@ export class GroupsService {
     private readonly usersService: UsersService,
     private readonly groupMembers: GroupMembersService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async list(actor: AuthUserPayload): Promise<Group[]> {
@@ -65,24 +67,32 @@ export class GroupsService {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 
-    const group = await this.groupsRepository.createGroupWithAdmins({
-      tenantId: actor.tenantId,
-      name,
-      description: dto.description ?? null,
-      createdByUserId: actor.id,
-      adminUserIds,
-    });
+    return this.transactions.run(async (manager) => {
+      const group = await this.groupsRepository.createGroupWithAdmins(
+        {
+          tenantId: actor.tenantId,
+          name,
+          description: dto.description ?? null,
+          createdByUserId: actor.id,
+          adminUserIds,
+        },
+        manager,
+      );
 
-    await this.auditLogs.recordSpaceEvent({
-      actionType: BusinessAuditAction.SPACE_CREATED,
-      actor,
-      group,
-      metadataJson: {
-        adminUserIds,
-      },
-    });
+      await this.auditLogs.recordSpaceEvent(
+        {
+          actionType: BusinessAuditAction.SPACE_CREATED,
+          actor,
+          group,
+          metadataJson: {
+            adminUserIds,
+          },
+        },
+        manager,
+      );
 
-    return group;
+      return group;
+    });
   }
 
   async update(
@@ -115,34 +125,44 @@ export class GroupsService {
 
     group.name = name;
     group.description = description;
-    const saved = await this.groupsRepository.saveGroup(group);
+    return this.transactions.run(async (manager) => {
+      const saved = await this.groupsRepository.saveGroup(group, manager);
 
-    await this.auditLogs.recordSpaceEvent({
-      actionType: BusinessAuditAction.SPACE_UPDATED,
-      actor,
-      group: saved,
-      metadataJson: {
-        nameFrom: before.name,
-        nameTo: saved.name,
-        descriptionFrom: before.description,
-        descriptionTo: saved.description,
-      },
+      await this.auditLogs.recordSpaceEvent(
+        {
+          actionType: BusinessAuditAction.SPACE_UPDATED,
+          actor,
+          group: saved,
+          metadataJson: {
+            nameFrom: before.name,
+            nameTo: saved.name,
+            descriptionFrom: before.description,
+            descriptionTo: saved.description,
+          },
+        },
+        manager,
+      );
+
+      return saved;
     });
-
-    return saved;
   }
 
   async remove(groupId: string, actor: AuthUserPayload): Promise<void> {
     const group = await this.findGroupInTenant(groupId, actor.tenantId);
-    await this.auditLogs.recordSpaceEvent({
-      actionType: BusinessAuditAction.SPACE_DELETED,
-      actor,
-      group,
-      metadataJson: {
-        groupId: group.id,
-      },
+    await this.transactions.run(async (manager) => {
+      await this.auditLogs.recordSpaceEvent(
+        {
+          actionType: BusinessAuditAction.SPACE_DELETED,
+          actor,
+          group,
+          metadataJson: {
+            groupId: group.id,
+          },
+        },
+        manager,
+      );
+      await this.groupsRepository.deleteGroup(group.id, manager);
     });
-    await this.groupsRepository.deleteGroup(group.id);
   }
 
   async listMembers(

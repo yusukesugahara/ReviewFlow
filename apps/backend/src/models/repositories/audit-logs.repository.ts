@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { AuditLog, type AuditActorType } from '../entities/audit-log.entity';
 import type { ApplicationStatusValue } from '../constants/application-status';
 import type { GroupMemberRoleValue } from '../constants/group-member-role';
@@ -57,9 +57,13 @@ export class AuditLogsRepository {
     private readonly auditLogs: Repository<AuditLog>,
   ) {}
 
-  async create(params: CreateAuditLogParams): Promise<void> {
-    await this.auditLogs.save(
-      this.auditLogs.create({
+  async create(
+    params: CreateAuditLogParams,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repository = manager?.getRepository(AuditLog) ?? this.auditLogs;
+    await repository.save(
+      repository.create({
         tenantId: params.tenantId,
         groupId: params.groupId ?? null,
         actorUserId: params.actorUserId,

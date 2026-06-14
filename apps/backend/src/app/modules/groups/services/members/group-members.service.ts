@@ -16,6 +16,7 @@ import type {
   UpdateGroupMemberRoleDto,
 } from '../../dto/groups.dto';
 import { SpaceAccessService } from '../access/space-access.service';
+import { TransactionService } from '../../../../transaction';
 
 @Injectable()
 export class GroupMembersService {
@@ -24,6 +25,7 @@ export class GroupMembersService {
     private readonly usersService: UsersService,
     private readonly spaceAccess: SpaceAccessService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async listMembers(
@@ -69,23 +71,31 @@ export class GroupMembersService {
       throw clientError(ClientErrorCodes.GROUP_MEMBER_EXISTS);
     }
 
-    const saved = await this.groupsRepository.createMember({
-      tenantId: actor.tenantId,
-      groupId,
-      userId: dto.userId,
-      role: dto.role,
-      invitedByUserId: actor.id,
-    });
+    return this.transactions.run(async (manager) => {
+      const saved = await this.groupsRepository.createMember(
+        {
+          tenantId: actor.tenantId,
+          groupId,
+          userId: dto.userId,
+          role: dto.role,
+          invitedByUserId: actor.id,
+        },
+        manager,
+      );
 
-    saved.user = user;
-    await this.auditLogs.recordSpaceMemberEvent({
-      actionType: BusinessAuditAction.SPACE_MEMBER_ADDED,
-      actor,
-      member: saved,
-      groupRoleTo: saved.role,
-    });
+      saved.user = user;
+      await this.auditLogs.recordSpaceMemberEvent(
+        {
+          actionType: BusinessAuditAction.SPACE_MEMBER_ADDED,
+          actor,
+          member: saved,
+          groupRoleTo: saved.role,
+        },
+        manager,
+      );
 
-    return saved;
+      return saved;
+    });
   }
 
   async updateMemberRole(
@@ -106,17 +116,22 @@ export class GroupMembersService {
 
     const previousRole = member.role;
     member.role = dto.role;
-    const saved = await this.groupsRepository.saveMember(member);
+    return this.transactions.run(async (manager) => {
+      const saved = await this.groupsRepository.saveMember(member, manager);
 
-    await this.auditLogs.recordSpaceMemberEvent({
-      actionType: BusinessAuditAction.SPACE_MEMBER_ROLE_CHANGED,
-      actor,
-      member: saved,
-      groupRoleFrom: previousRole,
-      groupRoleTo: saved.role,
+      await this.auditLogs.recordSpaceMemberEvent(
+        {
+          actionType: BusinessAuditAction.SPACE_MEMBER_ROLE_CHANGED,
+          actor,
+          member: saved,
+          groupRoleFrom: previousRole,
+          groupRoleTo: saved.role,
+        },
+        manager,
+      );
+
+      return saved;
     });
-
-    return saved;
   }
 
   async removeMember(
@@ -131,12 +146,17 @@ export class GroupMembersService {
       await this.assertAnotherAdminRemains(groupId, actor.tenantId, userId);
     }
 
-    await this.groupsRepository.deleteMember(member.id);
-    await this.auditLogs.recordSpaceMemberEvent({
-      actionType: BusinessAuditAction.SPACE_MEMBER_REMOVED,
-      actor,
-      member,
-      groupRoleFrom: member.role,
+    await this.transactions.run(async (manager) => {
+      await this.groupsRepository.deleteMember(member.id, manager);
+      await this.auditLogs.recordSpaceMemberEvent(
+        {
+          actionType: BusinessAuditAction.SPACE_MEMBER_REMOVED,
+          actor,
+          member,
+          groupRoleFrom: member.role,
+        },
+        manager,
+      );
     });
   }
 
@@ -148,12 +168,17 @@ export class GroupMembersService {
       await this.assertAnotherAdminRemains(groupId, actor.tenantId, actor.id);
     }
 
-    await this.groupsRepository.deleteMember(member.id);
-    await this.auditLogs.recordSpaceMemberEvent({
-      actionType: BusinessAuditAction.SPACE_MEMBER_LEFT,
-      actor,
-      member,
-      groupRoleFrom: member.role,
+    await this.transactions.run(async (manager) => {
+      await this.groupsRepository.deleteMember(member.id, manager);
+      await this.auditLogs.recordSpaceMemberEvent(
+        {
+          actionType: BusinessAuditAction.SPACE_MEMBER_LEFT,
+          actor,
+          member,
+          groupRoleFrom: member.role,
+        },
+        manager,
+      );
     });
   }
 

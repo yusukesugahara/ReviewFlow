@@ -19,6 +19,7 @@ import { ApplicationCreationService } from '../creation/application-creation.ser
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import { ApplicationProgressService } from '../progress/application-progress.service';
 import { ApplicationSubmissionService } from '../submission/application-submission.service';
+import { TransactionService } from '../../../../transaction';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
 
@@ -33,6 +34,7 @@ export class ApplicantApplicationService {
     private readonly progressService: ApplicationProgressService,
     private readonly submissionService: ApplicationSubmissionService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async createAndSubmit(
@@ -44,34 +46,44 @@ export class ApplicantApplicationService {
       actor.tenantId,
       actor.groupId,
     );
-    const created = await this.creationService.create(
-      actor.tenantId,
-      actor.email,
-      null,
-      {
-        ...dto,
-        formDefinitionId: actor.formDefinitionId ?? dto.formDefinitionId,
-        approvalFlowId: flow.id,
-        status: ApplicationStatus.DRAFT,
-      },
-    );
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_CREATED,
-      actor: { id: null, email: actor.email, type: 'applicant' },
-      app: created,
-      after: {
-        status: created.status,
-        stepOrder: created.currentStepOrder,
-      },
-    });
-    const before = this.snapshot(created);
-    await this.submissionService.submit(actor.tenantId, created);
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_SUBMITTED,
-      actor: { id: null, email: actor.email, type: 'applicant' },
-      app: created,
-      before,
-      after: this.snapshot(created),
+    const created = await this.transactions.run(async (manager) => {
+      const row = await this.creationService.create(
+        actor.tenantId,
+        actor.email,
+        null,
+        {
+          ...dto,
+          formDefinitionId: actor.formDefinitionId ?? dto.formDefinitionId,
+          approvalFlowId: flow.id,
+          status: ApplicationStatus.DRAFT,
+        },
+        manager,
+      );
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_CREATED,
+          actor: { id: null, email: actor.email, type: 'applicant' },
+          app: row,
+          after: {
+            status: row.status,
+            stepOrder: row.currentStepOrder,
+          },
+        },
+        manager,
+      );
+      const before = this.snapshot(row);
+      await this.submissionService.submit(actor.tenantId, row, manager);
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_SUBMITTED,
+          actor: { id: null, email: actor.email, type: 'applicant' },
+          app: row,
+          before,
+          after: this.snapshot(row),
+        },
+        manager,
+      );
+      return row;
     });
     const submitted = await this.applicantAccess.loadSubmittedApplication(
       actor.tenantId,
@@ -105,14 +117,24 @@ export class ApplicantApplicationService {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
     const before = this.snapshot(app);
-    await this.fieldValuePatchService.applyPatch(actor.tenantId, app, dto);
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_CORRECTED,
-      actor: { id: null, email: actor.email, type: 'applicant' },
-      app,
-      before,
-      after: this.snapshot(app),
-      metadataJson: { fieldKeys: Object.keys(dto.values ?? {}) },
+    await this.transactions.run(async (manager) => {
+      await this.fieldValuePatchService.applyPatch(
+        actor.tenantId,
+        app,
+        dto,
+        manager,
+      );
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_CORRECTED,
+          actor: { id: null, email: actor.email, type: 'applicant' },
+          app,
+          before,
+          after: this.snapshot(app),
+          metadataJson: { fieldKeys: Object.keys(dto.values ?? {}) },
+        },
+        manager,
+      );
     });
     const updated = await this.applicantAccess.loadApplicationDetail(actor, id);
     return this.progressService.hydrate(updated);
@@ -121,13 +143,18 @@ export class ApplicantApplicationService {
   async resubmit(actor: ApplicantSession, id: string): Promise<Application> {
     const app = await this.applicantAccess.loadEditableApplication(actor, id);
     const before = this.snapshot(app);
-    await this.submissionService.resubmit(actor.tenantId, app);
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_RESUBMITTED,
-      actor: { id: null, email: actor.email, type: 'applicant' },
-      app,
-      before,
-      after: this.snapshot(app),
+    await this.transactions.run(async (manager) => {
+      await this.submissionService.resubmit(actor.tenantId, app, manager);
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_RESUBMITTED,
+          actor: { id: null, email: actor.email, type: 'applicant' },
+          app,
+          before,
+          after: this.snapshot(app),
+        },
+        manager,
+      );
     });
     const updated = await this.applicantAccess.loadApplicationDetail(actor, id);
     return this.progressService.hydrate(updated);

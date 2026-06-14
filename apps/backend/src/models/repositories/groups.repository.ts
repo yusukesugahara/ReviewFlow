@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   GroupMemberRole,
   type GroupMemberRoleValue,
@@ -92,8 +92,11 @@ export class GroupsRepository {
     });
   }
 
-  async createGroupWithAdmins(params: CreateGroupWithAdminsParams) {
-    return this.dataSource.transaction(async (manager) => {
+  async createGroupWithAdmins(
+    params: CreateGroupWithAdminsParams,
+    manager?: EntityManager,
+  ) {
+    const work = async (manager: EntityManager) => {
       const groupRepo = manager.getRepository(Group);
       const memberRepo = manager.getRepository(GroupMember);
 
@@ -121,15 +124,18 @@ export class GroupsRepository {
       );
 
       return group;
-    });
+    };
+    return manager ? work(manager) : this.dataSource.transaction(work);
   }
 
-  saveGroup(group: Group): Promise<Group> {
-    return this.groups.save(group);
+  saveGroup(group: Group, manager?: EntityManager): Promise<Group> {
+    const repository = manager?.getRepository(Group) ?? this.groups;
+    return repository.save(group);
   }
 
-  async deleteGroup(groupId: string): Promise<void> {
-    await this.groups.delete(groupId);
+  async deleteGroup(groupId: string, manager?: EntityManager): Promise<void> {
+    const repository = manager?.getRepository(Group) ?? this.groups;
+    await repository.delete(groupId);
   }
 
   findMembersWithUsers(
@@ -191,15 +197,19 @@ export class GroupsRepository {
     });
   }
 
-  async createMember(params: {
-    tenantId: string;
-    groupId: string;
-    userId: string;
-    role: GroupMemberRoleValue;
-    invitedByUserId: string;
-  }): Promise<GroupMember> {
-    return this.members.save(
-      this.members.create({
+  async createMember(
+    params: {
+      tenantId: string;
+      groupId: string;
+      userId: string;
+      role: GroupMemberRoleValue;
+      invitedByUserId: string;
+    },
+    manager?: EntityManager,
+  ): Promise<GroupMember> {
+    const repository = manager?.getRepository(GroupMember) ?? this.members;
+    return repository.save(
+      repository.create({
         tenantId: params.tenantId,
         groupId: params.groupId,
         userId: params.userId,
@@ -209,16 +219,21 @@ export class GroupsRepository {
     );
   }
 
-  async saveMember(member: GroupMember): Promise<GroupMember> {
-    const saved = await this.members.save(member);
-    return this.members.findOneOrFail({
+  async saveMember(
+    member: GroupMember,
+    manager?: EntityManager,
+  ): Promise<GroupMember> {
+    const repository = manager?.getRepository(GroupMember) ?? this.members;
+    const saved = await repository.save(member);
+    return repository.findOneOrFail({
       where: { id: saved.id },
       relations: { user: true },
     });
   }
 
-  async deleteMember(memberId: string): Promise<void> {
-    await this.members.delete(memberId);
+  async deleteMember(memberId: string, manager?: EntityManager): Promise<void> {
+    const repository = manager?.getRepository(GroupMember) ?? this.members;
+    await repository.delete(memberId);
   }
 
   findAdmins(tenantId: string, groupId: string): Promise<GroupMember[]> {

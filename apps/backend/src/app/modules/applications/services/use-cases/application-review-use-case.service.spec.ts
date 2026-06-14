@@ -10,6 +10,7 @@ import type { ApplicationAccessPolicy } from '../../policies/application-access.
 import type { ApplicationNotificationService } from '../notifications/application-notification.service';
 import type { ApplicationQueryService } from '../query/application-query.service';
 import type { ApplicationReviewActionService } from '../review/application-review-action.service';
+import type { TransactionManager } from '../../../../transaction';
 import { ApplicationReviewUseCaseService } from './application-review-use-case.service';
 
 const actor = (overrides: Partial<AuthUserPayload> = {}): AuthUserPayload => ({
@@ -70,6 +71,10 @@ describe('ApplicationReviewUseCaseService', () => {
   let auditLogs: {
     recordApplicationEvent: jest.Mock;
   };
+  let transactionManager: TransactionManager;
+  let transactions: ConstructorParameters<
+    typeof ApplicationReviewUseCaseService
+  >[7];
   let service: ApplicationReviewUseCaseService;
 
   beforeEach(() => {
@@ -97,6 +102,14 @@ describe('ApplicationReviewUseCaseService', () => {
     auditLogs = {
       recordApplicationEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    } as unknown as ConstructorParameters<
+      typeof ApplicationReviewUseCaseService
+    >[7];
     service = new ApplicationReviewUseCaseService(
       applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
@@ -105,6 +118,7 @@ describe('ApplicationReviewUseCaseService', () => {
       queryService as unknown as ApplicationQueryService,
       reviewActionService as unknown as ApplicationReviewActionService,
       auditLogs as unknown as BusinessAuditLogService,
+      transactions,
     );
   });
 
@@ -135,12 +149,14 @@ describe('ApplicationReviewUseCaseService', () => {
       {
         comment: 'ok',
       },
+      transactionManager,
     );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'application.approved',
         app: row,
       }),
+      transactionManager,
     );
     expect(queryService.getOneForActor).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'reviewer-1' }),
@@ -161,12 +177,14 @@ describe('ApplicationReviewUseCaseService', () => {
       row,
       'reviewer-1',
       {},
+      transactionManager,
     );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'application.rejected',
         app: row,
       }),
+      transactionManager,
     );
   });
 
@@ -202,6 +220,7 @@ describe('ApplicationReviewUseCaseService', () => {
       row,
       'reviewer-1',
       dto,
+      transactionManager,
     );
     expect(notificationService.notifyApplicantOfReturn).toHaveBeenCalledWith(
       row,
@@ -213,6 +232,7 @@ describe('ApplicationReviewUseCaseService', () => {
         actionType: 'application.returned',
         app: row,
       }),
+      transactionManager,
     );
   });
 });

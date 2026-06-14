@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Not, Repository } from 'typeorm';
+import { EntityManager, In, Not, Repository } from 'typeorm';
 import { UserRole } from '../constants/user-role';
 import type { UserRoleValue } from '../constants/user-role';
 import { User } from '../entities/user.entity';
@@ -94,7 +94,8 @@ export class UsersRepository {
     });
   }
 
-  save(user: User): Promise<User> {
-    return this.users.save(user);
+  save(user: User, manager?: EntityManager): Promise<User> {
+    const repository = manager?.getRepository(User) ?? this.users;
+    return repository.save(user);
   }
 }

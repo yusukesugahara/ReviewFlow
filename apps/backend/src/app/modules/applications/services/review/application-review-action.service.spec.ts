@@ -114,6 +114,7 @@ describe('ApplicationReviewActionService', () => {
         comment: 'ok',
         approvalStepId: 'step-1',
       }),
+      undefined,
     );
     expect(target.status).toBe(ApplicationStatus.IN_REVIEW);
     expect(target.currentStepOrder).toBe(2);
@@ -133,6 +134,7 @@ describe('ApplicationReviewActionService', () => {
         comment: 'no',
         approvalStepId: 'step-2',
       }),
+      undefined,
     );
     expect(target.status).toBe(ApplicationStatus.REJECTED);
     expect(target.currentStepOrder).toBeNull();
@@ -186,6 +188,7 @@ describe('ApplicationReviewActionService', () => {
           }),
         ],
       }),
+      undefined,
     );
     expect(target.status).toBe(ApplicationStatus.RETURNED);
   });

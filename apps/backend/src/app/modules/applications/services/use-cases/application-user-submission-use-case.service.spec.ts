@@ -8,6 +8,7 @@ import type { ApplicationApprovalFlowResolver } from '../../resolvers/applicatio
 import type { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import type { ApplicationQueryService } from '../query/application-query.service';
 import type { ApplicationSubmissionService } from '../submission/application-submission.service';
+import type { TransactionManager } from '../../../../transaction';
 import { ApplicationUserSubmissionUseCaseService } from './application-user-submission-use-case.service';
 
 const actor = (overrides: Partial<AuthUserPayload> = {}): AuthUserPayload => ({
@@ -57,6 +58,10 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
   let auditLogs: {
     recordApplicationEvent: jest.Mock;
   };
+  let transactionManager: TransactionManager;
+  let transactions: ConstructorParameters<
+    typeof ApplicationUserSubmissionUseCaseService
+  >[7];
   let service: ApplicationUserSubmissionUseCaseService;
 
   beforeEach(() => {
@@ -82,6 +87,14 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
     auditLogs = {
       recordApplicationEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    } as unknown as ConstructorParameters<
+      typeof ApplicationUserSubmissionUseCaseService
+    >[7];
     service = new ApplicationUserSubmissionUseCaseService(
       applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
@@ -90,6 +103,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       queryService as unknown as ApplicationQueryService,
       submissionService as unknown as ApplicationSubmissionService,
       auditLogs as unknown as BusinessAuditLogService,
+      transactions,
     );
   });
 
@@ -124,6 +138,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       'tenant-1',
       row,
       dto,
+      transactionManager,
     );
     expect(queryService.getOneForActor).toHaveBeenCalledWith(
       expect.objectContaining({ id: 'applicant-user-1' }),
@@ -152,12 +167,17 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
 
     await expect(service.submit(actor(), 'app-1')).resolves.toBe(hydrated);
 
-    expect(submissionService.submit).toHaveBeenCalledWith('tenant-1', row);
+    expect(submissionService.submit).toHaveBeenCalledWith(
+      'tenant-1',
+      row,
+      transactionManager,
+    );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'application.submitted',
         app: row,
       }),
+      transactionManager,
     );
   });
 
@@ -169,12 +189,17 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
 
     await expect(service.resubmit(actor(), 'app-1')).resolves.toBe(hydrated);
 
-    expect(submissionService.resubmit).toHaveBeenCalledWith('tenant-1', row);
+    expect(submissionService.resubmit).toHaveBeenCalledWith(
+      'tenant-1',
+      row,
+      transactionManager,
+    );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'application.resubmitted',
         app: row,
       }),
+      transactionManager,
     );
   });
 

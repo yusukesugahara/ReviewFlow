@@ -10,6 +10,7 @@ import type { ApplicationCreationService } from '../creation/application-creatio
 import type { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import type { ApplicationProgressService } from '../progress/application-progress.service';
 import type { ApplicationSubmissionService } from '../submission/application-submission.service';
+import type { TransactionManager } from '../../../../transaction';
 import { ApplicantApplicationService } from './applicant-application.service';
 
 const applicant = (
@@ -68,6 +69,10 @@ describe('ApplicantApplicationService', () => {
   let auditLogs: {
     recordApplicationEvent: jest.Mock;
   };
+  let transactionManager: TransactionManager;
+  let transactions: ConstructorParameters<
+    typeof ApplicantApplicationService
+  >[8];
   let service: ApplicantApplicationService;
 
   beforeEach(() => {
@@ -97,6 +102,14 @@ describe('ApplicantApplicationService', () => {
     auditLogs = {
       recordApplicationEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    } as unknown as ConstructorParameters<
+      typeof ApplicantApplicationService
+    >[8];
     const applicantAccess = new ApplicantApplicationAccessService(
       applicationsRepository as unknown as ApplicationQueryRepository,
     );
@@ -109,6 +122,7 @@ describe('ApplicantApplicationService', () => {
       progressService as unknown as ApplicationProgressService,
       submissionService as unknown as ApplicationSubmissionService,
       auditLogs as unknown as BusinessAuditLogService,
+      transactions,
     );
   });
 
@@ -140,19 +154,26 @@ describe('ApplicantApplicationService', () => {
         groupId: 'group-1',
         status: ApplicationStatus.DRAFT,
       }),
+      transactionManager,
     );
-    expect(submissionService.submit).toHaveBeenCalledWith('tenant-1', created);
+    expect(submissionService.submit).toHaveBeenCalledWith(
+      'tenant-1',
+      created,
+      transactionManager,
+    );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'application.created',
         app: created,
       }),
+      transactionManager,
     );
     expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'application.submitted',
         app: created,
       }),
+      transactionManager,
     );
     expect(applicationsRepository.findById).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
@@ -226,6 +247,7 @@ describe('ApplicantApplicationService', () => {
       'tenant-1',
       row,
       { values: { title: 'Fixed' } },
+      transactionManager,
     );
     expect(applicationsRepository.findById).toHaveBeenCalledWith({
       id: 'app-1',
@@ -243,7 +265,11 @@ describe('ApplicantApplicationService', () => {
 
     await expect(service.resubmit(applicant(), 'app-1')).resolves.toBe(updated);
 
-    expect(submissionService.resubmit).toHaveBeenCalledWith('tenant-1', row);
+    expect(submissionService.resubmit).toHaveBeenCalledWith(
+      'tenant-1',
+      row,
+      transactionManager,
+    );
     expect(applicationsRepository.findById).toHaveBeenCalledWith({
       id: 'app-1',
       tenantId: 'tenant-1',

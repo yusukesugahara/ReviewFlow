@@ -9,6 +9,10 @@ import {
   InvitationRepositoryError,
   InvitationsRepository,
 } from '../../../../models/repositories/invitations.repository';
+import {
+  TransactionService,
+  type TransactionManager,
+} from '../../../transaction';
 import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { AuthService } from '../../auth/services/facades/auth.service';
 import { MailService } from '../../mail/services/mail.service';
@@ -37,6 +41,10 @@ describe('InvitationsService', () => {
     recordInvitationAccepted: jest.Mock;
     recordInvitationCreated: jest.Mock;
   };
+  let transactionManager: TransactionManager;
+  let transactions: {
+    run: jest.Mock;
+  };
 
   beforeEach(async () => {
     invitationsRepository = {
@@ -59,6 +67,12 @@ describe('InvitationsService', () => {
       recordInvitationAccepted: jest.fn(),
       recordInvitationCreated: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -68,6 +82,7 @@ describe('InvitationsService', () => {
         { provide: AuthService, useValue: authService },
         { provide: MailService, useValue: mailService },
         { provide: BusinessAuditLogService, useValue: auditLogs },
+        { provide: TransactionService, useValue: transactions },
       ],
     }).compile();
 
@@ -250,6 +265,7 @@ describe('InvitationsService', () => {
           token: 'tok',
           name: 'Joiner',
         }),
+        transactionManager,
       );
       expect(out.access_token).toBe('jwt');
       expect(auditLogs.recordInvitationAccepted).toHaveBeenCalledWith(
@@ -257,6 +273,7 @@ describe('InvitationsService', () => {
           invitation: acceptedInvitation,
           user: acceptedUser,
         }),
+        transactionManager,
       );
     });
   });

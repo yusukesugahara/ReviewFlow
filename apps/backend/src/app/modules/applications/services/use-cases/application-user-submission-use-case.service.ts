@@ -14,6 +14,7 @@ import { ApplicationApprovalFlowResolver } from '../../resolvers/application-app
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationSubmissionService } from '../submission/application-submission.service';
+import { TransactionService } from '../../../../transaction';
 
 @Injectable()
 export class ApplicationUserSubmissionUseCaseService {
@@ -25,6 +26,7 @@ export class ApplicationUserSubmissionUseCaseService {
     private readonly queryService: ApplicationQueryService,
     private readonly submissionService: ApplicationSubmissionService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async patch(
@@ -42,17 +44,27 @@ export class ApplicationUserSubmissionUseCaseService {
       );
     }
     const before = this.snapshot(app);
-    await this.fieldValuePatchService.applyPatch(actor.tenantId, app, dto);
-    if (before.status === ApplicationStatus.RETURNED) {
-      await this.auditLogs.recordApplicationEvent({
-        actionType: BusinessAuditAction.APPLICATION_CORRECTED,
-        actor: { id: actor.id ?? null, email: actor.email, type: 'user' },
+    await this.transactions.run(async (manager) => {
+      await this.fieldValuePatchService.applyPatch(
+        actor.tenantId,
         app,
-        before,
-        after: this.snapshot(app),
-        metadataJson: { fieldKeys: Object.keys(dto.values ?? {}) },
-      });
-    }
+        dto,
+        manager,
+      );
+      if (before.status === ApplicationStatus.RETURNED) {
+        await this.auditLogs.recordApplicationEvent(
+          {
+            actionType: BusinessAuditAction.APPLICATION_CORRECTED,
+            actor: { id: actor.id ?? null, email: actor.email, type: 'user' },
+            app,
+            before,
+            after: this.snapshot(app),
+            metadataJson: { fieldKeys: Object.keys(dto.values ?? {}) },
+          },
+          manager,
+        );
+      }
+    });
     return this.queryService.getOneForActor(actor, id);
   }
 
@@ -60,13 +72,18 @@ export class ApplicationUserSubmissionUseCaseService {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     const before = this.snapshot(app);
-    await this.submissionService.submit(actor.tenantId, app);
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_SUBMITTED,
-      actor: { id: actor.id, email: actor.email, type: 'user' },
-      app,
-      before,
-      after: this.snapshot(app),
+    await this.transactions.run(async (manager) => {
+      await this.submissionService.submit(actor.tenantId, app, manager);
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_SUBMITTED,
+          actor: { id: actor.id, email: actor.email, type: 'user' },
+          app,
+          before,
+          after: this.snapshot(app),
+        },
+        manager,
+      );
     });
     return this.queryService.getOneForActor(actor, id);
   }
@@ -75,13 +92,18 @@ export class ApplicationUserSubmissionUseCaseService {
     const app = await this.loadApplicantEditableApplication(actor, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
     const before = this.snapshot(app);
-    await this.submissionService.resubmit(actor.tenantId, app);
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_RESUBMITTED,
-      actor: { id: actor.id, email: actor.email, type: 'user' },
-      app,
-      before,
-      after: this.snapshot(app),
+    await this.transactions.run(async (manager) => {
+      await this.submissionService.resubmit(actor.tenantId, app, manager);
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_RESUBMITTED,
+          actor: { id: actor.id, email: actor.email, type: 'user' },
+          app,
+          before,
+          after: this.snapshot(app),
+        },
+        manager,
+      );
     });
     return this.queryService.getOneForActor(actor, id);
   }

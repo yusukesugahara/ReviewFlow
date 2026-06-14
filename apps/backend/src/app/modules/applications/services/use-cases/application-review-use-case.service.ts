@@ -17,6 +17,7 @@ import { ApplicationAccessPolicy } from '../../policies/application-access.polic
 import { ApplicationNotificationService } from '../notifications/application-notification.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationReviewActionService } from '../review/application-review-action.service';
+import { TransactionService } from '../../../../transaction';
 
 @Injectable()
 export class ApplicationReviewUseCaseService {
@@ -28,6 +29,7 @@ export class ApplicationReviewUseCaseService {
     private readonly queryService: ApplicationQueryService,
     private readonly reviewActionService: ApplicationReviewActionService,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   async approve(
@@ -37,14 +39,19 @@ export class ApplicationReviewUseCaseService {
   ): Promise<Application> {
     const app = await this.loadReviewableApplication(actor, id);
     const before = this.snapshot(app);
-    await this.reviewActionService.approve(app, actor.id, dto);
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_APPROVED,
-      actor: { id: actor.id, email: actor.email, type: 'user' },
-      app,
-      before,
-      after: this.snapshot(app),
-      metadataJson: { comment: this.trimComment(dto.comment) },
+    await this.transactions.run(async (manager) => {
+      await this.reviewActionService.approve(app, actor.id, dto, manager);
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_APPROVED,
+          actor: { id: actor.id, email: actor.email, type: 'user' },
+          app,
+          before,
+          after: this.snapshot(app),
+          metadataJson: { comment: this.trimComment(dto.comment) },
+        },
+        manager,
+      );
     });
     return this.queryService.getOneForActor(actor, id);
   }
@@ -56,14 +63,19 @@ export class ApplicationReviewUseCaseService {
   ): Promise<Application> {
     const app = await this.loadReviewableApplication(actor, id);
     const before = this.snapshot(app);
-    await this.reviewActionService.reject(app, actor.id, dto);
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_REJECTED,
-      actor: { id: actor.id, email: actor.email, type: 'user' },
-      app,
-      before,
-      after: this.snapshot(app),
-      metadataJson: { comment: this.trimComment(dto.comment) },
+    await this.transactions.run(async (manager) => {
+      await this.reviewActionService.reject(app, actor.id, dto, manager);
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_REJECTED,
+          actor: { id: actor.id, email: actor.email, type: 'user' },
+          app,
+          before,
+          after: this.snapshot(app),
+          metadataJson: { comment: this.trimComment(dto.comment) },
+        },
+        manager,
+      );
     });
     return this.queryService.getOneForActor(actor, id);
   }
@@ -75,21 +87,28 @@ export class ApplicationReviewUseCaseService {
   ): Promise<Application> {
     const app = await this.loadReviewableApplication(actor, id);
     const before = this.snapshot(app);
-    const template = await this.reviewActionService.returnForCorrection(
-      app,
-      actor.id,
-      dto,
-    );
-    await this.auditLogs.recordApplicationEvent({
-      actionType: BusinessAuditAction.APPLICATION_RETURNED,
-      actor: { id: actor.id, email: actor.email, type: 'user' },
-      app,
-      before,
-      after: this.snapshot(app),
-      metadataJson: {
-        overallComment: this.trimComment(dto.overallComment),
-        fieldIds: dto.fields.map((field) => field.fieldId),
-      },
+    const template = await this.transactions.run(async (manager) => {
+      const result = await this.reviewActionService.returnForCorrection(
+        app,
+        actor.id,
+        dto,
+        manager,
+      );
+      await this.auditLogs.recordApplicationEvent(
+        {
+          actionType: BusinessAuditAction.APPLICATION_RETURNED,
+          actor: { id: actor.id, email: actor.email, type: 'user' },
+          app,
+          before,
+          after: this.snapshot(app),
+          metadataJson: {
+            overallComment: this.trimComment(dto.overallComment),
+            fieldIds: dto.fields.map((field) => field.fieldId),
+          },
+        },
+        manager,
+      );
+      return result;
     });
     await this.notificationService.notifyApplicantOfReturn(app, template, dto);
     return this.queryService.getOneForActor(actor, id);

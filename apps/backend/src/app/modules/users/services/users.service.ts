@@ -12,6 +12,7 @@ import {
   BusinessAuditAction,
   BusinessAuditLogService,
 } from '../../audit-logs/services/business-audit-log.service';
+import { TransactionService } from '../../../transaction';
 
 const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [UserRole.TENANT_ADMIN];
 
@@ -20,6 +21,7 @@ export class UsersService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly auditLogs: BusinessAuditLogService,
+    private readonly transactions: TransactionService,
   ) {}
 
   count(): Promise<number> {
@@ -100,15 +102,20 @@ export class UsersService {
 
     const previousRole = target.role;
     target.role = nextRole;
-    const saved = await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_ROLE_CHANGED,
-      actor,
-      target: saved,
-      roleFrom: previousRole,
-      roleTo: saved.role,
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_ROLE_CHANGED,
+          actor,
+          target: saved,
+          roleFrom: previousRole,
+          roleTo: saved.role,
+        },
+        manager,
+      );
+      return saved;
     });
-    return saved;
   }
 
   async updateOwnProfile(
@@ -127,17 +134,22 @@ export class UsersService {
     }
 
     target.name = nextName;
-    const saved = await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_PROFILE_UPDATED,
-      actor,
-      target: saved,
-      metadataJson: {
-        userNameFrom: previousName,
-        userNameTo: saved.name,
-      },
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_PROFILE_UPDATED,
+          actor,
+          target: saved,
+          metadataJson: {
+            userNameFrom: previousName,
+            userNameTo: saved.name,
+          },
+        },
+        manager,
+      );
+      return saved;
     });
-    return saved;
   }
 
   async updateOwnPassword(
@@ -158,14 +170,19 @@ export class UsersService {
     }
 
     target.passwordHash = await bcrypt.hash(input.newPassword, 10);
-    const saved = await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_PASSWORD_CHANGED,
-      actor,
-      target: saved,
-      metadataJson: { passwordChanged: true },
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_PASSWORD_CHANGED,
+          actor,
+          target: saved,
+          metadataJson: { passwordChanged: true },
+        },
+        manager,
+      );
+      return saved;
     });
-    return saved;
   }
 
   async deactivateInTenant(
@@ -190,12 +207,17 @@ export class UsersService {
     }
 
     target.isActive = false;
-    await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_DEACTIVATED,
-      actor,
-      target,
-      metadataJson: { isActiveFrom: true, isActiveTo: false },
+    await this.transactions.run(async (manager) => {
+      await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_DEACTIVATED,
+          actor,
+          target,
+          metadataJson: { isActiveFrom: true, isActiveTo: false },
+        },
+        manager,
+      );
     });
   }
 
@@ -210,14 +232,19 @@ export class UsersService {
     }
 
     target.isActive = true;
-    const saved = await this.usersRepository.save(target);
-    await this.auditLogs.recordUserEvent({
-      actionType: BusinessAuditAction.USER_RESTORED,
-      actor,
-      target: saved,
-      metadataJson: { isActiveFrom: false, isActiveTo: true },
+    return this.transactions.run(async (manager) => {
+      const saved = await this.usersRepository.save(target, manager);
+      await this.auditLogs.recordUserEvent(
+        {
+          actionType: BusinessAuditAction.USER_RESTORED,
+          actor,
+          target: saved,
+          metadataJson: { isActiveFrom: false, isActiveTo: true },
+        },
+        manager,
+      );
+      return saved;
     });
-    return saved;
   }
 }
 

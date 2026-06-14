@@ -5,6 +5,10 @@ import type { AuthUserPayload } from '../../../../decorators/current-user.decora
 import { UserRole } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
 import { UsersRepository } from '../../../../models/repositories/users.repository';
+import {
+  TransactionService,
+  type TransactionManager,
+} from '../../../transaction';
 import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from './users.service';
 
@@ -42,6 +46,10 @@ describe('UsersService', () => {
   let auditLogs: {
     recordUserEvent: jest.Mock;
   };
+  let transactionManager: TransactionManager;
+  let transactions: {
+    run: jest.Mock;
+  };
 
   beforeEach(async () => {
     usersRepository = {
@@ -60,12 +68,19 @@ describe('UsersService', () => {
     auditLogs = {
       recordUserEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UsersService,
         { provide: UsersRepository, useValue: usersRepository },
         { provide: BusinessAuditLogService, useValue: auditLogs },
+        { provide: TransactionService, useValue: transactions },
       ],
     }).compile();
 
@@ -240,6 +255,7 @@ describe('UsersService', () => {
           roleFrom: UserRole.TENANT_USER,
           roleTo: UserRole.TENANT_USER,
         }),
+        transactionManager,
       );
     });
 
@@ -330,12 +346,16 @@ describe('UsersService', () => {
       await service.deactivateInTenant('t1', 'u-member', actor());
 
       expect(target.isActive).toBe(false);
-      expect(usersRepository.save).toHaveBeenCalledWith(target);
+      expect(usersRepository.save).toHaveBeenCalledWith(
+        target,
+        transactionManager,
+      );
       expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           actionType: 'user.deactivated',
           target,
         }),
+        transactionManager,
       );
     });
   });
@@ -369,12 +389,16 @@ describe('UsersService', () => {
       const out = await service.restoreInTenant('t1', 'u-member', actor());
 
       expect(out.isActive).toBe(true);
-      expect(usersRepository.save).toHaveBeenCalledWith(target);
+      expect(usersRepository.save).toHaveBeenCalledWith(
+        target,
+        transactionManager,
+      );
       expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           actionType: 'user.restored',
           target,
         }),
+        transactionManager,
       );
     });
   });
@@ -410,6 +434,7 @@ describe('UsersService', () => {
             userNameTo: 'New User',
           },
         }),
+        transactionManager,
       );
     });
 
@@ -459,6 +484,7 @@ describe('UsersService', () => {
           target: currentUser,
           metadataJson: { passwordChanged: true },
         }),
+        transactionManager,
       );
     });
 

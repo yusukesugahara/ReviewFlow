@@ -131,6 +131,7 @@ describe('ApplicationFieldValuePatchService', () => {
     expect(existing.valueJson).toBe('new');
     expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ values: [existing] }),
+      undefined,
     );
   });
 
@@ -149,6 +150,7 @@ describe('ApplicationFieldValuePatchService', () => {
 
     expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ formDefinitionId: 'template-next' }),
+      undefined,
     );
   });
 
@@ -167,6 +169,7 @@ describe('ApplicationFieldValuePatchService', () => {
 
     expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
       expect.objectContaining({ status: ApplicationStatus.PUBLISHED }),
+      undefined,
     );
   });
 

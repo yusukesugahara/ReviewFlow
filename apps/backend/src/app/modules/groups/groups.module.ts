@@ -10,6 +10,7 @@ import { GroupsController } from './controllers/groups.controller';
 import { GroupMembersService } from './services/members/group-members.service';
 import { GroupsService } from './services/facades/groups.service';
 import { SpaceAccessService } from './services/access/space-access.service';
+import { TransactionService } from '../../transaction';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { SpaceAccessService } from './services/access/space-access.service';
     GroupMembersService,
     SpaceAccessService,
     GroupsRepository,
+    TransactionService,
   ],
   exports: [GroupsService, SpaceAccessService],
 })

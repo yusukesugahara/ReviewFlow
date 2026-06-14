@@ -4,6 +4,10 @@ import { UserRole } from '../../../../../models/constants/user-role';
 import { EmailChangeToken } from '../../../../../models/entities/email-change-token.entity';
 import { User } from '../../../../../models/entities/user.entity';
 import { AuthRepository } from '../../../../../models/repositories/auth.repository';
+import {
+  TransactionService,
+  type TransactionManager,
+} from '../../../../transaction';
 import { BusinessAuditLogService } from '../../../audit-logs/services/business-audit-log.service';
 import { MailService } from '../../../mail/services/mail.service';
 import { UsersService } from '../../../users/services/users.service';
@@ -25,6 +29,10 @@ describe('AuthEmailChangeService', () => {
   };
   let auditLogs: {
     recordUserEvent: jest.Mock;
+  };
+  let transactionManager: TransactionManager;
+  let transactions: {
+    run: jest.Mock;
   };
 
   const actor = {
@@ -65,6 +73,12 @@ describe('AuthEmailChangeService', () => {
     auditLogs = {
       recordUserEvent: jest.fn(),
     };
+    transactionManager = {} as TransactionManager;
+    transactions = {
+      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
+        work(transactionManager),
+      ),
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -73,6 +87,7 @@ describe('AuthEmailChangeService', () => {
         { provide: UsersService, useValue: users },
         { provide: MailService, useValue: mailService },
         { provide: BusinessAuditLogService, useValue: auditLogs },
+        { provide: TransactionService, useValue: transactions },
       ],
     }).compile();
 
@@ -166,10 +181,13 @@ describe('AuthEmailChangeService', () => {
     expect(authRepository.findEmailChangeToken).toHaveBeenCalledWith('token');
     expect(
       authRepository.updateEmailAndMarkEmailChangeTokenUsed,
-    ).toHaveBeenCalledWith({
-      tokenRow,
-      email: 'new@example.com',
-    });
+    ).toHaveBeenCalledWith(
+      {
+        tokenRow,
+        email: 'new@example.com',
+      },
+      transactionManager,
+    );
     expect(auditLogs.recordUserEvent).toHaveBeenCalledWith(
       expect.objectContaining({
         actionType: 'user.profile_updated',
@@ -180,6 +198,7 @@ describe('AuthEmailChangeService', () => {
           emailTo: 'new@example.com',
         },
       }),
+      transactionManager,
     );
   });
 

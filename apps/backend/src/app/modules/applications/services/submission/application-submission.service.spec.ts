@@ -130,6 +130,7 @@ describe('ApplicationSubmissionService', () => {
     expect(target.currentStepOrder).toBe(1);
     expect(submissionRepository.saveSubmittedApplication).toHaveBeenCalledWith(
       target,
+      undefined,
     );
   });
 

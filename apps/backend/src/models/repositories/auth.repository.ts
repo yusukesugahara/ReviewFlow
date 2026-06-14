@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, IsNull, Repository } from 'typeorm';
+import { DataSource, EntityManager, IsNull, Repository } from 'typeorm';
 import { TenantPlan, TenantStatus } from '../constants/tenant-enums';
 import { UserRole } from '../constants/user-role';
 import { EmailChangeToken } from '../entities/email-change-token.entity';
@@ -98,11 +98,14 @@ export class AuthRepository {
     return this.emailChangeTokens.findOne({ where: { token } });
   }
 
-  async updateEmailAndMarkEmailChangeTokenUsed(params: {
-    tokenRow: EmailChangeToken;
-    email: string;
-  }): Promise<User> {
-    return this.dataSource.transaction(async (manager) => {
+  async updateEmailAndMarkEmailChangeTokenUsed(
+    params: {
+      tokenRow: EmailChangeToken;
+      email: string;
+    },
+    manager?: EntityManager,
+  ): Promise<User> {
+    const work = async (manager: EntityManager) => {
       const userRepo = manager.getRepository(User);
       const tokenRepo = manager.getRepository(EmailChangeToken);
       const user = await userRepo.findOne({
@@ -122,7 +125,8 @@ export class AuthRepository {
         { usedAt: new Date() },
       );
       return saved;
-    });
+    };
+    return manager ? work(manager) : this.dataSource.transaction(work);
   }
 
   async updatePasswordAndMarkResetTokenUsed(params: {
