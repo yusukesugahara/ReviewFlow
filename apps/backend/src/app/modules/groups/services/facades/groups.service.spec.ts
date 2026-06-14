@@ -21,9 +21,8 @@ describe('GroupsService', () => {
   let groupsRepository: jest.Mocked<
     Pick<
       GroupsRepository,
-      | 'findGroupsByTenant'
-      | 'findMembershipsByTenantAndUser'
-      | 'findMembershipsWithGroupsByTenantAndUser'
+      | 'findGroupsByMembershipForUser'
+      | 'findGroupsByTenantWithCurrentUserRole'
       | 'findGroupByTenantAndName'
       | 'findGroupByIdInTenant'
       | 'createGroupWithAdmins'
@@ -65,9 +64,8 @@ describe('GroupsService', () => {
 
   beforeEach(async () => {
     groupsRepository = {
-      findGroupsByTenant: jest.fn(),
-      findMembershipsByTenantAndUser: jest.fn(),
-      findMembershipsWithGroupsByTenantAndUser: jest.fn(),
+      findGroupsByMembershipForUser: jest.fn(),
+      findGroupsByTenantWithCurrentUserRole: jest.fn(),
       findGroupByTenantAndName: jest.fn(),
       findGroupByIdInTenant: jest.fn(),
       createGroupWithAdmins: jest.fn(),
@@ -103,18 +101,18 @@ describe('GroupsService', () => {
   });
 
   it('returns current user space roles independently per group', async () => {
-    groupsRepository.findMembershipsWithGroupsByTenantAndUser.mockResolvedValue(
-      [
-        {
-          role: GroupMemberRole.ADMIN,
-          group: group({ id: 'group-a', name: 'Aスペース' }),
-        },
-        {
-          role: GroupMemberRole.USER,
-          group: group({ id: 'group-b', name: 'Bスペース' }),
-        },
-      ] as GroupMember[],
-    );
+    groupsRepository.findGroupsByMembershipForUser.mockResolvedValue([
+      group({
+        id: 'group-a',
+        name: 'Aスペース',
+        currentUserRole: GroupMemberRole.ADMIN,
+      }),
+      group({
+        id: 'group-b',
+        name: 'Bスペース',
+        currentUserRole: GroupMemberRole.USER,
+      }),
+    ]);
 
     const out = await service.list(groupAdmin);
 
@@ -128,16 +126,21 @@ describe('GroupsService', () => {
         currentUserRole: GroupMemberRole.USER,
       }),
     ]);
+    expect(groupsRepository.findGroupsByMembershipForUser).toHaveBeenCalledWith(
+      'tenant-1',
+      'admin-1',
+    );
   });
 
   it('returns tenant admin groups with membership role when present', async () => {
-    groupsRepository.findGroupsByTenant.mockResolvedValue([
-      group({ id: 'group-a', name: 'Aスペース' }),
-      group({ id: 'group-b', name: 'Bスペース' }),
+    groupsRepository.findGroupsByTenantWithCurrentUserRole.mockResolvedValue([
+      group({
+        id: 'group-a',
+        name: 'Aスペース',
+        currentUserRole: GroupMemberRole.ADMIN,
+      }),
+      group({ id: 'group-b', name: 'Bスペース', currentUserRole: null }),
     ]);
-    groupsRepository.findMembershipsByTenantAndUser.mockResolvedValue([
-      { groupId: 'group-a', role: GroupMemberRole.ADMIN },
-    ] as GroupMember[]);
 
     const out = await service.list(systemAdmin);
 
@@ -148,6 +151,9 @@ describe('GroupsService', () => {
       }),
       expect.objectContaining({ id: 'group-b', currentUserRole: null }),
     ]);
+    expect(
+      groupsRepository.findGroupsByTenantWithCurrentUserRole,
+    ).toHaveBeenCalledWith('tenant-1', 'sys-1');
   });
 
   it('creates a group with initial group admins', async () => {

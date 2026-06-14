@@ -55,13 +55,13 @@ describe('ApplicationCorrectionRepository', () => {
 
   it('returns the latest open correction with item fields', async () => {
     const latest = { id: 'correction-latest' } as CorrectionRequest;
-    correctionRequests.find.mockResolvedValue([latest]);
+    correctionRequests.findOne.mockResolvedValue(latest);
 
     await expect(
       repository.findLatestOpenCorrectionWithItems('tenant-1', 'app-1'),
     ).resolves.toBe(latest);
 
-    expect(correctionRequests.find).toHaveBeenCalledWith({
+    expect(correctionRequests.findOne).toHaveBeenCalledWith({
       where: {
         applicationId: 'app-1',
         tenantId: 'tenant-1',

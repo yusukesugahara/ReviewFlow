@@ -20,7 +20,10 @@ describe('AuthService', () => {
   let users: jest.Mocked<
     Pick<
       UsersService,
-      'findAllByEmail' | 'updateOwnProfile' | 'updateOwnPassword'
+      | 'findAllByEmail'
+      | 'findAllByEmailAndTenant'
+      | 'updateOwnProfile'
+      | 'updateOwnPassword'
     >
   >;
   let jwt: { sign: jest.Mock };
@@ -39,6 +42,7 @@ describe('AuthService', () => {
   beforeEach(async () => {
     users = {
       findAllByEmail: jest.fn(),
+      findAllByEmailAndTenant: jest.fn(),
       updateOwnProfile: jest.fn(),
       updateOwnPassword: jest.fn(),
     };
@@ -200,6 +204,37 @@ describe('AuthService', () => {
         role: UserRole.TENANT_USER,
         tenantId: 't1',
       });
+    });
+
+    it('loads tenant-scoped candidates when tenant id is supplied', async () => {
+      const hash = await bcrypt.hash('password12', 4);
+      users.findAllByEmailAndTenant.mockResolvedValue([
+        {
+          id: 'u1',
+          tenantId: 't1',
+          email: 'a@b.com',
+          passwordHash: hash,
+          role: UserRole.TENANT_USER,
+          name: null,
+          isActive: true,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        } as User,
+      ]);
+
+      await expect(
+        service.login({
+          email: 'A@B.com',
+          password: 'password12',
+          tenantId: 't1',
+        }),
+      ).resolves.toMatchObject({ access_token: 'signed-jwt' });
+
+      expect(users.findAllByEmailAndTenant).toHaveBeenCalledWith(
+        'a@b.com',
+        't1',
+      );
+      expect(users.findAllByEmail).not.toHaveBeenCalled();
     });
   });
 

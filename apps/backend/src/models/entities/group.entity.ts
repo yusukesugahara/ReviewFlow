@@ -12,6 +12,7 @@ import {
 import { Tenant } from './tenant.entity';
 import { User } from './user.entity';
 import { GroupMember } from './group-member.entity';
+import type { GroupMemberRoleValue } from '../constants/group-member-role';
 
 @Entity('groups')
 @Index('UQ_groups_tenant_name', ['tenantId', 'name'], { unique: true })
@@ -41,6 +42,8 @@ export class Group {
 
   @OneToMany(() => GroupMember, (member) => member.group)
   members!: GroupMember[];
+
+  currentUserRole?: GroupMemberRoleValue | null;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt!: Date;

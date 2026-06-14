@@ -22,9 +22,7 @@ export class AuthPasswordResetService {
 
   async requestPasswordReset(dto: RequestPasswordResetDto) {
     const email = dto.email.toLowerCase();
-    const users = (await this.usersService.findAllByEmail(email)).filter(
-      (user) => user.isActive,
-    );
+    const users = await this.usersService.findActiveByEmail(email);
 
     for (const user of users) {
       const token = randomBytes(32).toString('hex');

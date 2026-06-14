@@ -28,6 +28,18 @@ export class UsersRepository {
     });
   }
 
+  findAllByEmailAndTenant(email: string, tenantId: string): Promise<User[]> {
+    return this.users.find({
+      where: { email: email.toLowerCase(), tenantId },
+    });
+  }
+
+  findActiveByEmail(email: string): Promise<User[]> {
+    return this.users.find({
+      where: { email: email.toLowerCase(), isActive: true },
+    });
+  }
+
   findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.users.findOne({
       where: { tenantId, email: email.toLowerCase() },

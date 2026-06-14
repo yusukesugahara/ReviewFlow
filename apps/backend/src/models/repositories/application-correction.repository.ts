@@ -29,11 +29,11 @@ export class ApplicationCorrectionRepository {
     });
   }
 
-  async findLatestOpenCorrectionWithItems(
+  findLatestOpenCorrectionWithItems(
     tenantId: string,
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    const opens = await this.correctionRequests.find({
+    return this.correctionRequests.findOne({
       where: {
         applicationId,
         tenantId,
@@ -42,6 +42,5 @@ export class ApplicationCorrectionRepository {
       relations: ['items', 'items.formField'],
       order: { createdAt: 'DESC' },
     });
-    return opens[0] ?? null;
   }
 }

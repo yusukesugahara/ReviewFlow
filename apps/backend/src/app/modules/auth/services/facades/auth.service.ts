@@ -105,13 +105,9 @@ export class AuthService {
 
   async login(dto: LoginDto) {
     const email = dto.email.toLowerCase();
-    let candidates = await this.usersService.findAllByEmail(email);
-    if (candidates.length === 0) {
-      throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
-    }
-    if (dto.tenantId) {
-      candidates = candidates.filter((u) => u.tenantId === dto.tenantId);
-    }
+    const candidates = dto.tenantId
+      ? await this.usersService.findAllByEmailAndTenant(email, dto.tenantId)
+      : await this.usersService.findAllByEmail(email);
     if (candidates.length === 0) {
       throw clientError(ClientErrorCodes.AUTH_INVALID_CREDENTIALS);
     }

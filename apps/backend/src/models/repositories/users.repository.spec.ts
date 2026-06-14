@@ -39,6 +39,26 @@ describe('UsersRepository', () => {
     });
   });
 
+  it('findAllByEmailAndTenant queries lowercase email in the tenant', async () => {
+    users.find.mockResolvedValue([]);
+
+    await repository.findAllByEmailAndTenant('User@Example.COM', 'tenant-1');
+
+    expect(users.find).toHaveBeenCalledWith({
+      where: { email: 'user@example.com', tenantId: 'tenant-1' },
+    });
+  });
+
+  it('findActiveByEmail queries active users with lowercase email', async () => {
+    users.find.mockResolvedValue([]);
+
+    await repository.findActiveByEmail('User@Example.COM');
+
+    expect(users.find).toHaveBeenCalledWith({
+      where: { email: 'user@example.com', isActive: true },
+    });
+  });
+
   it('findByTenantAndEmail queries lowercase email in tenant', async () => {
     users.findOne.mockResolvedValue(null);
 

@@ -39,12 +39,10 @@ export class GroupMembersService {
     actor: AuthUserPayload,
   ): Promise<User[]> {
     await this.spaceAccess.assertCanManageGroup(actor, groupId);
-    const [users, members] = await Promise.all([
-      this.usersService.findAllByTenant(actor.tenantId),
-      this.groupsRepository.findMembershipsByGroup(actor.tenantId, groupId),
-    ]);
-    const memberUserIds = new Set(members.map((member) => member.userId));
-    return users.filter((user) => !memberUserIds.has(user.id));
+    return this.groupsRepository.findAvailableUsersForGroup(
+      actor.tenantId,
+      groupId,
+    );
   }
 
   async addMember(

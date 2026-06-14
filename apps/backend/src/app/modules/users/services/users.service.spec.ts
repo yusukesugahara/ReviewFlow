@@ -28,6 +28,8 @@ describe('UsersService', () => {
       UsersRepository,
       | 'count'
       | 'findAllByEmail'
+      | 'findAllByEmailAndTenant'
+      | 'findActiveByEmail'
       | 'findByTenantAndEmail'
       | 'findByIdAndTenant'
       | 'countTenantAdmins'
@@ -42,6 +44,8 @@ describe('UsersService', () => {
     usersRepository = {
       count: jest.fn(),
       findAllByEmail: jest.fn(),
+      findAllByEmailAndTenant: jest.fn(),
+      findActiveByEmail: jest.fn(),
       findByTenantAndEmail: jest.fn(),
       findByIdAndTenant: jest.fn(),
       countTenantAdmins: jest.fn(),
@@ -77,6 +81,23 @@ describe('UsersService', () => {
     usersRepository.findAllByEmail.mockResolvedValue([]);
     await service.findAllByEmail('User@Example.COM');
     expect(usersRepository.findAllByEmail).toHaveBeenCalledWith(
+      'User@Example.COM',
+    );
+  });
+
+  it('findAllByEmailAndTenant delegates to repository', async () => {
+    usersRepository.findAllByEmailAndTenant.mockResolvedValue([]);
+    await service.findAllByEmailAndTenant('User@Example.COM', 'tenant-1');
+    expect(usersRepository.findAllByEmailAndTenant).toHaveBeenCalledWith(
+      'User@Example.COM',
+      'tenant-1',
+    );
+  });
+
+  it('findActiveByEmail delegates to repository', async () => {
+    usersRepository.findActiveByEmail.mockResolvedValue([]);
+    await service.findActiveByEmail('User@Example.COM');
+    expect(usersRepository.findActiveByEmail).toHaveBeenCalledWith(
       'User@Example.COM',
     );
   });

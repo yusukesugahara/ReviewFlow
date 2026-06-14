@@ -34,6 +34,14 @@ export class UsersService {
     return this.usersRepository.findAllByEmail(email);
   }
 
+  findAllByEmailAndTenant(email: string, tenantId: string): Promise<User[]> {
+    return this.usersRepository.findAllByEmailAndTenant(email, tenantId);
+  }
+
+  findActiveByEmail(email: string): Promise<User[]> {
+    return this.usersRepository.findActiveByEmail(email);
+  }
+
   findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.usersRepository.findByTenantAndEmail(tenantId, email);
   }

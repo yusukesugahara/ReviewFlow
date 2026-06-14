@@ -7,6 +7,7 @@ import {
 } from '../constants/group-member-role';
 import { GroupMember } from '../entities/group-member.entity';
 import { Group } from '../entities/group.entity';
+import { User } from '../entities/user.entity';
 
 type CreateGroupWithAdminsParams = {
   tenantId: string;
@@ -23,6 +24,8 @@ export class GroupsRepository {
     private readonly groups: Repository<Group>,
     @InjectRepository(GroupMember)
     private readonly members: Repository<GroupMember>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
@@ -34,24 +37,48 @@ export class GroupsRepository {
     });
   }
 
-  findMembershipsByTenantAndUser(
+  async findGroupsByTenantWithCurrentUserRole(
     tenantId: string,
     userId: string,
-  ): Promise<GroupMember[]> {
-    return this.members.find({
-      where: { tenantId, userId },
-    });
+  ): Promise<Group[]> {
+    const result = await this.groups
+      .createQueryBuilder('space')
+      .leftJoin(
+        GroupMember,
+        'currentMember',
+        [
+          'currentMember.tenantId = space.tenantId',
+          'currentMember.groupId = space.id',
+          'currentMember.userId = :userId',
+        ].join(' AND '),
+        { userId },
+      )
+      .addSelect('currentMember.role', 'currentUserRole')
+      .where('space.tenantId = :tenantId', { tenantId })
+      .orderBy('space.createdAt', 'ASC')
+      .getRawAndEntities<{
+        currentUserRole?: GroupMemberRoleValue | null;
+      }>();
+
+    return result.entities.map((group, index) =>
+      Object.assign(group, {
+        currentUserRole: result.raw[index]?.currentUserRole ?? null,
+      }),
+    );
   }
 
-  findMembershipsWithGroupsByTenantAndUser(
+  async findGroupsByMembershipForUser(
     tenantId: string,
     userId: string,
-  ): Promise<GroupMember[]> {
-    return this.members.find({
+  ): Promise<Group[]> {
+    const rows = await this.members.find({
       where: { tenantId, userId },
       relations: { group: true },
       order: { createdAt: 'ASC' },
     });
+    return rows.map((row) =>
+      Object.assign(row.group, { currentUserRole: row.role }),
+    );
   }
 
   findGroupByTenantAndName(
@@ -128,6 +155,28 @@ export class GroupsRepository {
     groupId: string,
   ): Promise<GroupMember[]> {
     return this.members.find({ where: { tenantId, groupId } });
+  }
+
+  findAvailableUsersForGroup(
+    tenantId: string,
+    groupId: string,
+  ): Promise<User[]> {
+    return this.users
+      .createQueryBuilder('user')
+      .leftJoin(
+        GroupMember,
+        'member',
+        [
+          'member.tenantId = user.tenantId',
+          'member.userId = user.id',
+          'member.groupId = :groupId',
+        ].join(' AND '),
+        { groupId },
+      )
+      .where('user.tenantId = :tenantId', { tenantId })
+      .andWhere('member.id IS NULL')
+      .orderBy('user.createdAt', 'ASC')
+      .getMany();
   }
 
   findMember(

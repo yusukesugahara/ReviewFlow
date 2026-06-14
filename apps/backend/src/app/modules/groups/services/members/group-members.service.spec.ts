@@ -16,7 +16,7 @@ describe('GroupMembersService', () => {
     Pick<
       GroupsRepository,
       | 'findMembersWithUsers'
-      | 'findMembershipsByGroup'
+      | 'findAvailableUsersForGroup'
       | 'findMember'
       | 'createMember'
       | 'saveMember'
@@ -25,7 +25,6 @@ describe('GroupMembersService', () => {
     >
   >;
   let usersService: {
-    findAllByTenant: jest.Mock;
     findByIdAndTenant: jest.Mock;
   };
   let spaceAccess: jest.Mocked<
@@ -52,7 +51,7 @@ describe('GroupMembersService', () => {
   beforeEach(async () => {
     groupsRepository = {
       findMembersWithUsers: jest.fn(),
-      findMembershipsByGroup: jest.fn(),
+      findAvailableUsersForGroup: jest.fn(),
       findMember: jest.fn(),
       createMember: jest.fn(),
       saveMember: jest.fn(),
@@ -60,7 +59,6 @@ describe('GroupMembersService', () => {
       findAdmins: jest.fn(),
     };
     usersService = {
-      findAllByTenant: jest.fn(),
       findByIdAndTenant: jest.fn(),
     };
     spaceAccess = {
@@ -101,13 +99,9 @@ describe('GroupMembersService', () => {
     );
   });
 
-  it('listAvailableUsers filters out current members', async () => {
-    usersService.findAllByTenant.mockResolvedValue([
-      user({ id: 'user-1' }),
+  it('listAvailableUsers loads non-member users through the repository', async () => {
+    groupsRepository.findAvailableUsersForGroup.mockResolvedValue([
       user({ id: 'user-2' }),
-    ]);
-    groupsRepository.findMembershipsByGroup.mockResolvedValue([
-      groupMember({ userId: 'user-1' }),
     ]);
 
     const out = await service.listAvailableUsers('group-1', groupAdmin);
@@ -115,6 +109,10 @@ describe('GroupMembersService', () => {
     expect(out.map((row) => row.id)).toEqual(['user-2']);
     expect(spaceAccess.assertCanManageGroup).toHaveBeenCalledWith(
       groupAdmin,
+      'group-1',
+    );
+    expect(groupsRepository.findAvailableUsersForGroup).toHaveBeenCalledWith(
+      'tenant-1',
       'group-1',
     );
   });

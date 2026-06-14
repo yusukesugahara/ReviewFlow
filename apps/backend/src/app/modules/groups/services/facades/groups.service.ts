@@ -30,30 +30,15 @@ export class GroupsService {
 
   async list(actor: AuthUserPayload): Promise<Group[]> {
     if (this.isSystemAdmin(actor)) {
-      const [groups, memberships] = await Promise.all([
-        this.groupsRepository.findGroupsByTenant(actor.tenantId),
-        this.groupsRepository.findMembershipsByTenantAndUser(
-          actor.tenantId,
-          actor.id,
-        ),
-      ]);
-      const roleByGroupId = new Map(
-        memberships.map((member) => [member.groupId, member.role]),
-      );
-      return groups.map((group) =>
-        Object.assign(group, {
-          currentUserRole: roleByGroupId.get(group.id) ?? null,
-        }),
-      );
-    }
-
-    const rows =
-      await this.groupsRepository.findMembershipsWithGroupsByTenantAndUser(
+      return this.groupsRepository.findGroupsByTenantWithCurrentUserRole(
         actor.tenantId,
         actor.id,
       );
-    return rows.map((row) =>
-      Object.assign(row.group, { currentUserRole: row.role }),
+    }
+
+    return this.groupsRepository.findGroupsByMembershipForUser(
+      actor.tenantId,
+      actor.id,
     );
   }
 

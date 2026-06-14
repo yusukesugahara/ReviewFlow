@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GroupMember } from '../../../models/entities/group-member.entity';
 import { Group } from '../../../models/entities/group.entity';
+import { User } from '../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../models/repositories/groups.repository';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
 import { UsersModule } from '../users/users.module';
@@ -12,7 +13,7 @@ import { SpaceAccessService } from './services/access/space-access.service';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Group, GroupMember]),
+    TypeOrmModule.forFeature([Group, GroupMember, User]),
     AuditLogsModule,
     UsersModule,
   ],

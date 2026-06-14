@@ -15,7 +15,7 @@ import { AuthPasswordResetService } from './auth-password-reset.service';
  */
 describe('AuthPasswordResetService', () => {
   let service: AuthPasswordResetService;
-  let users: jest.Mocked<Pick<UsersService, 'findAllByEmail'>>;
+  let users: jest.Mocked<Pick<UsersService, 'findActiveByEmail'>>;
   let authRepository: {
     createPasswordResetToken: jest.Mock;
     findPasswordResetToken: jest.Mock;
@@ -37,7 +37,7 @@ describe('AuthPasswordResetService', () => {
 
   beforeEach(async () => {
     users = {
-      findAllByEmail: jest.fn(),
+      findActiveByEmail: jest.fn(),
     };
     authRepository = {
       createPasswordResetToken: jest.fn((x: object) =>
@@ -65,20 +65,13 @@ describe('AuthPasswordResetService', () => {
      * アクティブなユーザに対してリセットトークンを作成し、メールを送信すること
      */
     it('creates reset token and sends mail for active users', async () => {
-      users.findAllByEmail.mockResolvedValue([
-        activeUser,
-        {
-          ...activeUser,
-          id: 'u2',
-          isActive: false,
-        },
-      ]);
+      users.findActiveByEmail.mockResolvedValue([activeUser]);
 
       await expect(
         service.requestPasswordReset({ email: 'A@B.com' }),
       ).resolves.toEqual({ ok: true });
 
-      expect(users.findAllByEmail).toHaveBeenCalledWith('a@b.com');
+      expect(users.findActiveByEmail).toHaveBeenCalledWith('a@b.com');
       expect(authRepository.createPasswordResetToken).toHaveBeenCalledTimes(1);
       expect(authRepository.createPasswordResetToken).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -99,7 +92,7 @@ describe('AuthPasswordResetService', () => {
     });
 
     it('does not reveal whether an email exists', async () => {
-      users.findAllByEmail.mockResolvedValue([]);
+      users.findActiveByEmail.mockResolvedValue([]);
 
       await expect(
         service.requestPasswordReset({ email: 'missing@example.com' }),
