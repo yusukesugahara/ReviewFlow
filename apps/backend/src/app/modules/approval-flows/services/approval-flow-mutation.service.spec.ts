@@ -4,7 +4,7 @@ import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
 import { GroupMember } from '../../../../models/entities/group-member.entity';
 import { User } from '../../../../models/entities/user.entity';
 import { ApprovalFlowsRepository } from '../../../../models/repositories/approval-flows.repository';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
+import { SpaceAccessService } from '../../groups/services/access/space-access.service';
 import { ApprovalFlowMutationService } from './approval-flow-mutation.service';
 
 describe('ApprovalFlowMutationService', () => {

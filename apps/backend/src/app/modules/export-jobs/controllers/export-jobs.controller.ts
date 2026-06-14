@@ -28,7 +28,7 @@ import {
   CreateExportJobDto,
   ExportJobResponseDto,
 } from '../dto/export-jobs.dto';
-import { ExportJobsService } from '../services/export-jobs.service';
+import { ExportJobsService } from '../services/facades/export-jobs.service';
 
 @ApiTags('export-jobs')
 @Controller('export-jobs')

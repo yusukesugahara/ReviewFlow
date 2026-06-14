@@ -10,7 +10,7 @@ import {
   InvitationsRepository,
 } from '../../../../models/repositories/invitations.repository';
 import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
-import { AuthService } from '../../auth/services/auth.service';
+import { AuthService } from '../../auth/services/facades/auth.service';
 import { MailService } from '../../mail/services/mail.service';
 import { UsersService } from '../../users/services/users.service';
 import { InvitationsService } from './invitations.service';

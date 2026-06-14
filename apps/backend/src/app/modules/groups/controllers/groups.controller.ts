@@ -38,7 +38,7 @@ import {
   UpdateGroupDto,
   UpdateGroupMemberRoleDto,
 } from '../dto/groups.dto';
-import { GroupsService } from '../services/groups.service';
+import { GroupsService } from '../services/facades/groups.service';
 
 type GroupWithCurrentUserRole = Group & { currentUserRole?: string | null };
 

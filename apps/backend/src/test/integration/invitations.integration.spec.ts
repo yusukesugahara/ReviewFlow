@@ -2,7 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { DataSource, Repository } from 'typeorm';
 import { AppModule } from '../../app/app.module';
-import { AuthService } from '../../app/modules/auth/services/auth.service';
+import { AuthService } from '../../app/modules/auth/services/facades/auth.service';
 import { InvitationsService } from '../../app/modules/invitations/services/invitations.service';
 import { UsersService } from '../../app/modules/users/services/users.service';
 import { ClientErrorCodes } from '../../common/errors';

@@ -37,7 +37,7 @@ import {
   RejectApplicationDto,
   ReturnApplicationDto,
 } from '../dto/applications.dto';
-import { ApplicationsService } from '../services/applications.service';
+import { ApplicationsService } from '../services/facades/applications.service';
 
 @ApiTags('applications')
 @Controller('applications')

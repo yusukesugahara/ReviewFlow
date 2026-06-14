@@ -17,9 +17,9 @@ import { Tenant } from '../../../models/entities/tenant.entity';
 import { User } from '../../../models/entities/user.entity';
 import { AuthRepository } from '../../../models/repositories/auth.repository';
 import { AuthController } from './controllers/auth.controller';
-import { AuthEmailChangeService } from './services/auth-email-change.service';
-import { AuthPasswordResetService } from './services/auth-password-reset.service';
-import { AuthService } from './services/auth.service';
+import { AuthEmailChangeService } from './services/email-change/auth-email-change.service';
+import { AuthPasswordResetService } from './services/password-reset/auth-password-reset.service';
+import { AuthService } from './services/facades/auth.service';
 
 const jwtModule = JwtModule.registerAsync({
   imports: [ConfigModule],

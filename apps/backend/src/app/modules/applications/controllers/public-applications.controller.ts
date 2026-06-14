@@ -15,7 +15,7 @@ import { Throttle } from '@nestjs/throttler';
 import { Api, ApiSuccessResponseCreated } from '../../../decorators';
 import { ApplicantAccessGuard } from '../../../guards/applicant-access.guard';
 import { CurrentApplicantSession } from '../../../../decorators/current-applicant-session.decorator';
-import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/facades/auth.service';
 import type { SuccessResponse } from '../../../type';
 import { successResponse } from '../../../utils';
 import {
@@ -24,7 +24,7 @@ import {
   CreatePublicApplicationDto,
   PatchApplicationDto,
 } from '../dto/applications.dto';
-import { ApplicationsService } from '../services/applications.service';
+import { ApplicationsService } from '../services/facades/applications.service';
 
 @ApiTags('public-applications')
 @Controller('public/applications')

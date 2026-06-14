@@ -27,7 +27,7 @@ import {
 } from '../../../../decorators/current-user.decorator';
 import { Roles } from '../../../../decorators/roles.decorator';
 import { UserRole } from '../../../../models/constants/user-role';
-import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/facades/auth.service';
 import type { SuccessResponse } from '../../../type';
 import { successResponse } from '../../../utils';
 import {
@@ -42,7 +42,7 @@ import {
   UpdateFormDefinitionDescriptionDto,
   UpdateFormFieldSettingsDto,
 } from '../dto/form-definitions.dto';
-import { FormDefinitionsService } from '../services/form-definitions.service';
+import { FormDefinitionsService } from '../services/facades/form-definitions.service';
 import { ApprovalFlowsService } from '../../approval-flows/services/approval-flows.service';
 import { ApprovalFlowsListResponseDto } from '../../approval-flows/dto/approval-flows.dto';
 

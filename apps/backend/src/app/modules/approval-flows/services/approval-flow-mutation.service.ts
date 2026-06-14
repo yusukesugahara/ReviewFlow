@@ -6,7 +6,7 @@ import {
   ApprovalFlowsRepository,
   type CreateApprovalFlowStepParams,
 } from '../../../../models/repositories/approval-flows.repository';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
+import { SpaceAccessService } from '../../groups/services/access/space-access.service';
 import type {
   CreateApprovalFlowDto,
   CreateApprovalFlowStepDto,

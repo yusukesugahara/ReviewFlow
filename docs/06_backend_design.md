@@ -35,6 +35,7 @@
 - space member 削除は `tenant_admin` と対象 space の `GroupMemberRole.admin` が実行できる。ただし最後の `GroupMemberRole.admin` は削除不可
 - `audit_logs.group_id` は nullable とし、tenant-level event は null、space-level event は `groupId` を保存する
 - 業務監査ログは `BusinessAuditLogService` から明示的に記録する。Pino のリクエストログとは別用途であり、誰が・いつ・どの対象に・何をし・状態/ロールがどう変わったかを追跡する。
+- `services/` 直下のファイルが増えたモジュールは、`facades` / `use-cases` / `access` / `creation` / `submission` / `review` / `query` などの責務別サブフォルダに分け、spec は対象実装と同じフォルダに置く。
 
 ## 主なユースケースサービス
 

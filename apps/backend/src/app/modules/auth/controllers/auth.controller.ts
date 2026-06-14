@@ -15,7 +15,7 @@ import {
   ApiSuccessResponseCreated,
   AuthApi,
 } from '../../../decorators';
-import { AuthService } from '../services/auth.service';
+import { AuthService } from '../services/facades/auth.service';
 import {
   AdminPingResponseDto,
   AuthIssueTokensResponseDto,
