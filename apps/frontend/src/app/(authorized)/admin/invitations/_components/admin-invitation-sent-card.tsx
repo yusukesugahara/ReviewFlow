@@ -2,10 +2,9 @@ import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { userRoleLabel } from "@/lib/constants/role-labels";
 import { formatDateTimeJa } from "@/lib/date-format";
 
@@ -23,10 +22,10 @@ export function AdminInvitationSentCard({
   return (
     <Card className="border-violet-200 bg-violet-50/40">
       <CardHeader>
-        <CardTitle>招待メールを送信しました</CardTitle>
-        <CardDescription>
-          対象ユーザはメール内のリンクから招待を受諾できます
-        </CardDescription>
+        <CardHeading
+          description="対象ユーザはメール内のリンクから招待を受諾できます"
+          title="招待メールを送信しました"
+        />
       </CardHeader>
       <CardContent className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">

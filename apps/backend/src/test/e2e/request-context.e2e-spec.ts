@@ -8,7 +8,7 @@ import { AppModule } from '../../app/app.module';
 import { GlobalExceptionFilter } from '../../common/filters/global-exception.filter';
 import { requestContextMiddleware } from '../../common/logging/request-context.middleware';
 import {
-  configurePostgresTestEnv,
+  preparePostgresTestDatabase,
   truncatePostgresTables,
 } from '../test-postgres';
 
@@ -18,7 +18,7 @@ describe('Request Context (e2e)', () => {
   beforeEach(async () => {
     process.env.INTERNAL_API_KEY = 'e2e-internal-api-key';
     process.env.JWT_SECRET = 'e2e-jwt-secret-at-least-32-characters-long';
-    configurePostgresTestEnv();
+    await preparePostgresTestDatabase();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -42,7 +42,7 @@ describe('Request Context (e2e)', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('echoes incoming X-Request-Id header', async () => {

@@ -7,6 +7,7 @@ import { client } from "@/lib/server/backend-fetch";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
+import type { components } from "@/lib/api-schema";
 import type { ApplicationDetailViewModel } from "@/components/applications/detail/application-detail.types";
 import {
   appendQueryParams,
@@ -22,6 +23,24 @@ const optionalNonEmptyStringFormValueSchema = z
   .min(1)
   .optional()
   .catch(undefined);
+const expectedStepOrderFormValueSchema = z.coerce.number().int().min(1);
+
+type ApproveApplicationBody = components["schemas"]["ApproveApplicationDto"];
+type RejectApplicationBody = components["schemas"]["RejectApplicationDto"];
+type ReturnApplicationBody = components["schemas"]["ReturnApplicationDto"];
+type ApplicationActionBody =
+  | ApproveApplicationBody
+  | RejectApplicationBody
+  | ReturnApplicationBody;
+
+type ApplicationBodyActionPath =
+  | "/applications/{id}/approve"
+  | "/applications/{id}/reject"
+  | "/applications/{id}/return";
+type EmptyApplicationActionPath =
+  | "/applications/{id}/submit"
+  | "/applications/{id}/resubmit"
+  | "/applications/{id}/return-email/resend";
 
 function readOptionalString(formData: FormData, key: string): string | undefined {
   return optionalStringFormValueSchema.parse(formData.get(key) || undefined);
@@ -34,16 +53,17 @@ function readOptionalNonEmptyString(
   return optionalNonEmptyStringFormValueSchema.parse(formData.get(key) || undefined);
 }
 
+function readExpectedStepOrder(formData: FormData): number | null {
+  const parsed = expectedStepOrderFormValueSchema.safeParse(
+    formData.get("expectedStepOrder"),
+  );
+  return parsed.success ? parsed.data : null;
+}
+
 async function postApplicationAction(
-  path:
-    | "/applications/{id}/submit"
-    | "/applications/{id}/resubmit"
-    | "/applications/{id}/approve"
-    | "/applications/{id}/reject"
-    | "/applications/{id}/return"
-    | "/applications/{id}/return-email/resend",
+  path: ApplicationBodyActionPath,
   applicationId: string,
-  body: Record<string, unknown>,
+  body: ApplicationActionBody,
 ): Promise<ApplicationDetailViewModel> {
   const response = await client.POST(path, {
     params: { path: { id: applicationId } },
@@ -53,10 +73,24 @@ async function postApplicationAction(
   return unwrapResponseData<ApplicationDetailViewModel>(response);
 }
 
+async function postEmptyApplicationAction(
+  path: EmptyApplicationActionPath,
+  applicationId: string,
+): Promise<ApplicationDetailViewModel> {
+  const response = await client.POST(path, {
+    params: { path: { id: applicationId } },
+    headers: await authHeadersOrRedirect(),
+  });
+  return unwrapResponseData<ApplicationDetailViewModel>(response);
+}
+
 export async function submitAction(spaceId: string, applicationId: string): Promise<void> {
   let updated: ApplicationDetailViewModel;
   try {
-    updated = await postApplicationAction("/applications/{id}/submit", applicationId, {});
+    updated = await postEmptyApplicationAction(
+      "/applications/{id}/submit",
+      applicationId,
+    );
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
@@ -66,7 +100,10 @@ export async function submitAction(spaceId: string, applicationId: string): Prom
 export async function resubmitAction(spaceId: string, applicationId: string): Promise<void> {
   let updated: ApplicationDetailViewModel;
   try {
-    updated = await postApplicationAction("/applications/{id}/resubmit", applicationId, {});
+    updated = await postEmptyApplicationAction(
+      "/applications/{id}/resubmit",
+      applicationId,
+    );
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
   }
@@ -79,10 +116,19 @@ export async function approveAction(
   formData: FormData,
 ): Promise<void> {
   const comment = readOptionalString(formData, "comment");
+  const expectedStepOrder = readExpectedStepOrder(formData);
+  if (!expectedStepOrder) {
+    redirectToApplicationValidationError(
+      spaceId,
+      applicationId,
+      "承認ステップが確認できません。画面を更新して再度お試しください。",
+    );
+  }
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postApplicationAction("/applications/{id}/approve", applicationId, {
       comment,
+      expectedStepOrder,
     });
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
@@ -96,10 +142,19 @@ export async function rejectAction(
   formData: FormData,
 ): Promise<void> {
   const comment = readOptionalString(formData, "comment");
+  const expectedStepOrder = readExpectedStepOrder(formData);
+  if (!expectedStepOrder) {
+    redirectToApplicationValidationError(
+      spaceId,
+      applicationId,
+      "承認ステップが確認できません。画面を更新して再度お試しください。",
+    );
+  }
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postApplicationAction("/applications/{id}/reject", applicationId, {
       comment,
+      expectedStepOrder,
     });
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
@@ -114,6 +169,14 @@ export async function returnAction(
   formData: FormData,
 ): Promise<void> {
   const overallComment = readOptionalNonEmptyString(formData, "overallComment");
+  const expectedStepOrder = readExpectedStepOrder(formData);
+  if (!expectedStepOrder) {
+    redirectToApplicationValidationError(
+      spaceId,
+      applicationId,
+      "承認ステップが確認できません。画面を更新して再度お試しください。",
+    );
+  }
   const fields: Array<{ fieldId: string; comment?: string }> = [];
   for (const field of fieldMap) {
     const selected = formData.get(`return:${field.id}`) === "on";
@@ -137,8 +200,8 @@ export async function returnAction(
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postApplicationAction("/applications/{id}/return", applicationId, {
-      overallComment:
-        overallComment,
+      overallComment,
+      expectedStepOrder,
       fields,
     });
   } catch (error) {
@@ -153,10 +216,9 @@ export async function resendReturnEmailAction(
 ): Promise<void> {
   let updated: ApplicationDetailViewModel;
   try {
-    updated = await postApplicationAction(
+    updated = await postEmptyApplicationAction(
       "/applications/{id}/return-email/resend",
       applicationId,
-      {},
     );
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
@@ -281,6 +343,9 @@ function applicationActionErrorMessage(error: unknown): string {
   }
   if (errorCode === "APPLICATION_APPROVAL_FORBIDDEN") {
     return "現在の承認ステップを操作する権限がありません。";
+  }
+  if (errorCode === "APPLICATION_REVIEW_STATE_CONFLICT") {
+    return "申請の承認ステップが更新されています。画面を更新して状態を確認してください。";
   }
   if (errorCode === "APPLICATION_RETURN_NOT_ALLOWED") {
     return "現在の承認ステップでは差し戻しできません。";

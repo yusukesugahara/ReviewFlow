@@ -10,8 +10,7 @@ import {
   Body,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
-import { AuthApi, ApiSuccessResponse } from '../../../decorators';
+import { AuthApi, ApiSuccessResponse, RateLimit } from '../../../decorators';
 import {
   CurrentUser,
   type AuthUserPayload,
@@ -51,7 +50,7 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get()
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -67,7 +66,7 @@ export class UsersController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Patch(':id/role')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -88,7 +87,7 @@ export class UsersController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Patch(':id/restore')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.OK)
@@ -107,7 +106,7 @@ export class UsersController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Delete(':id')
   @Roles(UserRole.TENANT_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)

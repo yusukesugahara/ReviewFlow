@@ -18,14 +18,17 @@ export class ApplicationReviewRepository {
     private readonly apps: Repository<Application>,
   ) {}
 
-  async saveApproval(params: {
-    app: Application;
-    approvalStepId: string;
-    actorId: string;
-    action: ApplicationApprovalActionValue;
-    comment: string | null;
-  }): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
+  async saveApproval(
+    params: {
+      app: Application;
+      approvalStepId: string;
+      actorId: string;
+      action: ApplicationApprovalActionValue;
+      comment: string | null;
+    },
+    manager?: EntityManager,
+  ): Promise<void> {
+    const work = async (em: EntityManager) => {
       const approvalRepo = em.getRepository(ApplicationApproval);
       const appRepo = em.getRepository(Application);
       await approvalRepo.save(
@@ -39,17 +42,25 @@ export class ApplicationReviewRepository {
         }),
       );
       await appRepo.save(params.app);
-    });
+    };
+    if (manager) {
+      await work(manager);
+    } else {
+      await this.apps.manager.transaction(work);
+    }
   }
 
-  async saveReturnForCorrection(params: {
-    app: Application;
-    approvalStepId: string;
-    actorId: string;
-    overallComment: string | null;
-    fields: Array<{ fieldId: string; comment: string | null }>;
-  }): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
+  async saveReturnForCorrection(
+    params: {
+      app: Application;
+      approvalStepId: string;
+      actorId: string;
+      overallComment: string | null;
+      fields: Array<{ fieldId: string; comment: string | null }>;
+    },
+    manager?: EntityManager,
+  ): Promise<void> {
+    const work = async (em: EntityManager) => {
       const approvalRepo = em.getRepository(ApplicationApproval);
       const corrRepo = em.getRepository(CorrectionRequest);
       const itemRepo = em.getRepository(CorrectionRequestItem);
@@ -90,6 +101,11 @@ export class ApplicationReviewRepository {
       }
 
       await appRepo.save(params.app);
-    });
+    };
+    if (manager) {
+      await work(manager);
+    } else {
+      await this.apps.manager.transaction(work);
+    }
   }
 }

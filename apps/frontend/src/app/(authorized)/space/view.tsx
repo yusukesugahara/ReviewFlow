@@ -4,14 +4,14 @@ import {
   CheckCircle2,
   Clock3,
   FileText,
-  LayoutDashboard,
   ListChecks,
   RotateCcw,
   Users,
 } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import {
   buildDashboardTotals,
   buildSpaceDashboardCardModel,
@@ -108,17 +108,14 @@ function SpaceSummaryCard({
     >
       <CardHeader className="space-y-3 border-b border-slate-200">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div className="min-w-0 space-y-1">
-            <CardTitle className="break-words text-lg text-slate-950">
-              {space.name}
-            </CardTitle>
-            <p className="text-sm leading-6 text-slate-600">
-              {viewModel.descriptionText}
-            </p>
-          </div>
-          <span className="rounded-md border border-slate-200 px-2 py-1 text-xs font-medium text-slate-600">
-            {viewModel.roleLabel}
-          </span>
+          <CardHeading
+            badge={viewModel.roleLabel}
+            badgeVariant="outline"
+            description={viewModel.descriptionText}
+            descriptionClassName="leading-6 text-slate-600"
+            title={space.name}
+            titleClassName="text-lg text-slate-950"
+          />
         </div>
       </CardHeader>
       <CardContent className="space-y-5 pt-5">
@@ -171,12 +168,6 @@ function SpaceSummaryCard({
         </div>
 
         <div className="flex flex-wrap items-center justify-end gap-2">
-          <Button asChild size="sm" variant="outline" className="bg-white">
-            <Link href={`/space/${encodeURIComponent(space.id)}`}>
-              <LayoutDashboard className="size-4" aria-hidden="true" />
-              概要
-            </Link>
-          </Button>
           <Button asChild size="sm" variant="outline" className="bg-white">
             <Link href={`/space/${encodeURIComponent(space.id)}/applications`}>
               <ListChecks className="size-4" aria-hidden="true" />

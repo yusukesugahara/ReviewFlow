@@ -7,8 +7,8 @@ import { authCredentialsSchema, type AuthCredentials } from "@/lib/auth-schema";
 import { client } from "@/lib/server/backend-fetch";
 import { errorMessageFromBody, toApiFailure } from "@/lib/server/api-failure";
 import { parseAuthRegisterSuccess } from "@/lib/server/auth-response-schema";
+import { persistAccessTokenCookie } from "@/lib/server/session";
 import type { RegisterRequestBody } from "@/lib/schema";
-import { persistAccessTokenCookie } from "../login/actions";
 
 export type SignupSchema = AuthCredentials & { next?: string };
 

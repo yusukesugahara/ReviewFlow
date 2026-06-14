@@ -60,6 +60,10 @@ export const confirmPasswordResetSchema = z.object({
 
 export type ConfirmPasswordResetInput = z.infer<typeof confirmPasswordResetSchema>;
 
+export const confirmEmailChangeSchema = z.object({
+  token: nonEmptyString(TOKEN_REQUIRED_MESSAGE),
+});
+
 export const acceptInvitationSchema = z.object({
   token: nonEmptyString(TOKEN_REQUIRED_MESSAGE),
   name: z.string().trim().optional(),
@@ -84,15 +88,20 @@ export const createExportJobSchema = z.object({
 
 export type CreateExportJobInput = z.infer<typeof createExportJobSchema>;
 
-export const createSpaceSchema = z.object({
+const spaceDetailsSchema = z.object({
   name: nonEmptyString(SPACE_NAME_REQUIRED_MESSAGE),
   description: z.string().trim().optional(),
+});
+
+export const createSpaceSchema = spaceDetailsSchema.extend({
   adminUserIds: z
     .array(nonEmptyString(USER_REQUIRED_MESSAGE), {
       error: SPACE_ADMIN_REQUIRED_MESSAGE,
     })
     .min(1, SPACE_ADMIN_REQUIRED_MESSAGE),
 });
+
+export const updateSpaceSchema = spaceDetailsSchema;
 
 export const addGroupMemberSchema = z.object({
   userId: nonEmptyString(USER_REQUIRED_MESSAGE),
@@ -117,3 +126,22 @@ export const createInvitationSchema = z.object({
 export const updateGroupMemberRoleSchema = z.object({
   role: z.enum(["admin", "user"], { error: ROLE_REQUIRED_MESSAGE }),
 });
+
+export const accountProfileSchema = z.object({
+  name: z.string().trim().optional(),
+});
+
+export const accountEmailSchema = z.object({
+  email: emailSchema(),
+});
+
+export const accountPasswordSchema = z
+  .object({
+    currentPassword: passwordSchema(),
+    newPassword: passwordSchema(),
+    newPasswordConfirmation: passwordSchema(),
+  })
+  .refine((value) => value.newPassword === value.newPasswordConfirmation, {
+    message: "新しいパスワードが一致しません。",
+    path: ["newPasswordConfirmation"],
+  });

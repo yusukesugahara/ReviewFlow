@@ -9,7 +9,6 @@ export type BreadcrumbItem = {
 };
 
 export type SidebarSpacePath =
-  | "overview"
   | "applications"
   | "applicationsNew"
   | "submissions";
@@ -74,13 +73,13 @@ export function buildSpaceSwitcherHref({
     const nextBase = `/space/${encodeURIComponent(spaceId)}`;
     const nextPathname =
       pathname === currentBase
-        ? nextBase
+        ? `${nextBase}/applications`
         : pathname.replace(`${currentBase}/`, `${nextBase}/`);
     return appendQueryString(nextPathname, params);
   }
 
   if (pathname === "/space" || pathname.startsWith("/admin")) {
-    return `/space/${encodeURIComponent(spaceId)}`;
+    return `/space/${encodeURIComponent(spaceId)}/applications`;
   }
 
   params.set("spaceId", spaceId);
@@ -118,6 +117,13 @@ export function buildBreadcrumbItems(
     return buildAdminBreadcrumbItems(segments);
   }
 
+  if (segments[0] === "account") {
+    return [
+      { href: "/space", label: "ホーム" },
+      { href: "/account", label: "アカウント" },
+    ];
+  }
+
   if (segments[0] === "space") {
     return buildSpaceBreadcrumbItems(segments, spaces, searchParams);
   }
@@ -134,9 +140,6 @@ function buildSidebarLinkHref({
   spacePath?: SidebarSpacePath;
   activeSpaceId: string | null;
 }): string {
-  if (spacePath === "overview" && activeSpaceId) {
-    return `/space/${encodeURIComponent(activeSpaceId)}`;
-  }
   if (spacePath === "applicationsNew" && activeSpaceId) {
     return `/space/${encodeURIComponent(activeSpaceId)}/applications/new`;
   }
@@ -164,8 +167,6 @@ function isSidebarLinkActive({
   spacePath?: SidebarSpacePath;
 }): boolean {
   const isSectionRoot = href === "/admin" || href === "/space";
-  const isOverviewActive =
-    spacePath === "overview" && (pathname === scopedHref || pathname === href);
   const isApplicationNewActive =
     spacePath === "applicationsNew" &&
     (pathname === scopedHref || pathname === href);
@@ -182,13 +183,11 @@ function isSidebarLinkActive({
       pathname === href);
 
   if (
-    spacePath === "overview" ||
     spacePath === "applications" ||
     spacePath === "applicationsNew" ||
     spacePath === "submissions"
   ) {
     return (
-      isOverviewActive ||
       isApplicationsActive ||
       isApplicationNewActive ||
       isSubmissionsActive
@@ -247,7 +246,10 @@ function buildSpaceBreadcrumbItems(
     spaces.find((space) => space.id === spaceId)?.name ?? "スペース";
   const encodedSpaceId = encodeURIComponent(spaceId);
 
-  items.push({ href: `/space/${encodedSpaceId}`, label: spaceName });
+  items.push({
+    href: `/space/${encodedSpaceId}/applications`,
+    label: spaceName,
+  });
 
   if (!third) {
     return items;

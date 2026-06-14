@@ -9,8 +9,9 @@ type AuditLogQueryBuilderMock = {
   where: jest.Mock;
   orderBy: jest.Mock;
   take: jest.Mock;
+  skip: jest.Mock;
   andWhere: jest.Mock;
-  getMany: jest.Mock;
+  getManyAndCount: jest.Mock;
 };
 
 function createQueryBuilderMock(): AuditLogQueryBuilderMock {
@@ -19,16 +20,18 @@ function createQueryBuilderMock(): AuditLogQueryBuilderMock {
     where: jest.fn(),
     orderBy: jest.fn(),
     take: jest.fn(),
+    skip: jest.fn(),
     andWhere: jest.fn(),
-    getMany: jest.fn(),
+    getManyAndCount: jest.fn(),
   };
 
   builder.leftJoinAndSelect.mockReturnValue(builder);
   builder.where.mockReturnValue(builder);
   builder.orderBy.mockReturnValue(builder);
   builder.take.mockReturnValue(builder);
+  builder.skip.mockReturnValue(builder);
   builder.andWhere.mockReturnValue(builder);
-  builder.getMany.mockResolvedValue([]);
+  builder.getManyAndCount.mockResolvedValue([[], 0]);
 
   return builder;
 }
@@ -98,8 +101,9 @@ describe('AuditLogsRepository', () => {
   });
 
   it('lists tenant audit logs with escaped filters', async () => {
-    await repository.listByTenant('tenant-1', {
+    const result = await repository.listByTenant('tenant-1', {
       limit: 20,
+      offset: 40,
       actionType: 'user_%',
       groupId: 'group-1',
       q: 'email_%',
@@ -114,6 +118,7 @@ describe('AuditLogsRepository', () => {
     );
     expect(builder.orderBy).toHaveBeenCalledWith('auditLog.createdAt', 'DESC');
     expect(builder.take).toHaveBeenCalledWith(20);
+    expect(builder.skip).toHaveBeenCalledWith(40);
     expect(builder.andWhere).toHaveBeenCalledWith(
       'auditLog.actionType LIKE :actionType',
       { actionType: 'user\\_\\%%' },
@@ -134,5 +139,6 @@ describe('AuditLogsRepository', () => {
       'auditLog.createdAt <= :createdTo',
       { createdTo: new Date('2026-01-31T00:00:00.000Z') },
     );
+    expect(result).toEqual({ rows: [], total: 0, limit: 20, offset: 40 });
   });
 });

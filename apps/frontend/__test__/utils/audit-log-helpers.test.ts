@@ -80,6 +80,52 @@ describe("audit log helpers", () => {
     ]);
   });
 
+  // テスト内容: 自分のプロフィール変更とパスワード変更が表示できることを確認する
+  it("builds account update display information", () => {
+    const profileRow: AuditLogItem = {
+      id: "audit-profile",
+      actorType: "user",
+      actorEmailSnapshot: "old@example.com",
+      actionType: "user.profile_updated",
+      targetType: "user",
+      targetId: "target-user-1234567890",
+      targetUserId: "target-user-1234567890",
+      targetEmailSnapshot: "new@example.com",
+      metadataJson: metadata({
+        emailFrom: "old@example.com",
+        emailTo: "new@example.com",
+        userNameFrom: "Old User",
+        userNameTo: "New User",
+      }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+    const passwordRow: AuditLogItem = {
+      id: "audit-password",
+      actorType: "user",
+      actorEmailSnapshot: "member@example.com",
+      actionType: "user.password_changed",
+      targetType: "user",
+      targetId: "target-user-1234567890",
+      targetUserId: "target-user-1234567890",
+      targetEmailSnapshot: "member@example.com",
+      metadataJson: metadata({ passwordChanged: true }),
+      createdAt: "2026-06-06T00:00:00.000Z",
+    };
+
+    expect(buildAuditDisplay(profileRow)).toMatchObject({
+      actionLabel: "アカウント情報を更新",
+      changeItems: [
+        "メールアドレス: old@example.com -> new@example.com",
+        "名前: Old User -> New User",
+      ],
+    });
+    const passwordDisplay = buildAuditDisplay(passwordRow);
+    expect(passwordDisplay.actionLabel).toBe("パスワードを変更");
+    expect(passwordDisplay.detailItems).toEqual(
+      expect.arrayContaining([{ label: "パスワード変更", value: "実施" }]),
+    );
+  });
+
   // テスト内容: スペースメンバー操作のスペース権限変更が表示できることを確認する
   it("builds group member role display information", () => {
     const row: AuditLogItem = {
@@ -116,11 +162,12 @@ describe("audit log helpers", () => {
       buildAuditLogsHref({
         createdFrom: "2026-06-01",
         createdTo: "2026-06-30",
+        page: 3,
         query: "admin@example.com",
         targetType: "user",
       }),
     ).toBe(
-      "/admin/audit-logs?q=admin%40example.com&targetType=user&createdFrom=2026-06-01&createdTo=2026-06-30",
+      "/admin/audit-logs?q=admin%40example.com&targetType=user&createdFrom=2026-06-01&createdTo=2026-06-30&page=3",
     );
   });
 

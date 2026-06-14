@@ -1,5 +1,14 @@
 import type { ReactNode } from "react";
 
+export type ApplicationCapabilities = {
+  canEditApplication: boolean;
+  canSubmitApplication: boolean;
+  canResubmitApplication: boolean;
+  canApproveApplication: boolean;
+  canRejectApplication: boolean;
+  canReturnApplication: boolean;
+};
+
 export type ApplicationDetailViewModel = {
   formDefinitionId?: string;
   formDefinitionName?: string;
@@ -15,6 +24,7 @@ export type ApplicationDetailViewModel = {
   currentStepCanReturn?: boolean | null;
   submittedAt?: string | null;
   approvalProgress?: ApplicationProgressStep[];
+  capabilities?: ApplicationCapabilities;
   values: Record<string, unknown>;
 };
 

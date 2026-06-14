@@ -16,10 +16,7 @@ describe('ApplicationSubmissionRepository', () => {
       transaction: jest.Mock;
     };
   };
-  let fieldValues: {
-    create: jest.Mock;
-    find: jest.Mock;
-  };
+  let fieldValues: { find: jest.Mock };
 
   beforeEach(async () => {
     apps = {
@@ -27,12 +24,7 @@ describe('ApplicationSubmissionRepository', () => {
         transaction: jest.fn(),
       },
     };
-    fieldValues = {
-      create: jest.fn((value: Partial<ApplicationFieldValue>) => ({
-        ...value,
-      })),
-      find: jest.fn(),
-    };
+    fieldValues = { find: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -54,27 +46,36 @@ describe('ApplicationSubmissionRepository', () => {
   it('loads existing field values for an application', async () => {
     fieldValues.find.mockResolvedValue([]);
 
-    await repository.findExistingFieldValues('app-1');
+    await repository.findExistingFieldValues({
+      tenantId: 'tenant-1',
+      applicationId: 'app-1',
+    });
 
     expect(fieldValues.find).toHaveBeenCalledWith({
-      where: { applicationId: 'app-1' },
+      where: { tenantId: 'tenant-1', applicationId: 'app-1' },
     });
   });
 
-  it('creates field value entities through TypeORM repository', () => {
-    repository.createFieldValue({
-      tenantId: 'tenant-1',
-      applicationId: 'app-1',
-      formFieldId: 'field-1',
-      valueJson: 'Expense',
-    });
+  it('loads existing field values through a transaction manager', async () => {
+    const managerRepository = { find: jest.fn().mockResolvedValue([]) };
+    const getRepository = jest.fn().mockReturnValue(managerRepository);
+    const manager = {
+      getRepository,
+    } as unknown as EntityManager;
 
-    expect(fieldValues.create).toHaveBeenCalledWith({
-      tenantId: 'tenant-1',
-      applicationId: 'app-1',
-      formFieldId: 'field-1',
-      valueJson: 'Expense',
+    await repository.findExistingFieldValues(
+      {
+        tenantId: 'tenant-1',
+        applicationId: 'app-1',
+      },
+      manager,
+    );
+
+    expect(getRepository).toHaveBeenCalledWith(ApplicationFieldValue);
+    expect(managerRepository.find).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', applicationId: 'app-1' },
     });
+    expect(fieldValues.find).not.toHaveBeenCalled();
   });
 
   it('saves an application patch in a transaction', async () => {

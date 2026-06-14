@@ -22,6 +22,11 @@ const publicApplicationFormSchema = z.object({
   fieldsJson: z.string().min(1),
 });
 
+function redirectWithPublicApplicationFormError(message: string): never {
+  const params = new URLSearchParams({ formError: message });
+  redirect(`/apply/form?${params.toString()}`);
+}
+
 export async function submitPublicApplicationAction(
   _previousState: PublicApplicationSubmitState,
   formData: FormData,
@@ -36,14 +41,14 @@ export async function submitPublicApplicationAction(
     fieldsJson,
   });
   if (!parsedForm.success) {
-    redirect("/apply/form?formError=入力内容を確認してください");
+    redirectWithPublicApplicationFormError("入力内容を確認してください");
   }
 
   let fields: DynamicFormField[] = [];
   try {
     fields = parseDynamicFormFieldsJson(parsedForm.data.fieldsJson);
   } catch {
-    redirect("/apply/form?formError=入力内容を確認してください");
+    redirectWithPublicApplicationFormError("入力内容を確認してください");
   }
 
   const body: CreatePublicApplicationBody = {

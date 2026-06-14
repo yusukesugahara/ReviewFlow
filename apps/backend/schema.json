@@ -199,136 +199,6 @@
         ]
       }
     },
-    "/audit-logs": {
-      "get": {
-        "operationId": "AuditLogsController_list",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50,
-              "type": "number"
-            }
-          },
-          {
-            "name": "actionType",
-            "required": false,
-            "in": "query",
-            "description": "action_type で前方一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "description": "target_type の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "applicationId",
-            "required": false,
-            "in": "query",
-            "description": "application_id の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "groupId",
-            "required": false,
-            "in": "query",
-            "description": "group_id の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "targetUserId",
-            "required": false,
-            "in": "query",
-            "description": "target_user_id の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "q",
-            "required": false,
-            "in": "query",
-            "description": "action_type / summary / actor / target / application / group の部分一致検索",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "createdFrom",
-            "required": false,
-            "in": "query",
-            "description": "created_at の検索開始日時（ISO 8601）",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "createdTo",
-            "required": false,
-            "in": "query",
-            "description": "created_at の検索終了日時（ISO 8601）",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "status",
-                    "data"
-                  ],
-                  "properties": {
-                    "status": {
-                      "type": "number",
-                      "enum": [
-                        200
-                      ],
-                      "example": 200
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/AuditLogsListResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "internal-api-key": []
-          },
-          {
-            "nest-jwt": []
-          }
-        ],
-        "summary": "監査ログ一覧（tenant_admin）",
-        "tags": [
-          "audit-logs"
-        ]
-      }
-    },
     "/auth/register": {
       "post": {
         "operationId": "AuthController_register",
@@ -587,6 +457,227 @@
         ]
       }
     },
+    "/auth/me/profile": {
+      "patch": {
+        "operationId": "AuthController_updateMeProfile",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMeProfileDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AuthIssueTokensResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "ログイン中ユーザの名前更新",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me/email-change/request": {
+      "post": {
+        "operationId": "AuthController_requestMeEmailChange",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RequestMeEmailChangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EmailChangeAcceptedResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "ログイン中ユーザのメールアドレス変更確認メール送信",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/email-change/confirm": {
+      "post": {
+        "operationId": "AuthController_confirmEmailChange",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ConfirmEmailChangeDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/EmailChangeAcceptedResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "メールアドレス変更の確定",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
+    "/auth/me/password": {
+      "patch": {
+        "operationId": "AuthController_updateMePassword",
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateMePasswordDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AuthIssueTokensResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "ログイン中ユーザのパスワード更新",
+        "tags": [
+          "auth"
+        ]
+      }
+    },
     "/auth/admin/ping": {
       "get": {
         "operationId": "AuthController_adminPing",
@@ -630,6 +721,146 @@
         "summary": "管理者のみ（403 = ロール不足）",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/audit-logs": {
+      "get": {
+        "operationId": "AuditLogsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "actionType",
+            "required": false,
+            "in": "query",
+            "description": "action_type で前方一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "description": "target_type の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "description": "application_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupId",
+            "required": false,
+            "in": "query",
+            "description": "group_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetUserId",
+            "required": false,
+            "in": "query",
+            "description": "target_user_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "action_type / summary / actor / target / application / group の部分一致検索",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索開始日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索終了日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AuditLogsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "監査ログ一覧（tenant_admin）",
+        "tags": [
+          "audit-logs"
         ]
       }
     },
@@ -1851,6 +2082,69 @@
       }
     },
     "/groups/{groupId}": {
+      "patch": {
+        "operationId": "GroupsController_update",
+        "parameters": [
+          {
+            "name": "groupId",
+            "required": true,
+            "in": "path",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateGroupDto"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/GroupSummaryDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "スペース名・説明更新（tenant_admin）",
+        "tags": [
+          "spaces"
+        ]
+      },
       "delete": {
         "operationId": "GroupsController_remove",
         "parameters": [
@@ -3275,118 +3569,6 @@
           "role"
         ]
       },
-      "AuditLogItemDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "groupId": {
-            "type": "string",
-            "nullable": true
-          },
-          "actorUserId": {
-            "type": "string",
-            "nullable": true
-          },
-          "actorEmail": {
-            "type": "string",
-            "nullable": true
-          },
-          "actorType": {
-            "type": "string"
-          },
-          "actorEmailSnapshot": {
-            "type": "string",
-            "nullable": true
-          },
-          "actionType": {
-            "type": "string"
-          },
-          "targetType": {
-            "type": "string"
-          },
-          "targetId": {
-            "type": "string",
-            "nullable": true
-          },
-          "targetUserId": {
-            "type": "string",
-            "nullable": true
-          },
-          "targetEmailSnapshot": {
-            "type": "string",
-            "nullable": true
-          },
-          "applicationId": {
-            "type": "string",
-            "nullable": true
-          },
-          "statusFrom": {
-            "type": "string",
-            "nullable": true
-          },
-          "statusTo": {
-            "type": "string",
-            "nullable": true
-          },
-          "stepOrderFrom": {
-            "type": "number",
-            "nullable": true
-          },
-          "stepOrderTo": {
-            "type": "number",
-            "nullable": true
-          },
-          "roleFrom": {
-            "type": "string",
-            "nullable": true
-          },
-          "roleTo": {
-            "type": "string",
-            "nullable": true
-          },
-          "groupRoleFrom": {
-            "type": "string",
-            "nullable": true
-          },
-          "groupRoleTo": {
-            "type": "string",
-            "nullable": true
-          },
-          "summary": {
-            "type": "string",
-            "nullable": true
-          },
-          "metadataJson": {
-            "type": "object"
-          },
-          "createdAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "actorType",
-          "actionType",
-          "targetType",
-          "createdAt"
-        ]
-      },
-      "AuditLogsListResponseDto": {
-        "type": "object",
-        "properties": {
-          "logs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AuditLogItemDto"
-            }
-          }
-        },
-        "required": [
-          "logs"
-        ]
-      },
       "AuthUserSummaryDto": {
         "type": "object",
         "properties": {
@@ -3397,6 +3579,10 @@
           "email": {
             "type": "string",
             "example": "user@example.com"
+          },
+          "name": {
+            "type": "string",
+            "nullable": true
           },
           "role": {
             "type": "string",
@@ -3533,6 +3719,10 @@
           "email": {
             "type": "string"
           },
+          "name": {
+            "type": "string",
+            "nullable": true
+          },
           "roles": {
             "example": [
               "tenant_admin"
@@ -3554,6 +3744,73 @@
           "tenantId"
         ]
       },
+      "UpdateMeProfileDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "山田 太郎",
+            "nullable": true
+          }
+        }
+      },
+      "EmailChangeAcceptedResponseDto": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean",
+            "example": true
+          }
+        },
+        "required": [
+          "ok"
+        ]
+      },
+      "RequestMeEmailChangeDto": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string",
+            "example": "user@example.com"
+          }
+        },
+        "required": [
+          "email"
+        ]
+      },
+      "ConfirmEmailChangeDto": {
+        "type": "object",
+        "properties": {
+          "token": {
+            "type": "string",
+            "example": "email-change-token"
+          }
+        },
+        "required": [
+          "token"
+        ]
+      },
+      "UpdateMePasswordDto": {
+        "type": "object",
+        "properties": {
+          "currentPassword": {
+            "type": "string",
+            "example": "current-password",
+            "minLength": 8,
+            "maxLength": 72
+          },
+          "newPassword": {
+            "type": "string",
+            "example": "new-password12",
+            "minLength": 8,
+            "maxLength": 72
+          }
+        },
+        "required": [
+          "currentPassword",
+          "newPassword"
+        ]
+      },
       "AdminPingResponseDto": {
         "type": "object",
         "properties": {
@@ -3564,6 +3821,134 @@
         },
         "required": [
           "ok"
+        ]
+      },
+      "AuditLogItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorType": {
+            "type": "string"
+          },
+          "actorEmailSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetEmailSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "applicationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "stepOrderFrom": {
+            "type": "number",
+            "nullable": true
+          },
+          "stepOrderTo": {
+            "type": "number",
+            "nullable": true
+          },
+          "roleFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "roleTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupRoleFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupRoleTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadataJson": {
+            "type": "object"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "actorType",
+          "actionType",
+          "targetType",
+          "createdAt"
+        ]
+      },
+      "AuditLogsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogItemDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "offset": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "logs",
+          "total",
+          "limit",
+          "offset"
         ]
       },
       "CreateInvitationResponseDto": {
@@ -4188,6 +4573,23 @@
           "adminUserIds"
         ]
       },
+      "UpdateGroupDto": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "example": "経理部",
+            "description": "スペース名"
+          },
+          "description": {
+            "type": "string",
+            "example": "経理部向けの承認・レビュースペース"
+          }
+        },
+        "required": [
+          "name"
+        ]
+      },
       "GroupMemberSummaryDto": {
         "type": "object",
         "properties": {
@@ -4451,6 +4853,37 @@
           "groupId"
         ]
       },
+      "ApplicationCapabilitiesDto": {
+        "type": "object",
+        "properties": {
+          "canEditApplication": {
+            "type": "boolean"
+          },
+          "canSubmitApplication": {
+            "type": "boolean"
+          },
+          "canResubmitApplication": {
+            "type": "boolean"
+          },
+          "canApproveApplication": {
+            "type": "boolean"
+          },
+          "canRejectApplication": {
+            "type": "boolean"
+          },
+          "canReturnApplication": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "canEditApplication",
+          "canSubmitApplication",
+          "canResubmitApplication",
+          "canApproveApplication",
+          "canRejectApplication",
+          "canReturnApplication"
+        ]
+      },
       "ApplicationProgressUserDto": {
         "type": "object",
         "properties": {
@@ -4597,6 +5030,9 @@
           "updatedAt": {
             "type": "string"
           },
+          "capabilities": {
+            "$ref": "#/components/schemas/ApplicationCapabilitiesDto"
+          },
           "currentStepCanReturn": {
             "type": "object",
             "description": "現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。",
@@ -4626,6 +5062,7 @@
           "currentStepAssigneeUserIds",
           "createdAt",
           "updatedAt",
+          "capabilities",
           "approvalProgress",
           "values"
         ]
@@ -4633,11 +5070,19 @@
       "ApproveApplicationDto": {
         "type": "object",
         "properties": {
+          "expectedStepOrder": {
+            "type": "number",
+            "example": 1,
+            "description": "画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。"
+          },
           "comment": {
             "type": "string",
             "description": "任意コメント（監査用）"
           }
-        }
+        },
+        "required": [
+          "expectedStepOrder"
+        ]
       },
       "ReturnFieldItemDto": {
         "type": "object",
@@ -4658,6 +5103,11 @@
       "ReturnApplicationDto": {
         "type": "object",
         "properties": {
+          "expectedStepOrder": {
+            "type": "number",
+            "example": 1,
+            "description": "画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。"
+          },
           "overallComment": {
             "type": "string"
           },
@@ -4669,16 +5119,26 @@
           }
         },
         "required": [
+          "expectedStepOrder",
           "fields"
         ]
       },
       "RejectApplicationDto": {
         "type": "object",
         "properties": {
+          "expectedStepOrder": {
+            "type": "number",
+            "example": 1,
+            "description": "画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。"
+          },
           "comment": {
-            "type": "string"
+            "type": "string",
+            "description": "任意コメント（監査用）"
           }
-        }
+        },
+        "required": [
+          "expectedStepOrder"
+        ]
       },
       "CorrectionTargetItemResponseDto": {
         "type": "object",

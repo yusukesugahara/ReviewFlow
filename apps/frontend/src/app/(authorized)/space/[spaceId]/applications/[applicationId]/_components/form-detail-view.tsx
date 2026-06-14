@@ -10,10 +10,9 @@ import {
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { ApplicationStatusBadge } from "@/components/applications/status/application-status-badge";
 import { PublicApplicationUrlCopyButton } from "@/components/applications/detail/public-application-url-card";
 import { DynamicFieldsTable } from "@/components/applications/dynamic-fields/dynamic-fields";
@@ -73,14 +72,11 @@ export function FormDetailView({
                   {viewModel.fieldCount}項目
                 </span>
               </div>
-              <div>
-                <CardTitle className="break-words text-2xl leading-tight text-slate-950">
-                  {viewModel.name}
-                </CardTitle>
-                <CardDescription className="mt-2">
-                  公開フォームとして利用者に表示される内容です
-                </CardDescription>
-              </div>
+              <CardHeading
+                description="公開フォームとして利用者に表示される内容です"
+                title={viewModel.name}
+                titleClassName="text-2xl leading-tight text-slate-950"
+              />
             </div>
             <div className="flex shrink-0 items-center gap-2">
               <DescriptionEditModal
@@ -126,12 +122,10 @@ export function FormDetailView({
       <Card className="overflow-hidden">
         <CardHeader>
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <CardTitle className="text-xl">フォームの内容</CardTitle>
-              <CardDescription>
-                利用者が申請時に見る入力フォームです
-              </CardDescription>
-            </div>
+            <CardHeading
+              description="利用者が申請時に見る入力フォームです"
+              title="フォームの内容"
+            />
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>

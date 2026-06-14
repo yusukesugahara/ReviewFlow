@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import {
   ApplicationStatus,
   type ApplicationStatusValue,
@@ -20,18 +20,21 @@ export class ApplicationCreationRepository {
     private readonly apps: Repository<Application>,
   ) {}
 
-  async createApplicationWithValues(params: {
-    tenantId: string;
-    groupId: string;
-    applicantUserId: string | null;
-    applicantEmail: string;
-    formDefinitionId: string;
-    approvalFlowId: string;
-    status: ApplicationStatusValue;
-    values: CreateApplicationValue[];
-  }): Promise<string> {
+  async createApplicationWithValues(
+    params: {
+      tenantId: string;
+      groupId: string;
+      applicantUserId: string | null;
+      applicantEmail: string;
+      formDefinitionId: string;
+      approvalFlowId: string;
+      status: ApplicationStatusValue;
+      values: CreateApplicationValue[];
+    },
+    manager?: EntityManager,
+  ): Promise<string> {
     let newId = '';
-    await this.apps.manager.transaction(async (em) => {
+    const work = async (em: EntityManager) => {
       const appRepo = em.getRepository(Application);
       const valRepo = em.getRepository(ApplicationFieldValue);
       const app = appRepo.create({
@@ -60,15 +63,22 @@ export class ApplicationCreationRepository {
           }),
         );
       }
-    });
+    };
+    if (manager) {
+      await work(manager);
+    } else {
+      await this.apps.manager.transaction(work);
+    }
     return newId;
   }
 
   findCreatedApplication(
     tenantId: string,
     id: string,
+    manager?: EntityManager,
   ): Promise<Application | null> {
-    return this.apps.findOne({
+    const repository = manager?.getRepository(Application) ?? this.apps;
+    return repository.findOne({
       where: { id, tenantId },
       relations: [
         'fieldValues',

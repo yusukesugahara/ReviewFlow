@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { CorrectionRequestStatus } from '../constants/correction-request-status';
 import { CorrectionRequest } from '../entities/correction-request.entity';
 
@@ -11,9 +11,18 @@ export class ApplicationCorrectionRepository {
     private readonly correctionRequests: Repository<CorrectionRequest>,
   ) {}
 
-  findOpenCorrection(applicationId: string): Promise<CorrectionRequest | null> {
-    return this.correctionRequests.findOne({
-      where: { applicationId, status: CorrectionRequestStatus.OPEN },
+  findOpenCorrection(
+    params: { tenantId: string; applicationId: string },
+    manager?: EntityManager,
+  ): Promise<CorrectionRequest | null> {
+    const repository =
+      manager?.getRepository(CorrectionRequest) ?? this.correctionRequests;
+    return repository.findOne({
+      where: {
+        tenantId: params.tenantId,
+        applicationId: params.applicationId,
+        status: CorrectionRequestStatus.OPEN,
+      },
       relations: ['items'],
     });
   }
@@ -29,11 +38,11 @@ export class ApplicationCorrectionRepository {
     });
   }
 
-  async findLatestOpenCorrectionWithItems(
+  findLatestOpenCorrectionWithItems(
     tenantId: string,
     applicationId: string,
   ): Promise<CorrectionRequest | null> {
-    const opens = await this.correctionRequests.find({
+    return this.correctionRequests.findOne({
       where: {
         applicationId,
         tenantId,
@@ -42,6 +51,5 @@ export class ApplicationCorrectionRepository {
       relations: ['items', 'items.formField'],
       order: { createdAt: 'DESC' },
     });
-    return opens[0] ?? null;
   }
 }

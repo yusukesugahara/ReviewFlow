@@ -3,8 +3,8 @@ import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { ApprovalFlow } from '../../../../models/entities/approval-flow.entity';
 import { ApprovalFlowsRepository } from '../../../../models/repositories/approval-flows.repository';
-import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
-import { SpaceAccessService } from '../../groups/services/space-access.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/facades/auth.service';
+import { SpaceAccessService } from '../../groups/services/access/space-access.service';
 import type {
   CreateApprovalFlowDto,
   UpdateApprovalFlowDto,

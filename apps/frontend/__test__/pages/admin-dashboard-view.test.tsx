@@ -37,10 +37,6 @@ describe("AdminDashboardView", () => {
     expect(screen.getByText("2/3")).toBeInTheDocument();
     expect(screen.getAllByText("対応が必要").length).toBeGreaterThan(0);
     expect(screen.getByText("再提出レビュー中 2件")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: "概要" })).toHaveAttribute(
-      "href",
-      "/space/space-1",
-    );
     expect(screen.getByRole("link", { name: "フォーム" })).toHaveAttribute(
       "href",
       "/space/space-1/applications",

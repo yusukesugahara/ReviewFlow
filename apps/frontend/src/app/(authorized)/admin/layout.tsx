@@ -19,6 +19,7 @@ export default async function AdminLayout({ children }: AdminLayoutProps) {
     <AppSidebar
       spaces={spaces}
       userEmail={me?.email}
+      userName={me?.name}
       userRoles={me?.roles ?? []}
     >
       {children}

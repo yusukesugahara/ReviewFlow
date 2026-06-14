@@ -157,6 +157,74 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/auth/me/profile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** ログイン中ユーザの名前更新 */
+        patch: operations["AuthController_updateMeProfile"];
+        trace?: never;
+    };
+    "/auth/me/email-change/request": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** ログイン中ユーザのメールアドレス変更確認メール送信 */
+        post: operations["AuthController_requestMeEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/email-change/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** メールアドレス変更の確定 */
+        post: operations["AuthController_confirmEmailChange"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/me/password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** ログイン中ユーザのパスワード更新 */
+        patch: operations["AuthController_updateMePassword"];
+        trace?: never;
+    };
     "/auth/admin/ping": {
         parameters: {
             query?: never;
@@ -520,7 +588,8 @@ export interface paths {
         delete: operations["GroupsController_remove"];
         options?: never;
         head?: never;
-        patch?: never;
+        /** スペース名・説明更新（tenant_admin） */
+        patch: operations["GroupsController_update"];
         trace?: never;
     };
     "/groups/{groupId}/members": {
@@ -951,6 +1020,7 @@ export interface components {
             id: string;
             /** @example user@example.com */
             email: string;
+            name?: string | null;
             /**
              * @example tenant_admin
              * @enum {string}
@@ -1003,6 +1073,7 @@ export interface components {
         AuthMeResponseDto: {
             id: string;
             email: string;
+            name?: string | null;
             /**
              * @example [
              *       "tenant_admin"
@@ -1011,6 +1082,28 @@ export interface components {
             roles: string[];
             /** @description 所属テナント ID */
             tenantId: string;
+        };
+        UpdateMeProfileDto: {
+            /** @example 山田 太郎 */
+            name?: string | null;
+        };
+        EmailChangeAcceptedResponseDto: {
+            /** @example true */
+            ok: boolean;
+        };
+        RequestMeEmailChangeDto: {
+            /** @example user@example.com */
+            email: string;
+        };
+        ConfirmEmailChangeDto: {
+            /** @example email-change-token */
+            token: string;
+        };
+        UpdateMePasswordDto: {
+            /** @example current-password */
+            currentPassword: string;
+            /** @example new-password12 */
+            newPassword: string;
         };
         AdminPingResponseDto: {
             /** @example true */
@@ -1043,6 +1136,9 @@ export interface components {
         };
         AuditLogsListResponseDto: {
             logs: components["schemas"]["AuditLogItemDto"][];
+            total: number;
+            limit: number;
+            offset: number;
         };
         CreateInvitationResponseDto: {
             id: string;
@@ -1241,6 +1337,15 @@ export interface components {
             /** @description 初期スペース管理者。1人以上必須。 */
             adminUserIds: string[];
         };
+        UpdateGroupDto: {
+            /**
+             * @description スペース名
+             * @example 経理部
+             */
+            name: string;
+            /** @example 経理部向けの承認・レビュースペース */
+            description?: string;
+        };
         GroupMemberSummaryDto: {
             id: string;
             /** @description 所属スペースID。後方互換のためプロパティ名は groupId。 */
@@ -1335,6 +1440,14 @@ export interface components {
                 [key: string]: unknown;
             };
         };
+        ApplicationCapabilitiesDto: {
+            canEditApplication: boolean;
+            canSubmitApplication: boolean;
+            canResubmitApplication: boolean;
+            canApproveApplication: boolean;
+            canRejectApplication: boolean;
+            canReturnApplication: boolean;
+        };
         ApplicationProgressUserDto: {
             id: string;
             email: string;
@@ -1373,6 +1486,7 @@ export interface components {
             submittedAt?: Record<string, never> | null;
             createdAt: string;
             updatedAt: string;
+            capabilities: components["schemas"]["ApplicationCapabilitiesDto"];
             /** @description 現在の承認ステップで差し戻し可能か。審査中でない場合や現在ステップが無い場合は null。 */
             currentStepCanReturn?: Record<string, never> | null;
             approvalProgress: components["schemas"]["ApplicationProgressStepDto"][];
@@ -1382,6 +1496,11 @@ export interface components {
             };
         };
         ApproveApplicationDto: {
+            /**
+             * @description 画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。
+             * @example 1
+             */
+            expectedStepOrder: number;
             /** @description 任意コメント（監査用） */
             comment?: string;
         };
@@ -1394,10 +1513,21 @@ export interface components {
             comment?: string;
         };
         ReturnApplicationDto: {
+            /**
+             * @description 画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。
+             * @example 1
+             */
+            expectedStepOrder: number;
             overallComment?: string;
             fields: components["schemas"]["ReturnFieldItemDto"][];
         };
         RejectApplicationDto: {
+            /**
+             * @description 画面表示時点の currentStepOrder。ロック取得後の最新 step と一致しない場合は競合として拒否する。
+             * @example 1
+             */
+            expectedStepOrder: number;
+            /** @description 任意コメント（監査用） */
             comment?: string;
         };
         CorrectionTargetItemResponseDto: {
@@ -1774,6 +1904,126 @@ export interface operations {
             };
         };
     };
+    AuthController_updateMeProfile: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMeProfileDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["AuthIssueTokensResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_requestMeEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RequestMeEmailChangeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["EmailChangeAcceptedResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_confirmEmailChange: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ConfirmEmailChangeDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["EmailChangeAcceptedResponseDto"];
+                    };
+                };
+            };
+        };
+    };
+    AuthController_updateMePassword: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMePasswordDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["AuthIssueTokensResponseDto"];
+                    };
+                };
+            };
+        };
+    };
     AuthController_adminPing: {
         parameters: {
             query?: never;
@@ -1804,6 +2054,7 @@ export interface operations {
         parameters: {
             query?: {
                 limit?: number;
+                offset?: number;
                 /** @description action_type で前方一致絞り込み */
                 actionType?: string;
                 /** @description target_type の完全一致絞り込み */
@@ -2484,6 +2735,38 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content?: never;
+            };
+        };
+    };
+    GroupsController_update: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                groupId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateGroupDto"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["GroupSummaryDto"];
+                    };
+                };
             };
         };
     };

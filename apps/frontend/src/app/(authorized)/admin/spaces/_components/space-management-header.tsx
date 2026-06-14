@@ -5,10 +5,9 @@ import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -50,10 +49,10 @@ export function SpaceManagementHeader({
       {canCreateSpace && isCreateOpen ? (
         <Card>
           <CardHeader>
-            <CardTitle>新しいスペースを作成</CardTitle>
-            <CardDescription>
-              スペース作成時に初期スペース管理者を1人以上指定します
-            </CardDescription>
+            <CardHeading
+              description="スペース作成時に初期スペース管理者を1人以上指定します"
+              title="新しいスペースを作成"
+            />
           </CardHeader>
           <CardContent>
             <form action={createSpaceAction} className="grid gap-4">

@@ -18,27 +18,29 @@ export class ApplicationSubmissionRepository {
   ) {}
 
   findExistingFieldValues(
-    applicationId: string,
+    params: { tenantId: string; applicationId: string },
+    manager?: EntityManager,
   ): Promise<ApplicationFieldValue[]> {
-    return this.fieldValues.find({ where: { applicationId } });
+    const repository =
+      manager?.getRepository(ApplicationFieldValue) ?? this.fieldValues;
+    return repository.find({
+      where: {
+        tenantId: params.tenantId,
+        applicationId: params.applicationId,
+      },
+    });
   }
 
-  createFieldValue(params: {
-    tenantId: string;
-    applicationId: string;
-    formFieldId: string;
-    valueJson: unknown;
-  }): ApplicationFieldValue {
-    return this.fieldValues.create(params);
-  }
-
-  async saveApplicationPatch(params: {
-    app: Application;
-    formDefinitionId?: string;
-    approvalFlowId?: string;
-    status?: ApplicationStatusValue;
-    values: ApplicationFieldValue[];
-  }): Promise<void> {
+  async saveApplicationPatch(
+    params: {
+      app: Application;
+      formDefinitionId?: string;
+      approvalFlowId?: string;
+      status?: ApplicationStatusValue;
+      values: ApplicationFieldValue[];
+    },
+    manager?: EntityManager,
+  ): Promise<void> {
     if (
       !params.formDefinitionId &&
       !params.approvalFlowId &&
@@ -47,7 +49,7 @@ export class ApplicationSubmissionRepository {
     ) {
       return;
     }
-    await this.apps.manager.transaction(async (em: EntityManager) => {
+    const work = async (em: EntityManager) => {
       const appRepo = em.getRepository(Application);
       const valueRepo = em.getRepository(ApplicationFieldValue);
       if (params.formDefinitionId) {
@@ -66,20 +68,36 @@ export class ApplicationSubmissionRepository {
       if (params.values.length > 0) {
         await valueRepo.save(params.values);
       }
-    });
+    };
+    if (manager) {
+      await work(manager);
+    } else {
+      await this.apps.manager.transaction(work);
+    }
   }
 
-  async saveSubmittedApplication(app: Application): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
+  async saveSubmittedApplication(
+    app: Application,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const work = async (em: EntityManager) => {
       await em.getRepository(Application).save(app);
-    });
+    };
+    if (manager) {
+      await work(manager);
+    } else {
+      await this.apps.manager.transaction(work);
+    }
   }
 
-  async saveResubmittedApplication(params: {
-    app: Application;
-    openCorrection: CorrectionRequest;
-  }): Promise<void> {
-    await this.apps.manager.transaction(async (em: EntityManager) => {
+  async saveResubmittedApplication(
+    params: {
+      app: Application;
+      openCorrection: CorrectionRequest;
+    },
+    manager?: EntityManager,
+  ): Promise<void> {
+    const work = async (em: EntityManager) => {
       const corrRepo = em.getRepository(CorrectionRequest);
       const itemRepo = em.getRepository(CorrectionRequestItem);
       const appRepo = em.getRepository(Application);
@@ -94,6 +112,11 @@ export class ApplicationSubmissionRepository {
       }
 
       await appRepo.save(params.app);
-    });
+    };
+    if (manager) {
+      await work(manager);
+    } else {
+      await this.apps.manager.transaction(work);
+    }
   }
 }

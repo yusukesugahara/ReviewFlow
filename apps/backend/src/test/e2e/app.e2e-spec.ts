@@ -12,7 +12,7 @@ import { UserRole } from '../../models/constants/user-role';
 import { Invitation } from '../../models/entities/invitation.entity';
 import { User } from '../../models/entities/user.entity';
 import {
-  configurePostgresTestEnv,
+  preparePostgresTestDatabase,
   truncatePostgresTables,
 } from '../test-postgres';
 
@@ -153,7 +153,7 @@ describe('App (e2e)', () => {
   beforeEach(async () => {
     process.env.INTERNAL_API_KEY = 'e2e-internal-api-key';
     process.env.JWT_SECRET = 'e2e-jwt-secret-at-least-32-characters-long';
-    configurePostgresTestEnv();
+    await preparePostgresTestDatabase();
 
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [AppModule],
@@ -177,7 +177,7 @@ describe('App (e2e)', () => {
   });
 
   afterEach(async () => {
-    await app.close();
+    await app?.close();
   });
 
   it('POST /auth/login rejects without API key (401 + errorCode)', async () => {
@@ -1184,7 +1184,7 @@ describe('App (e2e)', () => {
       .post(`/applications/${appId}/approve`)
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
-      .send({})
+      .send({ expectedStepOrder: 1 })
       .expect(200);
 
     const afterApprove = await request(http)
@@ -1356,6 +1356,7 @@ describe('App (e2e)', () => {
       .set(apiKey)
       .set('Authorization', `Bearer ${adminTok}`)
       .send({
+        expectedStepOrder: 1,
         overallComment: '修正してください',
         fields: [{ fieldId, comment: '内容を具体化' }],
       })
@@ -1648,16 +1649,11 @@ describe('App (e2e)', () => {
     );
 
     await request(http)
-      .get('/users')
+      .patch('/auth/me/profile')
       .set(apiKey)
       .set('Authorization', `Bearer ${tok}`)
+      .send({ name: 'Audit Admin' })
       .expect(200);
-    await request(http)
-      .post('/form-definitions')
-      .set(apiKey)
-      .set('Authorization', `Bearer ${tok}`)
-      .send({ groupId, name: 'Audit Form' })
-      .expect(201);
 
     const logs = await request(http)
       .get('/audit-logs')
@@ -1666,11 +1662,14 @@ describe('App (e2e)', () => {
       .expect(200);
     const rows = (logs.body as AuditLogsListBody).data?.logs ?? [];
     expect(rows.length).toBeGreaterThan(0);
-    expect(rows.some((x) => x.targetType === 'users')).toBe(true);
     expect(
       rows.some(
-        (x) => x.targetType === 'form-definitions' && x.groupId === groupId,
+        (x) =>
+          x.targetType === 'user' && x.actionType === 'user.profile_updated',
       ),
+    ).toBe(true);
+    expect(
+      rows.some((x) => x.targetType === 'space' && x.groupId === groupId),
     ).toBe(true);
   });
 });

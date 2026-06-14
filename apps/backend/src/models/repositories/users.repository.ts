@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { EntityManager, In, Not, Repository } from 'typeorm';
 import { UserRole } from '../constants/user-role';
 import type { UserRoleValue } from '../constants/user-role';
 import { User } from '../entities/user.entity';
@@ -28,6 +28,35 @@ export class UsersRepository {
     });
   }
 
+  findAllByEmailAndTenant(email: string, tenantId: string): Promise<User[]> {
+    return this.users.find({
+      where: { email: email.toLowerCase(), tenantId },
+    });
+  }
+
+  findActiveByEmail(email: string): Promise<User[]> {
+    return this.users.find({
+      where: { email: email.toLowerCase(), isActive: true },
+    });
+  }
+
+  async emailExists(email: string): Promise<boolean> {
+    const count = await this.users.count({
+      where: { email: email.toLowerCase() },
+    });
+    return count > 0;
+  }
+
+  async emailExistsForAnotherUser(
+    email: string,
+    currentUserId: string,
+  ): Promise<boolean> {
+    const count = await this.users.count({
+      where: { email: email.toLowerCase(), id: Not(currentUserId) },
+    });
+    return count > 0;
+  }
+
   findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.users.findOne({
       where: { tenantId, email: email.toLowerCase() },
@@ -45,14 +74,13 @@ export class UsersRepository {
     });
   }
 
-  findAllByIdsInTenant(tenantId: string, ids: string[]): Promise<User[]> {
+  countByIdsInTenant(tenantId: string, ids: string[]): Promise<number> {
     if (!ids.length) {
-      return Promise.resolve([]);
+      return Promise.resolve(0);
     }
 
-    return this.users.find({
+    return this.users.count({
       where: { tenantId, id: In(ids) },
-      order: { createdAt: 'ASC' },
     });
   }
 
@@ -66,7 +94,8 @@ export class UsersRepository {
     });
   }
 
-  save(user: User): Promise<User> {
-    return this.users.save(user);
+  save(user: User, manager?: EntityManager): Promise<User> {
+    const repository = manager?.getRepository(User) ?? this.users;
+    return repository.save(user);
   }
 }

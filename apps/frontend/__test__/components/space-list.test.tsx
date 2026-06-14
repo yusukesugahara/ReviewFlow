@@ -58,6 +58,7 @@ function renderSpaceList(props?: Partial<ComponentProps<typeof SpaceList>>) {
       isSystemAdmin
       addMemberAction={action}
       inviteSpaceMemberAction={action}
+      updateSpaceAction={action}
       updateMemberRoleAction={action}
       removeMemberAction={action}
       leaveSpaceAction={action}
@@ -92,7 +93,7 @@ describe("SpaceList", () => {
     const user = userEvent.setup();
     renderSpaceList();
 
-    await user.click(screen.getByRole("button", { name: /営業部/ }));
+    await user.click(screen.getByRole("button", { name: "営業部 営業用スペース" }));
 
     expect(screen.getByRole("table")).toBeInTheDocument();
     expect(screen.getByText("Current User")).toBeInTheDocument();
@@ -112,7 +113,7 @@ describe("SpaceList", () => {
     const user = userEvent.setup();
     renderSpaceList();
 
-    await user.click(screen.getByRole("button", { name: /営業部/ }));
+    await user.click(screen.getByRole("button", { name: "営業部 営業用スペース" }));
     await user.click(screen.getByRole("button", { name: "メンバーを追加または招待" }));
 
     expect(screen.getByRole("heading", { name: "メンバーを追加" })).toBeInTheDocument();
@@ -121,5 +122,30 @@ describe("SpaceList", () => {
     expect(screen.getByPlaceholderText("member@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "追加" })).toBeEnabled();
     expect(screen.getByRole("button", { name: "招待" })).toBeEnabled();
+  });
+
+  // テスト内容: テナント管理者はスペース編集ダイアログを開けることを確認する
+  it("opens the space details edit dialog for tenant admins", async () => {
+    const user = userEvent.setup();
+    renderSpaceList();
+
+    await user.click(screen.getByRole("button", { name: "営業部を編集" }));
+
+    expect(screen.getByRole("heading", { name: "スペースを編集" })).toBeInTheDocument();
+    expect(screen.getByLabelText("スペース名")).toHaveValue("営業部");
+    expect(screen.getByLabelText("説明文")).toHaveValue("営業用スペース");
+    expect(screen.getByRole("button", { name: "保存" })).toBeEnabled();
+
+    const overlay = screen.getByRole("dialog").previousElementSibling;
+    expect(overlay).not.toBeNull();
+    await user.click(overlay as Element);
+    expect(screen.queryByRole("heading", { name: "スペースを編集" })).not.toBeInTheDocument();
+  });
+
+  // テスト内容: テナント管理者でない場合はスペース編集ボタンを表示しないことを確認する
+  it("hides the space details edit button for non tenant admins", () => {
+    renderSpaceList({ isSystemAdmin: false });
+
+    expect(screen.queryByRole("button", { name: "営業部を編集" })).not.toBeInTheDocument();
   });
 });

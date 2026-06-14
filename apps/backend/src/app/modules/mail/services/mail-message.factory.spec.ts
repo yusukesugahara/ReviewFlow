@@ -54,4 +54,29 @@ describe('MailMessageFactory', () => {
       'https://review.example.com/apply/access?token=access-token',
     );
   });
+
+  it('builds email change confirmation email', () => {
+    const factory = new MailMessageFactory(
+      new ConfigService({
+        FRONTEND_BASE_URL: 'https://review.example.com',
+      }),
+    );
+
+    const message = factory.buildEmailChangeConfirmationEmail({
+      to: 'new@example.com',
+      currentEmail: 'old@example.com',
+      newEmail: 'new@example.com',
+      confirmToken: 'email-change-token',
+      expiresAtIso: '2026-01-01T00:00:00.000Z',
+    });
+
+    expect(message.to).toBe('new@example.com');
+    expect(message.subject).toBe('ReviewFlow メールアドレス変更の確認');
+    expect(message.text).toContain('現在のメールアドレス: old@example.com');
+    expect(message.text).toContain('新しいメールアドレス: new@example.com');
+    expect(message.text).toContain(
+      'https://review.example.com/account/email-change/confirm?token=email-change-token',
+    );
+    expect(message.html).toContain('メールアドレス変更を確認する');
+  });
 });

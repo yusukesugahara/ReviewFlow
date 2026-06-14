@@ -8,7 +8,12 @@ export class AuditLogsService {
   constructor(private readonly auditLogsRepository: AuditLogsRepository) {}
 
   async listByTenant(tenantId: string, query: AuditLogsQueryDto) {
-    const rows = await this.auditLogsRepository.listByTenant(tenantId, query);
-    return rows.map(mapAuditLogToDto);
+    const result = await this.auditLogsRepository.listByTenant(tenantId, query);
+    return {
+      logs: result.rows.map(mapAuditLogToDto),
+      total: result.total,
+      limit: result.limit,
+      offset: result.offset,
+    };
   }
 }

@@ -96,7 +96,10 @@ export async function createInvitationAction(
   });
 
   if (!parsed.success) {
-    redirect("/admin/invitations?formError=入力内容を確認してください");
+    const params = new URLSearchParams({
+      formError: "入力内容を確認してください",
+    });
+    redirect(`/admin/invitations?${params.toString()}`);
   }
 
   const body: CreateInvitationBody = parsed.data;
@@ -142,7 +145,11 @@ export async function deleteUserAction(userId: string): Promise<void> {
   }
 
   revalidatePath("/admin/invitations");
-  redirect("/admin/invitations?toast=success&message=ユーザを削除しました");
+  const params = new URLSearchParams({
+    toast: "success",
+    message: "ユーザを削除しました",
+  });
+  redirect(`/admin/invitations?${params.toString()}`);
 }
 
 export async function restoreUserAction(userId: string): Promise<void> {
@@ -161,5 +168,9 @@ export async function restoreUserAction(userId: string): Promise<void> {
   }
 
   revalidatePath("/admin/invitations");
-  redirect("/admin/invitations?toast=success&message=ユーザを復活しました");
+  const params = new URLSearchParams({
+    toast: "success",
+    message: "ユーザを復活しました",
+  });
+  redirect(`/admin/invitations?${params.toString()}`);
 }

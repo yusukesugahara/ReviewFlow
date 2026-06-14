@@ -19,6 +19,7 @@ export default async function RootSpaceLayout({ children }: RootSpaceLayoutProps
     <AppSidebar
       spaces={spaces}
       userEmail={me?.email}
+      userName={me?.name}
       userRoles={me?.roles ?? []}
     >
       {children}

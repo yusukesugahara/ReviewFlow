@@ -1,11 +1,9 @@
-import { Search } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ApplicationEmptyState } from "@/components/applications/list/application-empty-state";
 import { ApplicationListTable } from "@/components/applications/list/application-list-table";
@@ -80,15 +78,10 @@ export function SpaceSubmissionsPageContent({
 
       <Card>
         <CardHeader className="gap-3 border-b border-slate-200 sm:flex-row sm:items-start sm:justify-between">
-          <div>
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <Search className="h-5 w-5 text-slate-500" aria-hidden="true" />
-              すべての申請
-            </CardTitle>
-            <CardDescription>
-              申請者、ステータス、作成時期で申請を絞り込めます（{filteredApplications.length}件）
-            </CardDescription>
-          </div>
+          <CardHeading
+            description="申請者、ステータス、作成時期で申請を絞り込めます"
+            title="すべての申請"
+          />
           <SubmissionCsvExportControls
             exportFormOptions={exportFormOptions}
             latestExportJob={latestExportJob}

@@ -1,6 +1,7 @@
 import type { Application } from '../../../../models/entities/application.entity';
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
 import type {
+  ApplicationCapabilitiesDto,
   ApplicationDetailDto,
   ApplicationProgressStepDto,
   ApplicationSummaryDto,
@@ -8,12 +9,23 @@ import type {
   CorrectionRequestItemResponseDto,
   CorrectionRequestResponseDto,
   CorrectionsListResponseDto,
-  ReturnApplicationDto,
+  ReturnApplicationEmailDto,
 } from '../dto/applications.dto';
 
 export type ApplicationWithProgress = Application & {
   approvalProgress?: ApplicationProgressStepDto[];
 };
+
+export function disabledApplicationCapabilities(): ApplicationCapabilitiesDto {
+  return {
+    canEditApplication: false,
+    canSubmitApplication: false,
+    canResubmitApplication: false,
+    canApproveApplication: false,
+    canRejectApplication: false,
+    canReturnApplication: false,
+  };
+}
 
 export function mapApplicationToSummary(
   row: Application,
@@ -39,12 +51,7 @@ export function mapApplicationToSummary(
 }
 
 function getCurrentStepAssigneeUserIds(row: Application): string[] {
-  if (row.currentStepOrder == null) {
-    return [];
-  }
-  const step = (row.approvalFlow?.steps ?? []).find(
-    (s) => s.stepOrder === row.currentStepOrder,
-  );
+  const step = row.currentApprovalStep ?? null;
   if (!step) {
     return [];
   }
@@ -55,6 +62,7 @@ function getCurrentStepAssigneeUserIds(row: Application): string[] {
 
 export function mapApplicationToDetail(
   row: ApplicationWithProgress,
+  capabilities: ApplicationCapabilitiesDto = disabledApplicationCapabilities(),
 ): ApplicationDetailDto {
   const values: Record<string, unknown> = {};
   for (const v of row.fieldValues ?? []) {
@@ -63,14 +71,10 @@ export function mapApplicationToDetail(
       values[key] = v.valueJson;
     }
   }
-  const currentStep =
-    row.currentStepOrder == null
-      ? null
-      : (row.approvalFlow?.steps ?? []).find(
-          (step) => step.stepOrder === row.currentStepOrder,
-        );
+  const currentStep = row.currentApprovalStep ?? null;
   return {
     ...mapApplicationToSummary(row),
+    capabilities,
     currentStepCanReturn: currentStep?.canReturn ?? null,
     approvalProgress: row.approvalProgress ?? [],
     values,
@@ -160,7 +164,7 @@ export function mapCorrectionTargetsResponse(
 
 export function mapCorrectionToReturnApplicationDto(
   openCorrection: CorrectionRequest,
-): ReturnApplicationDto {
+): ReturnApplicationEmailDto {
   return {
     overallComment: openCorrection.overallComment ?? undefined,
     fields: (openCorrection.items ?? []).map((item) => ({

@@ -176,10 +176,10 @@ Recommended structure:
 
   <Card>
     <CardHeader>
-      <CardTitle>Application List</CardTitle>
-      <CardDescription>
-        Review and manage submitted applications.
-      </CardDescription>
+      <CardHeading
+        title="Application List"
+        description="Review and manage submitted applications."
+      />
     </CardHeader>
     <CardContent>
       {/* Main content */}
@@ -200,7 +200,7 @@ Recommended classes:
 
 - Page title: `text-2xl font-semibold tracking-tight`
 - Section title: `text-lg font-semibold`
-- Card title: use `CardTitle`
+- Card heading: use `CardHeading` for repeated title + optional status badge + description patterns
 - Body text: `text-sm`
 - Sub text: `text-sm text-muted-foreground`
 - Label: use shadcn/ui `Label`
@@ -271,16 +271,18 @@ Rules:
 - Disable submit buttons while submitting.
 - Show a loading state during submission.
 - Keep submit and cancel buttons consistently placed.
+- For large edit screens that belong to one workflow, prefer one card with clear sections over multiple cards when the user edits one object.
+- Place primary form actions in the card header when the form is long and the action should stay visually tied to the object being edited.
 
 Recommended structure:
 
 ```tsx
 <Card>
   <CardHeader>
-    <CardTitle>Basic Information</CardTitle>
-    <CardDescription>
-      Enter the required information for this application.
-    </CardDescription>
+    <CardHeading
+      title="Basic Information"
+      description="Enter the required information for this application."
+    />
   </CardHeader>
 
   <CardContent className="space-y-4">
@@ -290,6 +292,8 @@ Recommended structure:
 ```
 
 For complex forms, prefer a dedicated page over a large dialog.
+
+For application setup, keep the form definition and approval flow in one large card. The `下書き保存` and `公開` buttons live in the card's upper right. Do not duplicate the same actions at the bottom unless a sticky/footer action pattern is intentionally introduced.
 
 ---
 
@@ -625,6 +629,9 @@ Before adding a new screen, check existing screens and match:
 
 - Page header style
 - Card structure
+- Card headings use `CardHeading` where the screen follows a repeated management-card pattern.
+- Do not put count badges such as `5件`, `2名`, or `3項目` next to card titles. Counts belong in table pagination, summary metrics, or the table/body content.
+- Do not put decorative icons to the left of card titles. Icons may be used in action buttons, metrics, navigation, or row-level status where they carry meaning.
 - Button placement
 - Form spacing
 - Table style

@@ -4,6 +4,7 @@ import * as nodemailer from 'nodemailer';
 import {
   type ApplicationAccessMailInput,
   type ApplicationReturnedMailInput,
+  type EmailChangeConfirmationMailInput,
   type InvitationMailInput,
   MailMessageFactory,
   type PasswordResetMailInput,
@@ -38,6 +39,14 @@ export class MailService {
 
   async sendPasswordResetEmail(input: PasswordResetMailInput): Promise<void> {
     await this.send(this.messageFactory.buildPasswordResetEmail(input));
+  }
+
+  async sendEmailChangeConfirmationEmail(
+    input: EmailChangeConfirmationMailInput,
+  ): Promise<void> {
+    await this.send(
+      this.messageFactory.buildEmailChangeConfirmationEmail(input),
+    );
   }
 
   async send(input: SendMailInput): Promise<void> {

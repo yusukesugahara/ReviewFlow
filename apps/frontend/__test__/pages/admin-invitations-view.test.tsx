@@ -30,8 +30,8 @@ const deletedUser = {
 };
 
 describe("AdminInvitationsView", () => {
-  // テスト内容: 招待フォーム、送信結果、エラー、ユーザ一覧が表示されることを確認する
-  it("renders invitation form, sent summary, errors, and users", () => {
+  // テスト内容: フォームエラー時は招待モーダルを開き、送信結果、エラー、ユーザ一覧が表示されることを確認する
+  it("opens invitation modal for form errors and renders sent summary, errors, and users", () => {
     render(
       <AdminInvitationsView
         currentUserId="current-user"
@@ -46,6 +46,7 @@ describe("AdminInvitationsView", () => {
       />,
     );
 
+    expect(screen.getByRole("button", { name: "ユーザを招待" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "新しい招待を送信" })).toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toBeRequired();
     expect(screen.getByText("メールアドレスを入力してください")).toBeInTheDocument();
@@ -53,10 +54,42 @@ describe("AdminInvitationsView", () => {
     expect(screen.getByRole("heading", { name: "招待メールを送信しました" })).toBeInTheDocument();
     expect(screen.getAllByText("テナント管理者").length).toBeGreaterThan(0);
     expect(screen.getByText("invitee@example.com")).toBeInTheDocument();
-    expect(screen.getByText("2名のユーザが登録されています")).toBeInTheDocument();
+    expect(
+      screen.getByText("テナントに登録されているユーザを管理します"),
+    ).toBeInTheDocument();
     expect(screen.getByText("active@example.com")).toBeInTheDocument();
     expect(screen.getByText("deleted@example.com")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "復活" })).toBeInTheDocument();
+  });
+
+  // テスト内容: ユーザ一覧右上の招待アイコンから招待モーダルを開けることを確認する
+  it("opens invitation modal from the user list action button", async () => {
+    const user = userEvent.setup();
+    render(
+      <AdminInvitationsView
+        currentUserId="current-user"
+        sent={undefined}
+        users={[activeUser]}
+      />,
+    );
+
+    expect(
+      screen.queryByRole("heading", { name: "新しい招待を送信" }),
+    ).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole("button", { name: "ユーザを招待" }));
+
+    expect(screen.getByRole("heading", { name: "新しい招待を送信" })).toBeInTheDocument();
+    expect(screen.getByLabelText("メールアドレス")).toBeRequired();
+    expect(screen.getByRole("button", { name: "招待メールを送信" })).toBeInTheDocument();
+
+    const overlay = screen.getByRole("dialog").previousElementSibling;
+    expect(overlay).not.toBeNull();
+    await user.click(overlay as Element);
+
+    expect(
+      screen.queryByRole("heading", { name: "新しい招待を送信" }),
+    ).not.toBeInTheDocument();
   });
 
   // テスト内容: 自分自身の操作は表示せず、他ユーザの削除確認が開くことを確認する

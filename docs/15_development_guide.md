@@ -92,12 +92,13 @@ npm run seed:demo -w backend
 
 ```bash
 docker compose up postgres -d
-docker compose exec -T postgres psql -U app -d app_dev -c "CREATE DATABASE app_test;" 2>/dev/null || true
-TEST_DATABASE_URL=postgres://app:app@127.0.0.1:5432/app_test npm run test -w backend
+npm run test -w backend
 ```
 
 - ユニットテストと統合テストは Jest projects で分離している
-- 統合テストは `--runInBand` で直列実行（DB 競合防止）
+- 統合テスト・E2E テストは既定で `app_test` を自動作成し、各テスト前に schema を作り直す
+- 別 DB を使う場合は、DB 名に `test` を含む `TEST_DATABASE_URL` を指定する
+- 統合テストと E2E テストは DB 競合防止のため直列実行する
 
 ```bash
 # バックエンド E2E

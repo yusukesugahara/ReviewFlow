@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import {
   GroupMemberRole,
   type GroupMemberRoleValue,
 } from '../constants/group-member-role';
 import { GroupMember } from '../entities/group-member.entity';
 import { Group } from '../entities/group.entity';
+import { User } from '../entities/user.entity';
 
 type CreateGroupWithAdminsParams = {
   tenantId: string;
@@ -23,35 +24,54 @@ export class GroupsRepository {
     private readonly groups: Repository<Group>,
     @InjectRepository(GroupMember)
     private readonly members: Repository<GroupMember>,
+    @InjectRepository(User)
+    private readonly users: Repository<User>,
     @InjectDataSource()
     private readonly dataSource: DataSource,
   ) {}
 
-  findGroupsByTenant(tenantId: string): Promise<Group[]> {
-    return this.groups.find({
-      where: { tenantId },
-      order: { createdAt: 'ASC' },
-    });
-  }
-
-  findMembershipsByTenantAndUser(
+  async findGroupsByTenantWithCurrentUserRole(
     tenantId: string,
     userId: string,
-  ): Promise<GroupMember[]> {
-    return this.members.find({
-      where: { tenantId, userId },
-    });
+  ): Promise<Group[]> {
+    const result = await this.groups
+      .createQueryBuilder('space')
+      .leftJoin(
+        GroupMember,
+        'currentMember',
+        [
+          'currentMember.tenantId = space.tenantId',
+          'currentMember.groupId = space.id',
+          'currentMember.userId = :userId',
+        ].join(' AND '),
+        { userId },
+      )
+      .addSelect('currentMember.role', 'currentUserRole')
+      .where('space.tenantId = :tenantId', { tenantId })
+      .orderBy('space.createdAt', 'ASC')
+      .getRawAndEntities<{
+        currentUserRole?: GroupMemberRoleValue | null;
+      }>();
+
+    return result.entities.map((group, index) =>
+      Object.assign(group, {
+        currentUserRole: result.raw[index]?.currentUserRole ?? null,
+      }),
+    );
   }
 
-  findMembershipsWithGroupsByTenantAndUser(
+  async findGroupsByMembershipForUser(
     tenantId: string,
     userId: string,
-  ): Promise<GroupMember[]> {
-    return this.members.find({
+  ): Promise<Group[]> {
+    const rows = await this.members.find({
       where: { tenantId, userId },
       relations: { group: true },
       order: { createdAt: 'ASC' },
     });
+    return rows.map((row) =>
+      Object.assign(row.group, { currentUserRole: row.role }),
+    );
   }
 
   findGroupByTenantAndName(
@@ -72,8 +92,11 @@ export class GroupsRepository {
     });
   }
 
-  async createGroupWithAdmins(params: CreateGroupWithAdminsParams) {
-    return this.dataSource.transaction(async (manager) => {
+  async createGroupWithAdmins(
+    params: CreateGroupWithAdminsParams,
+    manager?: EntityManager,
+  ) {
+    const work = async (manager: EntityManager) => {
       const groupRepo = manager.getRepository(Group);
       const memberRepo = manager.getRepository(GroupMember);
 
@@ -101,11 +124,18 @@ export class GroupsRepository {
       );
 
       return group;
-    });
+    };
+    return manager ? work(manager) : this.dataSource.transaction(work);
   }
 
-  async deleteGroup(groupId: string): Promise<void> {
-    await this.groups.delete(groupId);
+  saveGroup(group: Group, manager?: EntityManager): Promise<Group> {
+    const repository = manager?.getRepository(Group) ?? this.groups;
+    return repository.save(group);
+  }
+
+  async deleteGroup(groupId: string, manager?: EntityManager): Promise<void> {
+    const repository = manager?.getRepository(Group) ?? this.groups;
+    await repository.delete(groupId);
   }
 
   findMembersWithUsers(
@@ -119,11 +149,26 @@ export class GroupsRepository {
     });
   }
 
-  findMembershipsByGroup(
+  findAvailableUsersForGroup(
     tenantId: string,
     groupId: string,
-  ): Promise<GroupMember[]> {
-    return this.members.find({ where: { tenantId, groupId } });
+  ): Promise<User[]> {
+    return this.users
+      .createQueryBuilder('user')
+      .leftJoin(
+        GroupMember,
+        'member',
+        [
+          'member.tenantId = user.tenantId',
+          'member.userId = user.id',
+          'member.groupId = :groupId',
+        ].join(' AND '),
+        { groupId },
+      )
+      .where('user.tenantId = :tenantId', { tenantId })
+      .andWhere('member.id IS NULL')
+      .orderBy('user.createdAt', 'ASC')
+      .getMany();
   }
 
   findMember(
@@ -152,15 +197,19 @@ export class GroupsRepository {
     });
   }
 
-  async createMember(params: {
-    tenantId: string;
-    groupId: string;
-    userId: string;
-    role: GroupMemberRoleValue;
-    invitedByUserId: string;
-  }): Promise<GroupMember> {
-    return this.members.save(
-      this.members.create({
+  async createMember(
+    params: {
+      tenantId: string;
+      groupId: string;
+      userId: string;
+      role: GroupMemberRoleValue;
+      invitedByUserId: string;
+    },
+    manager?: EntityManager,
+  ): Promise<GroupMember> {
+    const repository = manager?.getRepository(GroupMember) ?? this.members;
+    return repository.save(
+      repository.create({
         tenantId: params.tenantId,
         groupId: params.groupId,
         userId: params.userId,
@@ -170,16 +219,21 @@ export class GroupsRepository {
     );
   }
 
-  async saveMember(member: GroupMember): Promise<GroupMember> {
-    const saved = await this.members.save(member);
-    return this.members.findOneOrFail({
+  async saveMember(
+    member: GroupMember,
+    manager?: EntityManager,
+  ): Promise<GroupMember> {
+    const repository = manager?.getRepository(GroupMember) ?? this.members;
+    const saved = await repository.save(member);
+    return repository.findOneOrFail({
       where: { id: saved.id },
       relations: { user: true },
     });
   }
 
-  async deleteMember(memberId: string): Promise<void> {
-    await this.members.delete(memberId);
+  async deleteMember(memberId: string, manager?: EntityManager): Promise<void> {
+    const repository = manager?.getRepository(GroupMember) ?? this.members;
+    await repository.delete(memberId);
   }
 
   findAdmins(tenantId: string, groupId: string): Promise<GroupMember[]> {

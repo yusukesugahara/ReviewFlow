@@ -1,31 +1,11 @@
-import { isApiFailure } from "@/lib/server/api-failure";
-import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { getSpaceOverviewPageData } from "./_data/page-data";
-import type { SpaceOverviewPageProps } from "./types";
-import { SpaceOverviewView } from "./view";
+import { redirect } from "next/navigation";
+import { buildSpaceApplicationsHref } from "@/components/applications/routing/application-routes";
 
-export default async function SpaceOverviewPage({
+export default async function SpaceRedirectPage({
   params,
-}: SpaceOverviewPageProps) {
+}: {
+  params: Promise<{ spaceId: string }>;
+}) {
   const { spaceId } = await params;
-  const authHeaders = await authHeadersOrRedirect();
-
-  try {
-    const data = await getSpaceOverviewPageData({ authHeaders, spaceId });
-    return <SpaceOverviewView {...data} spaceId={spaceId} />;
-  } catch (error) {
-    return (
-      <SpaceOverviewView
-        applications={[]}
-        canManageSpace={false}
-        currentUserId={null}
-        fetchErrorStatus={isApiFailure(error) ? error.status : 500}
-        formDefinitions={[]}
-        isTenantAdmin={false}
-        members={[]}
-        space={null}
-        spaceId={spaceId}
-      />
-    );
-  }
+  redirect(buildSpaceApplicationsHref(spaceId));
 }

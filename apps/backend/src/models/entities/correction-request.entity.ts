@@ -17,6 +17,14 @@ import { CorrectionRequestItem } from './correction-request-item.entity';
 
 @Entity('correction_requests')
 @Index('IDX_correction_requests_app', ['applicationId'])
+@Index(
+  'UQ_correction_requests_open_application',
+  ['tenantId', 'applicationId'],
+  {
+    unique: true,
+    where: `"status" = 'open'`,
+  },
+)
 export class CorrectionRequest {
   @PrimaryGeneratedColumn('uuid')
   id!: string;

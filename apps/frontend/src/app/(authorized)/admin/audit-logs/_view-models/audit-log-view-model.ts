@@ -50,7 +50,10 @@ export function buildAdminAuditLogsViewModel({
   query,
   rows,
   targetType,
-}: AdminAuditLogsViewProps): AdminAuditLogsViewModel {
+}: Pick<
+  AdminAuditLogsViewProps,
+  "createdFrom" | "createdTo" | "query" | "rows" | "targetType"
+>): AdminAuditLogsViewModel {
   const enrichedRows = rows.map(enrichAuditRow);
   const filteredRows = filterAuditRows(enrichedRows, { targetType });
 
@@ -80,12 +83,15 @@ export function filterAuditRows(
 export function buildAuditLogsHref({
   createdFrom,
   createdTo,
+  page,
   query,
   targetType,
 }: Pick<
   AdminAuditLogsViewProps,
   "createdFrom" | "createdTo" | "query" | "targetType"
->): string {
+> & {
+  page?: number;
+}): string {
   const params = new URLSearchParams();
   if (query) {
     params.set("q", query);
@@ -98,6 +104,9 @@ export function buildAuditLogsHref({
   }
   if (createdTo) {
     params.set("createdTo", createdTo);
+  }
+  if (page && page > 1) {
+    params.set("page", String(page));
   }
   const search = params.toString();
   return search ? `/admin/audit-logs?${search}` : "/admin/audit-logs";
@@ -127,12 +136,12 @@ function describeAuditLogList({
   const targetLabel =
     TARGET_FILTER_LABELS[targetType as AuditLogTargetTypeFilter] ?? targetType;
   if (targetType !== "all" && query) {
-    return `${targetLabel}の監査ログのうち「${query}」に一致する最新200件`;
+    return `${targetLabel}の監査ログのうち「${query}」に一致する履歴`;
   }
   if (targetType !== "all") {
     return `${targetLabel}の監査ログを新しい順に表示しています`;
   }
   return query
-    ? `「${query}」に一致する最新200件`
-    : "最新200件を新しい順に表示しています";
+    ? `「${query}」に一致する履歴`
+    : "監査ログを新しい順に表示しています";
 }

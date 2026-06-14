@@ -3,9 +3,9 @@
 import { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useFormStatus } from "react-dom";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -154,17 +154,14 @@ export function ApplicationSetupDraftForm({
 
       <Card className="border-slate-200 bg-white shadow-sm">
         <CardHeader className="border-b border-slate-200">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div className="w-full max-w-2xl space-y-2">
-              <div className="flex items-center gap-2">
-                <CardTitle className="text-xl">申請フォーム</CardTitle>
-                <Badge variant={publishedFormDefinitionId ? "default" : "outline"}>
-                  {publishedFormDefinitionId ? "公開済み" : initialName ? "下書き" : "未保存"}
-                </Badge>
-              </div>
-              <CardDescription>
-                フォーム名と、利用者が入力する申請項目を設定します。
-              </CardDescription>
+              <CardHeading
+                badge={publishedFormDefinitionId ? "公開済み" : initialName ? "下書き" : "未保存"}
+                badgeVariant={publishedFormDefinitionId ? "default" : "outline"}
+                description="フォーム名と、利用者が入力する申請項目を設定します。"
+                title="申請フォーム"
+              />
               <Label htmlFor="templateName">申請フォーム名</Label>
               <Input
                 id="templateName"
@@ -186,36 +183,34 @@ export function ApplicationSetupDraftForm({
           </div>
         </CardHeader>
         <CardContent className="space-y-5 pt-6">
-          <div>
-            <div className="mb-4 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <section className="space-y-5">
+            <div className="mb-4">
               <h3 className="text-base font-semibold text-slate-950">フォーム入力画面</h3>
               <p className="mt-1 text-sm text-muted-foreground">
                 公開されるフォームと同じ表示です。鉛筆で編集、×で削除、行間の＋で追加できます。
               </p>
             </div>
-          </div>
-          <InlineFormBuilder
-            fieldsWithKeys={fieldsWithKeys}
-            setSelectedFieldId={setSelectedFieldId}
-            updateField={updateField}
-            insertFieldAt={insertFieldAt}
-            removeField={removeField}
-            moveFieldTo={moveFieldTo}
-            initialValues={initialValues}
-          />
+            <InlineFormBuilder
+              fieldsWithKeys={fieldsWithKeys}
+              setSelectedFieldId={setSelectedFieldId}
+              updateField={updateField}
+              insertFieldAt={insertFieldAt}
+              removeField={removeField}
+              moveFieldTo={moveFieldTo}
+              initialValues={initialValues}
+            />
+          </section>
+
+          <section className="space-y-4 border-t border-slate-200 pt-6">
+            <CardHeading
+              description="申請が提出された後の承認ステップを設定します。"
+              title="承認フロー設定"
+              titleClassName="text-lg"
+            />
+            <ApprovalStepsBuilder assignees={assignees} defaultSteps={initialSteps} />
+          </section>
         </CardContent>
       </Card>
-
-      <Card className="border-slate-200 bg-white shadow-sm">
-        <CardHeader className="border-b border-slate-200">
-          <CardTitle className="text-xl">承認フロー設定</CardTitle>
-          <CardDescription>申請が提出された後の承認ステップを設定します。</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4 pt-6">
-          <ApprovalStepsBuilder assignees={assignees} defaultSteps={initialSteps} />
-        </CardContent>
-      </Card>
-
     </form>
   );
 }

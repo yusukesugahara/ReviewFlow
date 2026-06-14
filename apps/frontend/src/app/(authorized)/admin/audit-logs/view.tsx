@@ -7,6 +7,7 @@ import { buildAdminAuditLogsViewModel } from "./_view-models/audit-log-view-mode
 export function AdminAuditLogsView({
   createdFrom,
   createdTo,
+  pagination,
   query,
   targetType,
   rows,
@@ -26,13 +27,6 @@ export function AdminAuditLogsView({
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-slate-950">監査ログ</h1>
-        <p className="text-sm text-slate-600">
-          誰が、いつ、どんな操作をしたかを確認できます。
-        </p>
-      </div>
-
       <AuditLogSummaryCards summaryCounts={summaryCounts} />
 
       <AuditLogListCard
@@ -41,6 +35,7 @@ export function AdminAuditLogsView({
         filteredRows={filteredRows}
         hasActiveFilters={hasActiveFilters}
         listDescription={listDescription}
+        pagination={pagination}
         query={query}
         targetType={targetType}
       />

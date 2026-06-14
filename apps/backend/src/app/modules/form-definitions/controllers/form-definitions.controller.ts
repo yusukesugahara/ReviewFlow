@@ -12,12 +12,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   Api,
   AuthApi,
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
+  RateLimit,
 } from '../../../decorators';
 import { ApplicantAccessGuard } from '../../../guards/applicant-access.guard';
 import { CurrentApplicantSession } from '../../../../decorators/current-applicant-session.decorator';
@@ -27,7 +27,7 @@ import {
 } from '../../../../decorators/current-user.decorator';
 import { Roles } from '../../../../decorators/roles.decorator';
 import { UserRole } from '../../../../models/constants/user-role';
-import type { ApplicantAccessTokenPayload } from '../../auth/services/auth.service';
+import type { ApplicantAccessTokenPayload } from '../../auth/services/facades/auth.service';
 import type { SuccessResponse } from '../../../type';
 import { successResponse } from '../../../utils';
 import {
@@ -42,7 +42,7 @@ import {
   UpdateFormDefinitionDescriptionDto,
   UpdateFormFieldSettingsDto,
 } from '../dto/form-definitions.dto';
-import { FormDefinitionsService } from '../services/form-definitions.service';
+import { FormDefinitionsService } from '../services/facades/form-definitions.service';
 import { ApprovalFlowsService } from '../../approval-flows/services/approval-flows.service';
 import { ApprovalFlowsListResponseDto } from '../../approval-flows/dto/approval-flows.dto';
 
@@ -55,7 +55,7 @@ export class FormDefinitionsController {
   ) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -85,7 +85,7 @@ export class FormDefinitionsController {
 
   @Api()
   @UseGuards(ApplicantAccessGuard)
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get('public/current')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '公開申請用の現在フォーム定義取得' })
@@ -100,7 +100,7 @@ export class FormDefinitionsController {
 
   @Api()
   @UseGuards(ApplicantAccessGuard)
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get('public/current/approval-flows')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '公開申請用の有効な承認フロー一覧' })
@@ -115,7 +115,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get(':id')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -130,7 +130,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Patch(':id/description')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -146,7 +146,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
@@ -162,7 +162,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Post(':id/fields')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
@@ -178,7 +178,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Post(':id/fields/:fieldId/move')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -196,7 +196,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Post(':id/fields/:fieldId/delete')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -213,7 +213,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Post(':id/fields/:fieldId/settings')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -231,7 +231,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/publish')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -247,7 +247,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/archive')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -262,7 +262,7 @@ export class FormDefinitionsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post(':id/restore')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -277,7 +277,7 @@ export class FormDefinitionsController {
   }
 
   @Api()
-  @Throttle({ default: { limit: 10, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 10, ttl: 60_000 } })
   @Post('groups/:groupId/request-access')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'フォーム案内メール送信（公開）' })

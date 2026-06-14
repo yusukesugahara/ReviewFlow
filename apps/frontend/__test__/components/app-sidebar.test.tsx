@@ -30,11 +30,15 @@ describe("AppSidebar", () => {
 
     expect(screen.getByRole("link", { name: "市民課" })).toHaveAttribute(
       "href",
-      "/space/citizen-space",
+      "/space/citizen-space/applications",
     );
     expect(screen.getByRole("link", { name: "道路公園課" })).toHaveAttribute(
       "href",
-      "/space/road-space",
+      "/space/road-space/applications",
+    );
+    expect(screen.getByRole("link", { name: /admin@example.com/ })).toHaveAttribute(
+      "href",
+      "/account",
     );
   });
 
@@ -42,11 +46,20 @@ describe("AppSidebar", () => {
     jest.mocked(usePathname).mockReturnValue("/space/citizen-space/applications");
 
     render(
-      <AppSidebar userEmail="admin@example.com" userRoles={["tenant_admin"]} spaces={spaces}>
+      <AppSidebar
+        userEmail="admin@example.com"
+        userName="管理者"
+        userRoles={["tenant_admin"]}
+        spaces={spaces}
+      >
         <div>content</div>
       </AppSidebar>,
     );
 
+    expect(screen.getByRole("link", { name: /管理者/ })).toHaveAttribute(
+      "href",
+      "/account",
+    );
     expect(screen.getByRole("link", { name: "道路公園課" })).toHaveAttribute(
       "href",
       "/space/road-space/applications",

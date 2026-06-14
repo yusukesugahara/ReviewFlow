@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 import { AuditLog, type AuditActorType } from '../entities/audit-log.entity';
 import type { ApplicationStatusValue } from '../constants/application-status';
 import type { GroupMemberRoleValue } from '../constants/group-member-role';
@@ -32,6 +32,7 @@ export type CreateAuditLogParams = {
 
 export type AuditLogListQuery = {
   limit?: number;
+  offset?: number;
   actionType?: string;
   applicationId?: string;
   groupId?: string;
@@ -42,6 +43,13 @@ export type AuditLogListQuery = {
   createdTo?: string;
 };
 
+export type AuditLogListResult = {
+  rows: AuditLog[];
+  total: number;
+  limit: number;
+  offset: number;
+};
+
 @Injectable()
 export class AuditLogsRepository {
   constructor(
@@ -49,9 +57,13 @@ export class AuditLogsRepository {
     private readonly auditLogs: Repository<AuditLog>,
   ) {}
 
-  async create(params: CreateAuditLogParams): Promise<void> {
-    await this.auditLogs.save(
-      this.auditLogs.create({
+  async create(
+    params: CreateAuditLogParams,
+    manager?: EntityManager,
+  ): Promise<void> {
+    const repository = manager?.getRepository(AuditLog) ?? this.auditLogs;
+    await repository.save(
+      repository.create({
         tenantId: params.tenantId,
         groupId: params.groupId ?? null,
         actorUserId: params.actorUserId,
@@ -80,8 +92,9 @@ export class AuditLogsRepository {
   async listByTenant(
     tenantId: string,
     query: AuditLogListQuery,
-  ): Promise<AuditLog[]> {
+  ): Promise<AuditLogListResult> {
     const limit = query.limit ?? 50;
+    const offset = query.offset ?? 0;
     const actionType = query.actionType?.trim();
     const keyword = query.q?.trim();
     const builder = this.auditLogs
@@ -89,7 +102,8 @@ export class AuditLogsRepository {
       .leftJoinAndSelect('auditLog.actorUser', 'actorUser')
       .where('auditLog.tenantId = :tenantId', { tenantId })
       .orderBy('auditLog.createdAt', 'DESC')
-      .take(limit);
+      .take(limit)
+      .skip(offset);
 
     if (actionType) {
       builder.andWhere('auditLog.actionType LIKE :actionType', {
@@ -146,7 +160,8 @@ export class AuditLogsRepository {
       });
     }
 
-    return builder.getMany();
+    const [rows, total] = await builder.getManyAndCount();
+    return { rows, total, limit, offset };
   }
 }
 

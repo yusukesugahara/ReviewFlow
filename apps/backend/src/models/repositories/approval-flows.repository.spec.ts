@@ -1,6 +1,6 @@
 import { getRepositoryToken } from '@nestjs/typeorm';
 import { Test, TestingModule } from '@nestjs/testing';
-import { Repository } from 'typeorm';
+import { In, Repository } from 'typeorm';
 import { ApprovalFlow } from '../entities/approval-flow.entity';
 import { ApprovalStep } from '../entities/approval-step.entity';
 import { GroupMember } from '../entities/group-member.entity';
@@ -12,8 +12,8 @@ describe('ApprovalFlowsRepository', () => {
   let flows: jest.Mocked<
     Pick<Repository<ApprovalFlow>, 'find' | 'findOne' | 'manager'>
   >;
-  let members: jest.Mocked<Pick<Repository<GroupMember>, 'find'>>;
-  let users: jest.Mocked<Pick<Repository<User>, 'find'>>;
+  let members: jest.Mocked<Pick<Repository<GroupMember>, 'count'>>;
+  let users: jest.Mocked<Pick<Repository<User>, 'count'>>;
   let txFlowRepo: { create: jest.Mock; save: jest.Mock };
   let txStepRepo: { create: jest.Mock; save: jest.Mock };
 
@@ -41,10 +41,10 @@ describe('ApprovalFlowsRepository', () => {
       } as unknown as Repository<ApprovalFlow>['manager'],
     };
     members = {
-      find: jest.fn(),
+      count: jest.fn(),
     };
     users = {
-      find: jest.fn(),
+      count: jest.fn(),
     };
 
     const module: TestingModule = await Test.createTestingModule({
@@ -78,6 +78,38 @@ describe('ApprovalFlowsRepository', () => {
       order: { updatedAt: 'DESC' },
     });
     expect(rows[0].steps.map((step) => step.stepOrder)).toEqual([1, 2]);
+  });
+
+  it('counts assignees in the tenant', async () => {
+    users.count.mockResolvedValue(2);
+
+    await expect(
+      repository.countAssigneesInTenant('tenant-1', ['user-1', 'user-2']),
+    ).resolves.toBe(2);
+
+    expect(users.count).toHaveBeenCalledWith({
+      where: { tenantId: 'tenant-1', id: In(['user-1', 'user-2']) },
+    });
+  });
+
+  it('counts assignee memberships in the group', async () => {
+    members.count.mockResolvedValue(2);
+
+    await expect(
+      repository.countAssigneeMemberships({
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        assigneeIds: ['user-1', 'user-2'],
+      }),
+    ).resolves.toBe(2);
+
+    expect(members.count).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        userId: In(['user-1', 'user-2']),
+      },
+    });
   });
 
   it('finds an active flow by tenant, group, and id', async () => {

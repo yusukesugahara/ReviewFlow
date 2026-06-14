@@ -2,11 +2,9 @@ import type { ReactNode } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { renderFieldValue } from "@/lib/form-field-value";
@@ -82,17 +80,23 @@ export function ApplicationFieldsCard({
     <Card>
       <CardHeader className="border-b border-slate-200">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle>{title}</CardTitle>
-            <CardDescription>{description}</CardDescription>
-          </div>
-          <Badge variant="secondary">{fields.length}項目</Badge>
+          <CardHeading
+            description={description}
+            title={title}
+          />
         </div>
       </CardHeader>
       <CardContent className="pt-6">
         {canReturn && returnAction ? (
           <div className="space-y-4">
             <form id={returnFormId} action={returnAction} className="space-y-4">
+              {application.currentStepOrder ? (
+                <input
+                  type="hidden"
+                  name="expectedStepOrder"
+                  value={application.currentStepOrder}
+                />
+              ) : null}
               <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
                 <Label htmlFor="overallComment">差し戻し全体コメント（任意）</Label>
                 <Textarea

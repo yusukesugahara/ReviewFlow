@@ -1,11 +1,11 @@
 import { Body, Controller, HttpCode, HttpStatus, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   Api,
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
   AuthApi,
+  RateLimit,
 } from '../../../decorators';
 import {
   CurrentUser,
@@ -27,7 +27,7 @@ export class InvitationsController {
   constructor(private readonly invitationsService: InvitationsService) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 30, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 30, ttl: 60_000 } })
   @Post()
   @HttpCode(HttpStatus.CREATED)
   @ApiOperation({
@@ -42,7 +42,7 @@ export class InvitationsController {
   }
 
   @Api()
-  @Throttle({ default: { limit: 20, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 20, ttl: 60_000 } })
   @Post('accept')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: '招待受諾（JWT 未保有）' })

@@ -7,10 +7,9 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -76,14 +75,14 @@ export function SpaceApplicationsPageContent({
       <Card>
         <CardHeader className="border-b border-slate-200">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div className="min-w-0 space-y-1.5">
-              <CardTitle>{showArchived ? "削除済み申請フォーム" : "申請フォーム"}</CardTitle>
-              <CardDescription>
-                {showArchived
+            <CardHeading
+              description={
+                showArchived
                   ? "削除済みに移動したフォームを確認し、必要に応じて復元します"
-                  : "公開URLの確認やフォーム詳細を管理します"}
-              </CardDescription>
-            </div>
+                  : "公開URLの確認やフォーム詳細を管理します"
+              }
+              title={showArchived ? "削除済み申請フォーム" : "申請フォーム"}
+            />
             {!showArchived ? (
               <TooltipProvider>
                 <Tooltip>

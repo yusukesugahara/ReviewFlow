@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource, EntityManager, Repository } from 'typeorm';
 import { GroupMemberRole } from '../constants/group-member-role';
 import { InvitationStatus } from '../constants/invitation-status';
 import type { UserRoleValue } from '../constants/user-role';
@@ -101,8 +101,9 @@ export class InvitationsRepository {
 
   async acceptInvitation(
     params: AcceptInvitationParams,
+    manager?: EntityManager,
   ): Promise<AcceptInvitationResult> {
-    return this.dataSource.transaction(async (manager) => {
+    const work = async (manager: EntityManager) => {
       const invRepo = manager.getRepository(Invitation);
       const userRepo = manager.getRepository(User);
       const groupRepo = manager.getRepository(Group);
@@ -161,7 +162,8 @@ export class InvitationsRepository {
       await invRepo.save(invitation);
 
       return { user: newUser, invitation };
-    });
+    };
+    return manager ? work(manager) : this.dataSource.transaction(work);
   }
 }
 

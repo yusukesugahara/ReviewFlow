@@ -1,7 +1,8 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
 type SpaceEmptyStateProps = {
@@ -43,12 +44,9 @@ function BaseSpaceEmptyState({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardHeading description={description} title={title} />
       </CardHeader>
-      <CardContent className="space-y-4">
-        <p className="text-sm text-muted-foreground">{description}</p>
-        {action}
-      </CardContent>
+      {action ? <CardContent>{action}</CardContent> : null}
     </Card>
   );
 }

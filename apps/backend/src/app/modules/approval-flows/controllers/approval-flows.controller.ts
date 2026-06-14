@@ -11,11 +11,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
-import { Throttle } from '@nestjs/throttler';
 import {
   AuthApi,
   ApiSuccessResponse,
   ApiSuccessResponseCreated,
+  RateLimit,
 } from '../../../decorators';
 import {
   CurrentUser,
@@ -39,7 +39,7 @@ export class ApprovalFlowsController {
   constructor(private readonly approvalFlows: ApprovalFlowsService) {}
 
   @AuthApi()
-  @Throttle({ default: { limit: 120, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
   @Get()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)
@@ -56,7 +56,7 @@ export class ApprovalFlowsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Post()
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.CREATED)
@@ -75,7 +75,7 @@ export class ApprovalFlowsController {
   }
 
   @AuthApi()
-  @Throttle({ default: { limit: 60, ttl: 60_000 } })
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
   @Patch(':id')
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   @HttpCode(HttpStatus.OK)

@@ -4,10 +4,9 @@ import { CalendarClock, ClipboardList, Route, UserRound } from "lucide-react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
+import { CardHeading } from "@/components/ui/card-heading";
 import {
   formatApplicationDateTime,
   getCurrentStep,
@@ -44,10 +43,10 @@ export function ApplicationBasicInfo({
     <Card>
       <CardHeader className="border-b border-slate-200">
         <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <CardTitle>基本情報</CardTitle>
-            <CardDescription>申請の対象フォームと管理上の状態です</CardDescription>
-          </div>
+          <CardHeading
+            description="申請の対象フォームと管理上の状態です"
+            title="基本情報"
+          />
           <ApplicationStatusBadge status={application.status} />
         </div>
       </CardHeader>
@@ -93,7 +92,7 @@ export function ApplicationSideSummary({
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
-        <CardTitle className="text-base">申請サマリー</CardTitle>
+        <CardHeading title="申請サマリー" titleClassName="text-base" />
       </CardHeader>
       <CardContent className="space-y-4 pt-5">
         <SummaryRow
@@ -170,8 +169,11 @@ export function ActionPanel({ children }: { children: ReactNode }) {
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
-        <CardTitle className="text-base">操作</CardTitle>
-        <CardDescription>この申請に対して実行できる操作です</CardDescription>
+        <CardHeading
+          description="この申請に対して実行できる操作です"
+          title="操作"
+          titleClassName="text-base"
+        />
       </CardHeader>
       <CardContent className="pt-5">{children}</CardContent>
     </Card>

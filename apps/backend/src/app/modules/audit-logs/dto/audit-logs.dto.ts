@@ -20,6 +20,14 @@ export class AuditLogsQueryDto {
   @Max(200)
   limit?: number;
 
+  @ApiPropertyOptional({ minimum: 0, default: 0 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  @Max(100_000)
+  offset?: number;
+
   @ApiPropertyOptional({ description: 'action_type で前方一致絞り込み' })
   @IsOptional()
   @IsString()
@@ -145,4 +153,13 @@ export class AuditLogItemDto {
 export class AuditLogsListResponseDto {
   @ApiProperty({ type: [AuditLogItemDto] })
   logs!: AuditLogItemDto[];
+
+  @ApiProperty({ minimum: 0 })
+  total!: number;
+
+  @ApiProperty({ minimum: 1, maximum: 200 })
+  limit!: number;
+
+  @ApiProperty({ minimum: 0 })
+  offset!: number;
 }
