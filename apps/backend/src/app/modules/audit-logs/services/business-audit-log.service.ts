@@ -131,6 +131,11 @@ export class BusinessAuditLogService {
     );
   }
 
+  /**
+   * 招待作成を業務監査ログに記録する。
+   * @param params 招待作成イベント
+   * @param manager トランザクションマネージャー
+   */
   async recordInvitationCreated(
     params: {
       actor: AuthUserPayload;
@@ -169,6 +174,11 @@ export class BusinessAuditLogService {
     );
   }
 
+  /**
+   * 招待受諾を業務監査ログに記録する。
+   * @param params 招待受諾イベント
+   * @param manager トランザクションマネージャー
+   */
   async recordInvitationAccepted(
     params: {
       invitation: Pick<
@@ -200,6 +210,11 @@ export class BusinessAuditLogService {
     );
   }
 
+  /**
+   * ユーザー操作を業務監査ログに記録する。
+   * @param params ユーザー操作イベント
+   * @param manager トランザクションマネージャー
+   */
   async recordUserEvent(
     params: {
       actionType: BusinessAuditActionValue;
@@ -239,6 +254,11 @@ export class BusinessAuditLogService {
     );
   }
 
+  /**
+   * space 操作を業務監査ログに記録する。
+   * @param params space 操作イベント
+   * @param manager トランザクションマネージャー
+   */
   async recordSpaceEvent(
     params: {
       actionType: BusinessAuditActionValue;
@@ -271,6 +291,11 @@ export class BusinessAuditLogService {
     );
   }
 
+  /**
+   * space メンバー操作を業務監査ログに記録する。
+   * @param params space メンバー操作イベント
+   * @param manager トランザクションマネージャー
+   */
   async recordSpaceMemberEvent(
     params: {
       actionType: BusinessAuditActionValue;
@@ -316,6 +341,11 @@ export class BusinessAuditLogService {
     );
   }
 
+  /**
+   * 監査ログ repository へイベントを保存する。
+   * @param params 監査ログ作成パラメータ
+   * @param manager トランザクションマネージャー
+   */
   private async record(
     params: CreateAuditLogParams,
     manager?: TransactionManager,
@@ -323,6 +353,14 @@ export class BusinessAuditLogService {
     await this.auditLogsRepository.create(params, manager);
   }
 
+  /**
+   * 申請イベントの既定 summary を組み立てる。
+   * @param actionType 操作種別
+   * @param app 申請
+   * @param before 変更前状態
+   * @param after 変更後状態
+   * @returns summary
+   */
   private applicationSummary(
     actionType: BusinessAuditActionValue,
     app: Pick<Application, 'id'>,
@@ -335,6 +373,13 @@ export class BusinessAuditLogService {
     return `${actionType} application ${app.id} (${transition})`;
   }
 
+  /**
+   * ユーザーイベントの既定 summary を組み立てる。
+   * @param actionType 操作種別
+   * @param actorEmail 操作者メールアドレス
+   * @param target 対象ユーザー
+   * @returns summary
+   */
   private userSummary(
     actionType: BusinessAuditActionValue,
     actorEmail: string,
@@ -343,6 +388,13 @@ export class BusinessAuditLogService {
     return `${actorEmail} ${actionType} ${target.email}`;
   }
 
+  /**
+   * space メンバーイベントの既定 summary を組み立てる。
+   * @param actionType 操作種別
+   * @param actorEmail 操作者メールアドレス
+   * @param targetLabel 対象表示名
+   * @returns summary
+   */
   private spaceMemberSummary(
     actionType: BusinessAuditActionValue,
     actorEmail: string,

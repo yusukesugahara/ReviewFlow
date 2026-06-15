@@ -12,6 +12,9 @@ import type {
 
 const PASSWORD_RESET_TTL_MS = 60 * 60 * 1000;
 
+/**
+ * パスワード再設定トークン発行・確定を扱う service。
+ */
 @Injectable()
 export class AuthPasswordResetService {
   constructor(
@@ -20,6 +23,11 @@ export class AuthPasswordResetService {
     private readonly mailService: MailService,
   ) {}
 
+  /**
+   * メールアドレスに一致する有効ユーザーへパスワード再設定メールを送信する。
+   * @param dto パスワード再設定リクエストDTO
+   * @returns 成功結果
+   */
   async requestPasswordReset(dto: RequestPasswordResetDto) {
     const email = dto.email.toLowerCase();
     const users = await this.usersService.findActiveByEmail(email);
@@ -45,6 +53,11 @@ export class AuthPasswordResetService {
     return { ok: true };
   }
 
+  /**
+   * 再設定トークンを検証し、パスワードを更新する。
+   * @param dto パスワード再設定確定DTO
+   * @returns 成功結果
+   */
   async confirmPasswordReset(dto: ConfirmPasswordResetDto) {
     const row = await this.authRepository.findPasswordResetToken(dto.token);
     if (!row || row.usedAt || new Date() > row.expiresAt) {

@@ -11,6 +11,9 @@ import type { ApplicantAccessTokenPayload } from '../../../auth/services/facades
 import { MailService } from '../../../mail/services/mail.service';
 import type { RequestFormAccessDto } from '../../dto/form-definitions.dto';
 
+/**
+ * 公開申請フォームへの申請者アクセス要求と applicant access token 発行を扱う service。
+ */
 @Injectable()
 export class FormAccessRequestService {
   private readonly logger = new Logger(FormAccessRequestService.name);
@@ -21,6 +24,11 @@ export class FormAccessRequestService {
     private readonly mailService: MailService,
   ) {}
 
+  /**
+   * 申請者トークンの scope で公開フォーム定義を取得する。
+   * @param actor 申請者トークン
+   * @returns 公開フォーム定義
+   */
   async getPublishedDefinitionForApplicant(
     actor: ApplicantAccessTokenPayload,
   ): Promise<FormDefinition> {
@@ -36,6 +44,13 @@ export class FormAccessRequestService {
     return definition;
   }
 
+  /**
+   * 申請者に公開申請フォームへのアクセスメールを送信する。
+   * @param groupId スペースID
+   * @param dto アクセス要求DTO
+   * @param formDefinitionId フォーム定義ID
+   * @returns 受付結果
+   */
   async requestAccess(
     groupId: string,
     dto: RequestFormAccessDto,
@@ -73,6 +88,12 @@ export class FormAccessRequestService {
     return { accepted: true };
   }
 
+  /**
+   * アクセス要求対象の公開フォーム定義を解決する。
+   * @param groupId スペースID
+   * @param formDefinitionId フォーム定義ID
+   * @returns 公開フォーム定義
+   */
   private async findPublishedDefinitionForAccessRequest(
     groupId: string,
     formDefinitionId?: string,

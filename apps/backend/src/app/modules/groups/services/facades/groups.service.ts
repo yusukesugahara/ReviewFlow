@@ -20,6 +20,9 @@ import type {
 import { GroupMembersService } from '../members/group-members.service';
 import { TransactionService } from '../../../../transaction';
 
+/**
+ * space CRUD と space member 操作の facade。
+ */
 @Injectable()
 export class GroupsService {
   constructor(
@@ -30,6 +33,11 @@ export class GroupsService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * actor が閲覧できる space 一覧を取得する。
+   * @param actor ログインユーザー
+   * @returns space 一覧
+   */
   async list(actor: AuthUserPayload): Promise<Group[]> {
     if (this.isSystemAdmin(actor)) {
       return this.groupsRepository.findGroupsByTenantWithCurrentUserRole(
@@ -44,6 +52,12 @@ export class GroupsService {
     );
   }
 
+  /**
+   * tenant 内に space を作成し、初期管理者を登録する。
+   * @param dto space 作成DTO
+   * @param actor ログインユーザー
+   * @returns 作成された space
+   */
   async create(dto: CreateGroupDto, actor: AuthUserPayload): Promise<Group> {
     const name = dto.name.trim();
     if (!name.length) {
@@ -95,6 +109,13 @@ export class GroupsService {
     });
   }
 
+  /**
+   * space の名前と説明文を更新する。
+   * @param groupId スペースID
+   * @param dto space 更新DTO
+   * @param actor ログインユーザー
+   * @returns 更新された space
+   */
   async update(
     groupId: string,
     dto: UpdateGroupDto,
@@ -147,6 +168,11 @@ export class GroupsService {
     });
   }
 
+  /**
+   * tenant 内の space を削除する。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   */
   async remove(groupId: string, actor: AuthUserPayload): Promise<void> {
     const group = await this.findGroupInTenant(groupId, actor.tenantId);
     await this.transactions.run(async (manager) => {
@@ -165,6 +191,12 @@ export class GroupsService {
     });
   }
 
+  /**
+   * space メンバー一覧を取得する。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   * @returns space メンバー一覧
+   */
   async listMembers(
     groupId: string,
     actor: AuthUserPayload,
@@ -172,6 +204,12 @@ export class GroupsService {
     return this.groupMembers.listMembers(groupId, actor);
   }
 
+  /**
+   * space に追加可能な tenant ユーザー一覧を取得する。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   * @returns 追加可能ユーザー一覧
+   */
   async listAvailableUsers(
     groupId: string,
     actor: AuthUserPayload,
@@ -179,6 +217,13 @@ export class GroupsService {
     return this.groupMembers.listAvailableUsers(groupId, actor);
   }
 
+  /**
+   * tenant ユーザーを space メンバーに追加する。
+   * @param groupId スペースID
+   * @param dto メンバー追加DTO
+   * @param actor ログインユーザー
+   * @returns 作成されたメンバー
+   */
   async addMember(
     groupId: string,
     dto: AddGroupMemberDto,
@@ -187,6 +232,14 @@ export class GroupsService {
     return this.groupMembers.addMember(groupId, dto, actor);
   }
 
+  /**
+   * space メンバーの権限を変更する。
+   * @param groupId スペースID
+   * @param userId ユーザーID
+   * @param dto メンバー権限更新DTO
+   * @param actor ログインユーザー
+   * @returns 更新されたメンバー
+   */
   async updateMemberRole(
     groupId: string,
     userId: string,
@@ -196,6 +249,12 @@ export class GroupsService {
     return this.groupMembers.updateMemberRole(groupId, userId, dto, actor);
   }
 
+  /**
+   * space メンバーを削除する。
+   * @param groupId スペースID
+   * @param userId ユーザーID
+   * @param actor ログインユーザー
+   */
   async removeMember(
     groupId: string,
     userId: string,
@@ -204,10 +263,21 @@ export class GroupsService {
     await this.groupMembers.removeMember(groupId, userId, actor);
   }
 
+  /**
+   * actor 自身が space から退出する。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   */
   async leave(groupId: string, actor: AuthUserPayload): Promise<void> {
     await this.groupMembers.leave(groupId, actor);
   }
 
+  /**
+   * tenant scope 内の space を読み込む。
+   * @param groupId スペースID
+   * @param tenantId テナントID
+   * @returns space
+   */
   private async findGroupInTenant(
     groupId: string,
     tenantId: string,
@@ -222,11 +292,21 @@ export class GroupsService {
     return group;
   }
 
+  /**
+   * actor が tenant 管理者かを返す。
+   * @param actor ログインユーザー
+   * @returns tenant 管理者か
+   */
   private isSystemAdmin(actor: AuthUserPayload): boolean {
     return actor.roles.includes(UserRole.TENANT_ADMIN);
   }
 }
 
+/**
+ * 任意テキストを null 許容の保存値へ正規化する。
+ * @param value 入力値
+ * @returns 正規化済みテキスト
+ */
 function normalizeOptionalText(value: string | undefined): string | null {
   const text = value?.trim();
   return text ? text : null;

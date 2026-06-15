@@ -28,6 +28,9 @@ export type ApplicantAccessTokenPayload = {
   applicationId?: string;
 };
 
+/**
+ * 認証 API の facade。登録、ログイン、本人情報更新、各種トークン発行を統括する。
+ */
 @Injectable()
 export class AuthService {
   constructor(
@@ -38,6 +41,11 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
+  /**
+   * tenant 管理者ユーザーと tenant を作成し、ログイン用トークンを返す。
+   * @param dto 登録DTO
+   * @returns アクセストークンとユーザー情報
+   */
   async register(dto: RegisterDto) {
     const email = dto.email.toLowerCase();
     if (await this.usersService.emailExists(email)) {
@@ -55,14 +63,30 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
+  /**
+   * パスワード再設定メール送信を開始する。
+   * @param dto パスワード再設定リクエストDTO
+   * @returns 成功結果
+   */
   async requestPasswordReset(dto: RequestPasswordResetDto) {
     return this.passwordResetService.requestPasswordReset(dto);
   }
 
+  /**
+   * パスワード再設定トークンを使ってパスワードを変更する。
+   * @param dto パスワード再設定確定DTO
+   * @returns 成功結果
+   */
   async confirmPasswordReset(dto: ConfirmPasswordResetDto) {
     return this.passwordResetService.confirmPasswordReset(dto);
   }
 
+  /**
+   * ログインユーザーのメールアドレス変更確認メールを送信する。
+   * @param dto メールアドレス変更リクエストDTO
+   * @param actor ログインユーザー
+   * @returns 成功結果
+   */
   async requestMeEmailChange(
     dto: RequestMeEmailChangeDto,
     actor: {
@@ -74,10 +98,21 @@ export class AuthService {
     return this.emailChangeService.requestMeEmailChange(dto, actor);
   }
 
+  /**
+   * メールアドレス変更確認トークンを確定する。
+   * @param dto メールアドレス変更確定DTO
+   * @returns 成功結果
+   */
   async confirmEmailChange(dto: ConfirmEmailChangeDto) {
     return this.emailChangeService.confirmEmailChange(dto);
   }
 
+  /**
+   * ログインユーザーのプロフィールを更新し、新しいトークンを返す。
+   * @param dto プロフィール更新DTO
+   * @param actor ログインユーザー
+   * @returns アクセストークンとユーザー情報
+   */
   async updateMeProfile(
     dto: UpdateMeProfileDto,
     actor: {
@@ -90,6 +125,12 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
+  /**
+   * ログインユーザーのパスワードを更新し、新しいトークンを返す。
+   * @param dto パスワード更新DTO
+   * @param actor ログインユーザー
+   * @returns アクセストークンとユーザー情報
+   */
   async updateMePassword(
     dto: UpdateMePasswordDto,
     actor: {
@@ -102,6 +143,11 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
+  /**
+   * メールアドレス、任意 tenantId、パスワードでログインする。
+   * @param dto ログインDTO
+   * @returns アクセストークンとユーザー情報
+   */
   async login(dto: LoginDto) {
     const email = dto.email.toLowerCase();
     const candidates = dto.tenantId
@@ -130,11 +176,20 @@ export class AuthService {
     return this.issueTokens(user);
   }
 
-  /** 招待受諾後など、既存ユーザに対してログイン相当のトークンを返す */
+  /**
+   * 招待受諾後など、既存ユーザに対してログイン相当のトークンを返す。
+   * @param user ユーザー
+   * @returns アクセストークンとユーザー情報
+   */
   issueTokensForUser(user: User) {
     return this.issueTokens(user);
   }
 
+  /**
+   * 公開申請・差し戻し修正用の申請者アクセストークンを発行する。
+   * @param input 申請者アクセストークン入力
+   * @returns JWT
+   */
   issueApplicantAccessToken(input: {
     tenantId: string;
     email: string;
@@ -153,6 +208,11 @@ export class AuthService {
     return this.jwtService.sign(payload);
   }
 
+  /**
+   * 申請者アクセストークンを検証し、payload を返す。
+   * @param token JWT
+   * @returns 申請者アクセストークン payload
+   */
   verifyApplicantAccessToken(token: string): ApplicantAccessTokenPayload {
     const payload = this.jwtService.verify<ApplicantAccessTokenPayload>(token);
     if (
@@ -166,6 +226,11 @@ export class AuthService {
     return payload;
   }
 
+  /**
+   * ログイン用アクセストークンとユーザー情報を組み立てる。
+   * @param user ユーザー
+   * @returns アクセストークンとユーザー情報
+   */
   private issueTokens(user: User) {
     const payload: AccessTokenPayload = {
       sub: user.id,

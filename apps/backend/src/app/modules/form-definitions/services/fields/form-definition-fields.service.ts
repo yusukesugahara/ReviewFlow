@@ -12,6 +12,9 @@ import type {
   UpdateFormFieldSettingsDto,
 } from '../../dto/form-definitions.dto';
 
+/**
+ * 下書きフォーム定義のフィールド追加・並べ替え・削除・設定更新を扱う service。
+ */
 @Injectable()
 export class FormDefinitionFieldsService {
   constructor(
@@ -20,6 +23,13 @@ export class FormDefinitionFieldsService {
     private readonly spaceAccess: SpaceAccessService,
   ) {}
 
+  /**
+   * 下書きフォーム定義にフィールドを追加する。
+   * @param actor ログインユーザー
+   * @param definitionId フォーム定義ID
+   * @param dto フォームフィールド作成DTO
+   * @returns 作成されたフォームフィールド
+   */
   async addField(
     actor: AuthUserPayload,
     definitionId: string,
@@ -57,6 +67,13 @@ export class FormDefinitionFieldsService {
     });
   }
 
+  /**
+   * 下書きフォーム定義内でフィールド順序を 1 つ移動する。
+   * @param actor ログインユーザー
+   * @param definitionId フォーム定義ID
+   * @param fieldId フォームフィールドID
+   * @param direction 移動方向
+   */
   async moveField(
     actor: AuthUserPayload,
     definitionId: string,
@@ -89,6 +106,12 @@ export class FormDefinitionFieldsService {
     await this.formFieldsRepository.saveFields(normalized);
   }
 
+  /**
+   * 下書きフォーム定義からフィールドを削除し、残りの sortOrder を正規化する。
+   * @param actor ログインユーザー
+   * @param definitionId フォーム定義ID
+   * @param fieldId フォームフィールドID
+   */
   async deleteField(
     actor: AuthUserPayload,
     definitionId: string,
@@ -119,6 +142,13 @@ export class FormDefinitionFieldsService {
     }
   }
 
+  /**
+   * 下書きフォームフィールドの表示・入力設定を更新する。
+   * @param actor ログインユーザー
+   * @param definitionId フォーム定義ID
+   * @param fieldId フォームフィールドID
+   * @param dto フォームフィールド設定更新DTO
+   */
   async updateFieldSettings(
     actor: AuthUserPayload,
     definitionId: string,
@@ -152,6 +182,12 @@ export class FormDefinitionFieldsService {
     await this.formFieldsRepository.saveField(target);
   }
 
+  /**
+   * 編集可能な下書きフォーム定義を読み込む。
+   * @param tenantId テナントID
+   * @param id フォーム定義ID
+   * @returns 下書きフォーム定義
+   */
   private async findDraftDefinitionOrThrow(
     tenantId: string,
     id: string,
@@ -169,6 +205,11 @@ export class FormDefinitionFieldsService {
     return definition;
   }
 
+  /**
+   * フォーム定義の space 管理権限を検証する。
+   * @param actor ログインユーザー
+   * @param definition フォーム定義
+   */
   private async assertCanManageDefinition(
     actor: AuthUserPayload,
     definition: FormDefinition,
@@ -176,6 +217,11 @@ export class FormDefinitionFieldsService {
     await this.spaceAccess.assertCanManageGroup(actor, definition.groupId);
   }
 
+  /**
+   * フィールド配列の sortOrder を 0 始まりで振り直す。
+   * @param fields フォームフィールド一覧
+   * @returns sortOrder 正規化済みフィールド一覧
+   */
   private normalizeSortOrder(fields: FormField[]): FormField[] {
     return fields.map((field, index) => {
       field.sortOrder = index;

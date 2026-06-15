@@ -11,6 +11,9 @@ import { ExportJobFileStorage } from '../storage/export-job-file-storage.service
 
 type CsvDownload = { fileName: string; content: Buffer };
 
+/**
+ * CSV エクスポートジョブの作成、状態取得、ダウンロードを扱う facade。
+ */
 @Injectable()
 export class ExportJobsService {
   constructor(
@@ -20,6 +23,12 @@ export class ExportJobsService {
     private readonly fileStorage: ExportJobFileStorage,
   ) {}
 
+  /**
+   * space 管理権限を検証し、申請 CSV を生成するエクスポートジョブを作成する。
+   * @param actor ログインユーザー
+   * @param dto エクスポートジョブ作成DTO
+   * @returns 作成後に再取得したエクスポートジョブDTO
+   */
   async create(actor: AuthUserPayload, dto: CreateExportJobDto) {
     await this.spaceAccess.assertCanManageGroup(actor, dto.groupId);
     const filterJson: Record<string, unknown> = {};
@@ -69,6 +78,12 @@ export class ExportJobsService {
     return this.getOne(actor, job.id);
   }
 
+  /**
+   * エクスポートジョブを tenant / space scope で取得する。
+   * @param actor ログインユーザー
+   * @param id エクスポートジョブID
+   * @returns エクスポートジョブDTO
+   */
   async getOne(actor: AuthUserPayload, id: string) {
     const row = await this.exportJobsRepository.findJobByIdInTenant(
       actor.tenantId,
@@ -81,6 +96,12 @@ export class ExportJobsService {
     return mapExportJobToDto(row);
   }
 
+  /**
+   * 完了済みエクスポートジョブの CSV ファイルを読み込む。
+   * @param actor ログインユーザー
+   * @param id エクスポートジョブID
+   * @returns CSV ダウンロード内容
+   */
   async getDownload(actor: AuthUserPayload, id: string): Promise<CsvDownload> {
     const row = await this.exportJobsRepository.findJobByIdInTenant(
       actor.tenantId,
