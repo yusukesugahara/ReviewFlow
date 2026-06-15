@@ -11,6 +11,9 @@ export type ApplicationCreationContext = {
   flow: ApprovalFlow;
 };
 
+/**
+ * 申請作成に必要な公開フォーム定義と有効な承認フローを解決する loader。
+ */
 @Injectable()
 export class ApplicationCreationContextLoader {
   constructor(
@@ -18,6 +21,12 @@ export class ApplicationCreationContextLoader {
     private readonly flowResolver: ApplicationApprovalFlowResolver,
   ) {}
 
+  /**
+   * 申請作成DTOから公開テンプレートと承認フローを読み込む。
+   * @param tenantId テナントID
+   * @param dto 申請作成DTO
+   * @returns 申請作成コンテキスト
+   */
   async load(
     tenantId: string,
     dto: CreateApplicationDto,
@@ -34,6 +43,12 @@ export class ApplicationCreationContextLoader {
     return { template, flow };
   }
 
+  /**
+   * 申請作成に使う公開フォーム定義を解決する。
+   * @param tenantId テナントID
+   * @param dto 申請作成DTO
+   * @returns 公開フォーム定義
+   */
   private async resolvePublishedTemplate(
     tenantId: string,
     dto: CreateApplicationDto,

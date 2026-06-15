@@ -16,6 +16,9 @@ import { TransactionService } from '../../../../transaction';
 
 const EMAIL_CHANGE_TTL_MS = 24 * 60 * 60 * 1000;
 
+/**
+ * ログインユーザーのメールアドレス変更確認トークン発行・確定を扱う service。
+ */
 @Injectable()
 export class AuthEmailChangeService {
   constructor(
@@ -26,6 +29,12 @@ export class AuthEmailChangeService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * 新しいメールアドレス宛に変更確認メールを送信する。
+   * @param dto メールアドレス変更リクエストDTO
+   * @param actor ログインユーザー
+   * @returns 成功結果
+   */
   async requestMeEmailChange(
     dto: RequestMeEmailChangeDto,
     actor: {
@@ -71,6 +80,11 @@ export class AuthEmailChangeService {
     return { ok: true };
   }
 
+  /**
+   * 確認トークンを検証し、ユーザーのメールアドレスを変更する。
+   * @param dto メールアドレス変更確定DTO
+   * @returns 成功結果
+   */
   async confirmEmailChange(dto: ConfirmEmailChangeDto) {
     const row = await this.authRepository.findEmailChangeToken(dto.token);
     if (!row || row.usedAt || new Date() > row.expiresAt) {
@@ -114,6 +128,11 @@ export class AuthEmailChangeService {
     return { ok: true };
   }
 
+  /**
+   * 新しいメールアドレスが他ユーザーに使われていないか検証する。
+   * @param email メールアドレス
+   * @param currentUserId 現在のユーザーID
+   */
   private async assertEmailAvailable(
     email: string,
     currentUserId: string,

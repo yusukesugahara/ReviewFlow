@@ -12,6 +12,9 @@ import type {
 import { ApplicationTransitionPolicy } from '../../policies/application-transition.policy';
 import { ApplicationReturnForCorrectionContextLoader } from './application-return-for-correction-context.loader';
 
+/**
+ * 承認・却下・差し戻しの状態遷移とレビュー履歴保存を扱う domain service。
+ */
 @Injectable()
 export class ApplicationReviewActionService {
   constructor(
@@ -20,6 +23,13 @@ export class ApplicationReviewActionService {
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
+  /**
+   * 現在ステップを承認し、次ステップまたは承認済み状態へ遷移させる。
+   * @param app 申請
+   * @param actorId 操作者ユーザーID
+   * @param dto 承認DTO
+   * @param manager トランザクションマネージャー
+   */
   async approve(
     app: Application,
     actorId: string,
@@ -43,6 +53,13 @@ export class ApplicationReviewActionService {
     );
   }
 
+  /**
+   * 現在ステップで却下履歴を保存し、申請を却下済みに遷移させる。
+   * @param app 申請
+   * @param actorId 操作者ユーザーID
+   * @param dto 却下DTO
+   * @param manager トランザクションマネージャー
+   */
   async reject(
     app: Application,
     actorId: string,
@@ -65,6 +82,14 @@ export class ApplicationReviewActionService {
     );
   }
 
+  /**
+   * 現在ステップで差し戻し履歴と修正対象を保存し、申請を差し戻し済みに遷移させる。
+   * @param app 申請
+   * @param actorId 操作者ユーザーID
+   * @param dto 差し戻しDTO
+   * @param manager トランザクションマネージャー
+   * @returns 差し戻しメールで使うフォーム定義
+   */
   async returnForCorrection(
     app: Application,
     actorId: string,
@@ -92,6 +117,11 @@ export class ApplicationReviewActionService {
     return context.template;
   }
 
+  /**
+   * 空白だけのコメントを null に正規化する。
+   * @param value コメント
+   * @returns 正規化したコメント
+   */
   private trimComment(value: string | undefined): string | null {
     return value?.trim().length ? value.trim() : null;
   }

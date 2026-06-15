@@ -5,6 +5,9 @@ import { AuthService } from '../../../auth/services/facades/auth.service';
 import { MailService } from '../../../mail/services/mail.service';
 import type { ReturnApplicationEmailDto } from '../../dto/applications.dto';
 
+/**
+ * 申請関連の外部通知を扱う service。
+ */
 @Injectable()
 export class ApplicationNotificationService {
   private readonly logger = new Logger(ApplicationNotificationService.name);
@@ -14,6 +17,14 @@ export class ApplicationNotificationService {
     private readonly mailService: MailService,
   ) {}
 
+  /**
+   * 差し戻し修正用の申請者アクセストークンを発行し、差し戻しメールを送信する。
+   *
+   * 通知失敗で申請状態更新を巻き戻さないため、送信エラーは operational log に記録する。
+   * @param app 申請
+   * @param template フォーム定義
+   * @param dto 差し戻しメールDTO
+   */
   async notifyApplicantOfReturn(
     app: Application,
     template: FormDefinition,

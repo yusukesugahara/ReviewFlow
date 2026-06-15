@@ -10,6 +10,9 @@ import type { CreateApplicationDto } from '../../dto/applications.dto';
 import { ApplicationCreationService } from '../creation/application-creation.service';
 import { TransactionService } from '../../../../transaction';
 
+/**
+ * ログインユーザーの申請作成を space access と監査ログ付きで実行する use case service。
+ */
 @Injectable()
 export class ApplicationCreationUseCaseService {
   constructor(
@@ -19,6 +22,12 @@ export class ApplicationCreationUseCaseService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * space 利用権限を検証し、申請作成と作成監査ログ記録を同一 transaction で実行する。
+   * @param actor ログインユーザー
+   * @param dto 申請作成DTO
+   * @returns 作成された申請
+   */
   async create(
     actor: AuthUserPayload,
     dto: CreateApplicationDto,

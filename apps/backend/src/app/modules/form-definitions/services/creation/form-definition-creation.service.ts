@@ -5,6 +5,9 @@ import { FormDefinitionsRepository } from '../../../../../models/repositories/fo
 import { SpaceAccessService } from '../../../groups/services/access/space-access.service';
 import type { CreateFormDefinitionDto } from '../../dto/form-definitions.dto';
 
+/**
+ * フォーム定義の新規作成を扱う service。
+ */
 @Injectable()
 export class FormDefinitionCreationService {
   constructor(
@@ -12,6 +15,12 @@ export class FormDefinitionCreationService {
     private readonly spaceAccess: SpaceAccessService,
   ) {}
 
+  /**
+   * space 管理権限を検証し、下書きフォーム定義を作成する。
+   * @param actor ログインユーザー
+   * @param dto フォーム定義作成DTO
+   * @returns 作成されたフォーム定義
+   */
   async create(
     actor: AuthUserPayload,
     dto: CreateFormDefinitionDto,

@@ -25,6 +25,9 @@ import { TransactionService } from '../../../transaction';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
+/**
+ * tenant / space 招待の作成、メール送信、受諾を扱う service。
+ */
 @Injectable()
 export class InvitationsService {
   private readonly logger = new Logger(InvitationsService.name);
@@ -38,6 +41,12 @@ export class InvitationsService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * 招待を作成し、招待メール送信後に作成監査ログを記録する。
+   * @param dto 招待作成DTO
+   * @param actor ログインユーザー
+   * @returns 作成された招待の概要
+   */
   async create(dto: CreateInvitationDto, actor: AuthUserPayload) {
     const email = dto.email.toLowerCase();
     const tenantId = actor.tenantId;
@@ -128,6 +137,11 @@ export class InvitationsService {
     };
   }
 
+  /**
+   * 招待トークンを受諾し、ユーザー作成・space 参加・監査ログを同一 transaction で実行する。
+   * @param dto 招待受諾DTO
+   * @returns ログイン用トークン
+   */
   async accept(dto: AcceptInvitationDto) {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const name = dto.name?.trim().length ? dto.name.trim() : null;
@@ -156,6 +170,12 @@ export class InvitationsService {
     return this.authService.issueTokensForUser(user);
   }
 
+  /**
+   * 招待受諾 repository error を API 向け client error に変換する。
+   * @param params 招待受諾パラメータ
+   * @param manager トランザクションマネージャー
+   * @returns 招待受諾結果
+   */
   private async acceptInvitationOrThrow(
     params: {
       token: string;
@@ -183,6 +203,11 @@ export class InvitationsService {
     }
   }
 
+  /**
+   * actor が tenant 全体の招待を作成できるかを返す。
+   * @param actor ログインユーザー
+   * @returns tenant 招待を作成できるか
+   */
   private canCreateTenantInvitation(actor: AuthUserPayload): boolean {
     return actor.roles.includes('tenant_admin');
   }

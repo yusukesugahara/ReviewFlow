@@ -16,6 +16,10 @@ export type ApplicationWithProgress = Application & {
   approvalProgress?: ApplicationProgressStepDto[];
 };
 
+/**
+ * 申請機能の無効化を表すDTOを返す。
+ * @returns 申請機能の無効化を表すDTO
+ */
 export function disabledApplicationCapabilities(): ApplicationCapabilitiesDto {
   return {
     canEditApplication: false,
@@ -27,6 +31,11 @@ export function disabledApplicationCapabilities(): ApplicationCapabilitiesDto {
   };
 }
 
+/**
+ * 申請を概要DTOにマッピングする。
+ * @param row 申請
+ * @returns 申請概要DTO
+ */
 export function mapApplicationToSummary(
   row: Application,
 ): ApplicationSummaryDto {
@@ -50,6 +59,11 @@ export function mapApplicationToSummary(
   };
 }
 
+/**
+ * 現在の承認ステップ担当者のユーザID一覧を取得する。
+ * @param row 申請
+ * @returns 現在の承認ステップ担当者のユーザID一覧
+ */
 function getCurrentStepAssigneeUserIds(row: Application): string[] {
   const step = row.currentApprovalStep ?? null;
   if (!step) {
@@ -60,6 +74,12 @@ function getCurrentStepAssigneeUserIds(row: Application): string[] {
     : [step.assigneeUserId];
 }
 
+/**
+ * 申請を詳細DTOにマッピングする。
+ * @param row 申請
+ * @param capabilities 申請機能の有効化を表すDTO
+ * @returns 申請詳細DTO
+ */
 export function mapApplicationToDetail(
   row: ApplicationWithProgress,
   capabilities: ApplicationCapabilitiesDto = disabledApplicationCapabilities(),
@@ -81,6 +101,11 @@ export function mapApplicationToDetail(
   };
 }
 
+/**
+ * 修正項目をDTOにマッピングする。
+ * @param row 修正項目
+ * @returns 修正項目DTO
+ */
 function mapCorrectionItem(
   row: NonNullable<CorrectionRequest['items']>[number],
 ): CorrectionRequestItemResponseDto {
@@ -94,6 +119,11 @@ function mapCorrectionItem(
   };
 }
 
+/**
+ * 修正リクエストをDTOにマッピングする。
+ * @param row 修正リクエスト
+ * @returns 修正リクエストDTO
+ */
 export function mapCorrectionRequestToDto(
   row: CorrectionRequest,
 ): CorrectionRequestResponseDto {
@@ -108,6 +138,11 @@ export function mapCorrectionRequestToDto(
   };
 }
 
+/**
+ * 修正リクエストをDTOにマッピングする。
+ * @param rows 修正リクエスト
+ * @returns 修正リクエストDTO
+ */
 export function mapCorrectionsList(
   rows: CorrectionRequest[],
 ): CorrectionsListResponseDto {
@@ -117,6 +152,12 @@ export function mapCorrectionsList(
   return { corrections: sorted.map(mapCorrectionRequestToDto) };
 }
 
+/**
+ * 修正リクエストをDTOにマッピングする。
+ * @param app 申請
+ * @param openCorrection オープンな修正リクエスト
+ * @returns 修正リクエストDTO
+ */
 export function mapCorrectionTargetsResponse(
   app: Application,
   openCorrection: CorrectionRequest | null,
@@ -162,6 +203,11 @@ export function mapCorrectionTargetsResponse(
   };
 }
 
+/**
+ * 修正リクエストをDTOにマッピングする。
+ * @param openCorrection オープンな修正リクエスト
+ * @returns 修正リクエストDTO
+ */
 export function mapCorrectionToReturnApplicationDto(
   openCorrection: CorrectionRequest,
 ): ReturnApplicationEmailDto {

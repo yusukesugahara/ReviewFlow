@@ -23,6 +23,9 @@ import {
   type TransactionManager,
 } from '../../../../transaction';
 
+/**
+ * 承認者の承認・却下・差し戻しを認可、状態競合検出、監査ログ付きで実行する use case service。
+ */
 @Injectable()
 export class ApplicationReviewUseCaseService {
   constructor(
@@ -36,6 +39,13 @@ export class ApplicationReviewUseCaseService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * 期待承認ステップを検証し、申請を承認する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @param dto 承認DTO
+   * @returns 承認後に再取得した申請
+   */
   async approve(
     actor: AuthUserPayload,
     id: string,
@@ -65,6 +75,13 @@ export class ApplicationReviewUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
+  /**
+   * 期待承認ステップを検証し、申請を却下する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @param dto 却下DTO
+   * @returns 却下後に再取得した申請
+   */
   async reject(
     actor: AuthUserPayload,
     id: string,
@@ -94,6 +111,13 @@ export class ApplicationReviewUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
+  /**
+   * 期待承認ステップを検証し、申請を差し戻して申請者へ通知する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @param dto 差し戻しDTO
+   * @returns 差し戻し後に再取得した申請
+   */
   async returnApplication(
     actor: AuthUserPayload,
     id: string,
@@ -133,6 +157,14 @@ export class ApplicationReviewUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
+  /**
+   * 審査操作対象の申請を pessimistic lock 付きで読み込み、space access と承認権限を検証する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @param expectedStepOrder 期待する承認ステップ
+   * @param manager トランザクションマネージャー
+   * @returns 審査操作可能な申請
+   */
   private async loadReviewableApplicationForExpectedStep(
     actor: AuthUserPayload,
     id: string,
@@ -152,6 +184,13 @@ export class ApplicationReviewUseCaseService {
     return app;
   }
 
+  /**
+   * tenant scope 内の申請を詳細付きで読み込む。
+   * @param tenantId テナントID
+   * @param id 申請ID
+   * @param manager トランザクションマネージャー
+   * @returns 申請
+   */
   private async loadApplicationOrThrow(
     tenantId: string,
     id: string,
@@ -167,6 +206,11 @@ export class ApplicationReviewUseCaseService {
     return row;
   }
 
+  /**
+   * 申請が審査中で、クライアントが期待した承認ステップのままか検証する。
+   * @param app 申請
+   * @param expectedStepOrder 期待する承認ステップ
+   */
   private assertExpectedReviewStep(
     app: Application,
     expectedStepOrder: number,
@@ -179,6 +223,11 @@ export class ApplicationReviewUseCaseService {
     }
   }
 
+  /**
+   * 監査ログ用に申請の状態と現在ステップを取得する。
+   * @param app 申請
+   * @returns 申請状態スナップショット
+   */
   private snapshot(app: Application) {
     return {
       status: app.status,
@@ -186,6 +235,11 @@ export class ApplicationReviewUseCaseService {
     };
   }
 
+  /**
+   * 空白だけのコメントを null に正規化する。
+   * @param value コメント
+   * @returns 正規化したコメント
+   */
   private trimComment(value: string | undefined): string | null {
     return value?.trim().length ? value.trim() : null;
   }

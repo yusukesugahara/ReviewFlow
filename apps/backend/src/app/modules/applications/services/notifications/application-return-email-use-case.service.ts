@@ -10,6 +10,9 @@ import { ApplicationCorrectionService } from '../review/application-correction.s
 import { ApplicationNotificationService } from './application-notification.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 
+/**
+ * 差し戻しメール再送の認可・状態確認・通知送信を統括する use case service。
+ */
 @Injectable()
 export class ApplicationReturnEmailUseCaseService {
   constructor(
@@ -22,6 +25,12 @@ export class ApplicationReturnEmailUseCaseService {
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
+  /**
+   * 閲覧可能かつ差し戻し済みの申請に対して差し戻しメールを再送する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @returns 再送後に再取得した申請
+   */
   async resend(actor: AuthUserPayload, id: string): Promise<Application> {
     const app = await this.loadApplicationOrThrow(actor.tenantId, id);
     await this.spaceAccess.assertCanUseGroup(actor, app.groupId);
@@ -43,6 +52,12 @@ export class ApplicationReturnEmailUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
+  /**
+   * 過去承認者の閲覧判定に使う承認件数を取得する。
+   * @param applicationId 申請ID
+   * @param actorId 操作者ユーザーID
+   * @returns 承認履歴件数
+   */
   private countApprovalsByActor(
     applicationId: string,
     actorId: string,
@@ -50,6 +65,12 @@ export class ApplicationReturnEmailUseCaseService {
     return this.queryRepository.countApprovalsByActor(applicationId, actorId);
   }
 
+  /**
+   * tenant scope 内の申請を詳細付きで読み込む。
+   * @param tenantId テナントID
+   * @param id 申請ID
+   * @returns 申請
+   */
   private async loadApplicationOrThrow(
     tenantId: string,
     id: string,

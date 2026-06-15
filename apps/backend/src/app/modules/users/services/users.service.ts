@@ -16,6 +16,9 @@ import { TransactionService } from '../../../transaction';
 
 const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [UserRole.TENANT_ADMIN];
 
+/**
+ * tenant ユーザーの検索、本人更新、管理者操作を扱う service。
+ */
 @Injectable()
 export class UsersService {
   constructor(
@@ -24,30 +27,66 @@ export class UsersService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * 全ユーザー数を取得する。
+   * @returns ユーザー数
+   */
   count(): Promise<number> {
     return this.usersRepository.count();
   }
 
+  /**
+   * ユーザーIDでユーザーを取得する。
+   * @param id ユーザーID
+   * @returns ユーザー
+   */
   findById(id: string): Promise<User | null> {
     return this.usersRepository.findById(id);
   }
 
+  /**
+   * メールアドレスに一致する全ユーザーを取得する。
+   * @param email メールアドレス
+   * @returns ユーザー一覧
+   */
   findAllByEmail(email: string): Promise<User[]> {
     return this.usersRepository.findAllByEmail(email);
   }
 
+  /**
+   * tenant 内でメールアドレスに一致するユーザーを取得する。
+   * @param email メールアドレス
+   * @param tenantId テナントID
+   * @returns ユーザー一覧
+   */
   findAllByEmailAndTenant(email: string, tenantId: string): Promise<User[]> {
     return this.usersRepository.findAllByEmailAndTenant(email, tenantId);
   }
 
+  /**
+   * メールアドレスに一致する有効ユーザーを取得する。
+   * @param email メールアドレス
+   * @returns 有効ユーザー一覧
+   */
   findActiveByEmail(email: string): Promise<User[]> {
     return this.usersRepository.findActiveByEmail(email);
   }
 
+  /**
+   * メールアドレスが既に使われているかを返す。
+   * @param email メールアドレス
+   * @returns 使用済みか
+   */
   emailExists(email: string): Promise<boolean> {
     return this.usersRepository.emailExists(email);
   }
 
+  /**
+   * 自分以外のユーザーがメールアドレスを使っているかを返す。
+   * @param email メールアドレス
+   * @param currentUserId 現在のユーザーID
+   * @returns 自分以外で使用済みか
+   */
   emailExistsForAnotherUser(
     email: string,
     currentUserId: string,
@@ -55,26 +94,62 @@ export class UsersService {
     return this.usersRepository.emailExistsForAnotherUser(email, currentUserId);
   }
 
+  /**
+   * tenant とメールアドレスでユーザーを取得する。
+   * @param tenantId テナントID
+   * @param email メールアドレス
+   * @returns ユーザー
+   */
   findByTenantAndEmail(tenantId: string, email: string): Promise<User | null> {
     return this.usersRepository.findByTenantAndEmail(tenantId, email);
   }
 
+  /**
+   * tenant scope 内でユーザーIDからユーザーを取得する。
+   * @param id ユーザーID
+   * @param tenantId テナントID
+   * @returns ユーザー
+   */
   findByIdAndTenant(id: string, tenantId: string): Promise<User | null> {
     return this.usersRepository.findByIdAndTenant(id, tenantId);
   }
 
+  /**
+   * tenant 内ユーザー一覧を取得する。
+   * @param tenantId テナントID
+   * @returns ユーザー一覧
+   */
   findAllByTenant(tenantId: string): Promise<User[]> {
     return this.usersRepository.findAllByTenant(tenantId);
   }
 
+  /**
+   * tenant 内に存在する指定ユーザーID数を数える。
+   * @param tenantId テナントID
+   * @param ids ユーザーID一覧
+   * @returns 存在件数
+   */
   countByIdsInTenant(tenantId: string, ids: string[]): Promise<number> {
     return this.usersRepository.countByIdsInTenant(tenantId, ids);
   }
 
+  /**
+   * tenant 管理者数を数える。
+   * @param tenantId テナントID
+   * @returns tenant 管理者数
+   */
   countTenantAdmins(tenantId: string): Promise<number> {
     return this.usersRepository.countTenantAdmins(tenantId);
   }
 
+  /**
+   * tenant 内ユーザーのロールを変更する。最後の tenant 管理者は降格できない。
+   * @param tenantId テナントID
+   * @param targetUserId 対象ユーザーID
+   * @param nextRole 変更後ロール
+   * @param actor ログインユーザー
+   * @returns 更新されたユーザー
+   */
   async updateRoleInTenant(
     tenantId: string,
     targetUserId: string,
@@ -118,6 +193,12 @@ export class UsersService {
     });
   }
 
+  /**
+   * ログインユーザー自身のプロフィールを更新する。
+   * @param actor ログインユーザー
+   * @param input 更新入力
+   * @returns 更新されたユーザー
+   */
   async updateOwnProfile(
     actor: Pick<AuthUserPayload, 'id' | 'email' | 'tenantId'>,
     input: { name?: string },
@@ -152,6 +233,12 @@ export class UsersService {
     });
   }
 
+  /**
+   * ログインユーザー自身のパスワードを更新する。
+   * @param actor ログインユーザー
+   * @param input パスワード更新入力
+   * @returns 更新されたユーザー
+   */
   async updateOwnPassword(
     actor: Pick<AuthUserPayload, 'id' | 'email' | 'tenantId'>,
     input: { currentPassword: string; newPassword: string },
@@ -185,6 +272,12 @@ export class UsersService {
     });
   }
 
+  /**
+   * tenant 内ユーザーを無効化する。最後の tenant 管理者は無効化できない。
+   * @param tenantId テナントID
+   * @param targetUserId 対象ユーザーID
+   * @param actor ログインユーザー
+   */
   async deactivateInTenant(
     tenantId: string,
     targetUserId: string,
@@ -221,6 +314,13 @@ export class UsersService {
     });
   }
 
+  /**
+   * tenant 内ユーザーを復元する。
+   * @param tenantId テナントID
+   * @param targetUserId 対象ユーザーID
+   * @param actor ログインユーザー
+   * @returns 復元されたユーザー
+   */
   async restoreInTenant(
     tenantId: string,
     targetUserId: string,
@@ -248,6 +348,11 @@ export class UsersService {
   }
 }
 
+/**
+ * 任意テキストを null 許容の保存値へ正規化する。
+ * @param value 入力値
+ * @returns 正規化済みテキスト
+ */
 function normalizeNullableText(value: string | undefined): string | null {
   const text = value?.trim();
   return text ? text : null;

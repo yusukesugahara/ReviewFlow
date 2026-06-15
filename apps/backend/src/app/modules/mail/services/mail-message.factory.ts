@@ -50,10 +50,18 @@ export type EmailChangeConfirmationMailInput = {
   expiresAtIso: string;
 };
 
+/**
+ * ReviewFlow から送るメールの件名・本文・HTML を組み立てる factory。
+ */
 @Injectable()
 export class MailMessageFactory {
   constructor(private readonly configService: ConfigService) {}
 
+  /**
+   * 招待メールを組み立てる。
+   * @param input 招待メール入力
+   * @returns メール送信入力
+   */
   buildInvitationEmail(input: InvitationMailInput): SendMailInput {
     const acceptUrl = this.buildFrontendUrl('/invitations/accept', {
       token: input.acceptToken,
@@ -80,6 +88,11 @@ export class MailMessageFactory {
     };
   }
 
+  /**
+   * 公開申請アクセスメールを組み立てる。
+   * @param input 公開申請アクセスメール入力
+   * @returns メール送信入力
+   */
   buildApplicationAccessEmail(
     input: ApplicationAccessMailInput,
   ): SendMailInput {
@@ -101,6 +114,11 @@ export class MailMessageFactory {
     };
   }
 
+  /**
+   * 差し戻し通知メールを組み立てる。
+   * @param input 差し戻し通知メール入力
+   * @returns メール送信入力
+   */
   buildApplicationReturnedEmail(
     input: ApplicationReturnedMailInput,
   ): SendMailInput {
@@ -146,6 +164,11 @@ export class MailMessageFactory {
     };
   }
 
+  /**
+   * パスワード再設定メールを組み立てる。
+   * @param input パスワード再設定メール入力
+   * @returns メール送信入力
+   */
   buildPasswordResetEmail(input: PasswordResetMailInput): SendMailInput {
     const resetUrl = this.buildFrontendUrl('/password-reset', {
       token: input.resetToken,
@@ -169,6 +192,11 @@ export class MailMessageFactory {
     };
   }
 
+  /**
+   * メールアドレス変更確認メールを組み立てる。
+   * @param input メールアドレス変更確認メール入力
+   * @returns メール送信入力
+   */
   buildEmailChangeConfirmationEmail(
     input: EmailChangeConfirmationMailInput,
   ): SendMailInput {
@@ -198,12 +226,23 @@ export class MailMessageFactory {
     };
   }
 
+  /**
+   * 公開申請アクセスURLを組み立てる。
+   * @param accessToken 申請者アクセストークン
+   * @returns 公開申請アクセスURL
+   */
   buildApplicationAccessUrl(accessToken: string): string {
     return this.buildFrontendUrl('/apply/access', {
       token: accessToken,
     });
   }
 
+  /**
+   * frontend の絶対URLを組み立てる。
+   * @param path パス
+   * @param params クエリパラメータ
+   * @returns frontend URL
+   */
   private buildFrontendUrl(
     path: string,
     params?: Record<string, string>,
@@ -220,6 +259,11 @@ export class MailMessageFactory {
     return url.toString();
   }
 
+  /**
+   * HTML メール本文に埋め込む文字列をエスケープする。
+   * @param value 入力値
+   * @returns HTML エスケープ済み文字列
+   */
   private escapeHtml(value: string): string {
     return value
       .replaceAll('&', '&amp;')

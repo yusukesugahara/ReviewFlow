@@ -19,6 +19,7 @@ const rows: AuditLogItem[] = [
     targetType: "application",
     targetId: "application-1234567890",
     applicationId: "application-1234567890",
+    groupId: "group-1234567890",
     statusFrom: "in_review",
     statusTo: "approved",
     stepOrderFrom: 1,
@@ -124,6 +125,15 @@ describe("AdminAuditLogsView", () => {
     const applicationRow = screen.getByRole("row", {
       name: /reviewer@example.com.*申請を承認/,
     });
+    const applicationTargetLink = within(applicationRow).getByRole("link", {
+      name: "申請 applicat...",
+    });
+    expect(applicationTargetLink).toHaveAttribute(
+      "href",
+      "/space/group-1234567890/applications/application-1234567890?definitionId=form-1",
+    );
+    expect(applicationTargetLink).toHaveAttribute("target", "_blank");
+    expect(applicationTargetLink).toHaveAttribute("rel", "noopener noreferrer");
     expect(within(applicationRow).getByText("状態: レビュー中 -> 承認済み")).toBeInTheDocument();
     expect(within(applicationRow).getByText("ステップ: 1 -> -")).toBeInTheDocument();
     expect(within(applicationRow).getByText("詳細")).toBeInTheDocument();
