@@ -9,6 +9,13 @@ export class ApplicationApprovalFlowResolver {
     private readonly approvalFlowsRepository: ApprovalFlowsRepository,
   ) {}
 
+  /**
+   * 有効な承認フローを解決する
+   * @param tenantId テナントID
+   * @param groupId グループID
+   * @param approvalFlowId 承認フローID (省略可)
+   * @returns 承認フロー
+   */
   async resolveActiveFlow(
     tenantId: string,
     groupId: string,
@@ -39,6 +46,12 @@ export class ApplicationApprovalFlowResolver {
     return list[0];
   }
 
+  /**
+   * 作成順の最初の有効な承認フローを解決する
+   * @param tenantId テナントID
+   * @param groupId グループID
+   * @returns 承認フロー
+   */
   async resolveDefaultActiveFlow(
     tenantId: string,
     groupId: string,

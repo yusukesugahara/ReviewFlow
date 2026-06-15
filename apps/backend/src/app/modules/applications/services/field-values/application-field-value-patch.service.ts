@@ -7,6 +7,9 @@ import type { PatchApplicationDto } from '../../dto/applications.dto';
 import { ApplicationFieldValuePatchBuilder } from './application-field-value-patch.builder';
 import { ApplicationPatchContextLoader } from './application-patch-context.loader';
 
+/**
+ * 申請のフォーム定義・承認フロー・状態・フィールド値更新を適用する service。
+ */
 @Injectable()
 export class ApplicationFieldValuePatchService {
   constructor(
@@ -15,6 +18,13 @@ export class ApplicationFieldValuePatchService {
     private readonly fieldValuePatchBuilder: ApplicationFieldValuePatchBuilder,
   ) {}
 
+  /**
+   * 申請更新DTOを検証し、保存対象のフィールド値差分を永続化する。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @param dto 申請更新DTO
+   * @param manager トランザクションマネージャー
+   */
   async applyPatch(
     tenantId: string,
     app: Application,
@@ -43,6 +53,13 @@ export class ApplicationFieldValuePatchService {
     await this.saveApplicationPatch(app, dto, fieldValues, manager);
   }
 
+  /**
+   * 実際に変更がある場合だけ申請更新を保存する。
+   * @param app 申請
+   * @param dto 申請更新DTO
+   * @param values 保存対象のフィールド値
+   * @param manager トランザクションマネージャー
+   */
   private async saveApplicationPatch(
     app: Application,
     dto: PatchApplicationDto,

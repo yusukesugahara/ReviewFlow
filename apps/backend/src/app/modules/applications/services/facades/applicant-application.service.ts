@@ -23,6 +23,9 @@ import { TransactionService } from '../../../../transaction';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
 
+/**
+ * 申請者トークンで実行される公開申請・差し戻し修正・再提出を統括する facade。
+ */
 @Injectable()
 export class ApplicantApplicationService {
   constructor(
@@ -37,6 +40,12 @@ export class ApplicantApplicationService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * 申請者トークンの scope で公開申請を作成し、そのまま提出する。
+   * @param actor 申請者トークン
+   * @param dto 公開申請作成DTO
+   * @returns 提出済み申請
+   */
   async createAndSubmit(
     actor: ApplicantSession,
     dto: CreatePublicApplicationDto,
@@ -95,6 +104,11 @@ export class ApplicantApplicationService {
     return this.progressService.hydrate(submitted);
   }
 
+  /**
+   * 申請者トークンに紐づく差し戻し申請の修正対象を返す。
+   * @param actor 申請者トークン
+   * @returns 修正対象レスポンス
+   */
   async getReturnedCorrection(
     actor: ApplicantSession,
   ): Promise<CorrectionTargetsResponseDto> {
@@ -107,6 +121,13 @@ export class ApplicantApplicationService {
     return this.correctionService.buildTargetsResponse(app);
   }
 
+  /**
+   * 申請者が差し戻し対象フィールドを修正する。
+   * @param actor 申請者トークン
+   * @param id 申請ID
+   * @param dto 申請更新DTO
+   * @returns 修正後の申請
+   */
   async patchReturned(
     actor: ApplicantSession,
     id: string,
@@ -144,6 +165,12 @@ export class ApplicantApplicationService {
     return this.progressService.hydrate(updated);
   }
 
+  /**
+   * 申請者が差し戻し済み申請を再提出する。
+   * @param actor 申請者トークン
+   * @param id 申請ID
+   * @returns 再提出後の申請
+   */
   async resubmit(actor: ApplicantSession, id: string): Promise<Application> {
     await this.transactions.run(async (manager) => {
       const app = await this.applicantAccess.loadEditableApplication(
@@ -168,6 +195,11 @@ export class ApplicantApplicationService {
     return this.progressService.hydrate(updated);
   }
 
+  /**
+   * 監査ログ用に申請の状態と現在ステップを取得する。
+   * @param app 申請
+   * @returns 申請状態スナップショット
+   */
   private snapshot(app: Application) {
     return {
       status: app.status,

@@ -16,6 +16,9 @@ export type ApplicationPatchContext = {
   allowedFieldIds?: Set<string>;
 };
 
+/**
+ * 申請更新に必要なフォーム定義・フィールド一覧・差し戻し対象 scope を読み込む loader。
+ */
 @Injectable()
 export class ApplicationPatchContextLoader {
   constructor(
@@ -25,6 +28,14 @@ export class ApplicationPatchContextLoader {
     private readonly formValueValidator: ApplicationFormValueValidator,
   ) {}
 
+  /**
+   * 申請更新DTOの前提を検証し、更新対象フィールドのコンテキストを組み立てる。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @param dto 申請更新DTO
+   * @param manager トランザクションマネージャー
+   * @returns 申請更新コンテキスト
+   */
   async load(
     tenantId: string,
     app: Application,
@@ -56,6 +67,12 @@ export class ApplicationPatchContextLoader {
     return { app, fieldsByKey, allowedFieldIds };
   }
 
+  /**
+   * 差し戻し済み申請では修正対象フィールドIDを返し、それ以外では通常編集可否を検証する。
+   * @param app 申請
+   * @param manager トランザクションマネージャー
+   * @returns 許可されたフィールドID
+   */
   private async resolveAllowedFieldIds(
     app: Application,
     manager?: TransactionManager,
@@ -73,6 +90,12 @@ export class ApplicationPatchContextLoader {
     return new Set(open.items.map((item) => item.formFieldId));
   }
 
+  /**
+   * 申請に紐づく open な修正リクエストを取得する。
+   * @param app 申請
+   * @param manager トランザクションマネージャー
+   * @returns open な修正リクエスト
+   */
   private async findOpenCorrection(
     app: Application,
     manager?: TransactionManager,

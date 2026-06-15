@@ -8,6 +8,9 @@ import type { CreateApplicationDto } from '../../dto/applications.dto';
 import { ApplicationCreationContextLoader } from './application-creation-context.loader';
 import { ApplicationInitialFieldValueBuilder } from './application-initial-field-value.builder';
 
+/**
+ * 申請レコードと初期フォーム値を作成する domain service。
+ */
 @Injectable()
 export class ApplicationCreationService {
   constructor(
@@ -16,6 +19,15 @@ export class ApplicationCreationService {
     private readonly initialFieldValueBuilder: ApplicationInitialFieldValueBuilder,
   ) {}
 
+  /**
+   * フォーム定義・承認フローを解決し、申請と初期フィールド値を保存する。
+   * @param tenantId テナントID
+   * @param applicantEmail 申請者メールアドレス
+   * @param applicantUserId ログイン申請者のユーザーID
+   * @param dto 申請作成DTO
+   * @param manager トランザクションマネージャー
+   * @returns 作成された申請
+   */
   async create(
     tenantId: string,
     applicantEmail: string,
@@ -49,6 +61,13 @@ export class ApplicationCreationService {
     return this.loadCreatedApplication(tenantId, newId, manager);
   }
 
+  /**
+   * 作成直後の申請を relation 込みで読み込む。
+   * @param tenantId テナントID
+   * @param id 申請ID
+   * @param manager トランザクションマネージャー
+   * @returns 作成された申請
+   */
   private async loadCreatedApplication(
     tenantId: string,
     id: string,

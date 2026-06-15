@@ -10,6 +10,9 @@ import { ApplicationCorrectionService } from '../review/application-correction.s
 import { ApplicationProgressService } from '../progress/application-progress.service';
 import { ApplicationReadAccessService } from '../access/application-read-access.service';
 
+/**
+ * ログインユーザー向けの申請検索・詳細取得・修正情報取得を扱う query service。
+ */
 @Injectable()
 export class ApplicationQueryService {
   constructor(
@@ -21,6 +24,12 @@ export class ApplicationQueryService {
     private readonly readAccess: ApplicationReadAccessService,
   ) {}
 
+  /**
+   * space 利用権限と申請閲覧条件に基づいて申請一覧を返す。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   * @returns 閲覧可能な申請一覧
+   */
   async listForActor(
     actor: AuthUserPayload,
     groupId: string,
@@ -48,6 +57,12 @@ export class ApplicationQueryService {
     return visibleRows;
   }
 
+  /**
+   * ログインユーザーが閲覧できる申請詳細を承認進捗付きで返す。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @returns 承認進捗付き申請
+   */
   async getOneForActor(
     actor: AuthUserPayload,
     id: string,
@@ -59,6 +74,12 @@ export class ApplicationQueryService {
     return this.progressService.hydrate(row);
   }
 
+  /**
+   * ログインユーザーが閲覧できる申請の修正履歴を返す。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @returns 修正履歴レスポンス
+   */
   async getCorrectionsForActor(actor: AuthUserPayload, id: string) {
     const app = await this.readAccess.loadReadable(actor, id, {
       detail: false,
@@ -67,6 +88,12 @@ export class ApplicationQueryService {
     return this.correctionService.listCorrections(actor.tenantId, app);
   }
 
+  /**
+   * ログインユーザーが閲覧できる申請の差し戻し修正対象を返す。
+   * @param actor ログインユーザー
+   * @param applicationId 申請ID
+   * @returns 修正対象レスポンス
+   */
   async getCorrectionTargetsForActor(
     actor: AuthUserPayload,
     applicationId: string,
