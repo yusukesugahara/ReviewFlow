@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
@@ -44,7 +45,20 @@ export function AuditLogTable({ rows }: AuditLogTableProps) {
               </TableCell>
               <TableCell className="align-top">
                 <div className="space-y-1">
-                  <p className="text-sm font-medium text-slate-950">{display.targetLabel}</p>
+                  {display.targetHref ? (
+                    <Link
+                      href={display.targetHref}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm font-medium text-slate-950 underline underline-offset-2"
+                    >
+                      {display.targetLabel}
+                    </Link>
+                  ) : (
+                    <p className="text-sm font-medium text-slate-950">
+                      {display.targetLabel}
+                    </p>
+                  )}
                   {display.targetDetail ? (
                     <p className="text-xs text-muted-foreground">{display.targetDetail}</p>
                   ) : null}

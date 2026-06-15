@@ -5,6 +5,9 @@ import { FormDefinition } from '../../../../../models/entities/form-definition.e
 import { FormDefinitionsRepository } from '../../../../../models/repositories/form-definitions.repository';
 import { SpaceAccessService } from '../../../groups/services/access/space-access.service';
 
+/**
+ * ログインユーザー向けフォーム定義検索・詳細取得を扱う query service。
+ */
 @Injectable()
 export class FormDefinitionQueryService {
   constructor(
@@ -12,6 +15,13 @@ export class FormDefinitionQueryService {
     private readonly spaceAccess: SpaceAccessService,
   ) {}
 
+  /**
+   * space 管理者向けにフォーム定義一覧を取得する。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   * @param includeArchived アーカイブ済みを含めるか
+   * @returns フォーム定義一覧
+   */
   async listByGroup(
     actor: AuthUserPayload,
     groupId: string,
@@ -25,6 +35,12 @@ export class FormDefinitionQueryService {
     });
   }
 
+  /**
+   * space 内の代表フォーム定義を取得する。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   * @returns フォーム定義
+   */
   async getOneByGroupForActor(
     actor: AuthUserPayload,
     groupId: string,
@@ -40,6 +56,12 @@ export class FormDefinitionQueryService {
     return row;
   }
 
+  /**
+   * tenant scope 内のフォーム定義を取得する。
+   * @param tenantId テナントID
+   * @param definitionId フォーム定義ID
+   * @returns フォーム定義
+   */
   async getOne(
     tenantId: string,
     definitionId: string,
@@ -54,6 +76,12 @@ export class FormDefinitionQueryService {
     return definition;
   }
 
+  /**
+   * ログインユーザーが利用できるフォーム定義を取得する。
+   * @param actor ログインユーザー
+   * @param definitionId フォーム定義ID
+   * @returns フォーム定義
+   */
   async getOneForActor(
     actor: AuthUserPayload,
     definitionId: string,

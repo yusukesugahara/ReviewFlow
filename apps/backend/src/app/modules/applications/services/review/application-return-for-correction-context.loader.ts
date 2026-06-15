@@ -14,6 +14,9 @@ export type ReturnForCorrectionContext = {
   template: FormDefinition;
 };
 
+/**
+ * 差し戻し実行前に必要な承認ステップ・修正リクエスト・フォーム定義を検証する loader。
+ */
 @Injectable()
 export class ApplicationReturnForCorrectionContextLoader {
   constructor(
@@ -22,6 +25,13 @@ export class ApplicationReturnForCorrectionContextLoader {
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
+  /**
+   * 差し戻し可能な現在ステップとフォーム定義を読み込み、差し戻し対象項目を検証する。
+   * @param app 申請
+   * @param dto 差し戻しDTO
+   * @param manager トランザクションマネージャー
+   * @returns 差し戻しコンテキスト
+   */
   async load(
     app: Application,
     dto: ReturnApplicationDto,
@@ -37,6 +47,11 @@ export class ApplicationReturnForCorrectionContextLoader {
     return { currentStep, template };
   }
 
+  /**
+   * 既に open な修正リクエストがないことを検証する。
+   * @param app 申請
+   * @param manager トランザクションマネージャー
+   */
   private async assertNoOpenCorrection(
     app: Application,
     manager?: TransactionManager,
@@ -50,6 +65,11 @@ export class ApplicationReturnForCorrectionContextLoader {
     }
   }
 
+  /**
+   * 申請に紐づくフォーム定義を読み込む。
+   * @param app 申請
+   * @returns フォーム定義
+   */
   private async loadTemplate(app: Application): Promise<FormDefinition> {
     const template =
       await this.formDefinitionsRepository.findTemplateByIdInGroup({
@@ -64,6 +84,11 @@ export class ApplicationReturnForCorrectionContextLoader {
     return template;
   }
 
+  /**
+   * 差し戻し対象フィールドが申請フォーム定義に含まれているか検証する。
+   * @param template フォーム定義
+   * @param dto 差し戻しDTO
+   */
   private assertReturnFieldsBelongToTemplate(
     template: FormDefinition,
     dto: ReturnApplicationDto,

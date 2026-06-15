@@ -10,6 +10,9 @@ import {
   type SubmittableApplicationContext,
 } from './application-submission-context.loader';
 
+/**
+ * 申請の提出・再提出の入力値検証、状態遷移、保存を扱う domain service。
+ */
 @Injectable()
 export class ApplicationSubmissionService {
   constructor(
@@ -19,6 +22,12 @@ export class ApplicationSubmissionService {
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
+  /**
+   * 下書き申請を提出し、審査中へ遷移させる。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @param manager トランザクションマネージャー
+   */
   async submit(
     tenantId: string,
     app: Application,
@@ -29,6 +38,12 @@ export class ApplicationSubmissionService {
     await this.applySubmitTransition(context, manager);
   }
 
+  /**
+   * 差し戻し済み申請を再提出し、open 修正リクエストを解決する。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @param manager トランザクションマネージャー
+   */
   async resubmit(
     tenantId: string,
     app: Application,
@@ -43,6 +58,10 @@ export class ApplicationSubmissionService {
     await this.applyResubmitTransition(context, manager);
   }
 
+  /**
+   * 必須項目など、提出可能な入力値が揃っているか検証する。
+   * @param context 提出用コンテキスト
+   */
   private validateApplicationReadyToSubmit(
     context: SubmittableApplicationContext,
   ): void {
@@ -52,6 +71,11 @@ export class ApplicationSubmissionService {
     );
   }
 
+  /**
+   * 提出済み申請を保存する。
+   * @param app 申請
+   * @param manager トランザクションマネージャー
+   */
   private async saveSubmittedApplication(
     app: Application,
     manager?: TransactionManager,
@@ -59,6 +83,11 @@ export class ApplicationSubmissionService {
     await this.submissionRepository.saveSubmittedApplication(app, manager);
   }
 
+  /**
+   * 下書き申請を審査中へ進めて保存する。
+   * @param context 提出用コンテキスト
+   * @param manager トランザクションマネージャー
+   */
   private async applySubmitTransition(
     context: SubmittableApplicationContext,
     manager?: TransactionManager,
@@ -67,6 +96,11 @@ export class ApplicationSubmissionService {
     await this.saveSubmittedApplication(context.app, manager);
   }
 
+  /**
+   * 差し戻し済み申請を再提出し、修正リクエストを解決済みにして保存する。
+   * @param context 再提出用コンテキスト
+   * @param manager トランザクションマネージャー
+   */
   private async applyResubmitTransition(
     context: ResubmittableApplicationContext,
     manager?: TransactionManager,

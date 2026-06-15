@@ -25,6 +25,13 @@ export class ApplicationAccessPolicy {
     );
   }
 
+  /**
+   * 申請を一覧表示できるかを検証する。
+   * @param actor ユーザ
+   * @param app 申請
+   * @param canManageGroup グループ管理権限を持っているか
+   * @returns 申請を一覧表示できるか
+   */
   canListForActor(
     actor: AuthUserPayload,
     app: Application,
@@ -37,6 +44,12 @@ export class ApplicationAccessPolicy {
     );
   }
 
+  /**
+   * グループ管理者が申請を閲覧できるかを検証する。
+   * @param app 申請
+   * @param canManageGroup グループ管理権限を持っているか
+   * @returns グループ管理者が申請を閲覧できるか
+   */
   canReadSetupApplicationAsManager(
     app: Application,
     canManageGroup: boolean,
@@ -44,6 +57,12 @@ export class ApplicationAccessPolicy {
     return canManageGroup && this.isSetupApplication(app);
   }
 
+  /**
+   * 現在の承認ステップ担当者かを検証する。
+   * @param actor ユーザ
+   * @param app 申請
+   * @returns 現在の承認ステップ担当者か
+   */
   actorIsAssignedToCurrentStep(
     actor: AuthUserPayload,
     app: Application,
@@ -62,6 +81,12 @@ export class ApplicationAccessPolicy {
     return assigneeUserIds.includes(actor.id);
   }
 
+  /**
+   * 現在の承認ステップ担当者かを検証する。
+   * @param actor ユーザ
+   * @param app 申請
+   * @returns 現在の承認ステップ担当者か
+   */
   canActOnReview(actor: AuthUserPayload, app: Application): boolean {
     if (app.status !== ApplicationStatus.IN_REVIEW) {
       return false;
@@ -100,6 +125,11 @@ export class ApplicationAccessPolicy {
     throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
   }
 
+  /**
+   * 現在の承認ステップを取得する。
+   * @param app 申請
+   * @returns 現在の承認ステップ
+   */
   private getCurrentApprovalStep(app: Application): ApprovalStep | null {
     if (app.currentStepOrder == null) {
       return null;

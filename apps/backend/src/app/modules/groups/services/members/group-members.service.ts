@@ -18,6 +18,9 @@ import type {
 import { SpaceAccessService } from '../access/space-access.service';
 import { TransactionService } from '../../../../transaction';
 
+/**
+ * space メンバーの一覧・追加・権限変更・削除・退出を扱う service。
+ */
 @Injectable()
 export class GroupMembersService {
   constructor(
@@ -28,6 +31,12 @@ export class GroupMembersService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * space 管理者向けにメンバー一覧を取得する。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   * @returns space メンバー一覧
+   */
   async listMembers(
     groupId: string,
     actor: AuthUserPayload,
@@ -36,6 +45,12 @@ export class GroupMembersService {
     return this.groupsRepository.findMembersWithUsers(actor.tenantId, groupId);
   }
 
+  /**
+   * space に未参加の tenant ユーザー一覧を取得する。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   * @returns 追加可能ユーザー一覧
+   */
   async listAvailableUsers(
     groupId: string,
     actor: AuthUserPayload,
@@ -47,6 +62,13 @@ export class GroupMembersService {
     );
   }
 
+  /**
+   * tenant 管理者が既存 tenant ユーザーを space に追加する。
+   * @param groupId スペースID
+   * @param dto メンバー追加DTO
+   * @param actor ログインユーザー
+   * @returns 作成されたメンバー
+   */
   async addMember(
     groupId: string,
     dto: AddGroupMemberDto,
@@ -98,6 +120,14 @@ export class GroupMembersService {
     });
   }
 
+  /**
+   * space メンバーの権限を変更する。最後の space 管理者は降格できない。
+   * @param groupId スペースID
+   * @param userId ユーザーID
+   * @param dto メンバー権限更新DTO
+   * @param actor ログインユーザー
+   * @returns 更新されたメンバー
+   */
   async updateMemberRole(
     groupId: string,
     userId: string,
@@ -134,6 +164,12 @@ export class GroupMembersService {
     });
   }
 
+  /**
+   * space メンバーを削除する。最後の space 管理者は削除できない。
+   * @param groupId スペースID
+   * @param userId ユーザーID
+   * @param actor ログインユーザー
+   */
   async removeMember(
     groupId: string,
     userId: string,
@@ -160,6 +196,11 @@ export class GroupMembersService {
     });
   }
 
+  /**
+   * actor 自身を space から退出させる。最後の space 管理者は退出できない。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   */
   async leave(groupId: string, actor: AuthUserPayload): Promise<void> {
     await this.spaceAccess.assertGroupInTenant(actor.tenantId, groupId);
 
@@ -182,6 +223,11 @@ export class GroupMembersService {
     });
   }
 
+  /**
+   * tenant 管理者だけが既存ユーザーを space に直接追加できることを検証する。
+   * @param groupId スペースID
+   * @param actor ログインユーザー
+   */
   private async assertTenantAdminCanManageGroup(
     groupId: string,
     actor: AuthUserPayload,
@@ -192,6 +238,13 @@ export class GroupMembersService {
     }
   }
 
+  /**
+   * tenant / space scope 内のメンバーを取得する。
+   * @param groupId スペースID
+   * @param userId ユーザーID
+   * @param tenantId テナントID
+   * @returns space メンバー
+   */
   private async findMember(
     groupId: string,
     userId: string,
@@ -208,6 +261,12 @@ export class GroupMembersService {
     return member;
   }
 
+  /**
+   * 対象ユーザー以外に space 管理者が残ることを検証する。
+   * @param groupId スペースID
+   * @param tenantId テナントID
+   * @param exceptUserId 除外するユーザーID
+   */
   private async assertAnotherAdminRemains(
     groupId: string,
     tenantId: string,

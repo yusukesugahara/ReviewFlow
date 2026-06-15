@@ -1,4 +1,5 @@
 import type { AuditLogItem } from "@/lib/schema";
+import { buildSpaceApplicationDetailHrefByIds } from "../applications/routing/application-routes";
 import { readMetadata, shortId, textValue, valueList } from "./audit-log-metadata";
 
 type AuditRow = AuditLogItem;
@@ -24,6 +25,7 @@ export type AuditDisplayInfo = {
   detailItems: AuditLogDisplayEntry[];
   summary: string | null;
   targetDetail: string | null;
+  targetHref: string | null;
   targetLabel: string;
 };
 
@@ -114,6 +116,7 @@ export function buildAuditDisplay(row: AuditRow): AuditDisplayInfo {
     detailItems: buildDetailItems(row, metadata),
     summary: row.summary ?? null,
     targetDetail: describeTargetDetail(row),
+    targetHref: buildTargetHref(row, metadata),
     targetLabel: describeTargetLabel(row, metadata),
   };
 }
@@ -284,6 +287,25 @@ function buildDetailItems(
   addListItem(items, "差し戻し項目", metadata.fieldIds);
   addListItem(items, "管理者ユーザID", metadata.adminUserIds);
   return items;
+}
+
+function buildTargetHref(
+  row: AuditRow,
+  metadata: Record<string, unknown>,
+): string | null {
+  if (row.targetType !== "application") {
+    return null;
+  }
+  const applicationId = row.applicationId ?? row.targetId;
+  if (!row.groupId || !applicationId) {
+    return null;
+  }
+
+  return buildSpaceApplicationDetailHrefByIds(
+    row.groupId,
+    applicationId,
+    textValue(metadata.formDefinitionId) || null,
+  );
 }
 
 function addItem(

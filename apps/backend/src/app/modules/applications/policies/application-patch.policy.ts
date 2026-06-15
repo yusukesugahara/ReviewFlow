@@ -26,6 +26,11 @@ export class ApplicationPatchPolicy {
     }
   }
 
+  /**
+   * 公開済みフォーム定義の変更が許可されるか検証する。
+   * @param app 申請
+   * @param formDefinitionId 公開済みフォーム定義ID
+   */
   assertFormDefinitionChangeAllowed(
     app: Application,
     formDefinitionId?: string,
@@ -35,21 +40,40 @@ export class ApplicationPatchPolicy {
     }
   }
 
+  /**
+   * 差し戻し修正時に field 単位の修正対象制限が必要かを返す。
+   * @param app 申請
+   * @returns 差し戻し修正時に field 単位の修正対象制限が必要か
+   */
   assertFieldPatchAllowedWithoutCorrectionScope(app: Application): void {
     if (!this.isDraftOrPublished(app)) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
   }
 
-  /** 差し戻し修正時に field 単位の修正対象制限が必要かを返す。 */
+  /**
+   * 差し戻し修正時に field 単位の修正対象制限が必要かを返す。
+   * @param app 申請
+   * @returns 差し戻し修正時に field 単位の修正対象制限が必要か
+   */
   requiresCorrectionFieldScope(app: Application): boolean {
     return app.status === ApplicationStatus.RETURNED;
   }
 
+  /**
+   * メタデータの変更があるかを返す。
+   * @param dto 申請更新DTO
+   * @returns メタデータの変更があるか
+   */
   private changesMetadata(dto: PatchApplicationDto): boolean {
     return !!(dto.formDefinitionId || dto.approvalFlowId || dto.status);
   }
 
+  /**
+   * 下書きまたは公開済みの申請かを返す。
+   * @param app 申請
+   * @returns 下書きまたは公開済みの申請か
+   */
   private isDraftOrPublished(app: Application): boolean {
     return (
       app.status === ApplicationStatus.DRAFT ||

@@ -17,6 +17,9 @@ export type ResubmittableApplicationContext = SubmittableApplicationContext & {
   openCorrection: CorrectionRequest;
 };
 
+/**
+ * 提出・再提出に必要な申請状態、フォーム定義、open 修正リクエストを読み込む loader。
+ */
 @Injectable()
 export class ApplicationSubmissionContextLoader {
   constructor(
@@ -25,6 +28,12 @@ export class ApplicationSubmissionContextLoader {
     private readonly transitionPolicy: ApplicationTransitionPolicy,
   ) {}
 
+  /**
+   * 下書き申請の提出に必要なフォーム定義を読み込む。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @returns 提出用コンテキスト
+   */
   async loadSubmittable(
     tenantId: string,
     app: Application,
@@ -35,6 +44,13 @@ export class ApplicationSubmissionContextLoader {
     return { app, template };
   }
 
+  /**
+   * 差し戻し済み申請の再提出に必要なフォーム定義と open 修正リクエストを読み込む。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @param manager トランザクションマネージャー
+   * @returns 再提出用コンテキスト
+   */
   async loadResubmittable(
     tenantId: string,
     app: Application,
@@ -55,6 +71,12 @@ export class ApplicationSubmissionContextLoader {
     return { app, template, openCorrection };
   }
 
+  /**
+   * 申請に紐づくフォーム定義を読み込む。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @returns フォーム定義
+   */
   private async loadTemplate(
     tenantId: string,
     app: Application,

@@ -4,6 +4,9 @@ import { ApplicationProgressRepository } from '../../../../../models/repositorie
 import type { ApplicationWithProgress } from '../../mappers/applications.mapper';
 import { ApplicationProgressBuilder } from './application-progress.builder';
 
+/**
+ * 申請詳細に承認進捗情報を付与する service。
+ */
 @Injectable()
 export class ApplicationProgressService {
   constructor(
@@ -11,6 +14,11 @@ export class ApplicationProgressService {
     private readonly progressBuilder: ApplicationProgressBuilder,
   ) {}
 
+  /**
+   * 承認履歴とユーザー情報を取得し、申請に approvalProgress を付与する。
+   * @param row 申請
+   * @returns 承認進捗付き申請
+   */
   async hydrate(row: Application): Promise<ApplicationWithProgress> {
     const steps = this.progressBuilder.getOrderedSteps(row);
     if (steps.length === 0) {

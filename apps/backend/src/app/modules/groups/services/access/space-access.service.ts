@@ -13,6 +13,11 @@ import { GroupsRepository } from '../../../../../models/repositories/groups.repo
 export class SpaceAccessService {
   constructor(private readonly groupsRepository: GroupsRepository) {}
 
+  /**
+   * group が tenant scope 内に存在するか検証する。
+   * @param tenantId テナントID
+   * @param groupId スペースID
+   */
   async assertGroupInTenant(tenantId: string, groupId: string): Promise<void> {
     const count = await this.groupsRepository.countGroupInTenant(
       tenantId,
@@ -23,6 +28,11 @@ export class SpaceAccessService {
     }
   }
 
+  /**
+   * actor が space を利用できるか検証する。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   */
   async assertCanUseGroup(
     actor: AuthUserPayload,
     groupId: string,
@@ -41,6 +51,11 @@ export class SpaceAccessService {
     }
   }
 
+  /**
+   * actor が space を管理できるか検証する。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   */
   async assertCanManageGroup(
     actor: AuthUserPayload,
     groupId: string,
@@ -59,6 +74,12 @@ export class SpaceAccessService {
     }
   }
 
+  /**
+   * actor が space を管理できるかを boolean で返す。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   * @returns 管理できるか
+   */
   async actorCanManageGroup(
     actor: AuthUserPayload,
     groupId: string,

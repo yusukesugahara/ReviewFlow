@@ -15,6 +15,9 @@ import {
   mapCorrectionsList,
 } from '../../mappers/applications.mapper';
 
+/**
+ * 差し戻し修正リクエストの参照・表示用レスポンス組み立てを扱う service。
+ */
 @Injectable()
 export class ApplicationCorrectionService {
   constructor(
@@ -22,6 +25,12 @@ export class ApplicationCorrectionService {
     private readonly correctionRepository: ApplicationCorrectionRepository,
   ) {}
 
+  /**
+   * 申請に紐づく修正履歴を一覧DTOとして返す。
+   * @param tenantId テナントID
+   * @param app 申請
+   * @returns 修正履歴レスポンス
+   */
   async listCorrections(tenantId: string, app: Application) {
     const rows = await this.correctionRepository.listCorrections(
       tenantId,
@@ -30,6 +39,11 @@ export class ApplicationCorrectionService {
     return mapCorrectionsList(rows);
   }
 
+  /**
+   * open な修正リクエストから修正対象レスポンスを組み立てる。
+   * @param app 申請
+   * @returns 修正対象レスポンス
+   */
   async buildTargetsResponse(
     app: Application,
   ): Promise<CorrectionTargetsResponseDto> {
@@ -37,6 +51,11 @@ export class ApplicationCorrectionService {
     return mapCorrectionTargetsResponse(app, open);
   }
 
+  /**
+   * 差し戻しメール送信に必要なフォーム定義とメールDTOを取得する。
+   * @param app 申請
+   * @returns 差し戻しメール用コンテキスト
+   */
   async getReturnEmailContext(
     app: Application,
   ): Promise<{ template: FormDefinition; dto: ReturnApplicationEmailDto }> {
@@ -61,6 +80,11 @@ export class ApplicationCorrectionService {
     };
   }
 
+  /**
+   * 申請に紐づく open な修正リクエストを取得する。
+   * @param app 申請
+   * @returns open な修正リクエスト
+   */
   private async findOpenCorrection(
     app: Application,
   ): Promise<CorrectionRequest | null> {
@@ -70,6 +94,12 @@ export class ApplicationCorrectionService {
     });
   }
 
+  /**
+   * 修正項目込みで最新の open な修正リクエストを取得する。
+   * @param tenantId テナントID
+   * @param applicationId 申請ID
+   * @returns open な修正リクエスト
+   */
   private async findOpenCorrectionWithItems(
     tenantId: string,
     applicationId: string,

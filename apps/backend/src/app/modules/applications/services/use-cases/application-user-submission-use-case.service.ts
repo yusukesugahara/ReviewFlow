@@ -19,6 +19,9 @@ import {
   type TransactionManager,
 } from '../../../../transaction';
 
+/**
+ * ログインユーザー本人の申請更新・提出・再提出を認可、監査ログ付きで実行する use case service。
+ */
 @Injectable()
 export class ApplicationUserSubmissionUseCaseService {
   constructor(
@@ -32,6 +35,13 @@ export class ApplicationUserSubmissionUseCaseService {
     private readonly transactions: TransactionService,
   ) {}
 
+  /**
+   * 申請者本人の編集可能な申請を更新する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @param dto 申請更新DTO
+   * @returns 更新後に再取得した申請
+   */
   async patch(
     actor: AuthUserPayload,
     id: string,
@@ -75,6 +85,12 @@ export class ApplicationUserSubmissionUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
+  /**
+   * 申請者本人の下書き申請を提出する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @returns 提出後に再取得した申請
+   */
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
     await this.transactions.run(async (manager) => {
       const app = await this.loadApplicantEditableApplication(
@@ -99,6 +115,12 @@ export class ApplicationUserSubmissionUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
+  /**
+   * 申請者本人の差し戻し済み申請を再提出する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @returns 再提出後に再取得した申請
+   */
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
     await this.transactions.run(async (manager) => {
       const app = await this.loadApplicantEditableApplication(
@@ -123,6 +145,13 @@ export class ApplicationUserSubmissionUseCaseService {
     return this.queryService.getOneForActor(actor, id);
   }
 
+  /**
+   * 申請者本人が編集できる申請を transaction 用に読み込む。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @param manager トランザクションマネージャー
+   * @returns 編集可能な申請
+   */
   private async loadApplicantEditableApplication(
     actor: { tenantId: string; id?: string; email: string },
     id: string,
@@ -144,6 +173,11 @@ export class ApplicationUserSubmissionUseCaseService {
     return app;
   }
 
+  /**
+   * 監査ログ用に申請の状態と現在ステップを取得する。
+   * @param app 申請
+   * @returns 申請状態スナップショット
+   */
   private snapshot(app: Application) {
     return {
       status: app.status,

@@ -11,6 +11,9 @@ type LoadReadableApplicationOptions = {
   allowManagingSetup?: boolean;
 };
 
+/**
+ * ログインユーザーが読み取れる申請を tenant / space / 申請権限で読み込むサービス。
+ */
 @Injectable()
 export class ApplicationReadAccessService {
   constructor(
@@ -19,6 +22,13 @@ export class ApplicationReadAccessService {
     private readonly accessPolicy: ApplicationAccessPolicy,
   ) {}
 
+  /**
+   * 申請を読み込み、space 利用権限と申請閲覧権限を検証する。
+   * @param actor ログインユーザー
+   * @param id 申請ID
+   * @param options 読み込みオプション
+   * @returns 閲覧可能な申請
+   */
   async loadReadable(
     actor: AuthUserPayload,
     id: string,
@@ -55,6 +65,13 @@ export class ApplicationReadAccessService {
     return app;
   }
 
+  /**
+   * tenant scope 内の申請を読み込み、存在しなければ not found にする。
+   * @param tenantId テナントID
+   * @param id 申請ID
+   * @param detail 詳細 relation を読み込むか
+   * @returns 申請
+   */
   private async loadApplicationOrThrow(
     tenantId: string,
     id: string,

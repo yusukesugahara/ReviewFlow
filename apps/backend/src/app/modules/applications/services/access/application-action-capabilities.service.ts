@@ -20,6 +20,12 @@ export class ApplicationActionCapabilitiesService {
     private readonly spaceAccess: SpaceAccessService,
   ) {}
 
+  /**
+   * ログインユーザー向けの申請操作可能フラグを組み立てる。
+   * @param actor ログインユーザー
+   * @param app 申請
+   * @returns 申請操作可能フラグ
+   */
   async buildForUser(
     actor: AuthUserPayload,
     app: Application,
@@ -64,6 +70,12 @@ export class ApplicationActionCapabilitiesService {
     };
   }
 
+  /**
+   * ログインユーザーが現在の承認操作を実行できるかを返す。
+   * @param actor ログインユーザー
+   * @param app 申請
+   * @returns 承認操作を実行できるか
+   */
   private async canReviewAsUser(
     actor: AuthUserPayload,
     app: Application,
@@ -78,6 +90,11 @@ export class ApplicationActionCapabilitiesService {
     return canManageGroup || this.accessPolicy.canActOnReview(actor, app);
   }
 
+  /**
+   * 現在の承認ステップで差し戻しが許可されているかを返す。
+   * @param app 申請
+   * @returns 差し戻しが許可されているか
+   */
   private currentStepCanReturn(app: Application): boolean {
     if (app.status !== ApplicationStatus.IN_REVIEW) {
       return false;
@@ -90,6 +107,11 @@ export class ApplicationActionCapabilitiesService {
     return currentStep?.canReturn === true;
   }
 
+  /**
+   * 申請フォーム作成中の状態かを返す。
+   * @param app 申請
+   * @returns 下書きまたは公開済みか
+   */
   private isSetupApplication(app: Application): boolean {
     return (
       app.status === ApplicationStatus.DRAFT ||
@@ -97,10 +119,21 @@ export class ApplicationActionCapabilitiesService {
     );
   }
 
+  /**
+   * 差し戻し済みの申請かを返す。
+   * @param app 申請
+   * @returns 差し戻し済みか
+   */
   private isReturnedApplication(app: Application): boolean {
     return app.status === ApplicationStatus.RETURNED;
   }
 
+  /**
+   * 申請者トークンと申請の tenant / group / application / email が一致するかを返す。
+   * @param actor 申請者トークン
+   * @param app 申請
+   * @returns 申請者トークンが申請に一致するか
+   */
   private applicantTokenMatchesApplication(
     actor: ApplicantAccessTokenPayload,
     app: Application,

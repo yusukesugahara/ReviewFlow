@@ -1,8 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { Application } from '../../../../../models/entities/application.entity';
 
+/**
+ * 申請一覧を CSV エクスポート本文へ変換する builder。
+ */
 @Injectable()
 export class ExportJobCsvBuilder {
+  /**
+   * 固定列とフォームフィールド列を組み合わせて CSV を生成する。
+   * @param rows エクスポート対象申請
+   * @returns CSV 文字列
+   */
   build(rows: Application[]): string {
     const baseColumns = [
       'applicationId',
@@ -48,6 +56,11 @@ export class ExportJobCsvBuilder {
     return `${lines.join('\n')}\n`;
   }
 
+  /**
+   * エクスポート対象申請のフォーム定義から動的列 fieldKey を収集する。
+   * @param rows エクスポート対象申請
+   * @returns fieldKey 一覧
+   */
   private collectFieldKeys(rows: Application[]): string[] {
     const fieldKeys = new Set<string>();
     for (const row of rows) {
@@ -58,6 +71,11 @@ export class ExportJobCsvBuilder {
     return [...fieldKeys].sort((a, b) => a.localeCompare(b));
   }
 
+  /**
+   * CSV セル値を文字列化し、必要に応じてエスケープする。
+   * @param value セル値
+   * @returns CSV セル文字列
+   */
   private csvEscape(value: unknown): string {
     if (value === null || value === undefined) {
       return '';
