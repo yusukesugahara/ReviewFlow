@@ -27,6 +27,7 @@ describe("audit log helpers", () => {
       targetType: "application",
       targetId: "application-1234567890",
       applicationId: "application-1234567890",
+      groupId: "group-1234567890",
       statusFrom: "in_review",
       statusTo: "approved",
       stepOrderFrom: 1,
@@ -45,6 +46,8 @@ describe("audit log helpers", () => {
         actorLabel: "reviewer@example.com",
         actionLabel: "申請を承認",
         targetLabel: "申請 applicat...",
+        targetHref:
+          "/space/group-1234567890/applications/application-1234567890?definitionId=form-1",
         changeItems: ["状態: レビュー中 -> 承認済み", "ステップ: 1 -> -"],
       },
     });
