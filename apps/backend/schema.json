@@ -199,146 +199,6 @@
         ]
       }
     },
-    "/audit-logs": {
-      "get": {
-        "operationId": "AuditLogsController_list",
-        "parameters": [
-          {
-            "name": "limit",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 1,
-              "maximum": 200,
-              "default": 50,
-              "type": "number"
-            }
-          },
-          {
-            "name": "offset",
-            "required": false,
-            "in": "query",
-            "schema": {
-              "minimum": 0,
-              "default": 0,
-              "type": "number"
-            }
-          },
-          {
-            "name": "actionType",
-            "required": false,
-            "in": "query",
-            "description": "action_type で前方一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "targetType",
-            "required": false,
-            "in": "query",
-            "description": "target_type の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "applicationId",
-            "required": false,
-            "in": "query",
-            "description": "application_id の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "groupId",
-            "required": false,
-            "in": "query",
-            "description": "group_id の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "targetUserId",
-            "required": false,
-            "in": "query",
-            "description": "target_user_id の完全一致絞り込み",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "q",
-            "required": false,
-            "in": "query",
-            "description": "action_type / summary / actor / target / application / group の部分一致検索",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "createdFrom",
-            "required": false,
-            "in": "query",
-            "description": "created_at の検索開始日時（ISO 8601）",
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "createdTo",
-            "required": false,
-            "in": "query",
-            "description": "created_at の検索終了日時（ISO 8601）",
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "status",
-                    "data"
-                  ],
-                  "properties": {
-                    "status": {
-                      "type": "number",
-                      "enum": [
-                        200
-                      ],
-                      "example": 200
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/AuditLogsListResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "internal-api-key": []
-          },
-          {
-            "nest-jwt": []
-          }
-        ],
-        "summary": "監査ログ一覧（tenant_admin）",
-        "tags": [
-          "audit-logs"
-        ]
-      }
-    },
     "/auth/register": {
       "post": {
         "operationId": "AuthController_register",
@@ -861,6 +721,146 @@
         "summary": "管理者のみ（403 = ロール不足）",
         "tags": [
           "auth"
+        ]
+      }
+    },
+    "/audit-logs": {
+      "get": {
+        "operationId": "AuditLogsController_list",
+        "parameters": [
+          {
+            "name": "limit",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 1,
+              "maximum": 200,
+              "default": 50,
+              "type": "number"
+            }
+          },
+          {
+            "name": "offset",
+            "required": false,
+            "in": "query",
+            "schema": {
+              "minimum": 0,
+              "default": 0,
+              "type": "number"
+            }
+          },
+          {
+            "name": "actionType",
+            "required": false,
+            "in": "query",
+            "description": "action_type で前方一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetType",
+            "required": false,
+            "in": "query",
+            "description": "target_type の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "applicationId",
+            "required": false,
+            "in": "query",
+            "description": "application_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "groupId",
+            "required": false,
+            "in": "query",
+            "description": "group_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "targetUserId",
+            "required": false,
+            "in": "query",
+            "description": "target_user_id の完全一致絞り込み",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "q",
+            "required": false,
+            "in": "query",
+            "description": "action_type / summary / actor / target / application / group の部分一致検索",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdFrom",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索開始日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "createdTo",
+            "required": false,
+            "in": "query",
+            "description": "created_at の検索終了日時（ISO 8601）",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/AuditLogsListResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "監査ログ一覧（tenant_admin）",
+        "tags": [
+          "audit-logs"
         ]
       }
     },
@@ -2076,6 +2076,52 @@
           }
         ],
         "summary": "スペース作成（tenant_admin）",
+        "tags": [
+          "spaces"
+        ]
+      }
+    },
+    "/groups/dashboard": {
+      "get": {
+        "operationId": "GroupsController_dashboard",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/SpaceDashboardResponseDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          },
+          {
+            "nest-jwt": []
+          }
+        ],
+        "summary": "スペースダッシュボード集計",
         "tags": [
           "spaces"
         ]
@@ -3569,134 +3615,6 @@
           "role"
         ]
       },
-      "AuditLogItemDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string"
-          },
-          "groupId": {
-            "type": "string",
-            "nullable": true
-          },
-          "actorUserId": {
-            "type": "string",
-            "nullable": true
-          },
-          "actorEmail": {
-            "type": "string",
-            "nullable": true
-          },
-          "actorType": {
-            "type": "string"
-          },
-          "actorEmailSnapshot": {
-            "type": "string",
-            "nullable": true
-          },
-          "actionType": {
-            "type": "string"
-          },
-          "targetType": {
-            "type": "string"
-          },
-          "targetId": {
-            "type": "string",
-            "nullable": true
-          },
-          "targetUserId": {
-            "type": "string",
-            "nullable": true
-          },
-          "targetEmailSnapshot": {
-            "type": "string",
-            "nullable": true
-          },
-          "applicationId": {
-            "type": "string",
-            "nullable": true
-          },
-          "statusFrom": {
-            "type": "string",
-            "nullable": true
-          },
-          "statusTo": {
-            "type": "string",
-            "nullable": true
-          },
-          "stepOrderFrom": {
-            "type": "number",
-            "nullable": true
-          },
-          "stepOrderTo": {
-            "type": "number",
-            "nullable": true
-          },
-          "roleFrom": {
-            "type": "string",
-            "nullable": true
-          },
-          "roleTo": {
-            "type": "string",
-            "nullable": true
-          },
-          "groupRoleFrom": {
-            "type": "string",
-            "nullable": true
-          },
-          "groupRoleTo": {
-            "type": "string",
-            "nullable": true
-          },
-          "summary": {
-            "type": "string",
-            "nullable": true
-          },
-          "metadataJson": {
-            "type": "object"
-          },
-          "createdAt": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "id",
-          "actorType",
-          "actionType",
-          "targetType",
-          "createdAt"
-        ]
-      },
-      "AuditLogsListResponseDto": {
-        "type": "object",
-        "properties": {
-          "logs": {
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/AuditLogItemDto"
-            }
-          },
-          "total": {
-            "type": "number",
-            "minimum": 0
-          },
-          "limit": {
-            "type": "number",
-            "minimum": 1,
-            "maximum": 200
-          },
-          "offset": {
-            "type": "number",
-            "minimum": 0
-          }
-        },
-        "required": [
-          "logs",
-          "total",
-          "limit",
-          "offset"
-        ]
-      },
       "AuthUserSummaryDto": {
         "type": "object",
         "properties": {
@@ -3949,6 +3867,134 @@
         },
         "required": [
           "ok"
+        ]
+      },
+      "AuditLogItemDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "groupId": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorEmail": {
+            "type": "string",
+            "nullable": true
+          },
+          "actorType": {
+            "type": "string"
+          },
+          "actorEmailSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "actionType": {
+            "type": "string"
+          },
+          "targetType": {
+            "type": "string"
+          },
+          "targetId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetUserId": {
+            "type": "string",
+            "nullable": true
+          },
+          "targetEmailSnapshot": {
+            "type": "string",
+            "nullable": true
+          },
+          "applicationId": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "statusTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "stepOrderFrom": {
+            "type": "number",
+            "nullable": true
+          },
+          "stepOrderTo": {
+            "type": "number",
+            "nullable": true
+          },
+          "roleFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "roleTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupRoleFrom": {
+            "type": "string",
+            "nullable": true
+          },
+          "groupRoleTo": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "metadataJson": {
+            "type": "object"
+          },
+          "createdAt": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "actorType",
+          "actionType",
+          "targetType",
+          "createdAt"
+        ]
+      },
+      "AuditLogsListResponseDto": {
+        "type": "object",
+        "properties": {
+          "logs": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditLogItemDto"
+            }
+          },
+          "total": {
+            "type": "number",
+            "minimum": 0
+          },
+          "limit": {
+            "type": "number",
+            "minimum": 1,
+            "maximum": 200
+          },
+          "offset": {
+            "type": "number",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "logs",
+          "total",
+          "limit",
+          "offset"
         ]
       },
       "CreateInvitationResponseDto": {
@@ -4546,6 +4592,114 @@
         },
         "required": [
           "groups"
+        ]
+      },
+      "SpaceDashboardSummaryDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "スペースID。API では groupId として参照する。"
+          },
+          "name": {
+            "type": "string",
+            "description": "スペース名"
+          },
+          "description": {
+            "type": "string",
+            "description": "スペース説明",
+            "nullable": true
+          },
+          "currentUserRole": {
+            "type": "string",
+            "description": "ログインユーザのこのスペースでのロール。未参加の tenant_admin は null。",
+            "enum": [
+              "admin",
+              "user"
+            ],
+            "nullable": true
+          },
+          "memberCount": {
+            "type": "number",
+            "description": "スペースメンバー数"
+          },
+          "formCount": {
+            "type": "number",
+            "description": "アーカイブ済みを除くフォーム定義数"
+          },
+          "publishedFormCount": {
+            "type": "number",
+            "description": "公開中フォーム定義数"
+          },
+          "totalApplications": {
+            "type": "number",
+            "description": "閲覧可能な申請数"
+          },
+          "needsActionCount": {
+            "type": "number",
+            "description": "対応が必要な申請数"
+          },
+          "returnedCount": {
+            "type": "number",
+            "description": "差し戻し中の申請数"
+          },
+          "approvedCount": {
+            "type": "number",
+            "description": "承認済み申請数"
+          },
+          "rejectedCount": {
+            "type": "number",
+            "description": "却下済み申請数"
+          },
+          "correctionCount": {
+            "type": "number",
+            "description": "差し戻し履歴数"
+          },
+          "resubmitCount": {
+            "type": "number",
+            "description": "差し戻し後に再提出されレビュー中の申請数"
+          },
+          "avgReturns": {
+            "type": "string",
+            "description": "申請あたりの平均差し戻し回数"
+          },
+          "latestApplicationAt": {
+            "type": "string",
+            "description": "直近申請更新日時",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "name",
+          "description",
+          "memberCount",
+          "formCount",
+          "publishedFormCount",
+          "totalApplications",
+          "needsActionCount",
+          "returnedCount",
+          "approvedCount",
+          "rejectedCount",
+          "correctionCount",
+          "resubmitCount",
+          "avgReturns",
+          "latestApplicationAt"
+        ]
+      },
+      "SpaceDashboardResponseDto": {
+        "type": "object",
+        "properties": {
+          "spaces": {
+            "description": "スペースダッシュボード集計一覧",
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/SpaceDashboardSummaryDto"
+            }
+          }
+        },
+        "required": [
+          "spaces"
         ]
       },
       "CreateGroupDto": {

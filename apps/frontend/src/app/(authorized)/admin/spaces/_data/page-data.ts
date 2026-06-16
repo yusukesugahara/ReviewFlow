@@ -224,35 +224,44 @@ async function getAdminSpaceMembersByGroup({
   const membersByGroup = new Map<string, GroupMemberSummary[]>();
   const availableUsersByGroup = new Map<string, AvailableUserSummary[]>();
 
-  for (const group of groups) {
-    const [membersResponse, availableUsersResponse] = await Promise.all([
-      client.GET("/groups/{groupId}/members", {
-        params: { path: { groupId: group.id } },
-        headers: authHeaders,
-      }),
-      client.GET("/groups/{groupId}/available-users", {
-        params: { path: { groupId: group.id } },
-        headers: authHeaders,
-      }),
-    ]);
+  const groupMemberships = await Promise.all(
+    groups.map(async (group) => {
+      const [membersResponse, availableUsersResponse] = await Promise.all([
+        client.GET("/groups/{groupId}/members", {
+          params: { path: { groupId: group.id } },
+          headers: authHeaders,
+        }),
+        client.GET("/groups/{groupId}/available-users", {
+          params: { path: { groupId: group.id } },
+          headers: authHeaders,
+        }),
+      ]);
 
-    membersByGroup.set(
-      group.id,
-      !membersResponse.response.ok || !membersResponse.data
-        ? []
-        : normalizeMembers(
-            unwrapResponseData<AdminSpacesMembersData>(membersResponse).members,
-          ),
-    );
+      return {
+        groupId: group.id,
+        members:
+          !membersResponse.response.ok || !membersResponse.data
+            ? []
+            : normalizeMembers(
+                unwrapResponseData<AdminSpacesMembersData>(membersResponse).members,
+              ),
+        availableUsers:
+          !availableUsersResponse.response.ok || !availableUsersResponse.data
+            ? []
+            : normalizeAvailableUsers(
+                unwrapResponseData<AdminSpacesAvailableUsersData>(
+                  availableUsersResponse,
+                ).users,
+              ),
+      };
+    }),
+  );
+
+  for (const groupMembership of groupMemberships) {
+    membersByGroup.set(groupMembership.groupId, groupMembership.members);
     availableUsersByGroup.set(
-      group.id,
-      !availableUsersResponse.response.ok || !availableUsersResponse.data
-        ? []
-        : normalizeAvailableUsers(
-            unwrapResponseData<AdminSpacesAvailableUsersData>(
-              availableUsersResponse,
-            ).users,
-          ),
+      groupMembership.groupId,
+      groupMembership.availableUsers,
     );
   }
 

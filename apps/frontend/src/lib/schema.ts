@@ -66,6 +66,10 @@ export type FormDefinitionsListSuccessJson =
 export type GroupsListSuccessJson =
   operations["GroupsController_list"]["responses"][200]["content"]["application/json"];
 export type GroupSummary = components["schemas"]["GroupSummaryDto"];
+export type SpaceDashboardSuccessJson =
+  operations["GroupsController_dashboard"]["responses"][200]["content"]["application/json"];
+export type SpaceDashboardSummary =
+  components["schemas"]["SpaceDashboardSummaryDto"];
 export type CreateGroupBody =
   operations["GroupsController_create"]["requestBody"]["content"]["application/json"];
 export type CreateGroupSuccessJson =

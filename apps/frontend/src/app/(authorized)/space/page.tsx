@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation";
 import { SpaceEmptyState } from "@/components/space/space-empty-state";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { getAdminDashboardPageData } from "./_data/dashboard-page-data";
@@ -24,6 +25,7 @@ export default async function AdminDashboardPage({
       />
     );
   } catch (error) {
+    unstable_rethrow(error);
     return (
       <AdminDashboardView
         fetchErrorStatus={isApiFailure(error) ? error.status : 500}
