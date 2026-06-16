@@ -44,18 +44,30 @@ export const FIELD_TYPES_SUPPORTING_PLACEHOLDER: readonly FieldType[] = [
   FIELD_TYPES.select,
 ];
 
+/**
+ * 文字列がサポート対象のフォーム項目種別かを判定します。
+ */
 export function isFieldType(value: string): value is FieldType {
   return FIELD_TYPE_OPTIONS.some((item) => item.value === value);
 }
 
+/**
+ * フォーム項目種別が選択肢を必要とするかを判定します。
+ */
 export function fieldTypeNeedsOptions(fieldType: string): boolean {
   return FIELD_TYPES_REQUIRING_OPTIONS.includes(fieldType as FieldType);
 }
 
+/**
+ * フォーム項目種別が placeholder をサポートするかを判定します。
+ */
 export function fieldTypeSupportsPlaceholder(fieldType: string): boolean {
   return FIELD_TYPES_SUPPORTING_PLACEHOLDER.includes(fieldType as FieldType);
 }
 
+/**
+ * フォーム項目種別が申請値として保存されるかを判定します。
+ */
 export function fieldTypeStoresValue(fieldType: string): boolean {
   return !FIELD_TYPES_WITHOUT_VALUES.includes(fieldType as FieldType);
 }

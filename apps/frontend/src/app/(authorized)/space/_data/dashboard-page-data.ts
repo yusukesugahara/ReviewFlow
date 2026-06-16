@@ -19,6 +19,9 @@ export type AdminDashboardPageData =
       spaces: SpaceDashboardSummary[];
     };
 
+/**
+ * スペースダッシュボード画面に必要な集計データを読み込みます。
+ */
 export async function getAdminDashboardPageData({
   selectedSpaceId,
 }: {

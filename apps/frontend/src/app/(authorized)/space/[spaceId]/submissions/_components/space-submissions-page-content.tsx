@@ -33,6 +33,9 @@ type SpaceSubmissionsPageContentProps = {
   spaceId: string;
 };
 
+/**
+ * 提出一覧のフィルター、CSV 出力、一覧表示をまとめて表示します。
+ */
 export function SpaceSubmissionsPageContent({
   applications,
   currentUserId,

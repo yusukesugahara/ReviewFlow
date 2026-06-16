@@ -23,6 +23,9 @@ type ApprovalFlowSelectorProps = {
   flows: ApprovalFlow[];
 };
 
+/**
+ * 既存の承認フローを選択する UI を表示します。
+ */
 export function ApprovalFlowSelector({ flows }: ApprovalFlowSelectorProps) {
   const [selectedFlowId, setSelectedFlowId] = useState<string>(flows[0]?.id ?? "");
 

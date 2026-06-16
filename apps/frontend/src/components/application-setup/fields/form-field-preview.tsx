@@ -22,6 +22,9 @@ type FormFieldPreviewProps = {
   required: boolean;
 };
 
+/**
+ * フォーム項目のプレビューを表示します。
+ */
 export function FormFieldPreview({
   fieldType,
   helpText,

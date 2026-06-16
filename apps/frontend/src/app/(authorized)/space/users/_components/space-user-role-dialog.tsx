@@ -24,6 +24,9 @@ type SpaceUserRoleDialogProps = {
   target: SpaceUserTableMember;
 };
 
+/**
+ * スペースユーザーのロール変更ダイアログを表示します。
+ */
 export function SpaceUserRoleDialog({
   action,
   onClose,

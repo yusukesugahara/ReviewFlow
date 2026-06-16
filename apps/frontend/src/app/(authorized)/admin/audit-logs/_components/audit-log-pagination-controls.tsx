@@ -11,6 +11,9 @@ type AuditLogPaginationControlsProps = Pick<
   pagination: AdminAuditLogsPagination;
 };
 
+/**
+ * 監査ログ一覧のページネーション操作を表示します。
+ */
 export function AuditLogPaginationControls({
   createdFrom,
   createdTo,

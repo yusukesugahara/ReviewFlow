@@ -28,6 +28,9 @@ type SpaceMemberTableProps = {
   ) => void;
 };
 
+/**
+ * スペースメンバー一覧をテーブルとして表示します。
+ */
 export function SpaceMemberTable({
   canManageSpace,
   currentUserId,

@@ -7,6 +7,9 @@ type DynamicFieldShellProps = DynamicFieldRendererProps & {
   children: ReactNode;
 };
 
+/**
+ * 動的フォーム項目のラベル、補足、エラーを含む共通枠を表示します。
+ */
 export function DynamicFieldShell({
   field,
   name,

@@ -15,6 +15,9 @@ import type { ApplicationDetailViewProps } from "./application-detail.types";
 
 export { ApprovalProgressDiagram } from "../approval-progress/approval-progress-diagram";
 
+/**
+ * 申請詳細画面の共通表示を組み立てます。
+ */
 export function ApplicationDetailView({
   application,
   fields,

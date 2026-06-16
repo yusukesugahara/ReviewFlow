@@ -8,6 +8,9 @@ import { InlineFormFieldRow } from "./application-setup-inline-field-row";
 import { InlineInsertFieldButton } from "./application-setup-inline-insert-button";
 import type { DraftField } from "../fields/application-setup-fields";
 
+/**
+ * フォーム項目をインラインで編集するビルダーを表示します。
+ */
 export function InlineFormBuilder({
   fieldsWithKeys,
   setSelectedFieldId,

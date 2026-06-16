@@ -9,6 +9,9 @@ import type {
   TenantUserSummary,
 } from "../types";
 
+/**
+ * 管理者向けスペース画面へ渡す前にグループ概要を正規化します。
+ */
 export function normalizeGroups(
   groups: AdminSpacesGroupsData["groups"],
 ): GroupSummary[] {
@@ -18,6 +21,9 @@ export function normalizeGroups(
   }));
 }
 
+/**
+ * テーブル表示へ渡す前にグループメンバー概要を正規化します。
+ */
 export function normalizeMembers(
   members: AdminSpacesMembersData["members"],
 ): GroupMemberSummary[] {
@@ -27,6 +33,9 @@ export function normalizeMembers(
   }));
 }
 
+/**
+ * ダイアログへ渡す前に追加可能ユーザー概要を正規化します。
+ */
 export function normalizeAvailableUsers(
   users: AdminSpacesAvailableUsersData["users"],
 ): AvailableUserSummary[] {
@@ -36,6 +45,9 @@ export function normalizeAvailableUsers(
   }));
 }
 
+/**
+ * 管理者操作へ渡す前にテナントユーザー概要を正規化します。
+ */
 export function normalizeTenantUsers(
   users: AdminSpacesUsersData["users"],
 ): TenantUserSummary[] {
@@ -45,6 +57,9 @@ export function normalizeTenantUsers(
   }));
 }
 
+/**
+ * 文字列以外の表示名を null に変換し、表示用 props の形に揃えます。
+ */
 function normalizeName(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }

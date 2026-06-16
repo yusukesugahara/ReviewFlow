@@ -31,6 +31,9 @@ import {
   FormDefinitionRestoreDialog,
 } from "./form-definition-action-dialogs";
 
+/**
+ * スペース申請フォーム一覧の検索状態、空状態、表を表示します。
+ */
 export function SpaceApplicationsPageContent({
   applications,
   formDefinitions,

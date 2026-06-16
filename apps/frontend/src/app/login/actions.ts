@@ -30,6 +30,9 @@ const loginFormSchema = z.object({
   next: z.string().optional(),
 });
 
+/**
+ * ログインフォームの FormData を認証入力の形に変換します。
+ */
 function authCredentialsFromFormData(formData: FormData): LoginSchema {
   return loginFormSchema.parse({
     email: formData.get("email"),
@@ -38,6 +41,9 @@ function authCredentialsFromFormData(formData: FormData): LoginSchema {
   });
 }
 
+/**
+ * ログイン後の遷移先をアプリ内の安全なパスに制限します。
+ */
 function resolveSafeNextPath(next?: string): string {
   if (!next || !next.startsWith("/")) {
     return "/";
@@ -48,11 +54,17 @@ function resolveSafeNextPath(next?: string): string {
   return next;
 }
 
+/**
+ * API エラー本文からエラーコードを取り出します。
+ */
 function errorCodeFromBody(body: unknown): string | undefined {
   const parsed = apiErrorCodeSchema.safeParse(body);
   return parsed.success ? parsed.data.errorCode : undefined;
 }
 
+/**
+ * ログイン API の失敗レスポンスから画面表示用のエラーメッセージを取得します。
+ */
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
   const errorCode = errorCodeFromBody(result.body);
   if (errorCode === "AUTH_INVALID_CREDENTIALS") {
@@ -64,6 +76,9 @@ function authErrorMessage(result: { ok: false; status: number; body: unknown }):
   return errorMessageFromBody(result.body, LOGIN_FAILED_MESSAGE);
 }
 
+/**
+ * ログイン API を呼び出し、成功時はアクセストークンを返します。
+ */
 async function postAuthLogin(
   body: LoginRequestBody,
 ): Promise<
@@ -84,9 +99,7 @@ async function postAuthLogin(
 }
 
 /**
- * ログインする
- * @param params - ログインするパラメータ
- * @returns ログイン API のレスポンス
+ * ログインフォームを検証し、ログイン後にセッション Cookie を保存します。
  */
 export async function login(formData: FormData): Promise<FormActionResponse<void>> {
   const params = authCredentialsFromFormData(formData);

@@ -21,6 +21,9 @@ type FormFieldTypeInputsProps = {
   placeholder: string;
 };
 
+/**
+ * フォーム項目種別に応じた追加入力欄を表示します。
+ */
 export function FormFieldTypeInputs({
   disabled,
   fieldType,

@@ -15,6 +15,9 @@ type SubmissionPaginationControlsProps = {
   totalPages: number;
 };
 
+/**
+ * 提出一覧のページネーション操作を表示します。
+ */
 export function SubmissionPaginationControls({
   currentPage,
   filters,

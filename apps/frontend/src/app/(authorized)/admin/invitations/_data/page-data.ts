@@ -8,6 +8,9 @@ import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { AdminInvitationsViewProps } from "../types";
 
+/**
+ * 管理者向け招待画面に必要なユーザー一覧と現在ユーザー情報を読み込みます。
+ */
 export async function getAdminInvitationsPageData(): Promise<
   Pick<AdminInvitationsViewProps, "currentUserId" | "userListError" | "users">
 > {
@@ -42,6 +45,9 @@ export async function getAdminInvitationsPageData(): Promise<
   }
 }
 
+/**
+ * ユーザー一覧取得失敗時の画面表示メッセージを組み立てます。
+ */
 function userListErrorMessage(error: unknown): string {
   return isApiFailure(error)
     ? `ユーザ一覧の取得に失敗しました（status: ${error.status}）`

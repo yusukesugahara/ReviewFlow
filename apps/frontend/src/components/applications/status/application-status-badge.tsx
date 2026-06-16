@@ -11,6 +11,9 @@ type ApplicationStatusBadgeProps = {
   className?: string;
 };
 
+/**
+ * 申請ステータスをバッジとして表示します。
+ */
 export function ApplicationStatusBadge({
   status,
   className,
@@ -25,6 +28,9 @@ export function ApplicationStatusBadge({
   );
 }
 
+/**
+ * 申請ステータスに対応するバッジ className を返します。
+ */
 function getApplicationStatusClassName(status: string): string {
   switch (status) {
     case APPLICATION_STATUSES.submitted:

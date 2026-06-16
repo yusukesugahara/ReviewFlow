@@ -6,6 +6,9 @@ type AuditLogSummaryCardsProps = {
   summaryCounts: AuditLogSummaryCounts;
 };
 
+/**
+ * 監査ログの概要件数カード群を表示します。
+ */
 export function AuditLogSummaryCards({ summaryCounts }: AuditLogSummaryCardsProps) {
   return (
     <div className="grid gap-3 md:grid-cols-4">
@@ -37,6 +40,9 @@ export function AuditLogSummaryCards({ summaryCounts }: AuditLogSummaryCardsProp
   );
 }
 
+/**
+ * 監査ログ概要件数の 1 カードを表示します。
+ */
 function AuditSummaryCard({
   icon,
   label,

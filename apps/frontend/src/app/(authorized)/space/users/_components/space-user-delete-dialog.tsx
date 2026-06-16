@@ -15,6 +15,9 @@ type SpaceUserDeleteDialogProps = {
   target: SpaceUserTableMember;
 };
 
+/**
+ * スペースユーザー削除確認ダイアログを表示します。
+ */
 export function SpaceUserDeleteDialog({
   action,
   onClose,

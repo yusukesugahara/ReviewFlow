@@ -4,6 +4,9 @@ import { AuthForm } from "../_components/auth/auth-form";
 import { login } from "./actions";
 import type { LoginViewProps } from "./types";
 
+/**
+ * ログインフォーム画面を表示します。
+ */
 export const LoginView = ({ apiReachable, next }: LoginViewProps) => {
   return (
     <AuthForm

@@ -16,6 +16,9 @@ type AccountPasswordEditDialogProps = {
   onClose: () => void;
 };
 
+/**
+ * パスワード変更ダイアログを表示します。
+ */
 export function AccountPasswordEditDialog({
   error,
   onClose,

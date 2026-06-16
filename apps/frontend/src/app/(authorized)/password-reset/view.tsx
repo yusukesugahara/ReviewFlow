@@ -13,6 +13,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { confirmPasswordResetAction } from "./actions";
 import type { PasswordResetViewProps } from "./types";
 
+/**
+ * 新しいパスワードを設定するフォームを表示します。
+ */
 export function PasswordResetView({ token, formError }: PasswordResetViewProps) {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">

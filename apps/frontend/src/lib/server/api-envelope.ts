@@ -7,6 +7,9 @@ export type ApiSuccessEnvelope<T> = {
   data: T;
 };
 
+/**
+ * API レスポンスエンベロープから data を取り出します。
+ */
 function unwrapData<T>(raw: unknown): T {
   if (!raw || typeof raw !== "object" || !("data" in raw)) {
     throw new Error("invalid success envelope");
@@ -15,6 +18,9 @@ function unwrapData<T>(raw: unknown): T {
   return (raw as ApiSuccessEnvelope<T>).data;
 }
 
+/**
+ * backend-fetch のレスポンスから成功時の data を取り出します。
+ */
 export function unwrapResponseData<T>(response: ApiResponseLike): T {
   if (
     !response.response.ok ||

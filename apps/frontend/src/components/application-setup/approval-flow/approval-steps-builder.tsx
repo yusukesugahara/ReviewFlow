@@ -22,6 +22,9 @@ type ApprovalStepsBuilderProps = {
   assignees: ApprovalAssigneeOption[];
 };
 
+/**
+ * 承認ステップを追加・編集するビルダーを表示します。
+ */
 export function ApprovalStepsBuilder({ defaultSteps, assignees }: ApprovalStepsBuilderProps) {
   const [steps, setSteps] = useState<ApprovalStepItem[]>(
     initialApprovalSteps(defaultSteps),

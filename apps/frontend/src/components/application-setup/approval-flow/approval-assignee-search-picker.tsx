@@ -11,6 +11,9 @@ type AssigneeSearchPickerProps = {
   placeholder: string;
 };
 
+/**
+ * 承認担当者を検索して選択する UI を表示します。
+ */
 export function AssigneeSearchPicker({
   assignees,
   selectedIds,

@@ -10,6 +10,9 @@ type MetricCardProps = {
   iconClassName: string;
 };
 
+/**
+ * スペース画面で使う指標カードを表示します。
+ */
 export function MetricCard({
   title,
   value,

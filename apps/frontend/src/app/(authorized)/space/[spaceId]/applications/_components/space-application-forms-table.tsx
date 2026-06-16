@@ -29,6 +29,9 @@ type SpaceApplicationFormsTableProps = {
   showArchived: boolean;
 };
 
+/**
+ * スペースの申請フォーム一覧をテーブルとして表示します。
+ */
 export function SpaceApplicationFormsTable({
   onArchive,
   onRestore,
@@ -145,6 +148,9 @@ export function SpaceApplicationFormsTable({
   );
 }
 
+/**
+ * フォーム定義の状態バッジを表示します。
+ */
 function FormDefinitionStatusBadge({ status }: { status: string }) {
   const isPublished = status === APPLICATION_STATUSES.published;
   const isArchived = status === APPLICATION_STATUSES.archived;

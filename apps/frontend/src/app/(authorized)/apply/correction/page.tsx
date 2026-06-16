@@ -7,6 +7,9 @@ import {
   PublicCorrectionView,
 } from "./view";
 
+/**
+ * 公開差戻し修正画面のデータを読み込んで表示します。
+ */
 export default async function PublicCorrectionPage({
   searchParams,
 }: PublicCorrectionPageProps) {

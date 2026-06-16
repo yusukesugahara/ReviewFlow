@@ -42,10 +42,16 @@ type EmptyApplicationActionPath =
   | "/applications/{id}/resubmit"
   | "/applications/{id}/return-email/resend";
 
+/**
+ * FormData から任意の文字列値を読み取ります。
+ */
 function readOptionalString(formData: FormData, key: string): string | undefined {
   return optionalStringFormValueSchema.parse(formData.get(key) || undefined);
 }
 
+/**
+ * FormData から空文字を除外した任意の文字列値を読み取ります。
+ */
 function readOptionalNonEmptyString(
   formData: FormData,
   key: string,
@@ -53,6 +59,9 @@ function readOptionalNonEmptyString(
   return optionalNonEmptyStringFormValueSchema.parse(formData.get(key) || undefined);
 }
 
+/**
+ * 承認操作の競合確認に使う期待ステップ番号を読み取ります。
+ */
 function readExpectedStepOrder(formData: FormData): number | null {
   const parsed = expectedStepOrderFormValueSchema.safeParse(
     formData.get("expectedStepOrder"),
@@ -60,6 +69,9 @@ function readExpectedStepOrder(formData: FormData): number | null {
   return parsed.success ? parsed.data : null;
 }
 
+/**
+ * ボディ付きの申請操作 API を呼び出し、更新後の申請詳細を返します。
+ */
 async function postApplicationAction(
   path: ApplicationBodyActionPath,
   applicationId: string,
@@ -73,6 +85,9 @@ async function postApplicationAction(
   return unwrapResponseData<ApplicationDetailViewModel>(response);
 }
 
+/**
+ * ボディなしの申請操作 API を呼び出し、更新後の申請詳細を返します。
+ */
 async function postEmptyApplicationAction(
   path: EmptyApplicationActionPath,
   applicationId: string,
@@ -84,6 +99,9 @@ async function postEmptyApplicationAction(
   return unwrapResponseData<ApplicationDetailViewModel>(response);
 }
 
+/**
+ * 下書きまたは公開済みの申請を提出します。
+ */
 export async function submitAction(spaceId: string, applicationId: string): Promise<void> {
   let updated: ApplicationDetailViewModel;
   try {
@@ -97,6 +115,9 @@ export async function submitAction(spaceId: string, applicationId: string): Prom
   redirectToApplicationDetail(updated, "申請を提出しました");
 }
 
+/**
+ * 差戻し修正後の申請を再提出します。
+ */
 export async function resubmitAction(spaceId: string, applicationId: string): Promise<void> {
   let updated: ApplicationDetailViewModel;
   try {
@@ -110,6 +131,9 @@ export async function resubmitAction(spaceId: string, applicationId: string): Pr
   redirectToApplicationDetail(updated, "申請を再提出しました");
 }
 
+/**
+ * 現在の承認ステップで申請を承認します。
+ */
 export async function approveAction(
   spaceId: string,
   applicationId: string,
@@ -136,6 +160,9 @@ export async function approveAction(
   redirectToApplicationDetail(updated, "申請を承認しました");
 }
 
+/**
+ * 現在の承認ステップで申請を却下します。
+ */
 export async function rejectAction(
   spaceId: string,
   applicationId: string,
@@ -162,6 +189,9 @@ export async function rejectAction(
   redirectToApplicationDetail(updated, "申請を却下しました");
 }
 
+/**
+ * 現在の承認ステップで申請を差し戻します。
+ */
 export async function returnAction(
   spaceId: string,
   applicationId: string,
@@ -210,6 +240,9 @@ export async function returnAction(
   redirectToApplicationDetail(updated, "申請を差し戻しました");
 }
 
+/**
+ * 差戻し依頼メールを再送します。
+ */
 export async function resendReturnEmailAction(
   spaceId: string,
   applicationId: string,
@@ -226,6 +259,9 @@ export async function resendReturnEmailAction(
   redirectToApplicationDetail(updated, "差し戻しメールを再送しました");
 }
 
+/**
+ * フォーム定義の説明欄を更新します。
+ */
 export async function updateDescriptionAction(
   spaceId: string,
   applicationId: string,
@@ -263,6 +299,9 @@ export async function updateDescriptionAction(
   );
 }
 
+/**
+ * 更新後の申請詳細画面へ成功メッセージ付きで遷移します。
+ */
 function redirectToApplicationDetail(
   application: ApplicationDetailViewModel,
   message?: string,
@@ -287,6 +326,9 @@ function redirectToApplicationDetail(
   redirect("/space");
 }
 
+/**
+ * 申請操作の入力検証エラーを詳細画面へ引き継いで遷移します。
+ */
 function redirectToApplicationValidationError(
   spaceId: string,
   applicationId: string,
@@ -299,6 +341,9 @@ function redirectToApplicationValidationError(
   redirect(appendQueryParams(detailHref ?? "/space", { actionError: message }));
 }
 
+/**
+ * 申請操作 API の失敗を詳細画面へエラートーストとして引き継ぎます。
+ */
 function redirectToApplicationActionError(
   spaceId: string,
   applicationId: string,
@@ -316,6 +361,9 @@ function redirectToApplicationActionError(
   );
 }
 
+/**
+ * 申請操作 API の失敗内容を画面表示用メッセージに変換します。
+ */
 function applicationActionErrorMessage(error: unknown): string {
   if (!isApiFailure(error)) {
     return "申請の操作に失敗しました";

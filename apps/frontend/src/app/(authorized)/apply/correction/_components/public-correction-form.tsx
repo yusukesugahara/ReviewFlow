@@ -28,6 +28,9 @@ type PublicCorrectionFormProps = {
 const initialState: PublicCorrectionSubmitState = {};
 const FORM_ID = "public-correction-form";
 
+/**
+ * 公開差戻し修正フォームの入力 UI を表示します。
+ */
 export function PublicCorrectionForm({
   applicationId,
   fields,

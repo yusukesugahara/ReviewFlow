@@ -10,6 +10,9 @@ type BackendErrorBody = {
   message?: unknown;
 };
 
+/**
+ * 既存 URL にクエリパラメータを追加または上書きした URL を返します。
+ */
 export function redirectUrlWithParams(
   base: string,
   params: Record<string, string>,
@@ -24,6 +27,9 @@ export function redirectUrlWithParams(
   return `${path}${nextSearch ? `?${nextSearch}` : ""}${hash ? `#${hash}` : ""}`;
 }
 
+/**
+ * 新規セットアップ失敗時に戻るリダイレクト先を FormData から解決します。
+ */
 export function resolveCreateApplicationSetupRedirectBase(
   formData: FormData,
 ): string {
@@ -33,6 +39,9 @@ export function resolveCreateApplicationSetupRedirectBase(
     : "/space/application-setup";
 }
 
+/**
+ * 更新セットアップ失敗時に戻るリダイレクト先を FormData から解決します。
+ */
 export function resolveUpdateApplicationSetupRedirectBase(
   applicationId: string,
   formData: FormData,
@@ -47,6 +56,9 @@ export function resolveUpdateApplicationSetupRedirectBase(
   return `/space/${spaceId}/applications/${encodeURIComponent(applicationId)}/edit`;
 }
 
+/**
+ * セットアップ保存失敗時のトースト付きリダイレクト URL を組み立てます。
+ */
 export function setupErrorRedirectUrl(base: string, error: unknown): string {
   const params = new URLSearchParams({
     toast: "error",
@@ -65,10 +77,16 @@ export function setupErrorRedirectUrl(base: string, error: unknown): string {
   return redirectUrlWithParams(base, Object.fromEntries(params));
 }
 
+/**
+ * 指定スペースの申請フォーム一覧パスを組み立てます。
+ */
 export function buildApplicationSetupListPath(spaceId: string): string {
   return `/space/${encodeURIComponent(spaceId)}/applications`;
 }
 
+/**
+ * セットアップ保存後に表示する申請詳細パスを組み立てます。
+ */
 export function buildApplicationSetupDetailPath({
   applicationId,
   applicationStatus,

@@ -13,6 +13,9 @@ export type ApprovalAssigneeOption = {
   label: string;
 };
 
+/**
+ * スペースメンバーを承認担当者の選択肢に変換します。
+ */
 export function toApprovalAssigneeOptions(
   members: EditableGroupMember[],
 ): ApprovalAssigneeOption[] {
@@ -22,6 +25,9 @@ export function toApprovalAssigneeOptions(
   }));
 }
 
+/**
+ * 保存済みフォーム項目を下書きフォームビルダーの状態に変換します。
+ */
 export function toDraftFields(fields: EditableFormField[]): DraftField[] {
   return fields.map((field) => ({
     id: field.id,
@@ -35,6 +41,9 @@ export function toDraftFields(fields: EditableFormField[]): DraftField[] {
   }));
 }
 
+/**
+ * 承認フローを承認ステップビルダーの状態に変換します。
+ */
 export function toInitialSteps(
   flow: EditableApprovalFlow | null,
 ): ApprovalStepItem[] {
@@ -51,10 +60,16 @@ export function toInitialSteps(
   }));
 }
 
+/**
+ * 未知のフィールド種別をフォームビルダーで扱える種別に変換します。
+ */
 function asFieldType(value: string): FieldType {
   return isFieldType(value) ? value : FIELD_TYPES.text;
 }
 
+/**
+ * 選択肢オブジェクトを改行区切りの選択肢テキストに変換します。
+ */
 function optionsToText(options: unknown[] | null | undefined): string {
   return normalizeFieldOptions(options)
     .map((option) => option.label || option.value)

@@ -15,6 +15,9 @@ type PublicApplicationUrlCopyButtonProps = {
   path: string;
 };
 
+/**
+ * 公開申請フォーム URL のコピー操作を表示します。
+ */
 export function PublicApplicationUrlCopyButton({
   path,
 }: PublicApplicationUrlCopyButtonProps) {

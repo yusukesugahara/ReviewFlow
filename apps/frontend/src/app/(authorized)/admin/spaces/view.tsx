@@ -26,6 +26,9 @@ type AdminSpacesViewProps = {
   users: TenantUserSummary[];
 };
 
+/**
+ * 管理者向けスペース管理画面を表示します。
+ */
 export function AdminSpacesView({
   canCreateSpace,
   currentUserId,

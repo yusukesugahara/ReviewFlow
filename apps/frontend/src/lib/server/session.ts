@@ -6,11 +6,17 @@ import { isProduction } from "@/lib/env";
 
 const FALLBACK_MAX_AGE_SEC = 60 * 60 * 24 * 7;
 
+/**
+ * 認証 Cookie からアクセストークンを取得します。
+ */
 export async function getAccessTokenFromCookie(): Promise<string | null> {
   const store = await cookies();
   return store.get(ACCESS_TOKEN_COOKIE_NAME)?.value ?? null;
 }
 
+/**
+ * JWT の exp から Cookie の maxAge 秒数を算出します。
+ */
 function maxAgeSecondsFromJwt(accessToken: string): number {
   try {
     const parts = accessToken.split(".");
@@ -33,6 +39,9 @@ function maxAgeSecondsFromJwt(accessToken: string): number {
   }
 }
 
+/**
+ * アクセストークンを認証 Cookie として保存します。
+ */
 export async function persistAccessTokenCookie(accessToken: string): Promise<void> {
   const store = await cookies();
   store.set(ACCESS_TOKEN_COOKIE_NAME, accessToken, {
@@ -44,6 +53,9 @@ export async function persistAccessTokenCookie(accessToken: string): Promise<voi
   });
 }
 
+/**
+ * 認証 Cookie からアクセストークンを削除します。
+ */
 export async function clearAccessTokenCookie(): Promise<void> {
   const store = await cookies();
   store.delete(ACCESS_TOKEN_COOKIE_NAME);

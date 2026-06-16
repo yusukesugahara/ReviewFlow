@@ -14,6 +14,9 @@ const REQUEST_ACCESS_FAILED_MESSAGE =
   "フォーム案内の送信に失敗しました。時間をおいて再度お試しください。";
 const JAPANESE_TEXT_PATTERN = /[ぁ-んァ-ヶ一-龠]/;
 
+/**
+ * 公開フォームアクセス依頼画面へ戻るための URL を組み立てます。
+ */
 function buildApplyRedirectPath(
   groupId: string,
   params: Record<string, string | undefined>,
@@ -28,6 +31,9 @@ function buildApplyRedirectPath(
   return `/apply/${encodeURIComponent(groupId)}${search ? `?${search}` : ""}`;
 }
 
+/**
+ * アクセス依頼フォームの検証エラーから表示メッセージを取得します。
+ */
 function validationMessageFromFieldErrors(fieldErrors: {
   email?: string[];
   groupId?: string[];
@@ -39,6 +45,9 @@ function validationMessageFromFieldErrors(fieldErrors: {
   );
 }
 
+/**
+ * API エラー本文からエラーコードを取り出します。
+ */
 function errorCodeFromBody(body: unknown): string | undefined {
   if (!body || typeof body !== "object" || !("errorCode" in body)) {
     return undefined;
@@ -47,6 +56,9 @@ function errorCodeFromBody(body: unknown): string | undefined {
   return typeof errorCode === "string" ? errorCode : undefined;
 }
 
+/**
+ * 公開フォームアクセス依頼失敗時の画面表示メッセージを組み立てます。
+ */
 function requestAccessFailureMessage(
   body: unknown,
   hasFormDefinitionId: boolean,
@@ -62,6 +74,9 @@ function requestAccessFailureMessage(
   return JAPANESE_TEXT_PATTERN.test(message) ? message : REQUEST_ACCESS_FAILED_MESSAGE;
 }
 
+/**
+ * 公開フォームへのアクセス依頼を送信します。
+ */
 export async function requestAccessAction(formData: FormData): Promise<void> {
   const parsed = requestFormAccessSchema.safeParse({
     groupId: formData.get("groupId"),

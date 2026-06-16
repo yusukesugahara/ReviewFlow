@@ -34,6 +34,9 @@ type ApplicationSetupFieldContentModalProps = {
   updateField: (id: string, patch: Partial<DraftField>) => void;
 };
 
+/**
+ * 申請フォーム項目の内容確認モーダルを表示します。
+ */
 export function ApplicationSetupFieldContentModal({
   field,
   onOpenChange,

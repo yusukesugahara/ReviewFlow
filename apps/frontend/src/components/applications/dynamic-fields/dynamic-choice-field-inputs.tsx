@@ -10,6 +10,9 @@ import { cn } from "@/lib/utils";
 import type { DynamicFieldRendererProps } from "./dynamic-fields.types";
 import { DynamicFieldShell } from "./dynamic-field-shell";
 
+/**
+ * 動的フォームのセレクト入力を表示します。
+ */
 export function SelectFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, options, variant } = props;
 
@@ -44,6 +47,9 @@ export function SelectFieldInput(props: DynamicFieldRendererProps) {
   );
 }
 
+/**
+ * 動的フォームのラジオ入力を表示します。
+ */
 export function RadioFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, options, afterInput, variant } = props;
   const isTable = variant === "table";
@@ -96,6 +102,9 @@ export function RadioFieldInput(props: DynamicFieldRendererProps) {
   );
 }
 
+/**
+ * 動的フォームのチェックボックス入力を表示します。
+ */
 export function CheckboxFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, selectedValues, disabled, readOnly, options, afterInput, variant } = props;
   const isTable = variant === "table";

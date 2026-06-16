@@ -14,6 +14,9 @@ export { normalizeFieldOptions };
 const stringArraySchema = z.array(z.string());
 const scalarDisplayValueSchema = z.union([z.string(), z.number()]);
 
+/**
+ * フォーム項目の値を画面表示用の文字列に変換します。
+ */
 export function renderFieldValue(field: DisplayableFormField, value: unknown): string {
   if (value === null || value === undefined) {
     return "-";

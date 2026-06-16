@@ -9,6 +9,9 @@ type AdminLayoutProps = {
   children: ReactNode;
 };
 
+/**
+ * 管理画面配下の共通レイアウトを表示します。
+ */
 export default async function AdminLayout({ children }: AdminLayoutProps) {
   const [spaces, me] = await Promise.all([
     getAdminLayoutSpaces(),

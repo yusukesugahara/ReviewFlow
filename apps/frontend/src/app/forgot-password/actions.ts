@@ -9,6 +9,9 @@ import type {
   RequestPasswordResetSuccessJson,
 } from "@/lib/schema";
 
+/**
+ * パスワード再設定メールの送信を依頼します。
+ */
 export async function requestPasswordResetAction(formData: FormData): Promise<void> {
   const parsed = requestPasswordResetSchema.safeParse({
     email: formData.get("email"),

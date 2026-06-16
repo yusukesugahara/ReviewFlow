@@ -18,6 +18,9 @@ type AccountEmailEditDialogProps = {
   user: CurrentSessionUser;
 };
 
+/**
+ * メールアドレス変更依頼ダイアログを表示します。
+ */
 export function AccountEmailEditDialog({
   error,
   onClose,

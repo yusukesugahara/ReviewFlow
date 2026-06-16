@@ -30,6 +30,9 @@ type SpaceApplicationEditViewProps = EditableApplicationInitialState & {
   spaceId: string;
 };
 
+/**
+ * セットアップ申請の編集画面を表示します。
+ */
 export function SpaceApplicationEditView({
   action,
   assignees,
@@ -81,6 +84,9 @@ type ReturnedApplicationCorrectionViewProps = {
   targets: CorrectionTargetItem[];
 };
 
+/**
+ * 差戻し申請の修正入力画面を表示します。
+ */
 export function ReturnedApplicationCorrectionView({
   action,
   correctionError,
@@ -178,6 +184,9 @@ export function ReturnedApplicationCorrectionView({
   );
 }
 
+/**
+ * 申請編集画面で編集不可状態を表示します。
+ */
 export function SpaceApplicationEditUnavailableView() {
   return (
     <Card>
@@ -188,6 +197,9 @@ export function SpaceApplicationEditUnavailableView() {
   );
 }
 
+/**
+ * 申請編集画面のエラー状態を表示します。
+ */
 export function SpaceApplicationEditErrorView({ status }: { status?: number }) {
   return (
     <Card>

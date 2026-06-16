@@ -11,6 +11,9 @@ type SubmissionSummaryCardsProps = {
   spaceId: string;
 };
 
+/**
+ * 提出一覧の概要件数カード群を表示します。
+ */
 export function SubmissionSummaryCards({
   activeSummary,
   counts,
@@ -50,6 +53,9 @@ export function SubmissionSummaryCards({
   );
 }
 
+/**
+ * 提出一覧概要の 1 カードを表示します。
+ */
 function SummaryCard({
   href,
   isActive,

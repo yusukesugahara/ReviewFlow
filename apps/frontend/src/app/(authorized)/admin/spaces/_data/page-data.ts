@@ -35,6 +35,9 @@ export type AdminSpacesViewData = {
   users: TenantUserSummary[];
 };
 
+/**
+ * 現在のセッションを確認し、管理者向けスペース画面のデータを読み込みます。
+ */
 export async function getAdminSpacesPageData(): Promise<AdminSpacesViewData> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
@@ -54,10 +57,16 @@ export async function getAdminSpacesPageData(): Promise<AdminSpacesViewData> {
   });
 }
 
+/**
+ * エラー表示に使う HTTP ステータスを返し、不明な失敗は 500 として扱います。
+ */
 export function statusFromResponse(response?: Pick<Response, "status">): number {
   return response?.status ?? 500;
 }
 
+/**
+ * 認証済みユーザー向けに管理者向けスペース画面の表示データを取得して組み立てます。
+ */
 export async function getAdminSpacesViewData({
   authHeaders,
   me,
@@ -129,6 +138,9 @@ export async function getAdminSpacesViewData({
   }
 }
 
+/**
+ * 表示対象スペースごとにメンバー一覧と追加可能ユーザー一覧を取得します。
+ */
 async function getAdminSpaceMembersByGroup({
   authHeaders,
   groups,
@@ -186,6 +198,9 @@ async function getAdminSpaceMembersByGroup({
   return { availableUsersByGroup, membersByGroup };
 }
 
+/**
+ * ページデータ取得に失敗したときのエラー表示データを組み立てます。
+ */
 function buildAdminSpacesErrorViewData({
   canCreateSpace,
   currentUserId,

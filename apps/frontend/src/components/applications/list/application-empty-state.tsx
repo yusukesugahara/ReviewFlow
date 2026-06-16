@@ -7,6 +7,9 @@ type ApplicationEmptyStateProps = {
   className?: string;
 };
 
+/**
+ * 申請一覧の空状態を表示します。
+ */
 export function ApplicationEmptyState({
   message,
   action,

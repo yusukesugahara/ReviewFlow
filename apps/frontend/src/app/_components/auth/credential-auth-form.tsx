@@ -31,6 +31,9 @@ type CredentialAuthFormProps = {
   submittingLabel: string;
 };
 
+/**
+ * メールアドレスとパスワードを使う認証フォームを表示します。
+ */
 export function CredentialAuthForm({
   apiReachable,
   fallbackErrorMessage,

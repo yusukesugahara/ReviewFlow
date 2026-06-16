@@ -18,6 +18,9 @@ import {
 } from "./_view-models/dashboard-view-model";
 import type { AdminDashboardViewProps, SpaceDashboardSummary } from "./types";
 
+/**
+ * スペースダッシュボード画面を表示します。
+ */
 export function AdminDashboardView({
   fetchErrorStatus,
   selectedSpaceId,
@@ -69,6 +72,9 @@ export function AdminDashboardView({
   );
 }
 
+/**
+ * ダッシュボード上部の概要指標を表示します。
+ */
 function OverviewStat({
   icon: Icon,
   label,
@@ -91,6 +97,9 @@ function OverviewStat({
   );
 }
 
+/**
+ * 1 スペース分のダッシュボード概要カードを表示します。
+ */
 function SpaceSummaryCard({
   isSelected,
   space,
@@ -186,6 +195,9 @@ function SpaceSummaryCard({
   );
 }
 
+/**
+ * 小さなメトリクス表示を返します。
+ */
 function CompactMetric({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-lg border border-slate-200 px-3 py-3">
@@ -197,6 +209,9 @@ function CompactMetric({ label, value }: { label: string; value: string }) {
   );
 }
 
+/**
+ * 状態別の件数メトリクスを表示します。
+ */
 function StatusMetric({
   icon: Icon,
   label,

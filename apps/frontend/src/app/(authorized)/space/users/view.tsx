@@ -24,6 +24,9 @@ import { SpaceUsersTable } from "./_components/space-users-table";
 import { buildSpaceUserTableMembers } from "./_view-models/space-users-view-model";
 import type { SpaceUsersErrorViewProps, SpaceUsersViewProps } from "./types";
 
+/**
+ * スペースユーザー管理画面を表示します。
+ */
 export function SpaceUsersView({
   availableUsers,
   currentUserId,
@@ -95,6 +98,9 @@ export function SpaceUsersView({
   );
 }
 
+/**
+ * スペースユーザー管理画面のエラー状態を表示します。
+ */
 export function SpaceUsersErrorView({ status }: SpaceUsersErrorViewProps) {
   return (
     <Card>
@@ -108,6 +114,9 @@ export function SpaceUsersErrorView({ status }: SpaceUsersErrorViewProps) {
   );
 }
 
+/**
+ * スペースユーザー管理画面のメッセージ表示を返します。
+ */
 function SpaceUsersMessage({ message }: { message: string }) {
   return (
     <Card className="border-rose-200 bg-rose-50">

@@ -8,6 +8,9 @@ const fieldOptionObjectSchema = z.object({
 
 const fieldOptionsSchema = z.array(z.unknown());
 
+/**
+ * unknown の options 値をフォーム選択肢配列に正規化します。
+ */
 export function normalizeFieldOptions(options: unknown[] | null | undefined): FieldOption[] {
   const parsed = fieldOptionsSchema.safeParse(options);
   if (!parsed.success) {

@@ -29,6 +29,9 @@ type SidebarLinkRouteInput = ActiveSpaceIdInput & {
   spacePath?: SidebarSpacePath;
 };
 
+/**
+ * パス名からスペース ID を取得します。
+ */
 export function getPathSpaceId(pathname: string): string | null {
   const segments = getPathSegments(pathname);
   if (segments[0] !== "space" || segments.length < 2) {
@@ -49,6 +52,9 @@ export function getPathSpaceId(pathname: string): string | null {
   return decodeURIComponent(spaceId);
 }
 
+/**
+ * 現在のパスとスペース一覧からアクティブなスペース ID を解決します。
+ */
 export function getActiveSpaceId({
   pathname,
   searchParams,
@@ -57,6 +63,9 @@ export function getActiveSpaceId({
   return getPathSpaceId(pathname) ?? searchParams.get("spaceId") ?? fallbackSpaceId ?? null;
 }
 
+/**
+ * スペース切り替え後の遷移先 URL を組み立てます。
+ */
 export function buildSpaceSwitcherHref({
   pathname,
   searchParams,
@@ -86,6 +95,9 @@ export function buildSpaceSwitcherHref({
   return `${pathname}?${params.toString()}`;
 }
 
+/**
+ * サイドバーリンクの遷移先とアクティブ状態を組み立てます。
+ */
 export function buildSidebarLinkRoute({
   pathname,
   searchParams,
@@ -106,6 +118,9 @@ export function buildSidebarLinkRoute({
   };
 }
 
+/**
+ * 現在のパスからパンくず項目を組み立てます。
+ */
 export function buildBreadcrumbItems(
   pathname: string,
   spaces: AppSidebarRouteSpace[],
@@ -131,6 +146,9 @@ export function buildBreadcrumbItems(
   return [{ href: "/", label: "ホーム" }];
 }
 
+/**
+ * サイドバーリンクの href をスペース状態に応じて組み立てます。
+ */
 function buildSidebarLinkHref({
   href,
   spacePath,
@@ -155,6 +173,9 @@ function buildSidebarLinkHref({
   return href;
 }
 
+/**
+ * サイドバーリンクが現在のパスでアクティブかを判定します。
+ */
 function isSidebarLinkActive({
   pathname,
   href,
@@ -199,6 +220,9 @@ function isSidebarLinkActive({
     : pathname === href || pathname.startsWith(`${href}/`);
 }
 
+/**
+ * 管理画面パスのパンくず項目を組み立てます。
+ */
 function buildAdminBreadcrumbItems(segments: string[]): BreadcrumbItem[] {
   const items: BreadcrumbItem[] = [{ href: "/admin", label: "管理" }];
   const section = segments[1];
@@ -214,6 +238,9 @@ function buildAdminBreadcrumbItems(segments: string[]): BreadcrumbItem[] {
   return items;
 }
 
+/**
+ * スペース配下パスのパンくず項目を組み立てます。
+ */
 function buildSpaceBreadcrumbItems(
   segments: string[],
   spaces: AppSidebarRouteSpace[],
@@ -297,6 +324,9 @@ function buildSpaceBreadcrumbItems(
   return items;
 }
 
+/**
+ * スペース ID を持たないスペース配下セクションかを判定します。
+ */
 function isUnscopedSpaceSection(value: string): boolean {
   return (
     value === "applications" ||
@@ -305,6 +335,9 @@ function isUnscopedSpaceSection(value: string): boolean {
   );
 }
 
+/**
+ * 申請関連パンくずの href を組み立てます。
+ */
 function buildApplicationBreadcrumbHref(
   encodedSpaceId: string,
   applicationId: string,
@@ -316,10 +349,16 @@ function buildApplicationBreadcrumbHref(
   return isFormDetail ? `${href}?view=form` : href;
 }
 
+/**
+ * パス名を空要素なしのセグメント配列に分割します。
+ */
 function getPathSegments(pathname: string): string[] {
   return pathname.split("/").filter(Boolean);
 }
 
+/**
+ * パス名にクエリ文字列を付与します。
+ */
 function appendQueryString(pathname: string, params: URLSearchParams): string {
   const query = params.toString();
   return query ? `${pathname}?${query}` : pathname;

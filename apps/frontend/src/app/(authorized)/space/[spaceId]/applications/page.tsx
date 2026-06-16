@@ -3,6 +3,9 @@ import { getSpaceApplicationsPageData } from "./_data/page-data";
 import type { SpaceApplicationsPageProps } from "./types";
 import { SpaceApplicationsView } from "./view";
 
+/**
+ * スペースの申請フォーム一覧画面のデータを読み込んで表示します。
+ */
 export default async function SpaceApplicationsPage({
   params,
   searchParams,

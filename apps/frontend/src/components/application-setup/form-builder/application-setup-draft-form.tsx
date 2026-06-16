@@ -42,6 +42,9 @@ type ApplicationSetupDraftFormProps = {
   returnPath?: string;
 };
 
+/**
+ * 申請フォームセットアップの下書き編集フォームを表示します。
+ */
 export function ApplicationSetupDraftForm({
   action,
   errorMessage,
@@ -215,6 +218,9 @@ export function ApplicationSetupDraftForm({
   );
 }
 
+/**
+ * 申請フォームセットアップの送信ボタンを表示します。
+ */
 function ApplicationSetupSubmitButton({
   children,
   intent,

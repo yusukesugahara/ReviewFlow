@@ -57,6 +57,9 @@ export type SpaceApplicationDetailPageData =
   | FormDetailPageData
   | ApplicationDetailPageData;
 
+/**
+ * セットアップフォームまたは提出済み申請の詳細画面データを読み込みます。
+ */
 export async function getSpaceApplicationDetailPageData({
   applicationId,
   queryDefinitionId,
@@ -121,6 +124,9 @@ export async function getSpaceApplicationDetailPageData({
   };
 }
 
+/**
+ * 対象フォーム定義を取得し、指定がない場合はスペース内の先頭定義を使います。
+ */
 async function getFormDefinition({
   authHeaders,
   definitionId,
@@ -147,6 +153,9 @@ async function getFormDefinition({
       }>(definitionRaw).definitions?.[0] ?? null);
 }
 
+/**
+ * 選択中の申請に紐づく差戻し履歴を取得します。
+ */
 async function getApplicationCorrections({
   applicationId,
   authHeaders,
@@ -164,6 +173,9 @@ async function getApplicationCorrections({
   );
 }
 
+/**
+ * 差戻し中の申請で修正対象になっている項目を取得します。
+ */
 async function getOpenCorrectionItems({
   applicationId,
   authHeaders,
@@ -185,6 +197,9 @@ async function getOpenCorrectionItems({
   );
 }
 
+/**
+ * 同じフォーム定義から作成された提出済み申請を取得します。
+ */
 async function getRelatedSubmittedApplications({
   authHeaders,
   definitionId,
@@ -200,6 +215,9 @@ async function getRelatedSubmittedApplications({
   );
 }
 
+/**
+ * 申請のフォーム定義に対応するセットアップフォーム詳細 URL を解決します。
+ */
 async function getFormDetailHref({
   authHeaders,
   definitionId,
@@ -230,6 +248,9 @@ async function getFormDetailHref({
     : null;
 }
 
+/**
+ * 現在のスペースで表示可能な申請一覧を取得します。
+ */
 async function getSpaceApplications({
   authHeaders,
   spaceId,
@@ -247,6 +268,9 @@ async function getSpaceApplications({
   );
 }
 
+/**
+ * スペースの表示可能な申請一覧を取得し、権限がない場合は空配列を返します。
+ */
 async function getSpaceApplicationsIfAvailable({
   authHeaders,
   spaceId,

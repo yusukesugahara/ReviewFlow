@@ -29,6 +29,9 @@ type SelectedProgressStepApplicationProps = {
   steps: ApplicationProgressStep[];
 };
 
+/**
+ * 選択中の承認ステップに関する申請情報を表示します。
+ */
 export function SelectedProgressStepApplication({
   application,
   corrections,
@@ -99,6 +102,9 @@ export function SelectedProgressStepApplication({
   );
 }
 
+/**
+ * 承認ステップ詳細内のフィールド値を表示します。
+ */
 function StepFieldValue({
   corrections,
   field,
@@ -143,6 +149,9 @@ function StepFieldValue({
   );
 }
 
+/**
+ * 承認ステップ詳細内の差戻し全体コメントを表示します。
+ */
 function StepOverallCorrectionComment({
   correction,
 }: {

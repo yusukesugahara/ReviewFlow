@@ -2,6 +2,9 @@
 
 import { Toaster as Sonner, type ToasterProps } from "sonner";
 
+/**
+ * アプリ全体のトースト表示コンテナを提供します。
+ */
 export function Toaster(props: ToasterProps) {
   return (
     <Sonner

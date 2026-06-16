@@ -2,6 +2,9 @@ import type * as React from "react";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * 読み込み中のプレースホルダーを表示します。
+ */
 function Skeleton({
   className,
   ...props

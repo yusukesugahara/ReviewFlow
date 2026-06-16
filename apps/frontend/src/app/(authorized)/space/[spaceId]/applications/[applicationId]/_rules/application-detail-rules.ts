@@ -2,6 +2,9 @@ import type { ApplicationFormField } from "@/components/applications/detail/appl
 import { isFormSetupStatus } from "@/components/applications/status/application-status-rules";
 import type { ApplicationSummary } from "../types";
 
+/**
+ * 申請が指定フォーム定義に紐づく提出済み申請かを判定します。
+ */
 export function isRelatedSubmittedApplication(
   application: ApplicationSummary,
   definitionId?: string,
@@ -12,6 +15,9 @@ export function isRelatedSubmittedApplication(
   );
 }
 
+/**
+ * 申請が指定フォーム定義のセットアップ申請かを判定します。
+ */
 export function isSetupApplicationForDefinition(
   application: ApplicationSummary,
   definitionId: string,
@@ -22,6 +28,9 @@ export function isSetupApplicationForDefinition(
   );
 }
 
+/**
+ * 必須項目のうち、提出値がないフィールドを返します。
+ */
 export function getMissingRequiredFields(
   fields: ApplicationFormField[],
   values: Record<string, unknown>,
@@ -31,6 +40,9 @@ export function getMissingRequiredFields(
   );
 }
 
+/**
+ * フィールド値が必須項目を満たす値かを判定します。
+ */
 function hasRequiredValue(value: unknown): boolean {
   if (value === null || value === undefined) {
     return false;

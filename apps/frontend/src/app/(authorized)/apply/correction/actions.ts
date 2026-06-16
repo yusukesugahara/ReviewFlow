@@ -17,6 +17,9 @@ const publicCorrectionFormSchema = z.object({
   fieldsJson: z.string().min(1),
 });
 
+/**
+ * FormData 内の修正対象項目 JSON を読み取り、失敗時は空配列を返します。
+ */
 function parseFields(fieldsJson: FormDataEntryValue | null): DynamicFormField[] {
   try {
     return parseDynamicFormFieldsJson(fieldsJson);
@@ -25,6 +28,9 @@ function parseFields(fieldsJson: FormDataEntryValue | null): DynamicFormField[] 
   }
 }
 
+/**
+ * 公開差戻し修正フォームの入力を保存し、申請を再提出します。
+ */
 export async function submitPublicCorrectionAction(
   _previousState: PublicCorrectionSubmitState,
   formData: FormData,

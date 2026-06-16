@@ -4,6 +4,9 @@ import { getServerApiBaseUrl } from "@/lib/server/env";
 
 const DEFAULT_API_ORIGIN_TIMEOUT_MS = 5_000;
 
+/**
+ * バックエンド API の origin に到達できるかを確認します。
+ */
 export async function isApiOriginReachable(
   timeoutMs = DEFAULT_API_ORIGIN_TIMEOUT_MS,
 ): Promise<boolean> {

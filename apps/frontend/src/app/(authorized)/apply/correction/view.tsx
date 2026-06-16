@@ -17,6 +17,9 @@ type PublicCorrectionViewProps = {
   formError?: string;
 };
 
+/**
+ * 公開差戻し修正の再提出完了状態を表示します。
+ */
 export function PublicCorrectionResubmittedView() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
@@ -32,6 +35,9 @@ export function PublicCorrectionResubmittedView() {
   );
 }
 
+/**
+ * 公開差戻し修正フォーム画面を表示します。
+ */
 export function PublicCorrectionView({
   correction,
   definition,
@@ -75,6 +81,9 @@ export function PublicCorrectionView({
   );
 }
 
+/**
+ * 公開差戻し修正画面のエラー状態を表示します。
+ */
 export function PublicCorrectionErrorView({ status }: { status?: number }) {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">

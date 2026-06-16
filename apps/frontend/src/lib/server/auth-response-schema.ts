@@ -25,6 +25,9 @@ const authMeSuccessSchema = z.object({
   }),
 });
 
+/**
+ * ログイン成功レスポンスを検証して返します。
+ */
 export function parseAuthLoginSuccess(
   json: unknown,
 ): AuthLoginSuccessJson | null {
@@ -32,6 +35,9 @@ export function parseAuthLoginSuccess(
   return result.success ? (result.data as AuthLoginSuccessJson) : null;
 }
 
+/**
+ * 登録成功レスポンスを検証して返します。
+ */
 export function parseAuthRegisterSuccess(
   json: unknown,
 ): AuthRegisterSuccessJson | null {
@@ -39,6 +45,9 @@ export function parseAuthRegisterSuccess(
   return result.success ? (result.data as AuthRegisterSuccessJson) : null;
 }
 
+/**
+ * 現在ユーザー取得成功レスポンスを検証して返します。
+ */
 export function parseAuthMeSuccess(json: unknown): AuthMeSuccessJson | null {
   const result = authMeSuccessSchema.safeParse(json);
   return result.success ? (result.data as AuthMeSuccessJson) : null;

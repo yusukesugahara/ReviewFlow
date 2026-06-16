@@ -18,6 +18,9 @@ const signupFormSchema = z.object({
   next: z.string().optional(),
 });
 
+/**
+ * サインアップフォームの FormData を認証入力の形に変換します。
+ */
 function authCredentialsFromFormData(formData: FormData): SignupSchema {
   return signupFormSchema.parse({
     email: formData.get("email"),
@@ -27,14 +30,15 @@ function authCredentialsFromFormData(formData: FormData): SignupSchema {
 }
 
 /**
- * 認証エラーメッセージを取得する
- * @param result - 認証エラーメッセージを取得する結果
- * @returns 認証エラーメッセージ
+ * 登録 API の失敗レスポンスから画面表示用のエラーメッセージを取得します。
  */
 function authErrorMessage(result: { ok: false; status: number; body: unknown }): string {
   return errorMessageFromBody(result.body, "登録に失敗しました");
 }
 
+/**
+ * 登録 API を呼び出し、成功時はアクセストークンを返します。
+ */
 async function postAuthRegister(
   body: RegisterRequestBody,
 ): Promise<
@@ -55,9 +59,7 @@ async function postAuthRegister(
 }
 
 /**
- * 認証登録する
- * @param params - 認証登録するパラメータ
- * @returns 認証登録 API のレスポンス
+ * サインアップフォームを検証し、登録後にセッション Cookie を保存します。
  */
 export async function signup(formData: FormData): Promise<FormActionResponse<void>> {
   const params = authCredentialsFromFormData(formData);

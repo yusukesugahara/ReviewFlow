@@ -33,6 +33,9 @@ const DEFAULT_APP_GUIDE: AuthFormAppGuide = {
   ],
 };
 
+/**
+ * 認証フォームの共通送信状態とエラー表示を提供します。
+ */
 export function AuthForm({
   apiReachable,
   title,

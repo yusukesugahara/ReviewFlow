@@ -4,6 +4,9 @@ import { AuthForm } from "../_components/auth/auth-form";
 import { signup } from "./actions";
 import type { SignupViewProps } from "./types";
 
+/**
+ * サインアップフォーム画面を表示します。
+ */
 export const SignupView = ({ apiReachable }: SignupViewProps) => {
   return (
     <AuthForm

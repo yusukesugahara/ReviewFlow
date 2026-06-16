@@ -4,6 +4,9 @@ import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
+/**
+ * ダイアログの背景オーバーレイを表示します。
+ */
 function DialogOverlay({
   className,
   ...props
@@ -16,6 +19,9 @@ function DialogOverlay({
   );
 }
 
+/**
+ * ダイアログ本体の共通レイアウトを表示します。
+ */
 function DialogContent({
   children,
   className,
@@ -60,6 +66,9 @@ function DialogContent({
   );
 }
 
+/**
+ * ダイアログヘッダーの共通レイアウトを表示します。
+ */
 function DialogHeader({
   className,
   ...props
@@ -72,6 +81,9 @@ function DialogHeader({
   );
 }
 
+/**
+ * ダイアログフッターの共通レイアウトを表示します。
+ */
 function DialogFooter({
   className,
   ...props

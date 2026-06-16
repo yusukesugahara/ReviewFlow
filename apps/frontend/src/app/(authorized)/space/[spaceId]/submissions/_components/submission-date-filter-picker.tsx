@@ -12,6 +12,9 @@ type SubmissionDateFilterPickerProps = {
   defaultValue: string;
 };
 
+/**
+ * 提出一覧の日付フィルター入力を表示します。
+ */
 export function SubmissionDateFilterPicker({
   id,
   name,
@@ -70,10 +73,16 @@ export function SubmissionDateFilterPicker({
   );
 }
 
+/**
+ * 日付入力文字列を Date に変換します。
+ */
 function parseDateValue(value: string): Date | null {
   return parseIsoDateValue(value);
 }
 
+/**
+ * 日付入力文字列を表示用の日付に変換します。
+ */
 function formatDisplayValue(value: string): string {
   return formatIsoDateDisplay(value);
 }

@@ -8,6 +8,9 @@ import { Label } from "@/components/ui/label";
 import { requestAccessAction } from "./actions";
 import type { PublicApplicationAccessViewProps } from "./types";
 
+/**
+ * 公開フォームアクセス依頼フォームの送信ボタンを表示します。
+ */
 function RequestAccessSubmitButton() {
   const { pending } = useFormStatus();
 
@@ -18,6 +21,9 @@ function RequestAccessSubmitButton() {
   );
 }
 
+/**
+ * 公開フォームアクセス依頼フォームを表示します。
+ */
 export function PublicApplicationAccessView({
   groupId,
   sent,

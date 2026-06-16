@@ -14,6 +14,9 @@ import type {
   ApplicationProgressUser,
 } from "../detail/application-detail.types";
 
+/**
+ * 承認進捗の開始カードを表示します。
+ */
 export function ApprovalProgressStartCard({
   application,
 }: {
@@ -48,6 +51,9 @@ export function ApprovalProgressStartCard({
   );
 }
 
+/**
+ * 承認進捗の 1 ステップカードを表示します。
+ */
 export function ApprovalProgressStepCard({
   isSelected,
   onSelect,
@@ -117,6 +123,9 @@ export function ApprovalProgressStepCard({
   );
 }
 
+/**
+ * 承認ステップに紐づくユーザー一覧を表示します。
+ */
 function UserList({ users }: { users: ApplicationProgressUser[] }) {
   if (users.length === 0) {
     return <p className="mt-2 text-sm text-slate-500">未設定</p>;
@@ -136,6 +145,9 @@ function UserList({ users }: { users: ApplicationProgressUser[] }) {
   );
 }
 
+/**
+ * 承認ステップの操作履歴を表示します。
+ */
 function ActionHistory({ action }: { action: ApplicationProgressAction }) {
   return (
     <div className="rounded-md bg-white/70 px-3 py-2">

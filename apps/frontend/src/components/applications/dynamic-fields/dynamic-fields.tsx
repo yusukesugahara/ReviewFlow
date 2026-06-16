@@ -19,6 +19,9 @@ export type { DynamicFormField } from "./dynamic-fields.types";
 const stringArraySchema = z.array(z.string());
 const scalarInputValueSchema = z.union([z.string(), z.number(), z.boolean()]);
 
+/**
+ * 動的フォーム項目の種別に応じた入力 UI を表示します。
+ */
 export function DynamicFieldInput({
   field,
   value,
@@ -65,6 +68,9 @@ export function DynamicFieldInput({
   }
 }
 
+/**
+ * 動的フォーム項目と値を読み取り専用テーブルで表示します。
+ */
 export function DynamicFieldsTable({
   fields,
   values,

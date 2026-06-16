@@ -21,6 +21,9 @@ type FormDefinitionActionDialogProps = {
   target: ApplicationFormListRow;
 };
 
+/**
+ * フォーム定義を削除済みにする確認ダイアログを表示します。
+ */
 export function FormDefinitionArchiveDialog({
   onCancel,
   spaceId,
@@ -58,6 +61,9 @@ export function FormDefinitionArchiveDialog({
   );
 }
 
+/**
+ * 削除済みフォーム定義を復元する確認ダイアログを表示します。
+ */
 export function FormDefinitionRestoreDialog({
   onCancel,
   spaceId,

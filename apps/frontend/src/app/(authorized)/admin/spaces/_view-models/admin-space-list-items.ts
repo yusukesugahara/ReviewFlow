@@ -6,6 +6,9 @@ import type {
   SpaceListItem,
 } from "../types";
 
+/**
+ * スペース、メンバー、追加可能ユーザー、権限を一覧表示用の項目にまとめます。
+ */
 export function buildAdminSpaceListItems({
   availableUsersByGroup,
   currentUserId,

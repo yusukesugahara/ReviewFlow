@@ -4,6 +4,9 @@ import { getSpaceSubmissionsPageData } from "./_data/page-data";
 import type { SpaceSubmissionsPageProps } from "./types";
 import { SpaceSubmissionsView } from "./view";
 
+/**
+ * スペースの提出一覧画面のデータを読み込んで表示します。
+ */
 export default async function SpaceSubmissionsPage({
   params,
   searchParams,

@@ -31,6 +31,9 @@ export type ApplicationListRow = {
   applicantEmail?: string;
 };
 
+/**
+ * 申請一覧行に表示する申請名を取得します。
+ */
 function getApplicationName(row: ApplicationListRow): string {
   const applicationName = row.applicationName?.trim();
   if (applicationName) {
@@ -43,6 +46,9 @@ function getApplicationName(row: ApplicationListRow): string {
   return "-";
 }
 
+/**
+ * 申請一覧行に表示する種別ラベルを取得します。
+ */
 function getApplicationKindLabel(row: ApplicationListRow): string {
   if (isFormSetupApplication(row)) {
     return `作成中（${row.status === APPLICATION_STATUSES.draft ? "下書き" : "公開済み"}）`;
@@ -53,6 +59,9 @@ function getApplicationKindLabel(row: ApplicationListRow): string {
   return "内部申請";
 }
 
+/**
+ * 申請一覧行の種別バッジに使う className を取得します。
+ */
 function getApplicationKindClassName(row: ApplicationListRow): string {
   if (isFormSetupApplication(row)) {
     return "border-sky-200 bg-sky-50 text-sky-800";
@@ -71,6 +80,9 @@ type ApplicationListTableProps = {
   showApplicantEmail?: boolean;
 };
 
+/**
+ * 申請一覧をテーブルとして表示します。
+ */
 export function ApplicationListTable({
   rows,
   getDetailHref,

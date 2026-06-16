@@ -13,6 +13,9 @@ export type SpaceDashboardCardModel = SpaceDashboardSummary & {
   roleLabel: string;
 };
 
+/**
+ * スペース一覧の集計値をダッシュボード全体の合計値にまとめます。
+ */
 export function buildDashboardTotals(
   spaces: SpaceDashboardSummary[],
 ): DashboardTotals {
@@ -26,6 +29,9 @@ export function buildDashboardTotals(
   );
 }
 
+/**
+ * スペース集計データをカード表示用の文言付きモデルに変換します。
+ */
 export function buildSpaceDashboardCardModel(
   space: SpaceDashboardSummary,
 ): SpaceDashboardCardModel {

@@ -22,6 +22,9 @@ type AdminUserListCardProps = {
   users: TenantUserSummary[];
 };
 
+/**
+ * テナントユーザー一覧カードを表示します。
+ */
 export function AdminUserListCard({
   currentUserId,
   onOpenInvitationDialog,

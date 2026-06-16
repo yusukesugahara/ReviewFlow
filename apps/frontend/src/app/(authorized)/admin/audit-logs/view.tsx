@@ -4,6 +4,9 @@ import { AuditLogSummaryCards } from "./_components/audit-log-summary-cards";
 import type { AdminAuditLogsErrorViewProps, AdminAuditLogsViewProps } from "./types";
 import { buildAdminAuditLogsViewModel } from "./_view-models/audit-log-view-model";
 
+/**
+ * 管理者向け監査ログ画面を表示します。
+ */
 export function AdminAuditLogsView({
   createdFrom,
   createdTo,
@@ -43,6 +46,9 @@ export function AdminAuditLogsView({
   );
 }
 
+/**
+ * 管理者向け監査ログ画面のエラー状態を表示します。
+ */
 export function AdminAuditLogsErrorView({ status }: AdminAuditLogsErrorViewProps) {
   return (
     <Card>

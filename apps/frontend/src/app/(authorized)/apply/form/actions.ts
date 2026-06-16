@@ -22,11 +22,17 @@ const publicApplicationFormSchema = z.object({
   fieldsJson: z.string().min(1),
 });
 
+/**
+ * 公開申請フォームへエラーメッセージ付きでリダイレクトします。
+ */
 function redirectWithPublicApplicationFormError(message: string): never {
   const params = new URLSearchParams({ formError: message });
   redirect(`/apply/form?${params.toString()}`);
 }
 
+/**
+ * 公開申請フォームの入力を検証し、公開申請として送信します。
+ */
 export async function submitPublicApplicationAction(
   _previousState: PublicApplicationSubmitState,
   formData: FormData,

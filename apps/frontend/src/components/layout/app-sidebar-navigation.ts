@@ -61,6 +61,9 @@ export const tenantAdminSidebarNavItems: SidebarNavItem[] = [
   { href: "/admin/audit-logs", label: "監査ログ", icon: ClipboardList },
 ];
 
+/**
+ * 現在ユーザーとスペースに応じたメインナビゲーション項目を返します。
+ */
 export function getPrimarySidebarNavItems({
   activeSpace,
   isTenantAdmin,
@@ -82,6 +85,9 @@ export function getPrimarySidebarNavItems({
     .filter((item) => !item.spaceAdminOnly || canManageActiveSpace);
 }
 
+/**
+ * サイドバー上でスペース管理導線を表示できるかを判定します。
+ */
 export function canManageSidebarSpace({
   activeSpace,
   isTenantAdmin,

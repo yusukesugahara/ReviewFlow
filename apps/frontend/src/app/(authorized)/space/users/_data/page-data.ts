@@ -36,6 +36,9 @@ export type SpaceUsersPageData =
       spaceId: string;
     };
 
+/**
+ * 現在のセッション向けに、選択中スペースのユーザー管理データを読み込みます。
+ */
 export async function getSpaceUsersPageData({
   querySpaceId,
 }: {
@@ -71,11 +74,17 @@ export async function getSpaceUsersPageData({
   };
 }
 
+/**
+ * 現在のユーザーが利用できるスペース一覧を取得します。
+ */
 async function listSpaces(headers: AuthHeaders): Promise<SpaceUsersGroup[]> {
   const response = await client.GET("/groups", { headers });
   return unwrapResponseData<GroupsListSuccessJson["data"]>(response).groups ?? [];
 }
 
+/**
+ * スペースのメンバー一覧を取得して正規化します。
+ */
 async function listSpaceMembers(
   groupId: string,
   headers: AuthHeaders,
@@ -89,6 +98,9 @@ async function listSpaceMembers(
   );
 }
 
+/**
+ * スペースへ追加できるテナントユーザー一覧を取得して正規化します。
+ */
 async function listAvailableUsers(
   groupId: string,
   headers: AuthHeaders,

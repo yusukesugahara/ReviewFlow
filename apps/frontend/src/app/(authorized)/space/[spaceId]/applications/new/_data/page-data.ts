@@ -22,6 +22,9 @@ export type SpaceNewApplicationPageData = {
   canManageSpace: boolean;
 };
 
+/**
+ * スペースの新規申請画面を表示するためのデータを読み込みます。
+ */
 export async function getSpaceNewApplicationPageData({
   spaceId,
 }: {
@@ -56,6 +59,9 @@ export async function getSpaceNewApplicationPageData({
   };
 }
 
+/**
+ * スペース内で承認担当者として選択できるメンバーを取得します。
+ */
 async function listApprovalAssignees({
   headers,
   spaceId,

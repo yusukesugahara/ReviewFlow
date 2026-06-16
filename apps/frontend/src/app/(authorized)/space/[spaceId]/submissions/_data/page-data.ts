@@ -17,6 +17,9 @@ export type SpaceSubmissionsPageData = {
   latestExportJob: ExportJobResponse | null;
 };
 
+/**
+ * スペースの提出一覧画面に必要な申請、現在ユーザー、CSV ジョブ情報を読み込みます。
+ */
 export async function getSpaceSubmissionsPageData({
   jobId,
   spaceId,

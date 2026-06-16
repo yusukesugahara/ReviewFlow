@@ -30,6 +30,9 @@ export type ApplicationSetupSaveResult = {
 
 type AuthHeaders = { Authorization: string };
 
+/**
+ * フォーム定義、承認フロー、申請を新規作成してセットアップを保存します。
+ */
 export async function createApplicationSetup(
   input: ApplicationSetupActionInput,
 ): Promise<ApplicationSetupSaveResult> {
@@ -56,6 +59,9 @@ export async function createApplicationSetup(
   };
 }
 
+/**
+ * 既存申請に新しいフォーム定義と承認フローを紐づけてセットアップを更新します。
+ */
 export async function updateApplicationSetup(
   applicationId: string,
   input: ApplicationSetupActionInput,
@@ -82,6 +88,9 @@ export async function updateApplicationSetup(
   };
 }
 
+/**
+ * 公開済みフォーム定義を作成し、入力された項目を登録します。
+ */
 async function createPublishedFormDefinition(
   input: ApplicationSetupActionInput,
   authHeaders: AuthHeaders,
@@ -116,6 +125,9 @@ async function createPublishedFormDefinition(
   return created;
 }
 
+/**
+ * 申請セットアップ入力から承認フローを作成します。
+ */
 async function createApprovalFlow(
   input: ApplicationSetupActionInput,
   authHeaders: AuthHeaders,

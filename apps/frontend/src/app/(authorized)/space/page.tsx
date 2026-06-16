@@ -5,6 +5,9 @@ import { getAdminDashboardPageData } from "./_data/dashboard-page-data";
 import { AdminDashboardView } from "./view";
 import type { AdminDashboardPageProps } from "./types";
 
+/**
+ * スペースダッシュボード画面のデータを読み込んで表示します。
+ */
 export default async function AdminDashboardPage({
   searchParams,
 }: AdminDashboardPageProps) {

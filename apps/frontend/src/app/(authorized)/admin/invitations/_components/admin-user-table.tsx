@@ -27,6 +27,9 @@ type AdminUserTableProps = {
   users: TenantUserSummary[];
 };
 
+/**
+ * テナントユーザー一覧をテーブルとして表示します。
+ */
 export function AdminUserTable({ currentUserId, users }: AdminUserTableProps) {
   const [deleteTarget, setDeleteTarget] = useState<TenantUserSummary | null>(
     null,

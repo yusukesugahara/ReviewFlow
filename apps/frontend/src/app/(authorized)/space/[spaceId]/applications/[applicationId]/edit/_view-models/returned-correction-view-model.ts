@@ -6,6 +6,9 @@ export type ReturnedCorrectionFormModel = {
   values: Record<string, unknown>;
 };
 
+/**
+ * 差戻し修正フォームで使う対象フィールド、対象マップ、初期値を組み立てます。
+ */
 export function buildReturnedCorrectionFormModel({
   fields,
   targets,

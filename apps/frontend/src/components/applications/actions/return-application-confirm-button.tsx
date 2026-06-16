@@ -14,6 +14,9 @@ type ReturnApplicationConfirmButtonProps = {
   formId: string;
 };
 
+/**
+ * 申請差戻しフォームの確認付き送信ボタンを表示します。
+ */
 export function ReturnApplicationConfirmButton({
   formId,
 }: ReturnApplicationConfirmButtonProps) {

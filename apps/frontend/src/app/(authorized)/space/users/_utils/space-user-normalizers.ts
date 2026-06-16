@@ -4,6 +4,9 @@ import type {
 } from "@/lib/schema";
 import type { SpaceUsersAvailableUser, SpaceUsersMember } from "../types";
 
+/**
+ * バックエンドから返されたスペースメンバーをユーザー管理画面用に正規化します。
+ */
 export function normalizeSpaceMembers(
   members: GroupMembersListSuccessJson["data"]["members"],
 ): SpaceUsersMember[] {
@@ -13,6 +16,9 @@ export function normalizeSpaceMembers(
   }));
 }
 
+/**
+ * スペースへ追加できるテナントユーザーを正規化します。
+ */
 export function normalizeAvailableUsers(
   users: GroupAvailableUsersSuccessJson["data"]["users"],
 ): SpaceUsersAvailableUser[] {
@@ -22,6 +28,9 @@ export function normalizeAvailableUsers(
   }));
 }
 
+/**
+ * 未知の name 値を UI で使う nullable string の形に変換します。
+ */
 function normalizeName(value: unknown): string | null {
   return typeof value === "string" ? value : null;
 }

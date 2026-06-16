@@ -58,6 +58,9 @@ export type SpaceApplicationEditPageData =
   | ReturnedApplicationEditPageData
   | SetupApplicationEditPageData;
 
+/**
+ * セットアップ申請または差戻し申請の編集画面データを読み込みます。
+ */
 export async function getSpaceApplicationEditPageData({
   applicationId,
   queryDefinitionId,
@@ -136,6 +139,9 @@ export async function getSpaceApplicationEditPageData({
   };
 }
 
+/**
+ * 編集対象のフォーム定義を取得し、指定がない場合はスペース内の先頭定義を使います。
+ */
 async function getFormDefinition({
   authHeaders,
   definitionId,
@@ -162,6 +168,9 @@ async function getFormDefinition({
       ).definitions?.[0] ?? null);
 }
 
+/**
+ * 差戻し申請に紐づく未完了の修正依頼を取得します。
+ */
 async function getOpenCorrection({
   applicationId,
   authHeaders,
@@ -190,6 +199,9 @@ async function getOpenCorrection({
   );
 }
 
+/**
+ * 承認担当者として選択できるメンバーを取得します。
+ */
 async function getSpaceMembers({
   authHeaders,
   spaceId,
@@ -206,6 +218,9 @@ async function getSpaceMembers({
     .members ?? [];
 }
 
+/**
+ * 現在のスペースに属する承認フローを取得します。
+ */
 async function getApprovalFlows({
   authHeaders,
   spaceId,
