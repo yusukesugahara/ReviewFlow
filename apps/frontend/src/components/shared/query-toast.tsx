@@ -5,6 +5,9 @@ import { toast } from "sonner";
 
 let lastToastKey: string | null = null;
 
+/**
+ * URL クエリに含まれる toast メッセージを表示します。
+ */
 export function QueryToast() {
   const searchParams = useSearchParams();
   const type = searchParams.get("toast");

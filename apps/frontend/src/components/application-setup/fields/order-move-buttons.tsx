@@ -13,6 +13,9 @@ type OrderMoveButtonsProps = {
   moveDownLabel?: string;
 };
 
+/**
+ * 項目の並び順を変更するボタン群を表示します。
+ */
 export function OrderMoveButtons({
   canMoveUp,
   canMoveDown,

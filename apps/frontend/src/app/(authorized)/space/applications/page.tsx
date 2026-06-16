@@ -4,6 +4,9 @@ import { getFallbackSpaceContext } from "./_data/page-data";
 import type { LegacySpaceApplicationsPageProps } from "./types";
 import { LegacySpaceApplicationsEmptyView } from "./view";
 
+/**
+ * 旧申請一覧ルートからスペース別申請一覧へリダイレクトします。
+ */
 export default async function LegacySpaceApplicationsPage({
   searchParams,
 }: LegacySpaceApplicationsPageProps) {

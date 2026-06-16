@@ -9,6 +9,9 @@ type AccountLayoutProps = {
   children: ReactNode;
 };
 
+/**
+ * アカウント配下ページのレイアウトを表示します。
+ */
 export default async function AccountLayout({ children }: AccountLayoutProps) {
   const [spaces, me] = await Promise.all([
     getSpaceLayoutSpaces(),

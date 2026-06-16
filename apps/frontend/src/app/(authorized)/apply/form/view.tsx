@@ -11,6 +11,9 @@ import type {
   PublicApplicationFormViewProps,
 } from "./types";
 
+/**
+ * 公開申請フォームの送信完了状態を表示します。
+ */
 export function PublicApplicationSubmittedView() {
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
@@ -26,6 +29,9 @@ export function PublicApplicationSubmittedView() {
   );
 }
 
+/**
+ * 公開申請フォーム画面を表示します。
+ */
 export function PublicApplicationFormView({
   definition,
   formError,
@@ -49,6 +55,9 @@ export function PublicApplicationFormView({
   );
 }
 
+/**
+ * 公開申請フォーム画面のエラー状態を表示します。
+ */
 export function PublicApplicationFormErrorView({
   status,
 }: PublicApplicationFormErrorViewProps) {

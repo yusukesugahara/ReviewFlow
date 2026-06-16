@@ -574,6 +574,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/groups/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** スペースダッシュボード集計 */
+        get: operations["GroupsController_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/groups/{groupId}": {
         parameters: {
             query?: never;
@@ -1325,6 +1342,47 @@ export interface components {
         GroupsListResponseDto: {
             /** @description スペース一覧。後方互換のためレスポンスキーは groups。 */
             groups: components["schemas"]["GroupSummaryDto"][];
+        };
+        SpaceDashboardSummaryDto: {
+            /** @description スペースID。API では groupId として参照する。 */
+            id: string;
+            /** @description スペース名 */
+            name: string;
+            /** @description スペース説明 */
+            description: string | null;
+            /**
+             * @description ログインユーザのこのスペースでのロール。未参加の tenant_admin は null。
+             * @enum {string|null}
+             */
+            currentUserRole?: "admin" | "user" | null;
+            /** @description スペースメンバー数 */
+            memberCount: number;
+            /** @description アーカイブ済みを除くフォーム定義数 */
+            formCount: number;
+            /** @description 公開中フォーム定義数 */
+            publishedFormCount: number;
+            /** @description 閲覧可能な申請数 */
+            totalApplications: number;
+            /** @description 対応が必要な申請数 */
+            needsActionCount: number;
+            /** @description 差し戻し中の申請数 */
+            returnedCount: number;
+            /** @description 承認済み申請数 */
+            approvedCount: number;
+            /** @description 却下済み申請数 */
+            rejectedCount: number;
+            /** @description 差し戻し履歴数 */
+            correctionCount: number;
+            /** @description 差し戻し後に再提出されレビュー中の申請数 */
+            resubmitCount: number;
+            /** @description 申請あたりの平均差し戻し回数 */
+            avgReturns: string;
+            /** @description 直近申請更新日時 */
+            latestApplicationAt: string | null;
+        };
+        SpaceDashboardResponseDto: {
+            /** @description スペースダッシュボード集計一覧 */
+            spaces: components["schemas"]["SpaceDashboardSummaryDto"][];
         };
         CreateGroupDto: {
             /**
@@ -2714,6 +2772,32 @@ export interface operations {
                          */
                         status: 200;
                         data: components["schemas"]["GroupSummaryDto"];
+                    };
+                };
+            };
+        };
+    };
+    GroupsController_dashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        /**
+                         * @example 200
+                         * @enum {number}
+                         */
+                        status: 200;
+                        data: components["schemas"]["SpaceDashboardResponseDto"];
                     };
                 };
             };

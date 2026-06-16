@@ -13,6 +13,9 @@ type ApplicantApplicationActionsProps = {
   resubmitAction: () => Promise<void>;
 };
 
+/**
+ * 申請者が実行できる申請操作ボタンを表示します。
+ */
 export function ApplicantApplicationActions({
   capabilities,
   canResendReturnEmail = false,

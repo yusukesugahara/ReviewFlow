@@ -12,6 +12,9 @@ type AdminAuditLogsPageProps = {
   }>;
 };
 
+/**
+ * 管理者向け監査ログ画面のデータを読み込んで表示します。
+ */
 export default async function AdminAuditLogsPage({
   searchParams,
 }: AdminAuditLogsPageProps) {

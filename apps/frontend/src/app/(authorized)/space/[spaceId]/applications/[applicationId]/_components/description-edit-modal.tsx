@@ -24,6 +24,9 @@ type DescriptionEditModalProps = {
   initialDescription: string;
 };
 
+/**
+ * フォーム説明欄を編集するモーダルを表示します。
+ */
 export function DescriptionEditModal({
   action,
   initialDescription,

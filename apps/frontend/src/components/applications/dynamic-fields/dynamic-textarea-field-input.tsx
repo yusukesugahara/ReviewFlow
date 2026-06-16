@@ -3,6 +3,9 @@ import { cn } from "@/lib/utils";
 import type { DynamicFieldRendererProps } from "./dynamic-fields.types";
 import { DynamicFieldShell } from "./dynamic-field-shell";
 
+/**
+ * 動的フォームの複数行テキスト入力を表示します。
+ */
 export function TextareaFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, variant } = props;
 

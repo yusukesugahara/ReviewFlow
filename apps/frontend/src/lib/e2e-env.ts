@@ -5,6 +5,9 @@ const E2E_DEFAULTS = {
   PLAYWRIGHT_BASE_URL: "http://127.0.0.1:3001",
 } as const;
 
+/**
+ * E2E 実行時に使う環境変数を検証して取得します。
+ */
 export function getE2eEnv() {
   return {
     apiBase:
@@ -15,6 +18,9 @@ export function getE2eEnv() {
   };
 }
 
+/**
+ * Playwright 設定で使う環境変数を検証して取得します。
+ */
 export function getPlaywrightConfigEnv() {
   const e2eApiUrlRaw = process.env.E2E_API_URL ?? E2E_DEFAULTS.API_URL;
   const e2eApiKey =
@@ -29,6 +35,9 @@ export function getPlaywrightConfigEnv() {
 }
 
 /** Playwright webServer が親シェルの PATH 等を引き継ぐため */
+/**
+ * テスト実行時に子プロセスへ引き継ぐ環境変数を組み立てます。
+ */
 export function getInheritedProcessEnv(): NodeJS.ProcessEnv {
   return process.env;
 }

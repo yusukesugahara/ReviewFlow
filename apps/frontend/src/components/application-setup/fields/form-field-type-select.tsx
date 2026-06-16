@@ -16,6 +16,9 @@ type FormFieldTypeSelectProps = {
   value: FieldType;
 };
 
+/**
+ * フォーム項目種別の選択 UI を表示します。
+ */
 export function FormFieldTypeSelect({
   disabled,
   onChange,

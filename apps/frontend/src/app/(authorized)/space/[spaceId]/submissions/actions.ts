@@ -10,6 +10,9 @@ import { isApiFailure } from "@/lib/server/api-failure";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { CreateExportJobBody, ExportJobResponse } from "@/lib/schema";
 
+/**
+ * 提出一覧の CSV 出力ジョブを作成し、提出一覧へ結果付きで遷移します。
+ */
 export async function createSubmissionCsvExportAction(
   spaceId: string,
   formData: FormData,
@@ -57,6 +60,9 @@ export async function createSubmissionCsvExportAction(
   });
 }
 
+/**
+ * 提出一覧へ指定クエリ付きでリダイレクトします。
+ */
 function redirectToSubmissions(
   spaceId: string,
   params: Record<string, string>,

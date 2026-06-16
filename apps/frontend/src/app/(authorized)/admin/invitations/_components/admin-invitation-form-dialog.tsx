@@ -22,6 +22,9 @@ type AdminInvitationFormDialogProps = {
   onClose: () => void;
 };
 
+/**
+ * テナントユーザー招待フォームのダイアログを表示します。
+ */
 export function AdminInvitationFormDialog({
   formError,
   onClose,

@@ -19,6 +19,9 @@ type SpaceDetailsEditDialogProps = {
   updateSpaceAction: (groupId: string, formData: FormData) => Promise<void>;
 };
 
+/**
+ * スペース詳細編集ダイアログを表示します。
+ */
 export function SpaceDetailsEditDialog({
   group,
   onClose,

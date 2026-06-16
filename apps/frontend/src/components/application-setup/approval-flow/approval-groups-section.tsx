@@ -16,6 +16,9 @@ type ApprovalGroupsSectionProps = {
   onUpdateGroup: (id: string, patch: Partial<ApprovalGroupItem>) => void;
 };
 
+/**
+ * 承認グループ編集セクションを表示します。
+ */
 export function ApprovalGroupsSection({
   assignees,
   groups,

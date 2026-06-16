@@ -14,6 +14,9 @@ type SubmissionStatusFilterSelectProps = {
   options: Array<{ label: string; value: string }>;
 };
 
+/**
+ * 提出一覧のステータスフィルター入力を表示します。
+ */
 export function SubmissionStatusFilterSelect({
   defaultValue,
   options,

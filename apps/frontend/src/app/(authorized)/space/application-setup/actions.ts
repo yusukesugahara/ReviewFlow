@@ -16,6 +16,9 @@ import {
   setupErrorRedirectUrl,
 } from "./_utils/application-setup-navigation";
 
+/**
+ * 新規申請フォームのセットアップ入力を保存し、作成した詳細画面へ遷移します。
+ */
 export async function submitApplicationSetupAction(
   formData: FormData,
 ): Promise<void> {
@@ -51,6 +54,9 @@ export async function submitApplicationSetupAction(
   redirect(detailPath);
 }
 
+/**
+ * 既存申請フォームのセットアップ入力を保存し、更新後の詳細画面へ遷移します。
+ */
 export async function updateApplicationSetupAction(
   applicationId: string,
   formData: FormData,

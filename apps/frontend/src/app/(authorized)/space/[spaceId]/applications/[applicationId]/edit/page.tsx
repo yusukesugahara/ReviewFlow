@@ -14,18 +14,27 @@ import {
   SpaceApplicationEditView,
 } from "./view";
 
+/**
+ * セットアップ編集のエラーコードを表示メッセージに変換します。
+ */
 function setupErrorMessage(error?: string): string | null {
   return error && error in APPLICATION_SETUP_ERROR_MESSAGES
     ? APPLICATION_SETUP_ERROR_MESSAGES[error as ApplicationSetupError]
     : null;
 }
 
+/**
+ * セットアップ編集のエラー詳細を補足メッセージに変換します。
+ */
 function setupErrorDetailMessage(detail?: string): string | null {
   return typeof detail === "string" && detail.trim().length > 0
     ? detail.trim()
     : null;
 }
 
+/**
+ * 申請編集画面のデータを読み込んで表示します。
+ */
 export default async function SpaceApplicationEditPage({
   params,
   searchParams,

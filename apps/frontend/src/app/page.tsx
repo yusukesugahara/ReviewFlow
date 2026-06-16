@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
+/**
+ * 現在ユーザーの権限に応じて初期表示先へリダイレクトします。
+ */
 export default async function RootRedirectPage() {
   const me = await getCurrentSessionUser();
   if (!me) {

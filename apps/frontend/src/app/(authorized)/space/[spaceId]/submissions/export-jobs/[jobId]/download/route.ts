@@ -6,6 +6,9 @@ type DownloadRouteContext = {
   params: Promise<{ jobId: string }>;
 };
 
+/**
+ * CSV 出力ジョブの成果物をバックエンドから取得してダウンロードレスポンスとして返します。
+ */
 export async function GET(_request: Request, context: DownloadRouteContext) {
   const { jobId } = await context.params;
   const accessToken = await getAccessTokenFromCookie();

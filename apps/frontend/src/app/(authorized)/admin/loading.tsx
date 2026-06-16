@@ -1,5 +1,8 @@
 import { Skeleton } from "@/components/ui/skeleton";
 
+/**
+ * 管理画面の読み込み中表示を返します。
+ */
 export default function AdminLoading() {
   return (
     <div className="space-y-10">

@@ -9,6 +9,9 @@ import type {
   ConfirmPasswordResetSuccessJson,
 } from "@/lib/schema";
 
+/**
+ * パスワード再設定トークンと新しいパスワードを検証し、再設定を確定します。
+ */
 export async function confirmPasswordResetAction(formData: FormData): Promise<void> {
   const parsed = confirmPasswordResetSchema.safeParse({
     token: formData.get("token"),

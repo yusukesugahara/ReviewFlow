@@ -19,6 +19,9 @@ type AuditLogListCardProps = Pick<
   listDescription: string;
 };
 
+/**
+ * 監査ログ一覧カードを表示します。
+ */
 export function AuditLogListCard({
   createdFrom,
   createdTo,

@@ -8,6 +8,9 @@ type ExportJobRouteContext = {
   params: Promise<{ jobId: string }>;
 };
 
+/**
+ * CSV 出力ジョブの状態をバックエンドから取得して返します。
+ */
 export async function GET(_request: Request, context: ExportJobRouteContext) {
   const { jobId } = await context.params;
   const accessToken = await getAccessTokenFromCookie();

@@ -44,6 +44,9 @@ const TARGET_FILTER_LABELS: Record<AuditLogTargetTypeFilter, string> = {
   group_member: "スペースメンバー",
 };
 
+/**
+ * 監査ログ画面の表示用データを検索条件と行データから組み立てます。
+ */
 export function buildAdminAuditLogsViewModel({
   createdFrom,
   createdTo,
@@ -70,6 +73,9 @@ export function buildAdminAuditLogsViewModel({
   };
 }
 
+/**
+ * 監査ログ行を対象種別フィルターで絞り込みます。
+ */
 export function filterAuditRows(
   rows: EnrichedAuditRow[],
   filters: Pick<AdminAuditLogsViewProps, "targetType">,
@@ -80,6 +86,9 @@ export function filterAuditRows(
   return rows.filter((item) => item.row.targetType === filters.targetType);
 }
 
+/**
+ * 監査ログ画面の検索条件付き URL を組み立てます。
+ */
 export function buildAuditLogsHref({
   createdFrom,
   createdTo,
@@ -112,6 +121,9 @@ export function buildAuditLogsHref({
   return search ? `/admin/audit-logs?${search}` : "/admin/audit-logs";
 }
 
+/**
+ * 監査ログ画面で有効な検索条件があるかを判定します。
+ */
 function hasAuditLogFilters({
   createdFrom,
   createdTo,
@@ -129,6 +141,9 @@ function hasAuditLogFilters({
   );
 }
 
+/**
+ * 現在の検索条件に応じた監査ログ一覧の説明文を返します。
+ */
 function describeAuditLogList({
   query,
   targetType,

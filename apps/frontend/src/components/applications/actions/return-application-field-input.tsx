@@ -5,6 +5,9 @@ type ReturnApplicationFieldInputProps = {
   field: Pick<DynamicFormField, "id">;
 };
 
+/**
+ * 差戻し対象フィールドの選択とコメント入力を表示します。
+ */
 export function ReturnApplicationFieldInput({
   field,
 }: ReturnApplicationFieldInputProps) {

@@ -28,6 +28,9 @@ const apiErrorCodeSchema = z.object({
   errorCode: z.string().optional(),
 });
 
+/**
+ * アカウント画面へエラーメッセージ付きでリダイレクトします。
+ */
 function redirectWithAccountError(
   key: "emailError" | "passwordError" | "profileError",
   message: string,
@@ -36,11 +39,17 @@ function redirectWithAccountError(
   redirect(`/account?${params.toString()}`);
 }
 
+/**
+ * アカウント画面へ成功トースト付きでリダイレクトします。
+ */
 function redirectWithAccountSuccess(message: string): never {
   const params = new URLSearchParams({ toast: "success", message });
   redirect(`/account?${params.toString()}`);
 }
 
+/**
+ * Zod の検証エラーから最初のフィールドエラーメッセージを取得します。
+ */
 function firstFieldError(
   error: z.ZodError,
   fallback: string,
@@ -58,11 +67,17 @@ function firstFieldError(
   return fallback;
 }
 
+/**
+ * API エラー本文からエラーコードを取り出します。
+ */
 function errorCodeFromBody(body: unknown): string | undefined {
   const parsed = apiErrorCodeSchema.safeParse(body);
   return parsed.success ? parsed.data.errorCode : undefined;
 }
 
+/**
+ * プロフィール更新失敗時の画面表示メッセージを組み立てます。
+ */
 function profileErrorMessage(error: unknown): string {
   if (!isApiFailure(error)) {
     return "プロフィールの更新に失敗しました";
@@ -73,6 +88,9 @@ function profileErrorMessage(error: unknown): string {
   return errorMessageFromBody(error.body, "プロフィールの更新に失敗しました");
 }
 
+/**
+ * メールアドレス変更依頼失敗時の画面表示メッセージを組み立てます。
+ */
 function emailErrorMessage(error: unknown): string {
   if (!isApiFailure(error)) {
     return "確認メールの送信に失敗しました";
@@ -89,6 +107,9 @@ function emailErrorMessage(error: unknown): string {
   return errorMessageFromBody(error.body, "確認メールの送信に失敗しました");
 }
 
+/**
+ * パスワード変更失敗時の画面表示メッセージを組み立てます。
+ */
 function passwordErrorMessage(error: unknown): string {
   if (!isApiFailure(error)) {
     return "パスワードの変更に失敗しました";
@@ -102,6 +123,9 @@ function passwordErrorMessage(error: unknown): string {
   return errorMessageFromBody(error.body, "パスワードの変更に失敗しました");
 }
 
+/**
+ * プロフィール更新フォームを検証し、現在のユーザー情報を更新します。
+ */
 export async function updateAccountProfileAction(
   formData: FormData,
 ): Promise<void> {
@@ -136,6 +160,9 @@ export async function updateAccountProfileAction(
   redirectWithAccountSuccess("プロフィールを更新しました");
 }
 
+/**
+ * メールアドレス変更フォームを検証し、確認メールの送信を依頼します。
+ */
 export async function updateAccountEmailAction(
   formData: FormData,
 ): Promise<void> {
@@ -171,6 +198,9 @@ export async function updateAccountEmailAction(
   );
 }
 
+/**
+ * パスワード変更フォームを検証し、現在のユーザーのパスワードを更新します。
+ */
 export async function updateAccountPasswordAction(
   formData: FormData,
 ): Promise<void> {

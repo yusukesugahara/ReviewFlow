@@ -9,6 +9,9 @@ export type ApplicationStatusBadgeVariant =
   | "destructive"
   | "outline";
 
+/**
+ * 申請ステータスに対応するバッジ variant を返します。
+ */
 export function getApplicationStatusBadgeVariant(
   status: string,
 ): ApplicationStatusBadgeVariant {
@@ -25,6 +28,9 @@ export function getApplicationStatusBadgeVariant(
   }
 }
 
+/**
+ * 申請ステータスを画面表示用ラベルに変換します。
+ */
 export function getApplicationStatusLabel(status: string): string {
   return APPLICATION_STATUS_LABELS[status as keyof typeof APPLICATION_STATUS_LABELS] ?? status;
 }

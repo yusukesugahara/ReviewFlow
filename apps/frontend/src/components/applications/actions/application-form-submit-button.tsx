@@ -35,6 +35,9 @@ type ApplicationFormSubmitButtonProps = {
   submitForm: (formData: FormData) => void;
 };
 
+/**
+ * 申請フォーム送信用の状態付きボタンを表示します。
+ */
 export function ApplicationFormSubmitButton({
   formId,
   fields,

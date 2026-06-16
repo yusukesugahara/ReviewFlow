@@ -17,6 +17,9 @@ export type FormDetailViewModel = {
   waitingCount: number;
 };
 
+/**
+ * フォーム詳細画面に表示する集計値と表示文言を組み立てます。
+ */
 export function buildFormDetailViewModel({
   application,
   definition,
@@ -39,6 +42,9 @@ export function buildFormDetailViewModel({
   };
 }
 
+/**
+ * 日時文字列を画面表示用の日本語日時に変換します。
+ */
 function formatDateTime(value?: string): string {
   return value ? formatDateTimeJa(value) : "-";
 }

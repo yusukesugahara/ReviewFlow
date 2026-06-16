@@ -7,6 +7,9 @@ import {
   PublicApplicationSubmittedView,
 } from "./view";
 
+/**
+ * 公開申請フォーム画面のデータを読み込んで表示します。
+ */
 export default async function PublicApplicationFormPage({
   searchParams,
 }: PublicApplicationFormPageProps) {

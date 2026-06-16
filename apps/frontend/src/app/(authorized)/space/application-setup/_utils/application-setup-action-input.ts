@@ -26,6 +26,9 @@ export type ApplicationSetupActionInputResult =
   | { success: true; data: ApplicationSetupActionInput }
   | { success: false; error: ApplicationSetupError };
 
+/**
+ * 申請セットアップフォームの FormData を保存処理用の入力値に変換します。
+ */
 export function readApplicationSetupActionInput(
   formData: FormData,
 ): ApplicationSetupActionInputResult {

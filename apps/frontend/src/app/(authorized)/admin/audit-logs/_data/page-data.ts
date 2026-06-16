@@ -24,6 +24,9 @@ const TARGET_TYPE_FILTERS = [
   "group_member",
 ] as const;
 
+/**
+ * 管理者向け監査ログ画面の検索条件を正規化し、ページデータを読み込みます。
+ */
 export async function getAdminAuditLogsPageData(
   params?: AdminAuditLogSearchParams,
 ): Promise<AdminAuditLogsViewProps> {
@@ -76,6 +79,9 @@ export async function getAdminAuditLogsPageData(
   };
 }
 
+/**
+ * 正規化済みの検索条件で監査ログの 1 ページ分を取得します。
+ */
 async function fetchAuditLogsPage({
   accessToken,
   createdFrom,
@@ -120,10 +126,16 @@ async function fetchAuditLogsPage({
   };
 }
 
+/**
+ * 検索文字列を画面と API で扱う標準形に整えます。
+ */
 function normalizeSearchValue(value?: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/**
+ * 日付検索値を yyyy-MM-dd 形式として検証し、無効な値は空文字にします。
+ */
 function normalizeDateValue(value?: string): string {
   const normalized = normalizeSearchValue(value);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) {
@@ -133,19 +145,31 @@ function normalizeDateValue(value?: string): string {
   return Number.isNaN(timestamp) ? "" : normalized;
 }
 
+/**
+ * ページ番号を正の整数に正規化します。
+ */
 function normalizePage(value?: string): number {
   const parsed = Number.parseInt(value ?? "", 10);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1;
 }
 
+/**
+ * 日付値をその日の開始時刻の ISO 文字列に変換します。
+ */
 function toIsoDateStart(value: string): string {
   return new Date(`${value}T00:00:00`).toISOString();
 }
 
+/**
+ * 日付値をその日の終了時刻の ISO 文字列に変換します。
+ */
 function toIsoDateEnd(value: string): string {
   return new Date(`${value}T23:59:59.999`).toISOString();
 }
 
+/**
+ * 選択肢値を許可リスト内の値に正規化します。
+ */
 function normalizeOption<T extends readonly string[]>(value: string | undefined, allowed: T): T[number] {
   return typeof value === "string" && allowed.includes(value)
     ? value

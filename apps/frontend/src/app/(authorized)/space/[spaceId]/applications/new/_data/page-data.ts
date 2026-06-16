@@ -2,7 +2,6 @@ import "server-only";
 
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import type { ApprovalAssigneeOption } from "@/components/application-setup/form-builder/application-setup-draft-form";
-import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   GroupMembersListSuccessJson,
   GroupsListSuccessJson,
@@ -15,12 +14,17 @@ import type {
   SpaceNewApplicationGroup,
   SpaceNewApplicationMember,
 } from "../types";
+import { canManageSpaceForNewApplication } from "../_rules/space-new-application-access";
+import { toApprovalAssigneeOptions } from "../_view-models/approval-assignee-options";
 
 export type SpaceNewApplicationPageData = {
   assignees: ApprovalAssigneeOption[];
   canManageSpace: boolean;
 };
 
+/**
+ * スペースの新規申請画面を表示するためのデータを読み込みます。
+ */
 export async function getSpaceNewApplicationPageData({
   spaceId,
 }: {
@@ -42,10 +46,10 @@ export async function getSpaceNewApplicationPageData({
   }
 
   const currentGroup = groups.find((group) => group.id === spaceId);
-  const canManageSpace = Boolean(
-    me?.roles.includes(TENANT_ROLES.admin) ||
-      currentGroup?.currentUserRole === "admin",
-  );
+  const canManageSpace = canManageSpaceForNewApplication({
+    currentGroup,
+    user: me,
+  });
 
   return {
     assignees: canManageSpace
@@ -55,6 +59,9 @@ export async function getSpaceNewApplicationPageData({
   };
 }
 
+/**
+ * スペース内で承認担当者として選択できるメンバーを取得します。
+ */
 async function listApprovalAssignees({
   headers,
   spaceId,
@@ -79,8 +86,5 @@ async function listApprovalAssignees({
     redirect("/space");
   }
 
-  return members.map((member) => ({
-    id: member.userId,
-    label: member.name ? `${member.name} (${member.email})` : member.email,
-  }));
+  return toApprovalAssigneeOptions(members);
 }

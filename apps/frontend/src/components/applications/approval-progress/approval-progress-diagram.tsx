@@ -29,6 +29,9 @@ type ApprovalProgressDiagramProps = {
   steps: ApplicationProgressStep[];
 };
 
+/**
+ * 申請の承認進捗をステップ図として表示します。
+ */
 export function ApprovalProgressDiagram({
   application,
   corrections,

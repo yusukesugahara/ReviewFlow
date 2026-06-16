@@ -58,6 +58,9 @@ const approvalStepSchema = z.object({
   canReturn: z.boolean().catch(false),
 });
 
+/**
+ * 申請セットアップフォームの FormData を基本項目として検証します。
+ */
 export function readApplicationSetupForm(formData: FormData) {
   return applicationSetupFormSchema.safeParse({
     name: formData.get("name"),
@@ -72,6 +75,9 @@ export function readApplicationSetupForm(formData: FormData) {
   });
 }
 
+/**
+ * JSON 化された下書きフォーム項目を読み取り、有効な項目だけを返します。
+ */
 export function readDraftFields(fieldsJson: FormDataEntryValue | null): DraftField[] {
   if (typeof fieldsJson !== "string") {
     return [];
@@ -87,6 +93,9 @@ export function readDraftFields(fieldsJson: FormDataEntryValue | null): DraftFie
   });
 }
 
+/**
+ * JSON 化された承認ステップを API 入力に近い形へ変換します。
+ */
 export function parseSteps(stepsJson: string): ApprovalStepInput[] {
   const parsed: unknown = JSON.parse(stepsJson);
   const items = unknownArraySchema.safeParse(parsed);

@@ -1,6 +1,9 @@
 import { AccountDetailsPanel } from "./_components/account-details-panel";
 import type { AccountViewProps } from "./types";
 
+/**
+ * アカウント設定画面を表示します。
+ */
 export function AccountView({
   emailError,
   passwordError,

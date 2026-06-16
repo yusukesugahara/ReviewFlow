@@ -15,6 +15,9 @@ type CalendarPosition = {
   left: number;
 };
 
+/**
+ * 動的フォームの日付入力を表示します。
+ */
 export function DynamicDateFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, afterInput, variant } = props;
   const isTable = variant === "table";

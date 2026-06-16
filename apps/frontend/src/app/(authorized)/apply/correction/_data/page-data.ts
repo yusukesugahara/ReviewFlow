@@ -13,6 +13,9 @@ type PublicCorrectionQuery = Awaited<
   NonNullable<PublicCorrectionPageProps["searchParams"]>
 >;
 
+/**
+ * 公開差戻し修正画面に必要なフォーム定義、申請情報、エラー表示情報を読み込みます。
+ */
 export async function getPublicCorrectionPageData(
   query: PublicCorrectionQuery,
 ): Promise<{
@@ -33,6 +36,9 @@ export async function getPublicCorrectionPageData(
   };
 }
 
+/**
+ * 公開差戻し修正画面に表示するエラーメッセージをクエリから取得します。
+ */
 function getPublicCorrectionFormError(
   query: PublicCorrectionQuery,
 ): string | undefined {

@@ -16,6 +16,9 @@ import {
   FormDetailView,
 } from "./view";
 
+/**
+ * 申請詳細またはフォーム詳細画面のデータを読み込んで表示します。
+ */
 export default async function SpaceApplicationDetailPage({
   params,
   searchParams,

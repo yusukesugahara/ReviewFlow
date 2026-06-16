@@ -28,6 +28,9 @@ type ApplicationFieldsCardProps = {
   title: string;
 };
 
+/**
+ * 申請詳細の入力項目カードを表示します。
+ */
 export function ApplicationFieldsCard({
   application,
   fields,

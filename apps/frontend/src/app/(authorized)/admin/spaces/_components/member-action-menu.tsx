@@ -10,6 +10,9 @@ export type MemberActionMenuState = {
   top: number;
 };
 
+/**
+ * スペースメンバーの操作メニューを表示します。
+ */
 export function MemberActionMenu({
   canManageSpace,
   currentUserId,

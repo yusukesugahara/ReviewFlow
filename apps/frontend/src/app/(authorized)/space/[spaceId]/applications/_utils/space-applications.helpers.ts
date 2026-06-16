@@ -27,6 +27,9 @@ export type ApplicationFormListRow = {
   title: string;
 };
 
+/**
+ * 申請とフォーム定義を一覧テーブル用の行データに変換します。
+ */
 export function buildApplicationFormListRows({
   applications,
   formDefinitions,
@@ -61,6 +64,9 @@ export function buildApplicationFormListRows({
     );
 }
 
+/**
+ * 1 つのフォーム定義に紐づく申請数とリンク情報を一覧行にまとめます。
+ */
 function buildApplicationFormListRow(
   definition: FormDefinitionRow,
   applications: ApplicationRow[],
@@ -101,6 +107,9 @@ function buildApplicationFormListRow(
   };
 }
 
+/**
+ * フォーム定義が取得できない場合に申請一覧から表示用の定義情報を補完します。
+ */
 function buildFallbackDefinitions(
   rows: ApplicationRow[],
   spaceId: string,

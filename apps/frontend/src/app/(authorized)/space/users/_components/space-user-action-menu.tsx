@@ -11,6 +11,9 @@ type SpaceUserActionMenuProps = {
   onRoleChange: (member: SpaceUserTableMember) => void;
 };
 
+/**
+ * スペースユーザーの操作メニューを表示します。
+ */
 export function SpaceUserActionMenu({
   currentUserId,
   menu,

@@ -10,6 +10,9 @@ import type {
   ConfirmEmailChangeSuccessJson,
 } from "@/lib/schema";
 
+/**
+ * メールアドレス変更トークンを検証し、変更を確定します。
+ */
 export async function confirmAccountEmailChangeAction(
   formData: FormData,
 ): Promise<void> {

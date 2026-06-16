@@ -9,12 +9,18 @@ export type ApplicationRouteQueryParams = Record<
   boolean | number | string | null | undefined
 >;
 
+/**
+ * 申請オブジェクトからスペース ID を取得します。
+ */
 export function getApplicationSpaceId(
   application: ApplicationSpaceRouteSource,
 ): string | null {
   return application.groupId ?? null;
 }
 
+/**
+ * パスにクエリパラメータを追加した URL を返します。
+ */
 export function appendQueryParams(
   href: string,
   params: ApplicationRouteQueryParams,
@@ -34,6 +40,9 @@ export function appendQueryParams(
   return `${href}${href.includes("?") ? "&" : "?"}${queryString}`;
 }
 
+/**
+ * 公開申請フォームの URL を組み立てます。
+ */
 export function buildApplyFormHref(
   spaceId: string,
   formDefinitionId?: string | null,
@@ -43,6 +52,9 @@ export function buildApplyFormHref(
   });
 }
 
+/**
+ * スペース申請フォーム一覧の URL を組み立てます。
+ */
 export function buildSpaceApplicationsHref(
   spaceId: string,
   params: ApplicationRouteQueryParams = {},
@@ -53,10 +65,16 @@ export function buildSpaceApplicationsHref(
   );
 }
 
+/**
+ * スペースの新規申請フォーム作成 URL を組み立てます。
+ */
 export function buildSpaceApplicationNewHref(spaceId: string): string {
   return `${buildSpaceApplicationsHref(spaceId)}/new`;
 }
 
+/**
+ * ID 群からスペース申請詳細 URL を組み立てます。
+ */
 export function buildSpaceApplicationDetailHrefByIds(
   spaceId: string,
   applicationId: string,
@@ -68,6 +86,9 @@ export function buildSpaceApplicationDetailHrefByIds(
   );
 }
 
+/**
+ * 申請オブジェクトからスペース申請詳細 URL を組み立てます。
+ */
 export function buildSpaceApplicationDetailHref(
   application: ApplicationSpaceRouteSource,
 ): string | null {
@@ -83,6 +104,9 @@ export function buildSpaceApplicationDetailHref(
   );
 }
 
+/**
+ * フォーム定義詳細表示用の申請詳細 URL を組み立てます。
+ */
 export function buildSpaceApplicationFormDetailHref({
   applicationId,
   definitionId,
@@ -98,6 +122,9 @@ export function buildSpaceApplicationFormDetailHref({
   );
 }
 
+/**
+ * スペース提出一覧の URL を組み立てます。
+ */
 export function buildSpaceSubmissionsHref(
   spaceId: string,
   params: ApplicationRouteQueryParams = {},
@@ -108,6 +135,9 @@ export function buildSpaceSubmissionsHref(
   );
 }
 
+/**
+ * ID 群から提出詳細互換 URL を組み立てます。
+ */
 export function buildSpaceSubmissionDetailHrefByIds(
   spaceId: string,
   applicationId: string,
@@ -119,6 +149,9 @@ export function buildSpaceSubmissionDetailHrefByIds(
   );
 }
 
+/**
+ * 申請オブジェクトから提出詳細互換 URL を組み立てます。
+ */
 export function buildSpaceSubmissionDetailHref(
   application: ApplicationSpaceRouteSource,
 ): string | null {
@@ -134,6 +167,9 @@ export function buildSpaceSubmissionDetailHref(
   );
 }
 
+/**
+ * 申請オブジェクトから申請編集 URL を組み立てます。
+ */
 export function buildSpaceApplicationEditHref(
   application: ApplicationSpaceRouteSource,
 ): string | null {
@@ -149,6 +185,9 @@ export function buildSpaceApplicationEditHref(
   );
 }
 
+/**
+ * ID 群から申請編集 URL を組み立てます。
+ */
 export function buildSpaceApplicationEditHrefByIds(
   spaceId: string,
   applicationId: string,

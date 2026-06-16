@@ -9,6 +9,9 @@ type RootSpaceLayoutProps = {
   children: ReactNode;
 };
 
+/**
+ * スペース配下ページの共通レイアウトを表示します。
+ */
 export default async function RootSpaceLayout({ children }: RootSpaceLayoutProps) {
   const [spaces, me] = await Promise.all([
     getSpaceLayoutSpaces(),

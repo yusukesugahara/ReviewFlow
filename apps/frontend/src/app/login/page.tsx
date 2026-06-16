@@ -1,25 +1,12 @@
 import { LoginView } from "./view";
-import { getServerApiBaseUrl } from "@/lib/server/env";
+import { isApiOriginReachable } from "@/lib/server/api-origin";
 import type { LoginPageProps } from "./types";
 
-async function fetchApiOriginReachable(): Promise<boolean> {
-  try {
-    const ac = new AbortController();
-    const id = setTimeout(() => ac.abort(), 5_000);
-    await fetch(`${getServerApiBaseUrl()}/`, {
-      method: "GET",
-      cache: "no-store",
-      signal: ac.signal,
-    });
-    clearTimeout(id);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
+/**
+ * ログイン画面の API 接続状態と next クエリを読み込んで表示します。
+ */
 export default async function LoginPage({ searchParams }: LoginPageProps) {
-  const apiReachable = await fetchApiOriginReachable();
+  const apiReachable = await isApiOriginReachable();
   const params = (await searchParams) ?? {};
   return <LoginView apiReachable={apiReachable} next={params.next} />;
 }

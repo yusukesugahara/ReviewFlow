@@ -4,6 +4,9 @@ type AdminInvitationErrorCardProps = {
   error: string;
 };
 
+/**
+ * 招待管理画面のエラー状態カードを表示します。
+ */
 export function AdminInvitationErrorCard({ error }: AdminInvitationErrorCardProps) {
   return (
     <Card className="border-red-200 bg-red-50/40">

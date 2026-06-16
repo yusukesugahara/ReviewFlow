@@ -11,6 +11,9 @@ type AuditLogDateFilterPickerProps = {
   name: string;
 };
 
+/**
+ * 監査ログの日付フィルター入力を表示します。
+ */
 export function AuditLogDateFilterPicker({
   defaultValue,
   id,
@@ -69,6 +72,9 @@ export function AuditLogDateFilterPicker({
   );
 }
 
+/**
+ * 日付入力文字列を Date に変換します。
+ */
 function parseDateValue(value: string): Date | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     return null;
@@ -80,6 +86,9 @@ function parseDateValue(value: string): Date | null {
   return new Date(year, month - 1, day);
 }
 
+/**
+ * 日付入力文字列を表示用の日付に変換します。
+ */
 function formatDisplayValue(value: string): string {
   const date = parseDateValue(value);
   if (!date) {

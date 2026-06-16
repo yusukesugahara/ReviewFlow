@@ -9,6 +9,9 @@ type CorrectionItemIdentity = Pick<
   "fieldKey" | "formFieldId"
 >;
 
+/**
+ * fieldKey を画面表示用のラベルに変換します。
+ */
 export function formatFieldKeyLabel(fieldKey: string): string {
   return fieldKey
     .split("_")
@@ -31,6 +34,9 @@ export function formatFieldKeyLabel(fieldKey: string): string {
     .join("");
 }
 
+/**
+ * 差戻し項目の表示ラベルを取得します。
+ */
 export function getCorrectionItemLabel(
   item: CorrectionItemIdentity,
   fields: ApplicationFormField[],
@@ -39,6 +45,9 @@ export function getCorrectionItemLabel(
   return field?.label ?? formatFieldKeyLabel(item.fieldKey);
 }
 
+/**
+ * 差戻し項目に対応するフォーム項目を取得します。
+ */
 export function getCorrectionItemField(
   item: CorrectionItemIdentity,
   fields: ApplicationFormField[],
@@ -49,6 +58,9 @@ export function getCorrectionItemField(
   );
 }
 
+/**
+ * 差戻し項目の提出値を表示用文字列に変換します。
+ */
 export function formatCorrectionSubmittedValue({
   fields,
   item,

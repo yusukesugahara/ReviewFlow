@@ -14,6 +14,9 @@ type RootLayoutProps = {
   children: ReactNode;
 };
 
+/**
+ * アプリ全体の HTML 構造と共通 UI プロバイダーを定義します。
+ */
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="ja" suppressHydrationWarning>

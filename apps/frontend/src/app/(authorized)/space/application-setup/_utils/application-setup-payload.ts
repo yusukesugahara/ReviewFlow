@@ -33,6 +33,9 @@ export type ApprovalStepRequest = {
   canReturn: boolean;
 };
 
+/**
+ * フィールド保存用ペイロードを backend-fetch のリクエスト型に合わせます。
+ */
 export function toFieldRequest(field: FieldPayload): FieldRequest {
   return {
     ...field,
@@ -40,6 +43,9 @@ export function toFieldRequest(field: FieldPayload): FieldRequest {
   };
 }
 
+/**
+ * 承認ステップ入力を API リクエストの steps 形式へ変換します。
+ */
 export function toApprovalStepRequest(
   steps: ApprovalStepInput[],
 ): ApprovalStepRequest[] {
@@ -52,6 +58,9 @@ export function toApprovalStepRequest(
   }));
 }
 
+/**
+ * 下書きフォーム項目をフォーム定義項目の作成ペイロードに変換します。
+ */
 export function toFieldPayloads(fields: DraftField[]): FieldPayload[] {
   const usedKeys = new Set<string>();
   return fields.map((field, index) => {

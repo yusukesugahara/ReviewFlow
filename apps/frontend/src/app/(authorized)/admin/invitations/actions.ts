@@ -16,6 +16,9 @@ import type {
   CreateInvitationSuccessJson,
 } from "@/lib/schema";
 
+/**
+ * 招待作成失敗時の画面表示メッセージを組み立てます。
+ */
 function invitationErrorMessage(error: unknown) {
   if (!isApiFailure(error)) {
     return "招待の作成に失敗しました";
@@ -46,6 +49,9 @@ function invitationErrorMessage(error: unknown) {
   return `招待の作成に失敗しました（status: ${error.status}）`;
 }
 
+/**
+ * ユーザー削除失敗時の画面表示メッセージを組み立てます。
+ */
 function userDeleteErrorMessage(error: unknown) {
   if (!isApiFailure(error)) {
     return "ユーザの削除に失敗しました";
@@ -68,6 +74,9 @@ function userDeleteErrorMessage(error: unknown) {
   return `ユーザの削除に失敗しました（status: ${error.status}）`;
 }
 
+/**
+ * ユーザー復活失敗時の画面表示メッセージを組み立てます。
+ */
 function userRestoreErrorMessage(error: unknown) {
   if (!isApiFailure(error)) {
     return "ユーザの復活に失敗しました";
@@ -87,6 +96,9 @@ function userRestoreErrorMessage(error: unknown) {
   return `ユーザの復活に失敗しました（status: ${error.status}）`;
 }
 
+/**
+ * 招待作成フォームを検証し、テナントユーザー招待を作成します。
+ */
 export async function createInvitationAction(
   formData: FormData,
 ): Promise<void> {
@@ -129,6 +141,9 @@ export async function createInvitationAction(
   redirect(`/admin/invitations?${nextParams.toString()}`);
 }
 
+/**
+ * 指定ユーザーを削除し、管理者向け招待画面へ結果を反映します。
+ */
 export async function deleteUserAction(userId: string): Promise<void> {
   try {
     const response = await client.DELETE("/users/{id}", {
@@ -152,6 +167,9 @@ export async function deleteUserAction(userId: string): Promise<void> {
   redirect(`/admin/invitations?${params.toString()}`);
 }
 
+/**
+ * 削除済みユーザーを復活し、管理者向け招待画面へ結果を反映します。
+ */
 export async function restoreUserAction(userId: string): Promise<void> {
   try {
     const response = await client.PATCH("/users/{id}/restore", {

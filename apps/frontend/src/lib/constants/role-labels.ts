@@ -1,5 +1,8 @@
 import { SPACE_ROLES, TENANT_ROLES } from "./roles";
 
+/**
+ * テナントロールを画面表示用ラベルに変換します。
+ */
 export function userRoleLabel(role: string): string {
   switch (role) {
     case TENANT_ROLES.admin:
@@ -11,6 +14,9 @@ export function userRoleLabel(role: string): string {
   }
 }
 
+/**
+ * スペースロールを画面表示用ラベルに変換します。
+ */
 export function spaceRoleLabel(role: string): string {
   switch (role) {
     case SPACE_ROLES.admin:

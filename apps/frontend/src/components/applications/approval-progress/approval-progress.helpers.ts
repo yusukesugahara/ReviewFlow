@@ -11,6 +11,9 @@ export type FieldCorrectionItem = {
   item: ApplicationCorrection["items"][number];
 };
 
+/**
+ * 承認進捗ステータスの表示メタ情報を返します。
+ */
 export function progressStatusMeta(status: ApplicationProgressStep["status"]) {
   if (status === "current") {
     return {
@@ -47,14 +50,23 @@ export function progressStatusMeta(status: ApplicationProgressStep["status"]) {
   };
 }
 
+/**
+ * 承認進捗ステップが詳細選択可能かを判定します。
+ */
 export function isSelectableProgressStep(step: ApplicationProgressStep): boolean {
   return step.status !== "pending";
 }
 
+/**
+ * 承認進捗内のユーザー表示名を返します。
+ */
 export function displayUser(user: ApplicationProgressUser): string {
   return user.name?.trim() || user.email;
 }
 
+/**
+ * 承認操作種別を表示ラベルに変換します。
+ */
 export function actionLabel(action: string): string {
   if (action === "approved") {
     return "承認";
@@ -68,6 +80,9 @@ export function actionLabel(action: string): string {
   return action;
 }
 
+/**
+ * 差戻し履歴を承認進捗上の差戻し操作として対応付けます。
+ */
 export function mapCorrectionsToReturnedActions(
   steps: ApplicationProgressStep[],
   corrections: ApplicationCorrection[],
@@ -97,6 +112,9 @@ export function mapCorrectionsToReturnedActions(
   return mapped;
 }
 
+/**
+ * 指定フィールドに紐づく差戻し項目を取得します。
+ */
 export function getFieldCorrectionItems(
   corrections: ApplicationCorrection[],
   field: Pick<ApplicationFormField, "id" | "fieldKey">,
@@ -110,6 +128,9 @@ export function getFieldCorrectionItems(
   );
 }
 
+/**
+ * 承認進捗で使う日時表示文字列を返します。
+ */
 export function formatDateTime(value?: string | null): string {
   return value ? formatDateTimeJa(value) : "-";
 }

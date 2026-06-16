@@ -17,6 +17,11 @@ import { isFormSetupStatus } from "@/components/applications/status/application-
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
+import {
+  getMissingRequiredFields,
+  isRelatedSubmittedApplication,
+  isSetupApplicationForDefinition,
+} from "../_rules/application-detail-rules";
 import type {
   ApplicationSummary,
   FormDefinitionDetail,
@@ -52,6 +57,9 @@ export type SpaceApplicationDetailPageData =
   | FormDetailPageData
   | ApplicationDetailPageData;
 
+/**
+ * セットアップフォームまたは提出済み申請の詳細画面データを読み込みます。
+ */
 export async function getSpaceApplicationDetailPageData({
   applicationId,
   queryDefinitionId,
@@ -116,6 +124,9 @@ export async function getSpaceApplicationDetailPageData({
   };
 }
 
+/**
+ * 対象フォーム定義を取得し、指定がない場合はスペース内の先頭定義を使います。
+ */
 async function getFormDefinition({
   authHeaders,
   definitionId,
@@ -142,6 +153,9 @@ async function getFormDefinition({
       }>(definitionRaw).definitions?.[0] ?? null);
 }
 
+/**
+ * 選択中の申請に紐づく差戻し履歴を取得します。
+ */
 async function getApplicationCorrections({
   applicationId,
   authHeaders,
@@ -159,6 +173,9 @@ async function getApplicationCorrections({
   );
 }
 
+/**
+ * 差戻し中の申請で修正対象になっている項目を取得します。
+ */
 async function getOpenCorrectionItems({
   applicationId,
   authHeaders,
@@ -180,6 +197,9 @@ async function getOpenCorrectionItems({
   );
 }
 
+/**
+ * 同じフォーム定義から作成された提出済み申請を取得します。
+ */
 async function getRelatedSubmittedApplications({
   authHeaders,
   definitionId,
@@ -190,12 +210,14 @@ async function getRelatedSubmittedApplications({
   spaceId: string;
 }): Promise<ApplicationSummary[]> {
   const applications = await getSpaceApplications({ authHeaders, spaceId });
-  return applications.filter(
-    (row) =>
-      row.formDefinitionId === definitionId && !isFormSetupStatus(row.status),
+  return applications.filter((row) =>
+    isRelatedSubmittedApplication(row, definitionId),
   );
 }
 
+/**
+ * 申請のフォーム定義に対応するセットアップフォーム詳細 URL を解決します。
+ */
 async function getFormDetailHref({
   authHeaders,
   definitionId,
@@ -214,16 +236,21 @@ async function getFormDetailHref({
     spaceId,
   });
   const setupApplication =
-    applications.find(
-      (row) =>
-        row.formDefinitionId === definitionId && isFormSetupStatus(row.status),
-    ) ?? null;
+    applications.find((row) => isSetupApplicationForDefinition(row, definitionId)) ??
+    null;
 
   return setupApplication
-    ? buildFormDetailHref({ applicationId: setupApplication.id, definitionId, spaceId })
+    ? buildSpaceApplicationFormDetailHref({
+        applicationId: setupApplication.id,
+        definitionId,
+        spaceId,
+      })
     : null;
 }
 
+/**
+ * 現在のスペースで表示可能な申請一覧を取得します。
+ */
 async function getSpaceApplications({
   authHeaders,
   spaceId,
@@ -241,6 +268,9 @@ async function getSpaceApplications({
   );
 }
 
+/**
+ * スペースの表示可能な申請一覧を取得し、権限がない場合は空配列を返します。
+ */
 async function getSpaceApplicationsIfAvailable({
   authHeaders,
   spaceId,
@@ -259,42 +289,4 @@ async function getSpaceApplicationsIfAvailable({
     unwrapResponseData<{ applications?: ApplicationSummary[] }>(applicationsRaw)
       .applications ?? []
   );
-}
-
-function hasRequiredValue(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return false;
-  }
-  if (typeof value === "string") {
-    return value.trim().length > 0;
-  }
-  if (Array.isArray(value)) {
-    return value.length > 0;
-  }
-  return true;
-}
-
-function getMissingRequiredFields(
-  fields: ApplicationFormField[],
-  values: Record<string, unknown>,
-): ApplicationFormField[] {
-  return fields.filter(
-    (field) => field.required && !hasRequiredValue(values[field.fieldKey]),
-  );
-}
-
-function buildFormDetailHref({
-  applicationId,
-  definitionId,
-  spaceId,
-}: {
-  applicationId: string;
-  definitionId: string;
-  spaceId: string;
-}): string {
-  return buildSpaceApplicationFormDetailHref({
-    applicationId,
-    definitionId,
-    spaceId,
-  });
 }
