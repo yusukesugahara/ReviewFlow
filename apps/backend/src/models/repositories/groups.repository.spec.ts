@@ -182,6 +182,21 @@ describe('GroupsRepository', () => {
     expect(userBuilder.orderBy).toHaveBeenCalledWith('user.createdAt', 'ASC');
   });
 
+  it('finds membership by tenant group and user', async () => {
+    members.findOne.mockResolvedValue(null);
+
+    await repository.findMember('tenant-1', 'group-1', 'user-1');
+
+    expect(members.findOne).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        userId: 'user-1',
+      },
+      relations: { user: true },
+    });
+  });
+
   it('creates a group and admin memberships in one transaction', async () => {
     const group = await repository.createGroupWithAdmins({
       tenantId: 'tenant-1',
@@ -239,5 +254,17 @@ describe('GroupsRepository', () => {
     await expect(repository.saveGroup(group)).resolves.toBe(group);
 
     expect(groups.save).toHaveBeenCalledWith(group);
+  });
+
+  it('counts groups by tenant and id', async () => {
+    groups.count.mockResolvedValue(1);
+
+    await expect(
+      repository.countGroupInTenant('tenant-1', 'group-1'),
+    ).resolves.toBe(1);
+
+    expect(groups.count).toHaveBeenCalledWith({
+      where: { id: 'group-1', tenantId: 'tenant-1' },
+    });
   });
 });
