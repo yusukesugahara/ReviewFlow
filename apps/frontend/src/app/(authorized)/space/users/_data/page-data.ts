@@ -1,7 +1,6 @@
 import "server-only";
 
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   GroupAvailableUsersSuccessJson,
   GroupMembersListSuccessJson,
@@ -15,6 +14,11 @@ import type {
   SpaceUsersGroup,
   SpaceUsersMember,
 } from "../types";
+import { isTenantAdminUser } from "../_rules/space-user-access-rules";
+import {
+  normalizeAvailableUsers,
+  normalizeSpaceMembers,
+} from "../_utils/space-user-normalizers";
 
 type AuthHeaders = { Authorization: string };
 
@@ -51,7 +55,7 @@ export async function getSpaceUsersPageData({
     };
   }
 
-  const isTenantAdmin = me?.roles.includes(TENANT_ROLES.admin) ?? false;
+  const isTenantAdmin = isTenantAdminUser(me);
   const [members, availableUsers] = await Promise.all([
     listSpaceMembers(spaceId, authHeaders),
     isTenantAdmin ? listAvailableUsers(spaceId, authHeaders) : Promise.resolve([]),
@@ -80,12 +84,9 @@ async function listSpaceMembers(
     params: { path: { groupId } },
     headers,
   });
-  return unwrapResponseData<GroupMembersListSuccessJson["data"]>(
-    response,
-  ).members.map((member) => ({
-    ...member,
-    name: typeof member.name === "string" ? member.name : null,
-  }));
+  return normalizeSpaceMembers(
+    unwrapResponseData<GroupMembersListSuccessJson["data"]>(response).members,
+  );
 }
 
 async function listAvailableUsers(
@@ -96,10 +97,7 @@ async function listAvailableUsers(
     params: { path: { groupId } },
     headers,
   });
-  return unwrapResponseData<GroupAvailableUsersSuccessJson["data"]>(
-    response,
-  ).users.map((user) => ({
-    ...user,
-    name: typeof user.name === "string" ? user.name : null,
-  }));
+  return normalizeAvailableUsers(
+    unwrapResponseData<GroupAvailableUsersSuccessJson["data"]>(response).users,
+  );
 }

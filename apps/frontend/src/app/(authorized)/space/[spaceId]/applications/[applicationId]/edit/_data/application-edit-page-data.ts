@@ -6,16 +6,19 @@ import {
   buildSpaceApplicationDetailHrefByIds,
   buildSpaceApplicationEditHrefByIds,
 } from "@/components/applications/routing/application-routes";
-import { normalizeFieldOptions } from "@/components/applications/dynamic-fields/field-options";
 import {
   isFormSetupStatus,
   isPublishedApplicationStatus,
   isReturnedApplicationStatus,
 } from "@/components/applications/status/application-status-rules";
-import { FIELD_TYPES, isFieldType, type FieldType } from "@/lib/constants/form-fields";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
+import {
+  toApprovalAssigneeOptions,
+  toDraftFields,
+  toInitialSteps,
+} from "../_view-models/setup-application-edit-view-model";
 import type {
   CorrectionTargetItem,
   EditableApplicationDetail,
@@ -119,10 +122,7 @@ export async function getSpaceApplicationEditPageData({
 
   return {
     kind: "setup",
-    assignees: members.map((member) => ({
-      id: member.userId,
-      label: member.name ? `${member.name} (${member.email})` : member.email,
-    })),
+    assignees: toApprovalAssigneeOptions(members),
     currentApprovalFlowId: app.approvalFlowId,
     currentFormDefinitionId: definitionId,
     detailPath,
@@ -219,42 +219,4 @@ async function getApprovalFlows({
   });
 
   return unwrapResponseData<{ flows?: EditableApprovalFlow[] }>(flowsRaw).flows ?? [];
-}
-
-function asFieldType(value: string): FieldType {
-  return isFieldType(value) ? value : FIELD_TYPES.text;
-}
-
-function optionsToText(options: unknown[] | null | undefined): string {
-  return normalizeFieldOptions(options)
-    .map((option) => option.label || option.value)
-    .filter((option) => option.length > 0)
-    .join("\n");
-}
-
-function toDraftFields(fields: EditableFormField[]): DraftField[] {
-  return fields.map((field) => ({
-    id: field.id,
-    fieldKey: field.fieldKey,
-    label: field.label,
-    fieldType: asFieldType(field.fieldType),
-    required: field.required,
-    placeholder: field.placeholder ?? "",
-    helpText: field.helpText ?? "",
-    optionsText: optionsToText(field.options),
-  }));
-}
-
-function toInitialSteps(flow: EditableApprovalFlow | null): ApprovalStepItem[] {
-  return (flow?.steps ?? []).map((step) => ({
-    id: step.id,
-    stepName: step.stepName,
-    assigneeUserIds:
-      step.assigneeUserIds && step.assigneeUserIds.length > 0
-        ? step.assigneeUserIds
-        : step.assigneeUserId
-          ? [step.assigneeUserId]
-          : [],
-    canReturn: step.canReturn,
-  }));
 }

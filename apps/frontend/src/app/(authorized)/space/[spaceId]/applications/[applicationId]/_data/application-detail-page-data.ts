@@ -17,6 +17,11 @@ import { isFormSetupStatus } from "@/components/applications/status/application-
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
+import {
+  getMissingRequiredFields,
+  isRelatedSubmittedApplication,
+  isSetupApplicationForDefinition,
+} from "../_rules/application-detail-rules";
 import type {
   ApplicationSummary,
   FormDefinitionDetail,
@@ -190,9 +195,8 @@ async function getRelatedSubmittedApplications({
   spaceId: string;
 }): Promise<ApplicationSummary[]> {
   const applications = await getSpaceApplications({ authHeaders, spaceId });
-  return applications.filter(
-    (row) =>
-      row.formDefinitionId === definitionId && !isFormSetupStatus(row.status),
+  return applications.filter((row) =>
+    isRelatedSubmittedApplication(row, definitionId),
   );
 }
 
@@ -214,13 +218,15 @@ async function getFormDetailHref({
     spaceId,
   });
   const setupApplication =
-    applications.find(
-      (row) =>
-        row.formDefinitionId === definitionId && isFormSetupStatus(row.status),
-    ) ?? null;
+    applications.find((row) => isSetupApplicationForDefinition(row, definitionId)) ??
+    null;
 
   return setupApplication
-    ? buildFormDetailHref({ applicationId: setupApplication.id, definitionId, spaceId })
+    ? buildSpaceApplicationFormDetailHref({
+        applicationId: setupApplication.id,
+        definitionId,
+        spaceId,
+      })
     : null;
 }
 
@@ -259,42 +265,4 @@ async function getSpaceApplicationsIfAvailable({
     unwrapResponseData<{ applications?: ApplicationSummary[] }>(applicationsRaw)
       .applications ?? []
   );
-}
-
-function hasRequiredValue(value: unknown): boolean {
-  if (value === null || value === undefined) {
-    return false;
-  }
-  if (typeof value === "string") {
-    return value.trim().length > 0;
-  }
-  if (Array.isArray(value)) {
-    return value.length > 0;
-  }
-  return true;
-}
-
-function getMissingRequiredFields(
-  fields: ApplicationFormField[],
-  values: Record<string, unknown>,
-): ApplicationFormField[] {
-  return fields.filter(
-    (field) => field.required && !hasRequiredValue(values[field.fieldKey]),
-  );
-}
-
-function buildFormDetailHref({
-  applicationId,
-  definitionId,
-  spaceId,
-}: {
-  applicationId: string;
-  definitionId: string;
-  spaceId: string;
-}): string {
-  return buildSpaceApplicationFormDetailHref({
-    applicationId,
-    definitionId,
-    spaceId,
-  });
 }

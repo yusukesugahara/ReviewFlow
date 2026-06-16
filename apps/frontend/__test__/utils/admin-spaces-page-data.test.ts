@@ -1,14 +1,16 @@
+import { statusFromResponse } from "@/app/(authorized)/admin/spaces/_data/page-data";
 import {
-  buildAdminSpaceListItems,
   canCreateSpace,
   canManageSpace,
   isSystemAdminUser,
+} from "@/app/(authorized)/admin/spaces/_rules/space-access-rules";
+import {
   normalizeAvailableUsers,
   normalizeGroups,
   normalizeMembers,
   normalizeTenantUsers,
-  statusFromResponse,
-} from "@/app/(authorized)/admin/spaces/_data/page-data";
+} from "@/app/(authorized)/admin/spaces/_utils/admin-space-normalizers";
+import { buildAdminSpaceListItems } from "@/app/(authorized)/admin/spaces/_view-models/admin-space-list-items";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 import type {
   AdminSpacesAvailableUsersData,
