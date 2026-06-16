@@ -14,6 +14,9 @@ type AdminInvitationSentCardProps = {
   role?: string;
 };
 
+/**
+ * 送信済み招待の確認カードを表示します。
+ */
 export function AdminInvitationSentCard({
   email,
   expiresAt,

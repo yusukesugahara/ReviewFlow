@@ -6,6 +6,9 @@ const nonEmptyStringSchema = z.string().trim().min(1);
 const stringValueSchema = z.string();
 const stringArraySchema = z.array(z.string());
 
+/**
+ * 動的フォーム項目の FormData から申請値を読み取ります。
+ */
 export function readDynamicValuesFromFormData(
   fields: DynamicFormField[],
   formData: FormData,

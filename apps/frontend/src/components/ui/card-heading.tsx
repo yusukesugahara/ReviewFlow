@@ -13,6 +13,9 @@ type CardHeadingProps = {
   titleClassName?: string;
 };
 
+/**
+ * カード内で使う見出しと説明文を表示します。
+ */
 export function CardHeading({
   badge,
   badgeVariant = "outline",

@@ -25,6 +25,9 @@ type SpaceUserAddDialogProps = {
   spaceId: string;
 };
 
+/**
+ * スペースユーザー追加ダイアログを表示します。
+ */
 export function SpaceUserAddDialog({
   availableUsers,
   onClose,

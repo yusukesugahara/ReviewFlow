@@ -34,6 +34,9 @@ type ApplicationDetailScreenProps = {
   submitAction: () => Promise<void>;
 };
 
+/**
+ * 申請詳細画面の主要コンテンツを表示します。
+ */
 export function ApplicationDetailScreen({
   actionError,
   app,

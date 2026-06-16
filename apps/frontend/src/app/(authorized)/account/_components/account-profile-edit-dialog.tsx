@@ -18,6 +18,9 @@ type AccountProfileEditDialogProps = {
   user: CurrentSessionUser;
 };
 
+/**
+ * プロフィール編集ダイアログを表示します。
+ */
 export function AccountProfileEditDialog({
   error,
   onClose,

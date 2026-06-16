@@ -17,6 +17,9 @@ type PublicApplicationFormProps = {
 const initialState: PublicApplicationSubmitState = {};
 const FORM_ID = "public-application-form";
 
+/**
+ * 公開申請フォームの入力 UI を表示します。
+ */
 export function PublicApplicationForm({
   definition,
   initialFormError,

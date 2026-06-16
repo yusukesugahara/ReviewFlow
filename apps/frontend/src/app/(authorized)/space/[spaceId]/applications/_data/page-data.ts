@@ -18,6 +18,9 @@ export type SpaceApplicationsPageData = {
   formDefinitions: FormDefinitionRow[];
 };
 
+/**
+ * スペースの申請一覧画面に必要な申請とフォーム定義を読み込みます。
+ */
 export async function getSpaceApplicationsPageData({
   showArchived,
   spaceId,
@@ -42,6 +45,9 @@ export async function getSpaceApplicationsPageData({
   };
 }
 
+/**
+ * 一覧表示用のフォーム定義を取得し、権限不足時は空配列として扱います。
+ */
 async function fetchFormDefinitionsForList(
   spaceId: string,
   headers: { Authorization: string },

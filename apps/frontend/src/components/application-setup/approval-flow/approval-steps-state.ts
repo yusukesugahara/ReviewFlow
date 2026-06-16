@@ -21,6 +21,9 @@ const defaultApprovalSteps: ApprovalStepItem[] = [
   },
 ];
 
+/**
+ * 初期表示用の承認ステップ配列を作成します。
+ */
 export function initialApprovalSteps(
   defaultSteps?: ApprovalStepItem[],
 ): ApprovalStepItem[] {
@@ -29,6 +32,9 @@ export function initialApprovalSteps(
     : defaultApprovalSteps;
 }
 
+/**
+ * 指定位置の新しい承認ステップを作成します。
+ */
 export function createApprovalStep(index: number): ApprovalStepItem {
   return {
     id: `step-${index}`,
@@ -38,6 +44,9 @@ export function createApprovalStep(index: number): ApprovalStepItem {
   };
 }
 
+/**
+ * 指定位置の新しい承認グループを作成します。
+ */
 export function createApprovalGroup(index: number): ApprovalGroupItem {
   return {
     id: `approval-group-${index}`,
@@ -46,10 +55,16 @@ export function createApprovalGroup(index: number): ApprovalGroupItem {
   };
 }
 
+/**
+ * 承認担当者 ID 配列から重複を取り除きます。
+ */
 export function uniqueAssigneeIds(assigneeUserIds: string[]): string[] {
   return Array.from(new Set(assigneeUserIds));
 }
 
+/**
+ * 指定した承認ステップを部分更新します。
+ */
 export function updateApprovalStep(
   steps: ApprovalStepItem[],
   stepId: string,
@@ -58,6 +73,9 @@ export function updateApprovalStep(
   return steps.map((step) => (step.id === stepId ? { ...step, ...patch } : step));
 }
 
+/**
+ * 承認ステップを指定方向へ移動します。
+ */
 export function moveApprovalStep(
   steps: ApprovalStepItem[],
   fromIndex: number,
@@ -82,6 +100,9 @@ export function moveApprovalStep(
   return next;
 }
 
+/**
+ * 承認グループの担当者選択を更新します。
+ */
 export function updateApprovalGroup(
   groups: ApprovalGroupItem[],
   groupId: string,
@@ -92,6 +113,9 @@ export function updateApprovalGroup(
   );
 }
 
+/**
+ * 削除された承認グループの選択状態をクリアします。
+ */
 export function clearRemovedGroupSelections(
   selectedGroupIdByStep: Record<string, string>,
   removedGroupId: string,

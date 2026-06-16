@@ -30,6 +30,9 @@ type AccountDetailsPanelProps = {
   user: CurrentSessionUser;
 };
 
+/**
+ * アカウント詳細と編集ダイアログの起点を表示します。
+ */
 export function AccountDetailsPanel({
   emailError,
   passwordError,
@@ -152,6 +155,9 @@ export function AccountDetailsPanel({
   );
 }
 
+/**
+ * クエリ状態から初期表示するアカウント編集ダイアログを決定します。
+ */
 function getInitialAccountDialog({
   emailError,
   passwordError,
@@ -172,6 +178,9 @@ function getInitialAccountDialog({
   return null;
 }
 
+/**
+ * アカウント詳細の 1 項目を表示します。
+ */
 function AccountDetailItem({
   label,
   value,

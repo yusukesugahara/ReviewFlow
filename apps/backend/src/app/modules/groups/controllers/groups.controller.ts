@@ -35,9 +35,11 @@ import {
   GroupMembersListResponseDto,
   GroupsListResponseDto,
   GroupSummaryDto,
+  SpaceDashboardResponseDto,
   UpdateGroupDto,
   UpdateGroupMemberRoleDto,
 } from '../dto/groups.dto';
+import { SpaceDashboardService } from '../services/dashboard/space-dashboard.service';
 import { GroupsService } from '../services/facades/groups.service';
 
 type GroupWithCurrentUserRole = Group & { currentUserRole?: string | null };
@@ -82,7 +84,10 @@ function toAvailableUserSummary(user: {
 @ApiTags('spaces')
 @Controller('groups')
 export class GroupsController {
-  constructor(private readonly groupsService: GroupsService) {}
+  constructor(
+    private readonly groupsService: GroupsService,
+    private readonly dashboardService: SpaceDashboardService,
+  ) {}
 
   @AuthApi()
   @RateLimit({ default: { limit: 120, ttl: 60_000 } })
@@ -97,6 +102,20 @@ export class GroupsController {
   ): Promise<SuccessResponse<GroupsListResponseDto>> {
     const groups = await this.groupsService.list(actor);
     return successResponse({ groups: groups.map(toGroupSummary) });
+  }
+
+  @AuthApi()
+  @RateLimit({ default: { limit: 120, ttl: 60_000 } })
+  @Get('dashboard')
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'スペースダッシュボード集計' })
+  @ApiSuccessResponse(SpaceDashboardResponseDto)
+  async dashboard(
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<SuccessResponse<SpaceDashboardResponseDto>> {
+    const spaces = await this.dashboardService.list(actor);
+    return successResponse({ spaces });
   }
 
   @AuthApi()

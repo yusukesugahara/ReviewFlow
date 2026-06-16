@@ -25,6 +25,9 @@ type AuthFormShellProps = {
   title: string;
 };
 
+/**
+ * 認証系フォーム画面の共通レイアウトを表示します。
+ */
 export function AuthFormShell({
   appGuide,
   children,

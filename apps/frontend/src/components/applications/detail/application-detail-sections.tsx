@@ -24,6 +24,9 @@ export {
   OpenCorrectionSummary,
 } from "../corrections/application-correction-sections";
 
+/**
+ * 申請の基本情報セクションを表示します。
+ */
 export function ApplicationBasicInfo({
   application,
   formDetailHref,
@@ -80,6 +83,9 @@ export function ApplicationBasicInfo({
   );
 }
 
+/**
+ * 申請詳細のサイドサマリーを表示します。
+ */
 export function ApplicationSideSummary({
   application,
   currentStepName,
@@ -116,6 +122,9 @@ export function ApplicationSideSummary({
   );
 }
 
+/**
+ * サマリー内の 1 行を表示します。
+ */
 function SummaryRow({
   icon,
   label,
@@ -165,6 +174,9 @@ function SummaryRow({
   );
 }
 
+/**
+ * 申請詳細の操作パネルを表示します。
+ */
 export function ActionPanel({ children }: { children: ReactNode }) {
   return (
     <Card>

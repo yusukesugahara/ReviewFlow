@@ -23,6 +23,9 @@ type InlineFormFieldRowProps = {
   setSelectedFieldId: (id: string) => void;
 };
 
+/**
+ * インライン編集用のフォーム項目行を表示します。
+ */
 export function InlineFormFieldRow({
   dragOverFieldId,
   draggingFieldId,

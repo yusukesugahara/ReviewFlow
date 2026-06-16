@@ -4,6 +4,9 @@ import { Loader2, Search } from "lucide-react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
 
+/**
+ * 提出一覧検索フォームの送信ボタンを表示します。
+ */
 export function SubmissionSearchSubmitButton() {
   const { pending } = useFormStatus();
 

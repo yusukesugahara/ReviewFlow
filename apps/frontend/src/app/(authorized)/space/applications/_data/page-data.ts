@@ -8,6 +8,9 @@ import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { redirect } from "next/navigation";
 import type { FallbackSpaceContext } from "../types";
 
+/**
+ * 旧申請一覧ルートから遷移するための既定スペース情報を取得します。
+ */
 export async function getFallbackSpaceContext(): Promise<FallbackSpaceContext> {
   const accessToken = await getAccessTokenFromCookie();
   if (!accessToken) {

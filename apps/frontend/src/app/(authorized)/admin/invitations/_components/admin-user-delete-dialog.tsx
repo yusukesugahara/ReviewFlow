@@ -15,6 +15,9 @@ type AdminUserDeleteDialogProps = {
   user: TenantUserSummary;
 };
 
+/**
+ * テナントユーザー削除確認ダイアログを表示します。
+ */
 export function AdminUserDeleteDialog({
   deleteFormRef,
   onClose,

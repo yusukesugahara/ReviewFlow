@@ -42,6 +42,9 @@ type AddFieldFormProps = {
   disabled: boolean;
 };
 
+/**
+ * フォーム項目の編集 UI を表示します。
+ */
 export function FormFieldEditor({
   field,
   index,
@@ -154,6 +157,9 @@ export function FormFieldEditor({
   );
 }
 
+/**
+ * 新しいフォーム項目を追加するフォームを表示します。
+ */
 export function AddFieldForm({ action, nextSortOrder, disabled }: AddFieldFormProps) {
   const [fieldType, setFieldType] = useState<FieldType>("text");
   const [label, setLabel] = useState("");

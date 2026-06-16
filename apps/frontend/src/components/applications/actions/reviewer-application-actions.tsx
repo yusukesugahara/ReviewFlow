@@ -24,6 +24,9 @@ type ReviewerApplicationActionsProps = {
   rejectAction: (formData: FormData) => Promise<void>;
 };
 
+/**
+ * レビュアーが実行できる承認・却下・差戻し操作を表示します。
+ */
 export function ReviewerApplicationActions({
   capabilities,
   approveAction,
@@ -69,6 +72,9 @@ export function ReviewerApplicationActions({
   );
 }
 
+/**
+ * 申請レビュー操作の確認ダイアログを表示します。
+ */
 function ApplicationDecisionDialog({
   action,
   approveAction,
@@ -134,6 +140,9 @@ function ApplicationDecisionDialog({
   );
 }
 
+/**
+ * 申請レビュー操作ダイアログの送信ボタンを表示します。
+ */
 function DecisionSubmitButton({
   children,
   variant,

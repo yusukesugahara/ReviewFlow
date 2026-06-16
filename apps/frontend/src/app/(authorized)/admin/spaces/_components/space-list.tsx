@@ -44,6 +44,9 @@ type SpaceListProps = {
   removeSpaceAction: (groupId: string) => Promise<void>;
 };
 
+/**
+ * 管理者向けスペース一覧を表示します。
+ */
 export function SpaceList({
   spaces,
   currentUserId,

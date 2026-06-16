@@ -1,6 +1,9 @@
 import { PublicApplicationAccessView } from "./view";
 import type { PublicApplicationAccessPageProps } from "./types";
 
+/**
+ * 公開フォームのアクセス依頼画面を表示します。
+ */
 export default async function PublicApplicationAccessPage({
   params,
   searchParams,

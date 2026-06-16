@@ -14,6 +14,9 @@ export type DynamicFieldValidationResult = {
   missingFieldLabels: string[];
 };
 
+/**
+ * 動的フォームの必須項目が入力されているかを検証します。
+ */
 export function validateRequiredDynamicFields(
   fields: DynamicFormField[],
   values: Record<string, unknown>,

@@ -18,6 +18,9 @@ type AuditLogFiltersFormProps = Pick<
   "createdFrom" | "createdTo" | "query" | "targetType"
 >;
 
+/**
+ * 監査ログの検索・絞り込みフォームを表示します。
+ */
 export function AuditLogFiltersForm({
   createdFrom,
   createdTo,

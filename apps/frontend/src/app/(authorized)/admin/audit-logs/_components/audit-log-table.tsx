@@ -15,6 +15,9 @@ type AuditLogTableProps = {
   rows: EnrichedAuditRow[];
 };
 
+/**
+ * 監査ログ行をテーブルとして表示します。
+ */
 export function AuditLogTable({ rows }: AuditLogTableProps) {
   return (
     <div className="overflow-x-auto">

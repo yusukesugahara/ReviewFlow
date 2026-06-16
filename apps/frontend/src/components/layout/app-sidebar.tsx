@@ -20,6 +20,9 @@ type AppSidebarProps = {
   variant?: AppSidebarVariant;
 };
 
+/**
+ * アプリ全体のサイドバーとメイン領域レイアウトを表示します。
+ */
 export function AppSidebar({
   children,
   userEmail,

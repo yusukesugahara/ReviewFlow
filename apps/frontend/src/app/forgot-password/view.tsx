@@ -13,6 +13,9 @@ import { Label } from "@/components/ui/label";
 import { requestPasswordResetAction } from "./actions";
 import type { ForgotPasswordViewProps } from "./types";
 
+/**
+ * パスワード再設定メールの送信フォームを表示します。
+ */
 export function ForgotPasswordView({ sent, formError }: ForgotPasswordViewProps) {
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">

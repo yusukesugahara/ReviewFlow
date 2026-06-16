@@ -18,6 +18,9 @@ import {
 import type { AppSidebarSpace, AppSidebarVariant } from "./app-sidebar.types";
 import { cn } from "@/lib/utils";
 
+/**
+ * アプリサイドバー内のナビゲーション内容を表示します。
+ */
 export function SidebarContent({
   variant,
   isTenantAdmin,
@@ -117,6 +120,9 @@ export function SidebarContent({
   );
 }
 
+/**
+ * サイドバー内のセクションラベルを表示します。
+ */
 function SectionLabel({ children }: { children: ReactNode }) {
   return (
     <h2 className="mb-2 px-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
@@ -125,6 +131,9 @@ function SectionLabel({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * サイドバー内のスペース切り替え UI を表示します。
+ */
 function SpaceSwitcher({
   spaces,
   onNavigate,
@@ -176,6 +185,9 @@ function SpaceSwitcher({
   );
 }
 
+/**
+ * サイドバー内のナビゲーションリンクを表示します。
+ */
 function SidebarLink({
   href,
   spacePath,

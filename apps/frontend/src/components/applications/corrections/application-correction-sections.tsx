@@ -16,6 +16,9 @@ import type {
   ApplicationFormField,
 } from "../detail/application-detail.types";
 
+/**
+ * 未解決の差戻し依頼概要を表示します。
+ */
 export function OpenCorrectionSummary({
   items,
 }: {
@@ -45,6 +48,9 @@ export function OpenCorrectionSummary({
   );
 }
 
+/**
+ * 差戻し履歴一覧を表示します。
+ */
 export function CorrectionHistory({
   corrections,
   fields,
@@ -114,6 +120,9 @@ export function CorrectionHistory({
   );
 }
 
+/**
+ * 差戻し履歴の 1 項目を表示します。
+ */
 function CorrectionHistoryItem({
   fields,
   item,

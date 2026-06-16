@@ -6,6 +6,9 @@ import { client } from "@/lib/server/backend-fetch";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type { AcceptInvitationBody, AcceptInvitationSuccessJson } from "@/lib/schema";
 
+/**
+ * 招待承諾トークンを検証し、招待を承諾します。
+ */
 export async function acceptInvitationAction(formData: FormData): Promise<void> {
   const parsed = acceptInvitationSchema.safeParse({
     token: formData.get("token"),

@@ -9,6 +9,9 @@ import { appendQueryParams } from "@/components/applications/routing/application
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 
+/**
+ * FormData 内のフォーム項目 JSON を読み取り、失敗時は空配列を返します。
+ */
 function parseFields(fieldsJson: FormDataEntryValue | null): DynamicFormField[] {
   try {
     return parseDynamicFormFieldsJson(fieldsJson);
@@ -17,6 +20,9 @@ function parseFields(fieldsJson: FormDataEntryValue | null): DynamicFormField[] 
   }
 }
 
+/**
+ * 差戻し申請の修正内容を保存し、詳細画面へ結果付きで遷移します。
+ */
 export async function updateReturnedApplicationAction(
   spaceId: string,
   applicationId: string,

@@ -9,24 +9,36 @@ import {
 } from "@/lib/constants/application-setup";
 import type { SpaceNewApplicationViewProps } from "./types";
 
+/**
+ * セットアップエラーコードを表示メッセージに変換します。
+ */
 function setupErrorMessage(error?: string): string | null {
   return error && error in APPLICATION_SETUP_ERROR_MESSAGES
     ? APPLICATION_SETUP_ERROR_MESSAGES[error as ApplicationSetupError]
     : null;
 }
 
+/**
+ * セットアップエラー詳細を補足メッセージに変換します。
+ */
 function setupErrorDetailMessage(detail?: string): string | null {
   return typeof detail === "string" && detail.trim().length > 0
     ? detail.trim()
     : null;
 }
 
+/**
+ * セットアップ完了状態を表示メッセージに変換します。
+ */
 function setupStatusMessage(status?: string): string | null {
   return status && status in APPLICATION_SETUP_STATUS_MESSAGES
     ? APPLICATION_SETUP_STATUS_MESSAGES[status as ApplicationSetupStatus]
     : null;
 }
 
+/**
+ * 新規申請フォーム作成画面を表示します。
+ */
 export function SpaceNewApplicationView({
   assignees,
   canManageSpace,

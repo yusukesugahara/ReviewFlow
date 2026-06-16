@@ -24,6 +24,9 @@ type SpaceManagementHeaderProps = {
   createSpaceAction: (formData: FormData) => Promise<void>;
 };
 
+/**
+ * スペース管理画面のヘッダーと作成導線を表示します。
+ */
 export function SpaceManagementHeader({
   canCreateSpace,
   users,

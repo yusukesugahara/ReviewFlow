@@ -5,15 +5,24 @@ import { redirect } from "next/navigation";
 import { client } from "@/lib/server/backend-fetch";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 
+/**
+ * 申請フォーム一覧のパスをアーカイブ表示条件付きで組み立てます。
+ */
 function applicationsPath(spaceId: string, archived = false): string {
   const base = `/space/${encodeURIComponent(spaceId)}/applications`;
   return archived ? `${base}?archived=true` : base;
 }
 
+/**
+ * 既存パスへクエリパラメータを付与した URL を返します。
+ */
 function withQuery(path: string, params: URLSearchParams): string {
   return `${path}${path.includes("?") ? "&" : "?"}${params.toString()}`;
 }
 
+/**
+ * フォーム定義のアーカイブ状態を更新し、一覧画面へ結果付きで遷移します。
+ */
 async function updateArchivedState(
   definitionId: string,
   spaceId: string,
@@ -54,6 +63,9 @@ async function updateArchivedState(
   redirect(withQuery(applicationsPath(spaceId, action === "archive"), params));
 }
 
+/**
+ * フォーム定義を削除済み状態に移動します。
+ */
 export async function archiveFormDefinitionAction(
   definitionId: string,
   spaceId: string,
@@ -61,6 +73,9 @@ export async function archiveFormDefinitionAction(
   await updateArchivedState(definitionId, spaceId, "archive");
 }
 
+/**
+ * 削除済みのフォーム定義を復元します。
+ */
 export async function restoreFormDefinitionAction(
   definitionId: string,
   spaceId: string,

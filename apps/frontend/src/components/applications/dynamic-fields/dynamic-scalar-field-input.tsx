@@ -4,6 +4,9 @@ import { DynamicDateFieldInput } from "./dynamic-date-field-input";
 import { DynamicFieldShell } from "./dynamic-field-shell";
 import type { DynamicFieldRendererProps } from "./dynamic-fields.types";
 
+/**
+ * 動的フォームの単一値入力を表示します。
+ */
 export function ScalarFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, variant } = props;
   if (field.fieldType === "date") {
@@ -40,6 +43,9 @@ export function ScalarFieldInput(props: DynamicFieldRendererProps) {
   );
 }
 
+/**
+ * 数値入力の表示値から末尾の不要な小数点を取り除きます。
+ */
 export function formatNumberDisplayValue(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) {

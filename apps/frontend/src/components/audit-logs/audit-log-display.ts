@@ -99,6 +99,9 @@ const GROUP_ROLE_LABELS: Record<string, string> = {
   user: "スペースユーザ",
 };
 
+/**
+ * 監査ログ行に表示用情報を付与します。
+ */
 export function enrichAuditRow(row: AuditRow): EnrichedAuditRow {
   return {
     display: buildAuditDisplay(row),
@@ -106,6 +109,9 @@ export function enrichAuditRow(row: AuditRow): EnrichedAuditRow {
   };
 }
 
+/**
+ * 監査ログ行の主要表示情報を組み立てます。
+ */
 export function buildAuditDisplay(row: AuditRow): AuditDisplayInfo {
   const metadata = readMetadata(row.metadataJson);
   return {
@@ -121,10 +127,16 @@ export function buildAuditDisplay(row: AuditRow): AuditDisplayInfo {
   };
 }
 
+/**
+ * 監査ログの action を表示ラベルに変換します。
+ */
 export function describeActionLabel(row: AuditRow): string {
   return ACTION_LABELS[row.actionType] ?? row.actionType;
 }
 
+/**
+ * 監査ログの対象種別と対象 ID を表示ラベルに変換します。
+ */
 export function describeTargetLabel(
   row: AuditRow,
   metadata = readMetadata(row.metadataJson),
@@ -143,6 +155,9 @@ export function describeTargetLabel(
   return row.targetId ? `${label} ${shortId(row.targetId)}` : label;
 }
 
+/**
+ * 監査ログ行から対象種別ごとの件数を集計します。
+ */
 export function buildAuditSummaryCounts(
   rows: EnrichedAuditRow[],
 ): AuditLogSummaryCounts {
@@ -159,6 +174,9 @@ export function buildAuditSummaryCounts(
   };
 }
 
+/**
+ * 監査ログの実行者ラベルを組み立てます。
+ */
 function describeActorLabel(row: AuditRow): string {
   if (row.actorEmailSnapshot) {
     return row.actorEmailSnapshot;
@@ -175,6 +193,9 @@ function describeActorLabel(row: AuditRow): string {
   return row.actorUserId ? `ユーザ ${shortId(row.actorUserId)}` : "不明な操作者";
 }
 
+/**
+ * 監査ログの実行者詳細を組み立てます。
+ */
 function describeActorDetail(row: AuditRow): string | null {
   const parts = [ACTOR_TYPE_LABELS[row.actorType] ?? row.actorType];
   if (row.actorUserId) {
@@ -183,6 +204,9 @@ function describeActorDetail(row: AuditRow): string | null {
   return parts.filter(Boolean).join(" / ");
 }
 
+/**
+ * 監査ログの対象詳細を組み立てます。
+ */
 function describeTargetDetail(row: AuditRow): string | null {
   const parts = [targetTypeLabel(row.targetType)];
   if (row.applicationId) {
@@ -201,6 +225,9 @@ function describeTargetDetail(row: AuditRow): string | null {
   return parts.filter(Boolean).join(" / ");
 }
 
+/**
+ * 監査ログの変更内容を表示用詳細項目に変換します。
+ */
 function describeChanges(
   row: AuditRow,
   metadata: Record<string, unknown>,
@@ -257,6 +284,9 @@ function describeChanges(
   return changes.length > 0 ? changes : ["変更なし"];
 }
 
+/**
+ * 監査ログのメタデータから詳細表示項目を組み立てます。
+ */
 function buildDetailItems(
   row: AuditRow,
   metadata: Record<string, unknown>,
@@ -289,6 +319,9 @@ function buildDetailItems(
   return items;
 }
 
+/**
+ * 監査ログ対象へ遷移する URL を組み立てます。
+ */
 function buildTargetHref(
   row: AuditRow,
   metadata: Record<string, unknown>,
@@ -308,6 +341,9 @@ function buildTargetHref(
   );
 }
 
+/**
+ * 値がある場合だけ詳細項目を追加します。
+ */
 function addItem(
   items: AuditLogDisplayEntry[],
   label: string,
@@ -319,6 +355,9 @@ function addItem(
   }
 }
 
+/**
+ * 配列値がある場合だけ詳細項目を追加します。
+ */
 function addListItem(
   items: AuditLogDisplayEntry[],
   label: string,
@@ -330,6 +369,9 @@ function addListItem(
   }
 }
 
+/**
+ * パスワード変更有無を詳細項目として追加します。
+ */
 function addPasswordChangedItem(
   items: AuditLogDisplayEntry[],
   value: unknown,
@@ -339,26 +381,44 @@ function addPasswordChangedItem(
   }
 }
 
+/**
+ * 監査ログ対象種別を表示ラベルに変換します。
+ */
 function targetTypeLabel(value: string): string {
   return TARGET_TYPE_LABELS[value] ?? value;
 }
 
+/**
+ * 申請ステータス値を表示ラベルに変換します。
+ */
 function formatStatus(value: string | null | undefined): string {
   return value ? (STATUS_LABELS[value] ?? value) : "-";
 }
 
+/**
+ * ユーザーロール値を表示ラベルに変換します。
+ */
 function formatUserRole(value: string | null | undefined): string {
   return value ? (USER_ROLE_LABELS[value] ?? value) : "-";
 }
 
+/**
+ * スペースロール値を表示ラベルに変換します。
+ */
 function formatGroupRole(value: string | null | undefined): string {
   return value ? (GROUP_ROLE_LABELS[value] ?? value) : "-";
 }
 
+/**
+ * 数値を監査ログ詳細の表示文字列に変換します。
+ */
 function formatNumber(value: number | null | undefined): string {
   return typeof value === "number" ? String(value) : "-";
 }
 
+/**
+ * 有効/無効値を監査ログ詳細の表示文字列に変換します。
+ */
 function formatActive(value: unknown): string {
   if (value === true) {
     return "有効";
@@ -369,6 +429,9 @@ function formatActive(value: unknown): string {
   return "-";
 }
 
+/**
+ * 変更前後のテキスト値を監査ログ詳細の表示文字列に変換します。
+ */
 function formatTextChange(from: unknown, to: unknown): string | null {
   const fromText = textValue(from);
   const toText = textValue(to);

@@ -24,6 +24,9 @@ type SpaceSubmissionsViewProps = {
   spaceId: string;
 };
 
+/**
+ * スペースの提出一覧画面を表示します。
+ */
 export function SpaceSubmissionsView(props: SpaceSubmissionsViewProps) {
   return <SpaceSubmissionsPageContent {...props} />;
 }

@@ -1,28 +1,12 @@
 import "server-only";
 
+import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
-import {
-  isApprovedApplicationStatus,
-  isInReviewApplicationStatus,
-  isPublishedApplicationStatus,
-  isRejectedApplicationStatus,
-  isReturnedApplication,
-  isSpaceNeedsActionApplication,
-} from "@/components/applications/status/application-status-rules";
-import type {
-  ApplicationsListSuccessJson,
-  CorrectionsListSuccessJson,
-  FormDefinitionsListSuccessJson,
-  GroupMembersListSuccessJson,
-  GroupsListSuccessJson,
-} from "@/lib/schema";
+import type { SpaceDashboardSuccessJson } from "@/lib/schema";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/server/backend-fetch";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { SpaceDashboardSummary } from "../types";
-
-type AuthHeaders = { Authorization: string };
-type GroupSummary = GroupsListSuccessJson["data"]["groups"][number];
 
 export type AdminDashboardPageData =
   | {
@@ -35,6 +19,9 @@ export type AdminDashboardPageData =
       spaces: SpaceDashboardSummary[];
     };
 
+/**
+ * スペースダッシュボード画面に必要な集計データを読み込みます。
+ */
 export async function getAdminDashboardPageData({
   selectedSpaceId,
 }: {
@@ -42,16 +29,17 @@ export async function getAdminDashboardPageData({
 }): Promise<AdminDashboardPageData> {
   const accessToken = await getAccessTokenFromCookie();
   if (!accessToken) {
-    throw { status: 401 };
+    redirect("/login");
   }
 
   const authHeaders = { Authorization: `Bearer ${accessToken}` };
-  const [spacesRaw, me] = await Promise.all([
-    client.GET("/groups", { headers: authHeaders }),
+  const [dashboardRaw, me] = await Promise.all([
+    client.GET("/groups/dashboard", { headers: authHeaders }),
     getCurrentSessionUser(),
   ]);
   const spaces =
-    unwrapResponseData<GroupsListSuccessJson["data"]>(spacesRaw).groups ?? [];
+    unwrapResponseData<SpaceDashboardSuccessJson["data"]>(dashboardRaw)
+      .spaces ?? [];
   const resolvedSelectedSpaceId = selectedSpaceId ?? spaces[0]?.id ?? "";
 
   if (!resolvedSelectedSpaceId) {
@@ -64,89 +52,6 @@ export async function getAdminDashboardPageData({
   return {
     kind: "ready",
     selectedSpaceId: resolvedSelectedSpaceId,
-    spaces: await Promise.all(
-      spaces.map((space) => buildSpaceDashboardSummary(space, authHeaders)),
-    ),
-  };
-}
-
-async function buildSpaceDashboardSummary(
-  space: GroupSummary,
-  headers: AuthHeaders,
-): Promise<SpaceDashboardSummary> {
-  const [appsRaw, formsRaw, membersRaw] = await Promise.all([
-    client.GET("/applications", {
-      params: { query: { groupId: space.id } },
-      headers,
-    }),
-    client.GET("/form-definitions", {
-      params: { query: { groupId: space.id } },
-      headers,
-    }),
-    client.GET("/groups/{groupId}/members", {
-      params: { path: { groupId: space.id } },
-      headers,
-    }),
-  ]);
-  const apps =
-    unwrapResponseData<ApplicationsListSuccessJson["data"]>(appsRaw)
-      .applications ?? [];
-  const forms =
-    unwrapResponseData<FormDefinitionsListSuccessJson["data"]>(formsRaw)
-      .definitions ?? [];
-  const members =
-    unwrapResponseData<GroupMembersListSuccessJson["data"]>(membersRaw)
-      .members ?? [];
-  const correctionCounts = await Promise.all(
-    apps.map(async (app) => {
-      const cRaw = await client.GET("/applications/{id}/corrections", {
-        params: { path: { id: app.id } },
-        headers,
-      });
-      return unwrapResponseData<CorrectionsListSuccessJson["data"]>(cRaw)
-        .corrections.length;
-    }),
-  );
-  const correctionCount = correctionCounts.reduce((sum, count) => sum + count, 0);
-  const totalApplications = apps.length;
-  const latestApplicationAt =
-    apps
-      .map((app) => app.updatedAt ?? app.createdAt)
-      .filter((value): value is string => typeof value === "string")
-      .sort((a, b) => Date.parse(b) - Date.parse(a))[0] ?? null;
-
-  return {
-    id: space.id,
-    name: space.name,
-    description:
-      typeof space.description === "string" && space.description.length > 0
-        ? space.description
-        : null,
-    currentUserRole: space.currentUserRole ?? null,
-    memberCount: members.length,
-    formCount: forms.length,
-    publishedFormCount: forms.filter((form) =>
-      isPublishedApplicationStatus(form.status),
-    ).length,
-    totalApplications,
-    needsActionCount: apps.filter(isSpaceNeedsActionApplication).length,
-    returnedCount: apps.filter(isReturnedApplication).length,
-    approvedCount: apps.filter((app) =>
-      isApprovedApplicationStatus(app.status),
-    ).length,
-    rejectedCount: apps.filter((app) =>
-      isRejectedApplicationStatus(app.status),
-    ).length,
-    correctionCount,
-    resubmitCount: apps.filter(
-      (app, index) =>
-        (correctionCounts[index] ?? 0) > 0 &&
-        isInReviewApplicationStatus(app.status),
-    ).length,
-    avgReturns:
-      totalApplications > 0
-        ? (correctionCount / totalApplications).toFixed(2)
-        : "0.00",
-    latestApplicationAt,
+    spaces,
   };
 }

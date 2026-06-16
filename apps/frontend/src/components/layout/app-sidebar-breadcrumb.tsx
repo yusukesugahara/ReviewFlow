@@ -6,6 +6,9 @@ import { ChevronRight, Home } from "lucide-react";
 import { buildBreadcrumbItems } from "@/components/layout/app-sidebar-routing";
 import type { AppSidebarSpace } from "./app-sidebar.types";
 
+/**
+ * 現在のルートに応じたパンくずリストを表示します。
+ */
 export function AppBreadcrumb({ spaces }: { spaces: AppSidebarSpace[] }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();

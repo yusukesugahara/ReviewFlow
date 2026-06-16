@@ -1,9 +1,16 @@
 import { client } from "@/lib/server/backend-fetch";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { TENANT_ROLES } from "@/lib/constants/roles";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { canCreateSpace, isSystemAdminUser } from "../_rules/space-access-rules";
+import {
+  normalizeAvailableUsers,
+  normalizeGroups,
+  normalizeMembers,
+  normalizeTenantUsers,
+} from "../_utils/admin-space-normalizers";
+import { buildAdminSpaceListItems } from "../_view-models/admin-space-list-items";
 import type {
   AdminSpacesAvailableUsersData,
   AdminSpacesGroupsData,
@@ -28,6 +35,9 @@ export type AdminSpacesViewData = {
   users: TenantUserSummary[];
 };
 
+/**
+ * 現在のセッションを確認し、管理者向けスペース画面のデータを読み込みます。
+ */
 export async function getAdminSpacesPageData(): Promise<AdminSpacesViewData> {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get(ACCESS_TOKEN_COOKIE_NAME)?.value;
@@ -47,99 +57,16 @@ export async function getAdminSpacesPageData(): Promise<AdminSpacesViewData> {
   });
 }
 
+/**
+ * エラー表示に使う HTTP ステータスを返し、不明な失敗は 500 として扱います。
+ */
 export function statusFromResponse(response?: Pick<Response, "status">): number {
   return response?.status ?? 500;
 }
 
-export function isSystemAdminUser(user: Pick<AdminSpacesMe, "roles">): boolean {
-  return user.roles.includes(TENANT_ROLES.admin);
-}
-
-export function canCreateSpace(user: Pick<AdminSpacesMe, "roles">): boolean {
-  return isSystemAdminUser(user);
-}
-
-export function normalizeGroups(
-  groups: AdminSpacesGroupsData["groups"],
-): GroupSummary[] {
-  return groups.map((group) => ({
-    ...group,
-    description: normalizeName(group.description),
-  }));
-}
-
-export function normalizeMembers(
-  members: AdminSpacesMembersData["members"],
-): GroupMemberSummary[] {
-  return members.map((member) => ({
-    ...member,
-    name: normalizeName(member.name),
-  }));
-}
-
-export function normalizeAvailableUsers(
-  users: AdminSpacesAvailableUsersData["users"],
-): AvailableUserSummary[] {
-  return users.map((user) => ({
-    ...user,
-    name: normalizeName(user.name),
-  }));
-}
-
-export function normalizeTenantUsers(
-  users: AdminSpacesUsersData["users"],
-): TenantUserSummary[] {
-  return users.map((user) => ({
-    ...user,
-    name: normalizeName(user.name),
-  }));
-}
-
-export function canManageSpace({
-  currentUserId,
-  isSystemAdmin,
-  members,
-}: {
-  currentUserId: string;
-  isSystemAdmin: boolean;
-  members: GroupMemberSummary[];
-}): boolean {
-  return (
-    isSystemAdmin ||
-    members.some(
-      (member) => member.userId === currentUserId && member.role === "admin",
-    )
-  );
-}
-
-export function buildAdminSpaceListItems({
-  availableUsersByGroup,
-  currentUserId,
-  groups,
-  isSystemAdmin,
-  membersByGroup,
-}: {
-  availableUsersByGroup: Map<string, AvailableUserSummary[]>;
-  currentUserId: string;
-  groups: GroupSummary[];
-  isSystemAdmin: boolean;
-  membersByGroup: Map<string, GroupMemberSummary[]>;
-}): SpaceListItem[] {
-  return groups.map((group) => {
-    const members = membersByGroup.get(group.id) ?? [];
-    return {
-      group,
-      members,
-      addableUsers: availableUsersByGroup.get(group.id) ?? [],
-      canManageSpace: canManageSpace({
-        currentUserId,
-        isSystemAdmin,
-        members,
-      }),
-    };
-  });
-}
-
+/**
+ * 認証済みユーザー向けに管理者向けスペース画面の表示データを取得して組み立てます。
+ */
 export async function getAdminSpacesViewData({
   authHeaders,
   me,
@@ -211,6 +138,9 @@ export async function getAdminSpacesViewData({
   }
 }
 
+/**
+ * 表示対象スペースごとにメンバー一覧と追加可能ユーザー一覧を取得します。
+ */
 async function getAdminSpaceMembersByGroup({
   authHeaders,
   groups,
@@ -224,41 +154,53 @@ async function getAdminSpaceMembersByGroup({
   const membersByGroup = new Map<string, GroupMemberSummary[]>();
   const availableUsersByGroup = new Map<string, AvailableUserSummary[]>();
 
-  for (const group of groups) {
-    const [membersResponse, availableUsersResponse] = await Promise.all([
-      client.GET("/groups/{groupId}/members", {
-        params: { path: { groupId: group.id } },
-        headers: authHeaders,
-      }),
-      client.GET("/groups/{groupId}/available-users", {
-        params: { path: { groupId: group.id } },
-        headers: authHeaders,
-      }),
-    ]);
+  const groupMemberships = await Promise.all(
+    groups.map(async (group) => {
+      const [membersResponse, availableUsersResponse] = await Promise.all([
+        client.GET("/groups/{groupId}/members", {
+          params: { path: { groupId: group.id } },
+          headers: authHeaders,
+        }),
+        client.GET("/groups/{groupId}/available-users", {
+          params: { path: { groupId: group.id } },
+          headers: authHeaders,
+        }),
+      ]);
 
-    membersByGroup.set(
-      group.id,
-      !membersResponse.response.ok || !membersResponse.data
-        ? []
-        : normalizeMembers(
-            unwrapResponseData<AdminSpacesMembersData>(membersResponse).members,
-          ),
-    );
+      return {
+        groupId: group.id,
+        members:
+          !membersResponse.response.ok || !membersResponse.data
+            ? []
+            : normalizeMembers(
+                unwrapResponseData<AdminSpacesMembersData>(membersResponse).members,
+              ),
+        availableUsers:
+          !availableUsersResponse.response.ok || !availableUsersResponse.data
+            ? []
+            : normalizeAvailableUsers(
+                unwrapResponseData<AdminSpacesAvailableUsersData>(
+                  availableUsersResponse,
+                ).users,
+              ),
+      };
+    }),
+  );
+
+  for (const groupMembership of groupMemberships) {
+    membersByGroup.set(groupMembership.groupId, groupMembership.members);
     availableUsersByGroup.set(
-      group.id,
-      !availableUsersResponse.response.ok || !availableUsersResponse.data
-        ? []
-        : normalizeAvailableUsers(
-            unwrapResponseData<AdminSpacesAvailableUsersData>(
-              availableUsersResponse,
-            ).users,
-          ),
+      groupMembership.groupId,
+      groupMembership.availableUsers,
     );
   }
 
   return { availableUsersByGroup, membersByGroup };
 }
 
+/**
+ * ページデータ取得に失敗したときのエラー表示データを組み立てます。
+ */
 function buildAdminSpacesErrorViewData({
   canCreateSpace,
   currentUserId,
@@ -278,8 +220,4 @@ function buildAdminSpacesErrorViewData({
     spaces: [],
     users: [],
   };
-}
-
-function normalizeName(value: unknown): string | null {
-  return typeof value === "string" ? value : null;
 }

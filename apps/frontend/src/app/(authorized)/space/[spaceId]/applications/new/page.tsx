@@ -3,6 +3,9 @@ import { getSpaceNewApplicationPageData } from "./_data/page-data";
 import type { SpaceNewApplicationPageProps } from "./types";
 import { SpaceNewApplicationView } from "./view";
 
+/**
+ * 新規申請フォーム作成画面のデータを読み込んで表示します。
+ */
 export default async function SpaceNewApplicationPage({
   params,
   searchParams,

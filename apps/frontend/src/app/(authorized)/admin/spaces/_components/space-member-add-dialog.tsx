@@ -36,6 +36,9 @@ type SpaceMemberAddDialogProps = {
   onClose: () => void;
 };
 
+/**
+ * スペースメンバー追加ダイアログを表示します。
+ */
 export function SpaceMemberAddDialog({
   addableUsers,
   addMemberAction,
@@ -77,6 +80,9 @@ export function SpaceMemberAddDialog({
   );
 }
 
+/**
+ * 既存ユーザーをスペースに追加するフォームを表示します。
+ */
 function ExistingUserAddForm({
   addableUsers,
   addMemberAction,
@@ -142,6 +148,9 @@ function ExistingUserAddForm({
   );
 }
 
+/**
+ * 新しいユーザーをスペースへ招待するフォームを表示します。
+ */
 function InviteSpaceMemberForm({
   groupId,
   inviteSpaceMemberAction,

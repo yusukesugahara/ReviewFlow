@@ -12,6 +12,9 @@ type ApplicationSetupRedirectParams = Awaited<
   NonNullable<ApplicationSetupRedirectPageProps["searchParams"]>
 >;
 
+/**
+ * 旧セットアップ URL から現在のスペース別新規申請画面への遷移先を解決します。
+ */
 export async function getApplicationSetupRedirectTarget(
   params: ApplicationSetupRedirectParams,
 ): Promise<string> {
@@ -38,6 +41,9 @@ export async function getApplicationSetupRedirectTarget(
   }`;
 }
 
+/**
+ * 旧セットアップ URL のクエリを新規申請画面へ引き継ぐ形式に変換します。
+ */
 function buildApplicationSetupRedirectQuery(
   params: ApplicationSetupRedirectParams,
 ): string {

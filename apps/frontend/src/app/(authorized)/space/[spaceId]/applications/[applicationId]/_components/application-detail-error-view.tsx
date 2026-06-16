@@ -1,5 +1,8 @@
 import { Card, CardContent } from "@/components/ui/card";
 
+/**
+ * 申請詳細画面のエラー状態を表示します。
+ */
 export function ApplicationDetailErrorView({ status }: { status?: number }) {
   return (
     <Card>

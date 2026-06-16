@@ -7,6 +7,9 @@ import { AdminInvitationSentCard } from "./_components/admin-invitation-sent-car
 import { AdminUserListCard } from "./_components/admin-user-list-card";
 import type { AdminInvitationsViewProps } from "./types";
 
+/**
+ * 管理者向け招待管理画面を表示します。
+ */
 export function AdminInvitationsView({
   sent,
   email,

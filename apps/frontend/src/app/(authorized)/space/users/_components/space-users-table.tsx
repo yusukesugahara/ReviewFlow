@@ -45,6 +45,9 @@ export type SpaceUserActionMenuState = {
   top: number;
 };
 
+/**
+ * スペースユーザー一覧をテーブルとして表示します。
+ */
 export function SpaceUsersTable({
   currentUserId,
   members,

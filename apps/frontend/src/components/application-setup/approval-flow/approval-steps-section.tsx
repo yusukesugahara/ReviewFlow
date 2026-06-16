@@ -30,6 +30,9 @@ type ApprovalStepsSectionProps = {
   steps: ApprovalStepItem[];
 };
 
+/**
+ * 承認ステップ編集セクションを表示します。
+ */
 export function ApprovalStepsSection({
   approvalGroups,
   assignees,

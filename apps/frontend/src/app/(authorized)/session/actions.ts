@@ -12,6 +12,9 @@ export type CurrentSessionUser = {
   roles: string[];
 };
 
+/**
+ * アクセストークンを使って現在の認証ユーザー情報を取得します。
+ */
 async function getAuthMe(accessToken: string): Promise<CurrentSessionUser | null> {
   const response = await client.POST("/auth/me", {
     headers: { Authorization: `Bearer ${accessToken}` },
@@ -23,6 +26,9 @@ async function getAuthMe(accessToken: string): Promise<CurrentSessionUser | null
   return data.data;
 }
 
+/**
+ * Cookie に保存されたアクセストークンから現在のセッションユーザーを取得します。
+ */
 export async function getCurrentSessionUser(): Promise<CurrentSessionUser | null> {
   const token = await getAccessTokenFromCookie();
   if (!token) {

@@ -14,6 +14,9 @@ import type {
   UpdateGroupMemberRoleBody,
 } from "@/lib/schema";
 
+/**
+ * スペースユーザー管理操作失敗時の画面表示メッセージを組み立てます。
+ */
 function spaceUsersErrorMessage(error: unknown, fallback: string) {
   if (!isApiFailure(error)) {
     return fallback;
@@ -33,6 +36,9 @@ function spaceUsersErrorMessage(error: unknown, fallback: string) {
   return `${fallback}（status: ${error.status}）`;
 }
 
+/**
+ * スペースユーザー管理画面へエラートースト付きでリダイレクトします。
+ */
 function redirectWithSpaceUsersError(
   groupId: string,
   error: unknown,
@@ -46,6 +52,9 @@ function redirectWithSpaceUsersError(
   redirect(`/space/users?${params.toString()}`);
 }
 
+/**
+ * スペースユーザー管理画面へフォーム検証エラー付きでリダイレクトします。
+ */
 function redirectWithSpaceUsersValidationError(
   groupId: string,
   message: string,
@@ -57,6 +66,9 @@ function redirectWithSpaceUsersValidationError(
   redirect(`/space/users?${params.toString()}`);
 }
 
+/**
+ * 指定スペースからメンバーを削除します。
+ */
 export async function removeSpaceMemberAction(
   groupId: string,
   userId: string,
@@ -84,6 +96,9 @@ export async function removeSpaceMemberAction(
   redirect(`/space/users?${params.toString()}`);
 }
 
+/**
+ * 指定スペースメンバーのスペースロールを更新します。
+ */
 export async function updateSpaceMemberRoleAction(
   groupId: string,
   userId: string,
@@ -126,6 +141,9 @@ export async function updateSpaceMemberRoleAction(
   redirect(`/space/users?${params.toString()}`);
 }
 
+/**
+ * 既存ユーザーを指定スペースのメンバーとして追加します。
+ */
 export async function addSpaceMemberAction(
   groupId: string,
   formData: FormData,

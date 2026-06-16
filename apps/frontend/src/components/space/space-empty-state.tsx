@@ -9,6 +9,9 @@ type SpaceEmptyStateProps = {
   userRoles: string[];
 };
 
+/**
+ * スペース未作成時の空状態をユーザーロールに応じて表示します。
+ */
 export function SpaceEmptyState({ userRoles }: SpaceEmptyStateProps) {
   if (userRoles.includes(TENANT_ROLES.admin)) {
     return (
@@ -32,6 +35,9 @@ export function SpaceEmptyState({ userRoles }: SpaceEmptyStateProps) {
   );
 }
 
+/**
+ * スペース未作成時の空状態の基本表示を返します。
+ */
 function BaseSpaceEmptyState({
   title,
   description,

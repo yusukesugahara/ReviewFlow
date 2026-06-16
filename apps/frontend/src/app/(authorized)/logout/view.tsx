@@ -1,6 +1,9 @@
 import Link from "next/link";
 import type { LogoutViewProps } from "./types";
 
+/**
+ * ログアウト確認画面を表示します。
+ */
 export function LogoutView({ apiReachable }: LogoutViewProps) {
   return (
     <main style={{ padding: "1rem" }}>

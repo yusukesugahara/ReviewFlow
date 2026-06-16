@@ -12,6 +12,9 @@ import {
 import { confirmAccountEmailChangeAction } from "./actions";
 import type { AccountEmailChangeConfirmViewProps } from "./types";
 
+/**
+ * メールアドレス変更確認フォームを表示します。
+ */
 export function AccountEmailChangeConfirmView({
   formError,
   token,

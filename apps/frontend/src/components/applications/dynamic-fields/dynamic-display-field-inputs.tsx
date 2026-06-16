@@ -1,6 +1,9 @@
 import { cn } from "@/lib/utils";
 import type { DynamicFieldRendererProps } from "./dynamic-fields.types";
 
+/**
+ * 動的フォームの同意チェック入力を表示します。
+ */
 export function ConsentFieldInput(props: DynamicFieldRendererProps) {
   const { field, name, stringValue, disabled, readOnly, afterInput, variant } = props;
   const isTable = variant === "table";
@@ -41,6 +44,9 @@ export function ConsentFieldInput(props: DynamicFieldRendererProps) {
   );
 }
 
+/**
+ * 動的フォームの説明テキスト項目を表示します。
+ */
 export function DescriptionFieldDisplay(props: DynamicFieldRendererProps) {
   const { field, afterInput, variant } = props;
   const isTable = variant === "table";
@@ -56,6 +62,9 @@ export function DescriptionFieldDisplay(props: DynamicFieldRendererProps) {
   );
 }
 
+/**
+ * 動的フォームのセクション見出し項目を表示します。
+ */
 export function SectionFieldDisplay(props: DynamicFieldRendererProps) {
   const { field, afterInput, variant } = props;
   const isTable = variant === "table";

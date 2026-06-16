@@ -41,6 +41,9 @@ type ExportJobStatus = ExportJobResponse["status"];
 
 const ACTIVE_STATUSES = new Set<ExportJobStatus>(["queued", "processing"]);
 
+/**
+ * 提出一覧の CSV 出力操作とジョブ状態を表示します。
+ */
 export function SubmissionCsvExportControls({
   exportFormOptions,
   latestExportJob,
@@ -187,6 +190,9 @@ export function SubmissionCsvExportControls({
   );
 }
 
+/**
+ * CSV 出力ジョブ作成フォームの送信ボタンを表示します。
+ */
 function CsvExportSubmitButton({
   disabled,
   isJobActive,
@@ -218,10 +224,16 @@ function CsvExportSubmitButton({
   );
 }
 
+/**
+ * CSV ダウンロード済みジョブを記録する storage key を返します。
+ */
 function downloadedJobStorageKey(jobId: string): string {
   return `reviewflow:downloaded-csv-export-job:${jobId}`;
 }
 
+/**
+ * 現在 URL から jobId クエリを取り除きます。
+ */
 function removeJobIdFromCurrentUrl(): void {
   const url = new URL(window.location.href);
   url.searchParams.delete("jobId");

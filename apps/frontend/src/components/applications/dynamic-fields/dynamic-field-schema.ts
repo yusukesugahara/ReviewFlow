@@ -14,10 +14,16 @@ const dynamicFormFieldSchema = z.object({
 
 const dynamicFormFieldsJsonSchema = z.array(z.unknown());
 
+/**
+ * unknown 値が動的フォーム項目として扱えるかを判定します。
+ */
 export function isDynamicFormField(value: unknown): value is DynamicFormField {
   return dynamicFormFieldSchema.safeParse(value).success;
 }
 
+/**
+ * 動的フォーム項目の JSON 文字列を検証して配列に変換します。
+ */
 export function parseDynamicFormFieldsJson(
   fieldsJson: FormDataEntryValue | string | null,
 ): DynamicFormField[] {

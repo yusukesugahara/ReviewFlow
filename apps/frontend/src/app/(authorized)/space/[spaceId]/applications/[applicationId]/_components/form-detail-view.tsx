@@ -22,6 +22,9 @@ import { DescriptionEditModal } from "./description-edit-modal";
 import { buildFormDetailViewModel } from "../_view-models/form-detail-view-model";
 import type { FormDetailViewProps } from "../types";
 
+/**
+ * フォーム定義の詳細情報と関連申請の概要を表示します。
+ */
 export function FormDetailView({
   application,
   definition,
@@ -173,6 +176,9 @@ export function FormDetailView({
   );
 }
 
+/**
+ * フォーム詳細画面の情報パネルを表示します。
+ */
 function InfoPanel({
   label,
   value,
@@ -198,6 +204,9 @@ function InfoPanel({
   );
 }
 
+/**
+ * フォーム詳細画面の日時情報パネルを表示します。
+ */
 function TimestampPanel({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">

@@ -6,6 +6,9 @@ import { PasswordInput } from "@/components/ui/password-input";
 import { acceptInvitationAction } from "./actions";
 import type { InvitationAcceptViewProps } from "./types";
 
+/**
+ * 招待承諾フォームを表示します。
+ */
 export function InvitationAcceptView({
   presetToken,
   formError,

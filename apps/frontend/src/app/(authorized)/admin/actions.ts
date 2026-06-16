@@ -6,6 +6,9 @@ import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { AppSidebarSpace } from "@/components/layout/app-sidebar.types";
 import type { GroupsListSuccessJson } from "@/lib/schema";
 
+/**
+ * 管理レイアウトのサイドバーに表示するスペース一覧を取得します。
+ */
 export async function getAdminLayoutSpaces(): Promise<AppSidebarSpace[]> {
   const accessToken = await getAccessTokenFromCookie();
   if (!accessToken) {

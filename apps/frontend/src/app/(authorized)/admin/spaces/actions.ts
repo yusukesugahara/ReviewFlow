@@ -33,6 +33,9 @@ import type {
 
 const formDataStringArraySchema = z.array(z.string());
 
+/**
+ * スペース操作失敗時の画面表示メッセージを組み立てます。
+ */
 function spaceErrorMessage(error: unknown, fallback: string) {
   if (!isApiFailure(error)) {
     return fallback;
@@ -55,6 +58,9 @@ function spaceErrorMessage(error: unknown, fallback: string) {
   return `${fallback}（status: ${error.status}）`;
 }
 
+/**
+ * 管理者向けスペース画面へエラートースト付きでリダイレクトします。
+ */
 function redirectWithSpaceError(error: unknown, fallback: string): never {
   const nextParams = new URLSearchParams({
     toast: "error",
@@ -63,21 +69,33 @@ function redirectWithSpaceError(error: unknown, fallback: string): never {
   redirect(`/admin/spaces?${nextParams.toString()}`);
 }
 
+/**
+ * 管理者向けスペース画面へ成功トースト付きでリダイレクトします。
+ */
 function redirectWithSpaceSuccess(message: string): never {
   const nextParams = new URLSearchParams({ toast: "success", message });
   redirect(`/admin/spaces?${nextParams.toString()}`);
 }
 
+/**
+ * 管理者向けスペース画面へフォーム検証エラー付きでリダイレクトします。
+ */
 function redirectWithSpaceValidationError(message: string): never {
   const nextParams = new URLSearchParams({ formError: message });
   redirect(`/admin/spaces?${nextParams.toString()}`);
 }
 
+/**
+ * FormData から同名キーの文字列配列を読み取ります。
+ */
 function readStringFormDataValues(formData: FormData, key: string): string[] {
   const parsed = formDataStringArraySchema.safeParse(formData.getAll(key));
   return parsed.success ? parsed.data : [];
 }
 
+/**
+ * スペース作成フォームを検証し、新しいスペースを作成します。
+ */
 export async function createSpaceAction(formData: FormData): Promise<void> {
   const parsed = createSpaceSchema.safeParse({
     name: formData.get("name"),
@@ -109,6 +127,9 @@ export async function createSpaceAction(formData: FormData): Promise<void> {
   redirectWithSpaceSuccess("スペースを作成しました");
 }
 
+/**
+ * スペース編集フォームを検証し、スペース情報を更新します。
+ */
 export async function updateSpaceAction(
   groupId: string,
   formData: FormData,
@@ -142,6 +163,9 @@ export async function updateSpaceAction(
   redirectWithSpaceSuccess("スペース情報を更新しました");
 }
 
+/**
+ * 既存ユーザーを指定スペースのメンバーとして追加します。
+ */
 export async function addMemberAction(
   groupId: string,
   formData: FormData,
@@ -172,6 +196,9 @@ export async function addMemberAction(
   redirectWithSpaceSuccess("スペースメンバーを追加しました");
 }
 
+/**
+ * 未登録または未参加ユーザーを指定スペースへ招待します。
+ */
 export async function inviteSpaceMemberAction(
   groupId: string,
   formData: FormData,
@@ -207,6 +234,9 @@ export async function inviteSpaceMemberAction(
   redirectWithSpaceSuccess("招待メールを送信しました");
 }
 
+/**
+ * 指定スペースメンバーのスペースロールを更新します。
+ */
 export async function updateMemberRoleAction(
   groupId: string,
   userId: string,
@@ -237,6 +267,9 @@ export async function updateMemberRoleAction(
   redirectWithSpaceSuccess("スペースロールを更新しました");
 }
 
+/**
+ * 指定スペースからメンバーを削除します。
+ */
 export async function removeMemberAction(
   groupId: string,
   userId: string,
@@ -254,6 +287,9 @@ export async function removeMemberAction(
   redirectWithSpaceSuccess("スペースメンバーを削除しました");
 }
 
+/**
+ * 現在のユーザーを指定スペースから退出させます。
+ */
 export async function leaveSpaceAction(groupId: string): Promise<void> {
   try {
     const response = await client.DELETE("/groups/{groupId}/members/me", {
@@ -268,6 +304,9 @@ export async function leaveSpaceAction(groupId: string): Promise<void> {
   redirectWithSpaceSuccess("スペースから退出しました");
 }
 
+/**
+ * 指定スペースを削除します。
+ */
 export async function removeSpaceAction(groupId: string): Promise<void> {
   try {
     const response = await client.DELETE("/groups/{groupId}", {

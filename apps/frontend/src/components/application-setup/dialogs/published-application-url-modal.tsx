@@ -17,6 +17,9 @@ type PublishedApplicationUrlModalProps = {
   open: boolean;
 };
 
+/**
+ * 公開申請フォーム URL の確認モーダルを表示します。
+ */
 export function PublishedApplicationUrlModal({
   groupId,
   formDefinitionId,

@@ -63,6 +63,9 @@ export type NormalizedSubmissionSearchParams = {
   jobId: string;
 };
 
+/**
+ * 提出一覧画面の検索クエリを内部で扱うフィルター値に正規化します。
+ */
 export function normalizeSubmissionSearchParams(
   query?: SubmissionSearchParams | null,
 ): NormalizedSubmissionSearchParams {
@@ -80,12 +83,18 @@ export function normalizeSubmissionSearchParams(
   };
 }
 
+/**
+ * 申請一覧からセットアップ申請を除外し、提出済み申請だけを返します。
+ */
 export function buildSubmittedApplications(
   applications: ApplicationRow[],
 ): ApplicationRow[] {
   return applications.filter((row) => !isFormSetupApplication(row));
 }
 
+/**
+ * 提出一覧のサマリーカードに表示する件数を集計します。
+ */
 export function buildSubmissionSummaryCounts(
   applications: ApplicationRow[],
   currentUserId?: string | null,
@@ -100,6 +109,9 @@ export function buildSubmissionSummaryCounts(
   };
 }
 
+/**
+ * 提出一覧で有効なフィルターが指定されているかを判定します。
+ */
 export function hasSubmissionFilters(filters: SubmissionFilters): boolean {
   return (
     filters.applicant.length > 0 ||
@@ -111,6 +123,9 @@ export function hasSubmissionFilters(filters: SubmissionFilters): boolean {
   );
 }
 
+/**
+ * 提出一覧の申請配列を指定ページ分に切り出します。
+ */
 export function paginateApplications(
   applications: ApplicationRow[],
   requestedPage: number,
@@ -128,6 +143,9 @@ export function paginateApplications(
   };
 }
 
+/**
+ * CSV 出力対象として選べるフォーム定義の選択肢を作成します。
+ */
 export function buildExportFormOptions(
   applications: ApplicationRow[],
 ): Array<{ id: string; name: string }> {
@@ -146,6 +164,9 @@ export function buildExportFormOptions(
     .sort((a, b) => a.name.localeCompare(b.name, "ja"));
 }
 
+/**
+ * 提出一覧の申請を検索条件、状態条件、期間条件で絞り込みます。
+ */
 export function filterApplications(
   applications: ApplicationRow[],
   filters: SubmissionFilters,
@@ -200,6 +221,9 @@ export function filterApplications(
   });
 }
 
+/**
+ * 提出一覧のフィルター状態を反映したページ URL を組み立てます。
+ */
 export function buildSubmissionsPageHref(
   spaceId: string,
   filters: SubmissionFilters,
@@ -216,10 +240,16 @@ export function buildSubmissionsPageHref(
   });
 }
 
+/**
+ * サマリーカードから遷移する提出一覧 URL を組み立てます。
+ */
 export function buildSummaryFilterHref(spaceId: string, summary: SummaryFilter): string {
   return buildSpaceSubmissionsHref(spaceId, { summary });
 }
 
+/**
+ * 申請が現在ユーザーの対応対象かを判定します。
+ */
 export function isAssignedToCurrentUser(
   row: ApplicationRow,
   currentUserId?: string | null,
@@ -230,6 +260,9 @@ export function isAssignedToCurrentUser(
   return row.currentStepAssigneeUserIds?.includes(currentUserId) ?? false;
 }
 
+/**
+ * 申請が最近処理済みになったものかを判定します。
+ */
 export function isRecentlyProcessedApplication(row: ApplicationRow): boolean {
   if (!isProcessedApplication(row)) {
     return false;
@@ -238,6 +271,9 @@ export function isRecentlyProcessedApplication(row: ApplicationRow): boolean {
   return Number.isFinite(updatedAt) && updatedAt >= Date.now() - RECENT_DAYS_MS;
 }
 
+/**
+ * 申請のフォーム名検索に使うテキストを組み立てます。
+ */
 function getApplicationFormSearchText(row: ApplicationRow): string {
   return [
     row.formDefinitionName,
@@ -249,6 +285,9 @@ function getApplicationFormSearchText(row: ApplicationRow): string {
     .toLowerCase();
 }
 
+/**
+ * 日付フィルターの開始日時をタイムスタンプに変換します。
+ */
 function parseDateStart(value: string): number | null {
   if (!value) {
     return null;
@@ -257,6 +296,9 @@ function parseDateStart(value: string): number | null {
   return Number.isNaN(date.getTime()) ? null : date.getTime();
 }
 
+/**
+ * 日付フィルターの終了日時をタイムスタンプに変換します。
+ */
 function parseDateEnd(value: string): number | null {
   if (!value) {
     return null;
@@ -265,15 +307,24 @@ function parseDateEnd(value: string): number | null {
   return Number.isNaN(date.getTime()) ? null : date.getTime();
 }
 
+/**
+ * 検索入力値を前後空白なしの文字列に正規化します。
+ */
 function normalizeSearchValue(value?: string): string {
   return typeof value === "string" ? value.trim() : "";
 }
 
+/**
+ * ページ番号を正の整数に正規化します。
+ */
 function normalizePage(value?: string): number {
   const page = Number(value);
   return Number.isInteger(page) && page > 0 ? page : 1;
 }
 
+/**
+ * サマリーフィルターを許可された値に正規化します。
+ */
 function normalizeSummaryFilter(value?: string): SummaryFilter {
   if (
     value === "myNeedsAction" ||

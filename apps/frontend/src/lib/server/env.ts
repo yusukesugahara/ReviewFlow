@@ -24,6 +24,9 @@ export type ServerAuthEnv = z.infer<typeof serverAuthEnvSchema> & {
   apiBaseUrl: string;
 };
 
+/**
+ * サーバー側の認証関連環境変数を検証して取得します。
+ */
 export function getServerAuthEnv(): ServerAuthEnv {
   const parsed = serverAuthEnvSchema.parse({
     INTERNAL_API_KEY: process.env.INTERNAL_API_KEY,

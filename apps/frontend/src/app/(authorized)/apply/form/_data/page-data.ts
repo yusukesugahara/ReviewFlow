@@ -12,6 +12,9 @@ type PublicApplicationFormQuery = Awaited<
   NonNullable<PublicApplicationFormPageProps["searchParams"]>
 >;
 
+/**
+ * 公開申請フォーム画面に必要なフォーム定義とエラー表示情報を読み込みます。
+ */
 export async function getPublicApplicationFormPageData(
   query: PublicApplicationFormQuery,
 ): Promise<{
@@ -28,6 +31,9 @@ export async function getPublicApplicationFormPageData(
   };
 }
 
+/**
+ * 公開申請フォーム画面に表示するエラーメッセージをクエリから取得します。
+ */
 function getPublicFormError(query: PublicApplicationFormQuery): string | undefined {
   return query.formError ?? (query.toast === "error" ? query.message : undefined);
 }

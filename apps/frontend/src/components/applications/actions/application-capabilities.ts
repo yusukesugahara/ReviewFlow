@@ -14,6 +14,9 @@ const DISABLED_APPLICATION_CAPABILITIES: ApplicationCapabilities = {
   canReturnApplication: false,
 };
 
+/**
+ * 申請詳細の状態から実行可能な操作を判定します。
+ */
 export function getApplicationCapabilities(
   application: ApplicationDetailViewModel,
 ): ApplicationCapabilities {

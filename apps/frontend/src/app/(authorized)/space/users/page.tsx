@@ -4,6 +4,9 @@ import { getSpaceUsersPageData } from "./_data/page-data";
 import type { SpaceUsersPageProps } from "./types";
 import { SpaceUsersErrorView, SpaceUsersView } from "./view";
 
+/**
+ * スペースユーザー管理画面のデータを読み込んで表示します。
+ */
 export default async function SpaceUsersPage({ searchParams }: SpaceUsersPageProps) {
   try {
     const params = (await searchParams) ?? {};

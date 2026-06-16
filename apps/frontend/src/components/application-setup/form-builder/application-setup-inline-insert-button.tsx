@@ -8,6 +8,9 @@ type InlineInsertFieldButtonProps = {
   onInsert: (index: number) => void;
 };
 
+/**
+ * インラインフォームビルダーへ項目を挿入するボタンを表示します。
+ */
 export function InlineInsertFieldButton({
   index,
   onInsert,

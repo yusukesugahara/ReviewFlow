@@ -22,6 +22,9 @@ type SubmissionFiltersFormProps = {
   spaceId: string;
 };
 
+/**
+ * 提出一覧の検索・絞り込みフォームを表示します。
+ */
 export function SubmissionFiltersForm({
   filters,
   spaceId,

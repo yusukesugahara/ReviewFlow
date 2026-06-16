@@ -20,6 +20,9 @@ const monthFormatter = new Intl.DateTimeFormat("ja-JP", {
   timeZone: "Asia/Tokyo",
 });
 
+/**
+ * 単一日付選択用のカレンダー UI を表示します。
+ */
 export function Calendar({
   month,
   selected,
@@ -86,6 +89,9 @@ export function Calendar({
   );
 }
 
+/**
+ * 表示月に必要なカレンダー日付セルを組み立てます。
+ */
 function buildCalendarDays(month: Date): Array<{
   date: Date;
   isCurrentMonth: boolean;
@@ -106,10 +112,16 @@ function buildCalendarDays(month: Date): Array<{
   });
 }
 
+/**
+ * 指定日付に月数を加算した Date を返します。
+ */
 function addMonths(date: Date, amount: number): Date {
   return new Date(date.getFullYear(), date.getMonth() + amount, 1);
 }
 
+/**
+ * Date を yyyy-MM-dd 形式の入力値に変換します。
+ */
 function formatDateValue(date: Date): string {
   const year = date.getFullYear();
   const month = `${date.getMonth() + 1}`.padStart(2, "0");

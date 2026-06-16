@@ -12,6 +12,9 @@ type CopyButtonProps = {
   variant?: ButtonProps["variant"];
 };
 
+/**
+ * 指定テキストをクリップボードへコピーするボタンを表示します。
+ */
 export function CopyButton({
   copiedLabel = "コピー済み",
   label = "URLをコピー",
