@@ -16,6 +16,7 @@ import type { GroupMemberRoleValue } from '../constants/group-member-role';
 
 @Entity('groups')
 @Index('UQ_groups_tenant_name', ['tenantId', 'name'], { unique: true })
+@Index('UQ_groups_tenant_id_id', ['tenantId', 'id'], { unique: true })
 export class Group {
   @PrimaryGeneratedColumn('uuid')
   id!: string;
