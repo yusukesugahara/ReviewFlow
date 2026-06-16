@@ -171,7 +171,19 @@ describe('GroupsRepository', () => {
     expect(userBuilder.leftJoin).toHaveBeenCalledWith(
       GroupMember,
       'member',
+      expect.stringContaining('member.tenantId = user.tenantId'),
+      { groupId: 'group-1' },
+    );
+    expect(userBuilder.leftJoin).toHaveBeenCalledWith(
+      GroupMember,
+      'member',
       expect.stringContaining('member.userId = user.id'),
+      { groupId: 'group-1' },
+    );
+    expect(userBuilder.leftJoin).toHaveBeenCalledWith(
+      GroupMember,
+      'member',
+      expect.stringContaining('member.groupId = :groupId'),
       { groupId: 'group-1' },
     );
     expect(userBuilder.where).toHaveBeenCalledWith(
