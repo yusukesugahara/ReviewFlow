@@ -50,7 +50,7 @@ const template = (overrides: Partial<FormDefinition> = {}): FormDefinition =>
  */
 describe('ApplicationReviewUseCaseService', () => {
   let applicationsRepository: {
-    findById: jest.Mock;
+    findByIdInTenant: jest.Mock;
   };
   let spaceAccess: {
     actorCanManageGroup: jest.Mock;
@@ -81,7 +81,7 @@ describe('ApplicationReviewUseCaseService', () => {
 
   beforeEach(() => {
     applicationsRepository = {
-      findById: jest.fn(),
+      findByIdInTenant: jest.fn(),
     };
     spaceAccess = {
       actorCanManageGroup: jest.fn(),
@@ -127,7 +127,7 @@ describe('ApplicationReviewUseCaseService', () => {
   it('approves a reviewable application and returns the hydrated detail', async () => {
     const row = app();
     const hydrated = app({ id: 'hydrated-app' });
-    applicationsRepository.findById.mockResolvedValue(row);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(row);
     spaceAccess.actorCanManageGroup.mockResolvedValue(false);
     accessPolicy.canActOnReview.mockReturnValue(true);
     queryService.getOneForActor.mockResolvedValue(hydrated);
@@ -139,7 +139,7 @@ describe('ApplicationReviewUseCaseService', () => {
       }),
     ).resolves.toBe(hydrated);
 
-    expect(applicationsRepository.findById).toHaveBeenCalledWith(
+    expect(applicationsRepository.findByIdInTenant).toHaveBeenCalledWith(
       {
         tenantId: 'tenant-1',
         id: 'app-1',
@@ -175,7 +175,7 @@ describe('ApplicationReviewUseCaseService', () => {
 
   it('allows group managers to review without current-step assignment', async () => {
     const row = app();
-    applicationsRepository.findById.mockResolvedValue(row);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(row);
     spaceAccess.actorCanManageGroup.mockResolvedValue(true);
     queryService.getOneForActor.mockResolvedValue(row);
 
@@ -200,7 +200,7 @@ describe('ApplicationReviewUseCaseService', () => {
   });
 
   it('rejects review actions when the actor cannot review the application', async () => {
-    applicationsRepository.findById.mockResolvedValue(app());
+    applicationsRepository.findByIdInTenant.mockResolvedValue(app());
     spaceAccess.actorCanManageGroup.mockResolvedValue(false);
     accessPolicy.canActOnReview.mockReturnValue(false);
 
@@ -213,7 +213,7 @@ describe('ApplicationReviewUseCaseService', () => {
   });
 
   it('rejects stale review actions when the current step changed after page load', async () => {
-    applicationsRepository.findById.mockResolvedValue(
+    applicationsRepository.findByIdInTenant.mockResolvedValue(
       app({ currentStepOrder: 2 }),
     );
     spaceAccess.actorCanManageGroup.mockResolvedValue(true);
@@ -235,7 +235,7 @@ describe('ApplicationReviewUseCaseService', () => {
   it('returns an application for correction and sends the applicant notification', async () => {
     const row = app();
     const form = template();
-    applicationsRepository.findById.mockResolvedValue(row);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(row);
     spaceAccess.actorCanManageGroup.mockResolvedValue(false);
     accessPolicy.canActOnReview.mockReturnValue(true);
     reviewActionService.returnForCorrection.mockResolvedValue(form);

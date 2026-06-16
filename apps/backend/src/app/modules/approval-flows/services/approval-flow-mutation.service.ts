@@ -184,7 +184,7 @@ export class ApprovalFlowMutationService {
     tenantId: string,
     flowId: string,
   ): Promise<ApprovalFlow> {
-    const row = await this.approvalFlowsRepository.findOneById(
+    const row = await this.approvalFlowsRepository.findOneByIdInTenant(
       tenantId,
       flowId,
     );

@@ -196,7 +196,7 @@ export class ApplicationReviewUseCaseService {
     id: string,
     manager?: TransactionManager,
   ): Promise<Application> {
-    const row = await this.queryRepository.findById(
+    const row = await this.queryRepository.findByIdInTenant(
       { tenantId, id, detail: true },
       manager,
     );

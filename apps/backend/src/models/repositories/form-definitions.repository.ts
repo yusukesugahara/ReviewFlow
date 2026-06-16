@@ -59,7 +59,7 @@ export class FormDefinitionsRepository {
     );
   }
 
-  findByIdWithFields(
+  findByIdWithFieldsInTenant(
     tenantId: string,
     definitionId: string,
   ): Promise<FormDefinition | null> {

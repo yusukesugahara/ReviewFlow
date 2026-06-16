@@ -72,7 +72,7 @@ export class ApprovalFlowsService {
    * @returns 承認フロー
    */
   async getOne(tenantId: string, flowId: string): Promise<ApprovalFlow> {
-    const row = await this.approvalFlowsRepository.findOneById(
+    const row = await this.approvalFlowsRepository.findOneByIdInTenant(
       tenantId,
       flowId,
     );

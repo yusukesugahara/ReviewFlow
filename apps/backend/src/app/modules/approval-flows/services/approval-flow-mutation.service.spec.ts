@@ -14,7 +14,7 @@ describe('ApprovalFlowMutationService', () => {
       | 'countAssigneeMemberships'
       | 'createFlowWithSteps'
       | 'replaceFlowSteps'
-      | 'findOneById'
+      | 'findOneByIdInTenant'
     >
   >;
   let spaceAccess: jest.Mocked<
@@ -33,7 +33,7 @@ describe('ApprovalFlowMutationService', () => {
       countAssigneeMemberships: jest.fn().mockResolvedValue(1),
       createFlowWithSteps: jest.fn().mockResolvedValue('flow-new'),
       replaceFlowSteps: jest.fn().mockResolvedValue(undefined),
-      findOneById: jest.fn(),
+      findOneByIdInTenant: jest.fn(),
     };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
@@ -53,7 +53,7 @@ describe('ApprovalFlowMutationService', () => {
   });
 
   it('create stores a group-scoped approval flow', async () => {
-    approvalFlowsRepository.findOneById.mockResolvedValue(
+    approvalFlowsRepository.findOneByIdInTenant.mockResolvedValue(
       approvalFlow({ id: 'flow-new', groupId: 'g1' }),
     );
 
@@ -93,7 +93,7 @@ describe('ApprovalFlowMutationService', () => {
   it('create accepts multiple assignees for a single approval step', async () => {
     approvalFlowsRepository.countAssigneesInTenant.mockResolvedValue(2);
     approvalFlowsRepository.countAssigneeMemberships.mockResolvedValue(2);
-    approvalFlowsRepository.findOneById.mockResolvedValue(
+    approvalFlowsRepository.findOneByIdInTenant.mockResolvedValue(
       approvalFlow({
         steps: [
           {
@@ -134,7 +134,7 @@ describe('ApprovalFlowMutationService', () => {
   it('update replaces steps on an existing approval flow', async () => {
     approvalFlowsRepository.countAssigneesInTenant.mockResolvedValue(1);
     approvalFlowsRepository.countAssigneeMemberships.mockResolvedValue(1);
-    approvalFlowsRepository.findOneById
+    approvalFlowsRepository.findOneByIdInTenant
       .mockResolvedValueOnce(approvalFlow({ id: 'flow-1', name: 'Before' }))
       .mockResolvedValueOnce(approvalFlow({ id: 'flow-1', name: 'After' }));
 
