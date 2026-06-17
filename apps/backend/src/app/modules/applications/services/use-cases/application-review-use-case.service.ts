@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
@@ -18,10 +19,7 @@ import { ApplicationAccessPolicy } from '../../policies/application-access.polic
 import { ApplicationNotificationService } from '../notifications/application-notification.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationReviewActionService } from '../review/application-review-action.service';
-import {
-  TransactionService,
-  type TransactionManager,
-} from '../../../../transaction';
+import type { TransactionManager } from '../../../../transaction';
 
 /**
  * 承認者の承認・却下・差し戻しを認可、状態競合検出、監査ログ付きで実行する use case service。
@@ -36,7 +34,7 @@ export class ApplicationReviewUseCaseService {
     private readonly queryService: ApplicationQueryService,
     private readonly reviewActionService: ApplicationReviewActionService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -51,7 +49,7 @@ export class ApplicationReviewUseCaseService {
     id: string,
     dto: ApproveApplicationDto,
   ): Promise<Application> {
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const app = await this.loadReviewableApplicationForExpectedStep(
         actor,
         id,
@@ -87,7 +85,7 @@ export class ApplicationReviewUseCaseService {
     id: string,
     dto: RejectApplicationDto,
   ): Promise<Application> {
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const app = await this.loadReviewableApplicationForExpectedStep(
         actor,
         id,
@@ -123,36 +121,38 @@ export class ApplicationReviewUseCaseService {
     id: string,
     dto: ReturnApplicationDto,
   ): Promise<Application> {
-    const { app, template } = await this.transactions.run(async (manager) => {
-      const app = await this.loadReviewableApplicationForExpectedStep(
-        actor,
-        id,
-        dto.expectedStepOrder,
-        manager,
-      );
-      const before = this.snapshot(app);
-      const result = await this.reviewActionService.returnForCorrection(
-        app,
-        actor.id,
-        dto,
-        manager,
-      );
-      await this.auditLogs.recordApplicationEvent(
-        {
-          actionType: BusinessAuditAction.APPLICATION_RETURNED,
-          actor: { id: actor.id, email: actor.email, type: 'user' },
+    const { app, template } = await this.dataSource.transaction(
+      async (manager) => {
+        const app = await this.loadReviewableApplicationForExpectedStep(
+          actor,
+          id,
+          dto.expectedStepOrder,
+          manager,
+        );
+        const before = this.snapshot(app);
+        const result = await this.reviewActionService.returnForCorrection(
           app,
-          before,
-          after: this.snapshot(app),
-          metadataJson: {
-            overallComment: this.trimComment(dto.overallComment),
-            fieldIds: dto.fields.map((field) => field.fieldId),
+          actor.id,
+          dto,
+          manager,
+        );
+        await this.auditLogs.recordApplicationEvent(
+          {
+            actionType: BusinessAuditAction.APPLICATION_RETURNED,
+            actor: { id: actor.id, email: actor.email, type: 'user' },
+            app,
+            before,
+            after: this.snapshot(app),
+            metadataJson: {
+              overallComment: this.trimComment(dto.overallComment),
+              fieldIds: dto.fields.map((field) => field.fieldId),
+            },
           },
-        },
-        manager,
-      );
-      return { app, template: result };
-    });
+          manager,
+        );
+        return { app, template: result };
+      },
+    );
     await this.notificationService.notifyApplicantOfReturn(app, template, dto);
     return this.queryService.getOneForActor(actor, id);
   }

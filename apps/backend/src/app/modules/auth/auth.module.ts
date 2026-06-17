@@ -11,7 +11,6 @@ import { JwtStrategy } from '../../../strategies/jwt.strategy';
 import { UsersModule } from '../users/users.module';
 import { MailModule } from '../mail/mail.module';
 import { AuditLogsModule } from '../audit-logs/audit-logs.module';
-import { TransactionService } from '../../transaction';
 import { EmailChangeToken } from '../../../models/entities/email-change-token.entity';
 import { PasswordResetToken } from '../../../models/entities/password-reset-token.entity';
 import { Tenant } from '../../../models/entities/tenant.entity';
@@ -58,7 +57,6 @@ const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
     AuthPasswordResetService,
     AuthRepository,
     JwtStrategy,
-    TransactionService,
     { provide: APP_GUARD, useClass: InternalApiKeyGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
     { provide: APP_GUARD, useClass: RolesGuard },

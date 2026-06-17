@@ -12,7 +12,6 @@ import { SpaceDashboardService } from './services/dashboard/space-dashboard.serv
 import { GroupMembersService } from './services/members/group-members.service';
 import { GroupsService } from './services/facades/groups.service';
 import { SpaceAccessService } from './services/access/space-access.service';
-import { TransactionService } from '../../transaction';
 
 @Module({
   imports: [
@@ -28,7 +27,6 @@ import { TransactionService } from '../../transaction';
     SpaceAccessService,
     GroupsRepository,
     SpaceDashboardRepository,
-    TransactionService,
   ],
   exports: [GroupsService, SpaceAccessService],
 })

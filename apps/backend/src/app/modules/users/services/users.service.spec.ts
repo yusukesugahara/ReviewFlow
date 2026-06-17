@@ -1,14 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import * as bcrypt from 'bcrypt';
+import { DataSource } from 'typeorm';
 import { ClientErrorCodes } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import { UserRole } from '../../../../models/constants/user-role';
 import { User } from '../../../../models/entities/user.entity';
 import { UsersRepository } from '../../../../models/repositories/users.repository';
-import {
-  TransactionService,
-  type TransactionManager,
-} from '../../../transaction';
+import type { TransactionManager } from '../../../transaction';
 import { BusinessAuditLogService } from '../../audit-logs/services/business-audit-log.service';
 import { UsersService } from './users.service';
 
@@ -47,8 +45,8 @@ describe('UsersService', () => {
     recordUserEvent: jest.Mock;
   };
   let transactionManager: TransactionManager;
-  let transactions: {
-    run: jest.Mock;
+  let dataSource: {
+    transaction: jest.Mock;
   };
 
   beforeEach(async () => {
@@ -69,9 +67,10 @@ describe('UsersService', () => {
       recordUserEvent: jest.fn(),
     };
     transactionManager = {} as TransactionManager;
-    transactions = {
-      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
-        work(transactionManager),
+    dataSource = {
+      transaction: jest.fn(
+        <T>(work: (manager: TransactionManager) => Promise<T>) =>
+          work(transactionManager),
       ),
     };
 
@@ -80,7 +79,7 @@ describe('UsersService', () => {
         UsersService,
         { provide: UsersRepository, useValue: usersRepository },
         { provide: BusinessAuditLogService, useValue: auditLogs },
-        { provide: TransactionService, useValue: transactions },
+        { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
 

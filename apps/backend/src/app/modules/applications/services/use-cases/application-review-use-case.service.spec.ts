@@ -1,3 +1,4 @@
+import type { DataSource } from 'typeorm';
 import { ClientErrorCodes } from '../../../../../common/errors';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
 import { UserRole } from '../../../../../models/constants/user-role';
@@ -74,9 +75,7 @@ describe('ApplicationReviewUseCaseService', () => {
     recordApplicationEvent: jest.Mock;
   };
   let transactionManager: TransactionManager;
-  let transactions: ConstructorParameters<
-    typeof ApplicationReviewUseCaseService
-  >[7];
+  let dataSource: DataSource;
   let service: ApplicationReviewUseCaseService;
 
   beforeEach(() => {
@@ -105,13 +104,12 @@ describe('ApplicationReviewUseCaseService', () => {
       recordApplicationEvent: jest.fn(),
     };
     transactionManager = {} as TransactionManager;
-    transactions = {
-      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
-        work(transactionManager),
+    dataSource = {
+      transaction: jest.fn(
+        <T>(work: (manager: TransactionManager) => Promise<T>) =>
+          work(transactionManager),
       ),
-    } as unknown as ConstructorParameters<
-      typeof ApplicationReviewUseCaseService
-    >[7];
+    } as unknown as DataSource;
     service = new ApplicationReviewUseCaseService(
       applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
@@ -120,7 +118,7 @@ describe('ApplicationReviewUseCaseService', () => {
       queryService as unknown as ApplicationQueryService,
       reviewActionService as unknown as ApplicationReviewActionService,
       auditLogs as unknown as BusinessAuditLogService,
-      transactions,
+      dataSource,
     );
   });
 

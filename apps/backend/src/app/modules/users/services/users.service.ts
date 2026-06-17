@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { DataSource } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import {
@@ -12,7 +13,6 @@ import {
   BusinessAuditAction,
   BusinessAuditLogService,
 } from '../../audit-logs/services/business-audit-log.service';
-import { TransactionService } from '../../../transaction';
 
 const ADMIN_CAPABLE_ROLES: UserRoleValue[] = [UserRole.TENANT_ADMIN];
 
@@ -24,7 +24,7 @@ export class UsersService {
   constructor(
     private readonly usersRepository: UsersRepository,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -177,7 +177,7 @@ export class UsersService {
 
     const previousRole = target.role;
     target.role = nextRole;
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const saved = await this.usersRepository.save(target, manager);
       await this.auditLogs.recordUserEvent(
         {
@@ -215,7 +215,7 @@ export class UsersService {
     }
 
     target.name = nextName;
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const saved = await this.usersRepository.save(target, manager);
       await this.auditLogs.recordUserEvent(
         {
@@ -257,7 +257,7 @@ export class UsersService {
     }
 
     target.passwordHash = await bcrypt.hash(input.newPassword, 10);
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const saved = await this.usersRepository.save(target, manager);
       await this.auditLogs.recordUserEvent(
         {
@@ -300,7 +300,7 @@ export class UsersService {
     }
 
     target.isActive = false;
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       await this.usersRepository.save(target, manager);
       await this.auditLogs.recordUserEvent(
         {
@@ -332,7 +332,7 @@ export class UsersService {
     }
 
     target.isActive = true;
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const saved = await this.usersRepository.save(target, manager);
       await this.auditLogs.recordUserEvent(
         {

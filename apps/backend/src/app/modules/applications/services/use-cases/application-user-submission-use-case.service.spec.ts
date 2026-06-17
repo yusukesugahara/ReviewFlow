@@ -1,3 +1,4 @@
+import type { DataSource } from 'typeorm';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
 import type { Application } from '../../../../../models/entities/application.entity';
 import type { ApplicationQueryRepository } from '../../../../../models/repositories/application-query.repository';
@@ -59,9 +60,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
     recordApplicationEvent: jest.Mock;
   };
   let transactionManager: TransactionManager;
-  let transactions: ConstructorParameters<
-    typeof ApplicationUserSubmissionUseCaseService
-  >[7];
+  let dataSource: DataSource;
   let service: ApplicationUserSubmissionUseCaseService;
 
   beforeEach(() => {
@@ -88,13 +87,12 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       recordApplicationEvent: jest.fn(),
     };
     transactionManager = {} as TransactionManager;
-    transactions = {
-      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
-        work(transactionManager),
+    dataSource = {
+      transaction: jest.fn(
+        <T>(work: (manager: TransactionManager) => Promise<T>) =>
+          work(transactionManager),
       ),
-    } as unknown as ConstructorParameters<
-      typeof ApplicationUserSubmissionUseCaseService
-    >[7];
+    } as unknown as DataSource;
     service = new ApplicationUserSubmissionUseCaseService(
       applicationsRepository as unknown as ApplicationQueryRepository,
       spaceAccess as unknown as SpaceAccessService,
@@ -103,7 +101,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       queryService as unknown as ApplicationQueryService,
       submissionService as unknown as ApplicationSubmissionService,
       auditLogs as unknown as BusinessAuditLogService,
-      transactions,
+      dataSource,
     );
   });
 

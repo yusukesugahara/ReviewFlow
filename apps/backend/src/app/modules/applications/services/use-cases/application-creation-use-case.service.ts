@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import type { Application } from '../../../../../models/entities/application.entity';
 import {
@@ -8,7 +9,6 @@ import {
 import { SpaceAccessService } from '../../../groups/services/access/space-access.service';
 import type { CreateApplicationDto } from '../../dto/applications.dto';
 import { ApplicationCreationService } from '../creation/application-creation.service';
-import { TransactionService } from '../../../../transaction';
 
 /**
  * ログインユーザーの申請作成を space access と監査ログ付きで実行する use case service。
@@ -19,7 +19,7 @@ export class ApplicationCreationUseCaseService {
     private readonly spaceAccess: SpaceAccessService,
     private readonly creationService: ApplicationCreationService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -33,7 +33,7 @@ export class ApplicationCreationUseCaseService {
     dto: CreateApplicationDto,
   ): Promise<Application> {
     await this.spaceAccess.assertCanUseGroup(actor, dto.groupId);
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const created = await this.creationService.create(
         actor.tenantId,
         actor.email,
