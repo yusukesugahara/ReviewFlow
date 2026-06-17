@@ -37,7 +37,7 @@ export class ApplicantApplicationAccessService {
     id: string,
     options: { detail: boolean },
   ): Promise<Application> {
-    const row = await this.queryRepository.findById({
+    const row = await this.queryRepository.findByIdInTenant({
       tenantId,
       id,
       detail: options.detail,
@@ -90,7 +90,7 @@ export class ApplicantApplicationAccessService {
     id: string,
   ): Promise<Application> {
     this.assertCanAccessApplication(actor, id);
-    const app = await this.queryRepository.findById({
+    const app = await this.queryRepository.findByIdInTenant({
       id,
       tenantId: actor.tenantId,
       detail: true,

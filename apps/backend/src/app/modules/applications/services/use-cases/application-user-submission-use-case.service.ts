@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
@@ -14,10 +15,7 @@ import { ApplicationApprovalFlowResolver } from '../../resolvers/application-app
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationSubmissionService } from '../submission/application-submission.service';
-import {
-  TransactionService,
-  type TransactionManager,
-} from '../../../../transaction';
+import type { TransactionManager } from '../../../../transaction';
 
 /**
  * ログインユーザー本人の申請更新・提出・再提出を認可、監査ログ付きで実行する use case service。
@@ -32,7 +30,7 @@ export class ApplicationUserSubmissionUseCaseService {
     private readonly queryService: ApplicationQueryService,
     private readonly submissionService: ApplicationSubmissionService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -47,7 +45,7 @@ export class ApplicationUserSubmissionUseCaseService {
     id: string,
     dto: PatchApplicationDto,
   ): Promise<Application> {
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const app = await this.loadApplicantEditableApplication(
         actor,
         id,
@@ -92,7 +90,7 @@ export class ApplicationUserSubmissionUseCaseService {
    * @returns 提出後に再取得した申請
    */
   async submit(actor: AuthUserPayload, id: string): Promise<Application> {
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const app = await this.loadApplicantEditableApplication(
         actor,
         id,
@@ -122,7 +120,7 @@ export class ApplicationUserSubmissionUseCaseService {
    * @returns 再提出後に再取得した申請
    */
   async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const app = await this.loadApplicantEditableApplication(
         actor,
         id,

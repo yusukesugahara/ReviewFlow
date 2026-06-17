@@ -40,7 +40,7 @@ const app = (overrides: Partial<Application> = {}): Application =>
 describe('ApplicationQueryService', () => {
   let applicationsRepository: {
     countApprovalsByActor: jest.Mock;
-    findById: jest.Mock;
+    findByIdInTenant: jest.Mock;
     listForGroup: jest.Mock;
     listForTenantAdmin: jest.Mock;
   };
@@ -68,7 +68,7 @@ describe('ApplicationQueryService', () => {
   beforeEach(() => {
     applicationsRepository = {
       countApprovalsByActor: jest.fn(),
-      findById: jest.fn(),
+      findByIdInTenant: jest.fn(),
       listForGroup: jest.fn(),
       listForTenantAdmin: jest.fn(),
     };

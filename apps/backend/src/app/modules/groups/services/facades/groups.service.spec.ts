@@ -1,4 +1,5 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { DataSource } from 'typeorm';
 import { ClientErrorCodes } from '../../../../../common/errors';
 import { GroupMemberRole } from '../../../../../models/constants/group-member-role';
 import { UserRole } from '../../../../../models/constants/user-role';
@@ -8,10 +9,7 @@ import { User } from '../../../../../models/entities/user.entity';
 import { GroupsRepository } from '../../../../../models/repositories/groups.repository';
 import { BusinessAuditLogService } from '../../../audit-logs/services/business-audit-log.service';
 import { UsersService } from '../../../users/services/users.service';
-import {
-  TransactionService,
-  type TransactionManager,
-} from '../../../../transaction';
+import type { TransactionManager } from '../../../../transaction';
 import { GroupMembersService } from '../members/group-members.service';
 import { GroupsService } from './groups.service';
 
@@ -52,8 +50,8 @@ describe('GroupsService', () => {
     recordSpaceEvent: jest.Mock;
   };
   let transactionManager: TransactionManager;
-  let transactions: {
-    run: jest.Mock;
+  let dataSource: {
+    transaction: jest.Mock;
   };
 
   const systemAdmin = {
@@ -95,9 +93,10 @@ describe('GroupsService', () => {
       recordSpaceEvent: jest.fn(),
     };
     transactionManager = {} as TransactionManager;
-    transactions = {
-      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
-        work(transactionManager),
+    dataSource = {
+      transaction: jest.fn(
+        <T>(work: (manager: TransactionManager) => Promise<T>) =>
+          work(transactionManager),
       ),
     };
 
@@ -108,7 +107,7 @@ describe('GroupsService', () => {
         { provide: UsersService, useValue: usersService },
         { provide: GroupMembersService, useValue: groupMembers },
         { provide: BusinessAuditLogService, useValue: auditLogs },
-        { provide: TransactionService, useValue: transactions },
+        { provide: DataSource, useValue: dataSource },
       ],
     }).compile();
 

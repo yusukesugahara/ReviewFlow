@@ -41,14 +41,14 @@ const expectErrorCode = (act: () => void, errorCode: string): void => {
 describe('ApplicantApplicationAccessService', () => {
   let queryRepository: {
     findApplicantEditable: jest.Mock;
-    findById: jest.Mock;
+    findByIdInTenant: jest.Mock;
   };
   let service: ApplicantApplicationAccessService;
 
   beforeEach(() => {
     queryRepository = {
       findApplicantEditable: jest.fn(),
-      findById: jest.fn(),
+      findByIdInTenant: jest.fn(),
     };
     service = new ApplicantApplicationAccessService(
       queryRepository as unknown as ApplicationQueryRepository,
@@ -64,13 +64,13 @@ describe('ApplicantApplicationAccessService', () => {
 
   it('loads submitted applications by tenant and id', async () => {
     const row = app({ status: ApplicationStatus.IN_REVIEW });
-    queryRepository.findById.mockResolvedValue(row);
+    queryRepository.findByIdInTenant.mockResolvedValue(row);
 
     await expect(
       service.loadSubmittedApplication('tenant-1', 'app-1', { detail: true }),
     ).resolves.toBe(row);
 
-    expect(queryRepository.findById).toHaveBeenCalledWith({
+    expect(queryRepository.findByIdInTenant).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
       id: 'app-1',
       detail: true,
@@ -118,13 +118,13 @@ describe('ApplicantApplicationAccessService', () => {
 
   it('loads detail applications through the repository detail query within token scope', async () => {
     const row = app({ status: ApplicationStatus.IN_REVIEW });
-    queryRepository.findById.mockResolvedValue(row);
+    queryRepository.findByIdInTenant.mockResolvedValue(row);
 
     await expect(
       service.loadApplicationDetail(applicant(), 'app-1'),
     ).resolves.toBe(row);
 
-    expect(queryRepository.findById).toHaveBeenCalledWith({
+    expect(queryRepository.findByIdInTenant).toHaveBeenCalledWith({
       id: 'app-1',
       tenantId: 'tenant-1',
       detail: true,
@@ -157,7 +157,7 @@ describe('ApplicantApplicationAccessService', () => {
   });
 
   it('rejects detail loads for another applicant email', async () => {
-    queryRepository.findById.mockResolvedValue(
+    queryRepository.findByIdInTenant.mockResolvedValue(
       app({ applicantEmail: 'other@example.com' }),
     );
 

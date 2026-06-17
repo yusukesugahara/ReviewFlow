@@ -171,7 +171,19 @@ describe('GroupsRepository', () => {
     expect(userBuilder.leftJoin).toHaveBeenCalledWith(
       GroupMember,
       'member',
+      expect.stringContaining('member.tenantId = user.tenantId'),
+      { groupId: 'group-1' },
+    );
+    expect(userBuilder.leftJoin).toHaveBeenCalledWith(
+      GroupMember,
+      'member',
       expect.stringContaining('member.userId = user.id'),
+      { groupId: 'group-1' },
+    );
+    expect(userBuilder.leftJoin).toHaveBeenCalledWith(
+      GroupMember,
+      'member',
+      expect.stringContaining('member.groupId = :groupId'),
       { groupId: 'group-1' },
     );
     expect(userBuilder.where).toHaveBeenCalledWith(
@@ -180,6 +192,21 @@ describe('GroupsRepository', () => {
     );
     expect(userBuilder.andWhere).toHaveBeenCalledWith('member.id IS NULL');
     expect(userBuilder.orderBy).toHaveBeenCalledWith('user.createdAt', 'ASC');
+  });
+
+  it('finds membership by tenant group and user', async () => {
+    members.findOne.mockResolvedValue(null);
+
+    await repository.findMember('tenant-1', 'group-1', 'user-1');
+
+    expect(members.findOne).toHaveBeenCalledWith({
+      where: {
+        tenantId: 'tenant-1',
+        groupId: 'group-1',
+        userId: 'user-1',
+      },
+      relations: { user: true },
+    });
   });
 
   it('creates a group and admin memberships in one transaction', async () => {
@@ -239,5 +266,17 @@ describe('GroupsRepository', () => {
     await expect(repository.saveGroup(group)).resolves.toBe(group);
 
     expect(groups.save).toHaveBeenCalledWith(group);
+  });
+
+  it('counts groups by tenant and id', async () => {
+    groups.count.mockResolvedValue(1);
+
+    await expect(
+      repository.countGroupInTenant('tenant-1', 'group-1'),
+    ).resolves.toBe(1);
+
+    expect(groups.count).toHaveBeenCalledWith({
+      where: { id: 'group-1', tenantId: 'tenant-1' },
+    });
   });
 });

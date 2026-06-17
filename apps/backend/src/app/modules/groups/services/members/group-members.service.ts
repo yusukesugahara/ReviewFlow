@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import { GroupMemberRole } from '../../../../../models/constants/group-member-role';
@@ -16,7 +17,6 @@ import type {
   UpdateGroupMemberRoleDto,
 } from '../../dto/groups.dto';
 import { SpaceAccessService } from '../access/space-access.service';
-import { TransactionService } from '../../../../transaction';
 
 /**
  * space メンバーの一覧・追加・権限変更・削除・退出を扱う service。
@@ -28,7 +28,7 @@ export class GroupMembersService {
     private readonly usersService: UsersService,
     private readonly spaceAccess: SpaceAccessService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -93,7 +93,7 @@ export class GroupMembersService {
       throw clientError(ClientErrorCodes.GROUP_MEMBER_EXISTS);
     }
 
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const saved = await this.groupsRepository.createMember(
         {
           tenantId: actor.tenantId,
@@ -146,7 +146,7 @@ export class GroupMembersService {
 
     const previousRole = member.role;
     member.role = dto.role;
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const saved = await this.groupsRepository.saveMember(member, manager);
 
       await this.auditLogs.recordSpaceMemberEvent(
@@ -182,7 +182,7 @@ export class GroupMembersService {
       await this.assertAnotherAdminRemains(groupId, actor.tenantId, userId);
     }
 
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       await this.groupsRepository.deleteMember(member.id, manager);
       await this.auditLogs.recordSpaceMemberEvent(
         {
@@ -209,7 +209,7 @@ export class GroupMembersService {
       await this.assertAnotherAdminRemains(groupId, actor.tenantId, actor.id);
     }
 
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       await this.groupsRepository.deleteMember(member.id, manager);
       await this.auditLogs.recordSpaceMemberEvent(
         {

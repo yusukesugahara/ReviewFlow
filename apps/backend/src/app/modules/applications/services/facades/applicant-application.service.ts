@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import type { ApplicantAccessTokenPayload } from '../../../auth/services/facades/auth.service';
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
@@ -19,7 +20,6 @@ import { ApplicationCreationService } from '../creation/application-creation.ser
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import { ApplicationProgressService } from '../progress/application-progress.service';
 import { ApplicationSubmissionService } from '../submission/application-submission.service';
-import { TransactionService } from '../../../../transaction';
 
 type ApplicantSession = ApplicantAccessTokenPayload;
 
@@ -37,7 +37,7 @@ export class ApplicantApplicationService {
     private readonly progressService: ApplicationProgressService,
     private readonly submissionService: ApplicationSubmissionService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -55,7 +55,7 @@ export class ApplicantApplicationService {
       actor.tenantId,
       actor.groupId,
     );
-    const created = await this.transactions.run(async (manager) => {
+    const created = await this.dataSource.transaction(async (manager) => {
       const row = await this.creationService.create(
         actor.tenantId,
         actor.email,
@@ -136,7 +136,7 @@ export class ApplicantApplicationService {
     if (dto.formDefinitionId || dto.approvalFlowId) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const app = await this.applicantAccess.loadEditableApplication(
         actor,
         id,
@@ -172,7 +172,7 @@ export class ApplicantApplicationService {
    * @returns 再提出後の申請
    */
   async resubmit(actor: ApplicantSession, id: string): Promise<Application> {
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const app = await this.applicantAccess.loadEditableApplication(
         actor,
         id,

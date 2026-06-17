@@ -76,7 +76,7 @@ describe('ApplicationQueryRepository', () => {
   it('loads detailed applications with expected relations', async () => {
     apps.findOne.mockResolvedValue(null);
 
-    await repository.findById({
+    await repository.findByIdInTenant({
       tenantId: 'tenant-1',
       id: 'app-1',
       detail: true,
@@ -105,7 +105,7 @@ describe('ApplicationQueryRepository', () => {
     apps.findOne.mockResolvedValue(row);
 
     await expect(
-      repository.findById({
+      repository.findByIdInTenant({
         tenantId: 'tenant-1',
         id: 'app-1',
         detail: false,
@@ -139,7 +139,7 @@ describe('ApplicationQueryRepository', () => {
     } as unknown as EntityManager;
 
     await expect(
-      repository.findById(
+      repository.findByIdInTenant(
         {
           tenantId: 'tenant-1',
           id: 'app-1',
@@ -175,7 +175,7 @@ describe('ApplicationQueryRepository', () => {
     } as unknown as EntityManager;
 
     await expect(
-      repository.findById(
+      repository.findByIdInTenant(
         {
           tenantId: 'tenant-1',
           id: 'missing-app',

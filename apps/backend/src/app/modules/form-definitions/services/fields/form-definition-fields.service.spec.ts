@@ -12,7 +12,7 @@ import { FormDefinitionFieldsService } from './form-definition-fields.service';
 describe('FormDefinitionFieldsService', () => {
   let service: FormDefinitionFieldsService;
   let formDefinitionsRepository: jest.Mocked<
-    Pick<FormDefinitionsRepository, 'findByIdWithFields'>
+    Pick<FormDefinitionsRepository, 'findByIdWithFieldsInTenant'>
   >;
   let formFieldsRepository: jest.Mocked<
     Pick<
@@ -39,7 +39,7 @@ describe('FormDefinitionFieldsService', () => {
 
   beforeEach(async () => {
     formDefinitionsRepository = {
-      findByIdWithFields: jest.fn(),
+      findByIdWithFieldsInTenant: jest.fn(),
     };
     formFieldsRepository = {
       findFieldByKey: jest.fn(),
@@ -73,7 +73,7 @@ describe('FormDefinitionFieldsService', () => {
   });
 
   it('addField rejects when definition is not draft', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
       definition({ status: FormDefinitionStatus.PUBLISHED }),
     );
 
@@ -94,7 +94,7 @@ describe('FormDefinitionFieldsService', () => {
   it('addField trims values and creates a field after management check', async () => {
     const saved = field('field1', 2);
     const options = [{ label: 'A', value: 'a' }];
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
       definition(),
     );
     formFieldsRepository.findFieldByKey.mockResolvedValue(null);
@@ -132,7 +132,7 @@ describe('FormDefinitionFieldsService', () => {
   });
 
   it('addField rejects duplicate field keys', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
       definition(),
     );
     formFieldsRepository.findFieldByKey.mockResolvedValue(field('field1', 0));
@@ -152,7 +152,7 @@ describe('FormDefinitionFieldsService', () => {
   });
 
   it('moveField reorders fields and normalizes sort order', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
       definition(),
     );
     formFieldsRepository.findFieldsOrdered.mockResolvedValue([
@@ -170,7 +170,7 @@ describe('FormDefinitionFieldsService', () => {
 
   it('deleteField removes the target and normalizes remaining fields', async () => {
     const target = field('b', 20);
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
       definition(),
     );
     formFieldsRepository.findFieldByIdInDefinition.mockResolvedValue(target);
@@ -197,7 +197,7 @@ describe('FormDefinitionFieldsService', () => {
       optionsJson: [{ label: 'old' }],
     });
     const options = [{ label: 'A', value: 'a' }];
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
       definition(),
     );
     formFieldsRepository.findFieldByIdInDefinition.mockResolvedValue(target);

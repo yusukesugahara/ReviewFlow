@@ -11,7 +11,7 @@ describe('FormDefinitionQueryService', () => {
   let formDefinitionsRepository: jest.Mocked<
     Pick<
       FormDefinitionsRepository,
-      'listByGroup' | 'findOneByGroup' | 'findByIdWithFields'
+      'listByGroup' | 'findOneByGroup' | 'findByIdWithFieldsInTenant'
     >
   >;
   let spaceAccess: jest.Mocked<
@@ -29,7 +29,7 @@ describe('FormDefinitionQueryService', () => {
     formDefinitionsRepository = {
       listByGroup: jest.fn(),
       findOneByGroup: jest.fn(),
-      findByIdWithFields: jest.fn(),
+      findByIdWithFieldsInTenant: jest.fn(),
     };
     spaceAccess = {
       assertCanManageGroup: jest.fn().mockResolvedValue(undefined),
@@ -91,19 +91,20 @@ describe('FormDefinitionQueryService', () => {
 
   it('getOne returns a tenant-scoped definition', async () => {
     const row = formDefinition();
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
 
     const out = await service.getOne('ten1', 't1');
 
-    expect(formDefinitionsRepository.findByIdWithFields).toHaveBeenCalledWith(
-      'ten1',
-      't1',
-    );
+    expect(
+      formDefinitionsRepository.findByIdWithFieldsInTenant,
+    ).toHaveBeenCalledWith('ten1', 't1');
     expect(out).toBe(row);
   });
 
   it('getOne rejects when definition is not found in the tenant scope', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(null);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
+      null,
+    );
 
     await expect(service.getOne('ten1', 'missing')).rejects.toMatchObject({
       errorCode: ClientErrorCodes.FORM_DEFINITION_NOT_FOUND,
@@ -112,7 +113,7 @@ describe('FormDefinitionQueryService', () => {
 
   it('getOneForActor checks space usage access only', async () => {
     const row = formDefinition({ groupId: 'g1' });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
 
     const out = await service.getOneForActor(actor, 't1');
 

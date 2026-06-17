@@ -142,7 +142,7 @@ export class ApprovalFlowsRepository {
     });
   }
 
-  async findOneById(
+  async findOneByIdInTenant(
     tenantId: string,
     flowId: string,
   ): Promise<ApprovalFlow | null> {

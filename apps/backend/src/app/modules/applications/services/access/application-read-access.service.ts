@@ -77,7 +77,7 @@ export class ApplicationReadAccessService {
     id: string,
     detail: boolean,
   ): Promise<Application> {
-    const app = await this.queryRepository.findById({
+    const app = await this.queryRepository.findByIdInTenant({
       tenantId,
       id,
       detail,

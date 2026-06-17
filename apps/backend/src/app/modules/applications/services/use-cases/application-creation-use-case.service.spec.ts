@@ -1,3 +1,4 @@
+import type { DataSource } from 'typeorm';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import type { Application } from '../../../../../models/entities/application.entity';
 import type { SpaceAccessService } from '../../../groups/services/access/space-access.service';
@@ -51,9 +52,7 @@ describe('ApplicationCreationUseCaseService', () => {
     recordApplicationEvent: jest.Mock;
   };
   let transactionManager: TransactionManager;
-  let transactions: ConstructorParameters<
-    typeof ApplicationCreationUseCaseService
-  >[3];
+  let dataSource: DataSource;
   let service: ApplicationCreationUseCaseService;
 
   beforeEach(() => {
@@ -67,18 +66,17 @@ describe('ApplicationCreationUseCaseService', () => {
       recordApplicationEvent: jest.fn(),
     };
     transactionManager = {} as TransactionManager;
-    transactions = {
-      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
-        work(transactionManager),
+    dataSource = {
+      transaction: jest.fn(
+        <T>(work: (manager: TransactionManager) => Promise<T>) =>
+          work(transactionManager),
       ),
-    } as unknown as ConstructorParameters<
-      typeof ApplicationCreationUseCaseService
-    >[3];
+    } as unknown as DataSource;
     service = new ApplicationCreationUseCaseService(
       spaceAccess as unknown as SpaceAccessService,
       creationService as unknown as ApplicationCreationService,
       auditLogs as unknown as BusinessAuditLogService,
-      transactions,
+      dataSource,
     );
   });
 

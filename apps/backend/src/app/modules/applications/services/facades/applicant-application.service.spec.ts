@@ -1,3 +1,4 @@
+import type { DataSource } from 'typeorm';
 import { ApplicationStatus } from '../../../../../models/constants/application-status';
 import type { Application } from '../../../../../models/entities/application.entity';
 import type { ApplicationQueryRepository } from '../../../../../models/repositories/application-query.repository';
@@ -45,7 +46,7 @@ const app = (overrides: Partial<Application> = {}): Application =>
 describe('ApplicantApplicationService', () => {
   let applicationsRepository: {
     findApplicantEditable: jest.Mock;
-    findById: jest.Mock;
+    findByIdInTenant: jest.Mock;
   };
   let correctionService: {
     buildTargetsResponse: jest.Mock;
@@ -70,15 +71,13 @@ describe('ApplicantApplicationService', () => {
     recordApplicationEvent: jest.Mock;
   };
   let transactionManager: TransactionManager;
-  let transactions: ConstructorParameters<
-    typeof ApplicantApplicationService
-  >[8];
+  let dataSource: DataSource;
   let service: ApplicantApplicationService;
 
   beforeEach(() => {
     applicationsRepository = {
       findApplicantEditable: jest.fn(),
-      findById: jest.fn(),
+      findByIdInTenant: jest.fn(),
     };
     correctionService = {
       buildTargetsResponse: jest.fn(),
@@ -103,13 +102,12 @@ describe('ApplicantApplicationService', () => {
       recordApplicationEvent: jest.fn(),
     };
     transactionManager = {} as TransactionManager;
-    transactions = {
-      run: jest.fn(<T>(work: (manager: TransactionManager) => Promise<T>) =>
-        work(transactionManager),
+    dataSource = {
+      transaction: jest.fn(
+        <T>(work: (manager: TransactionManager) => Promise<T>) =>
+          work(transactionManager),
       ),
-    } as unknown as ConstructorParameters<
-      typeof ApplicantApplicationService
-    >[8];
+    } as unknown as DataSource;
     const applicantAccess = new ApplicantApplicationAccessService(
       applicationsRepository as unknown as ApplicationQueryRepository,
     );
@@ -122,7 +120,7 @@ describe('ApplicantApplicationService', () => {
       progressService as unknown as ApplicationProgressService,
       submissionService as unknown as ApplicationSubmissionService,
       auditLogs as unknown as BusinessAuditLogService,
-      transactions,
+      dataSource,
     );
   });
 
@@ -134,7 +132,7 @@ describe('ApplicantApplicationService', () => {
     });
     flowResolver.resolveDefaultActiveFlow.mockResolvedValue({ id: 'flow-1' });
     creationService.create.mockResolvedValue(created);
-    applicationsRepository.findById.mockResolvedValue(submitted);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(submitted);
 
     await expect(
       service.createAndSubmit(applicant(), {
@@ -175,7 +173,7 @@ describe('ApplicantApplicationService', () => {
       }),
       transactionManager,
     );
-    expect(applicationsRepository.findById).toHaveBeenCalledWith({
+    expect(applicationsRepository.findByIdInTenant).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
       id: 'created-app',
       detail: true,
@@ -238,7 +236,7 @@ describe('ApplicantApplicationService', () => {
     const row = app();
     const updated = app({ id: 'app-1', status: ApplicationStatus.RETURNED });
     applicationsRepository.findApplicantEditable.mockResolvedValue(row);
-    applicationsRepository.findById.mockResolvedValue(updated);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(updated);
 
     await expect(
       service.patchReturned(applicant(), 'app-1', {
@@ -261,7 +259,7 @@ describe('ApplicantApplicationService', () => {
       { values: { title: 'Fixed' } },
       transactionManager,
     );
-    expect(applicationsRepository.findById).toHaveBeenCalledWith({
+    expect(applicationsRepository.findByIdInTenant).toHaveBeenCalledWith({
       id: 'app-1',
       tenantId: 'tenant-1',
       detail: true,
@@ -273,7 +271,7 @@ describe('ApplicantApplicationService', () => {
     const row = app();
     const updated = app({ id: 'app-1', status: ApplicationStatus.IN_REVIEW });
     applicationsRepository.findApplicantEditable.mockResolvedValue(row);
-    applicationsRepository.findById.mockResolvedValue(updated);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(updated);
 
     await expect(service.resubmit(applicant(), 'app-1')).resolves.toBe(updated);
 
@@ -291,7 +289,7 @@ describe('ApplicantApplicationService', () => {
       row,
       transactionManager,
     );
-    expect(applicationsRepository.findById).toHaveBeenCalledWith({
+    expect(applicationsRepository.findByIdInTenant).toHaveBeenCalledWith({
       id: 'app-1',
       tenantId: 'tenant-1',
       detail: true,
