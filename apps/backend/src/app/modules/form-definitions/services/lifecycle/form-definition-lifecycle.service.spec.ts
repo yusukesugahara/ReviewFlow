@@ -9,7 +9,10 @@ import { FormDefinitionLifecycleService } from './form-definition-lifecycle.serv
 describe('FormDefinitionLifecycleService', () => {
   let service: FormDefinitionLifecycleService;
   let formDefinitionsRepository: jest.Mocked<
-    Pick<FormDefinitionsRepository, 'findByIdWithFields' | 'saveDefinition'>
+    Pick<
+      FormDefinitionsRepository,
+      'findByIdWithFieldsInTenant' | 'saveDefinition'
+    >
   >;
   let spaceAccess: jest.Mocked<
     Pick<SpaceAccessService, 'assertCanManageGroup'>
@@ -24,7 +27,7 @@ describe('FormDefinitionLifecycleService', () => {
 
   beforeEach(async () => {
     formDefinitionsRepository = {
-      findByIdWithFields: jest.fn(),
+      findByIdWithFieldsInTenant: jest.fn(),
       saveDefinition: jest.fn(),
     };
     spaceAccess = {
@@ -46,7 +49,7 @@ describe('FormDefinitionLifecycleService', () => {
   });
 
   it('publish rejects when definition is not draft', async () => {
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(
       definition({ status: FormDefinitionStatus.ARCHIVED }),
     );
 
@@ -59,7 +62,7 @@ describe('FormDefinitionLifecycleService', () => {
 
   it('publish moves draft definition to published after management check', async () => {
     const row = definition({ status: FormDefinitionStatus.DRAFT });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
     formDefinitionsRepository.saveDefinition.mockResolvedValue(row);
 
     const out = await service.publish(actor, 't1');
@@ -71,7 +74,7 @@ describe('FormDefinitionLifecycleService', () => {
 
   it('archive marks definition as archived after management check', async () => {
     const row = definition({ status: FormDefinitionStatus.PUBLISHED });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
     formDefinitionsRepository.saveDefinition.mockResolvedValue(row);
 
     const out = await service.archive(actor, 't1');
@@ -87,7 +90,7 @@ describe('FormDefinitionLifecycleService', () => {
       status: FormDefinitionStatus.ARCHIVED,
       archivedFromStatus: FormDefinitionStatus.DRAFT,
     });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
 
     const out = await service.archive(actor, 't1');
 
@@ -100,7 +103,7 @@ describe('FormDefinitionLifecycleService', () => {
       status: FormDefinitionStatus.ARCHIVED,
       archivedFromStatus: FormDefinitionStatus.DRAFT,
     });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
     formDefinitionsRepository.saveDefinition.mockResolvedValue(row);
 
     const out = await service.restore(actor, 't1');
@@ -113,7 +116,7 @@ describe('FormDefinitionLifecycleService', () => {
 
   it('restore leaves non-archived definitions unchanged', async () => {
     const row = definition({ status: FormDefinitionStatus.PUBLISHED });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
 
     const out = await service.restore(actor, 't1');
 
@@ -123,7 +126,7 @@ describe('FormDefinitionLifecycleService', () => {
 
   it('updateDescription trims non-empty text before saving', async () => {
     const row = definition({ description: 'old' });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
     formDefinitionsRepository.saveDefinition.mockResolvedValue(row);
 
     const out = await service.updateDescription(actor, 't1', {
@@ -136,7 +139,7 @@ describe('FormDefinitionLifecycleService', () => {
 
   it('updateDescription stores null for blank text', async () => {
     const row = definition({ description: 'old' });
-    formDefinitionsRepository.findByIdWithFields.mockResolvedValue(row);
+    formDefinitionsRepository.findByIdWithFieldsInTenant.mockResolvedValue(row);
     formDefinitionsRepository.saveDefinition.mockResolvedValue(row);
 
     const out = await service.updateDescription(actor, 't1', {

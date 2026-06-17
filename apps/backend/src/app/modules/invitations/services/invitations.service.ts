@@ -3,7 +3,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import type { EntityManager } from 'typeorm';
+import { DataSource, type EntityManager } from 'typeorm';
 import { randomBytes } from 'node:crypto';
 import * as bcrypt from 'bcrypt';
 import { ClientErrorCodes, clientError } from '../../../../common/errors';
@@ -21,7 +21,6 @@ import type {
   AcceptInvitationDto,
   CreateInvitationDto,
 } from '../dto/invitations.dto';
-import { TransactionService } from '../../../transaction';
 
 const INVITE_TTL_MS = 7 * 24 * 60 * 60 * 1000;
 
@@ -38,7 +37,7 @@ export class InvitationsService {
     private readonly authService: AuthService,
     private readonly mailService: MailService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -146,7 +145,7 @@ export class InvitationsService {
     const passwordHash = await bcrypt.hash(dto.password, 10);
     const name = dto.name?.trim().length ? dto.name.trim() : null;
 
-    const { user } = await this.transactions.run(async (manager) => {
+    const { user } = await this.dataSource.transaction(async (manager) => {
       const result = await this.acceptInvitationOrThrow(
         {
           token: dto.token,

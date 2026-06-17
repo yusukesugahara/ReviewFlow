@@ -192,10 +192,11 @@ export class FormDefinitionFieldsService {
     tenantId: string,
     id: string,
   ): Promise<FormDefinition> {
-    const definition = await this.formDefinitionsRepository.findByIdWithFields(
-      tenantId,
-      id,
-    );
+    const definition =
+      await this.formDefinitionsRepository.findByIdWithFieldsInTenant(
+        tenantId,
+        id,
+      );
     if (!definition) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }

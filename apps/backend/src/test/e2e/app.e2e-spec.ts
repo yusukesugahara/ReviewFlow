@@ -978,7 +978,47 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${adminTok}`)
       .send({ groupId: groupB, name: 'Group B Form' })
       .expect(201);
-    expect((tplB.body as FormDefinitionCreateBody).data?.id).toBeTruthy();
+    const tplBId = (tplB.body as FormDefinitionCreateBody).data?.id ?? '';
+    expect(tplBId).toBeTruthy();
+
+    await request(http)
+      .post(`/form-definitions/${tplBId}/publish`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    const flowB = await request(http)
+      .post('/approval-flows')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        groupId: groupB,
+        name: 'Group B Flow',
+        steps: [
+          {
+            stepOrder: 1,
+            stepName: 'Admin approval',
+            assigneeUserId: adminId,
+            canReturn: false,
+          },
+        ],
+      })
+      .expect(201);
+    const flowBId = (flowB.body as ApprovalFlowCreateBody).data?.id ?? '';
+    expect(flowBId).toBeTruthy();
+    const appB = await request(http)
+      .post('/applications')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        groupId: groupB,
+        formDefinitionId: tplBId,
+        approvalFlowId: flowBId,
+        status: 'published',
+        values: {},
+      })
+      .expect(201);
+    const appBId = (appB.body as ApplicationCreateBody).data?.id ?? '';
+    expect(appBId).toBeTruthy();
 
     await request(http)
       .post('/applications')
@@ -986,6 +1026,44 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${groupUserTok}`)
       .send({ groupId: groupB, values: {} })
       .expect(403);
+    const groupAdminGroupBApps = await request(http)
+      .get('/applications')
+      .query({ groupId: groupB })
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .expect(403);
+    expect((groupAdminGroupBApps.body as ErrorJsonBody).errorCode).toBe(
+      'APPLICATION_ACCESS_DENIED',
+    );
+    const groupAdminGroupBDetail = await request(http)
+      .get(`/applications/${appBId}`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .expect(403);
+    expect((groupAdminGroupBDetail.body as ErrorJsonBody).errorCode).toBe(
+      'APPLICATION_ACCESS_DENIED',
+    );
+    const groupAdminGroupBForms = await request(http)
+      .get('/form-definitions')
+      .query({ groupId: groupB })
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .expect(403);
+    expect((groupAdminGroupBForms.body as ErrorJsonBody).errorCode).toBe(
+      'GROUP_ADMIN_REQUIRED',
+    );
+    const groupAdminGroupBExport = await request(http)
+      .post('/export-jobs')
+      .set(apiKey)
+      .set('Authorization', `Bearer ${groupAdminTok}`)
+      .send({
+        groupId: groupB,
+        formDefinitionId: tplBId,
+      })
+      .expect(403);
+    expect((groupAdminGroupBExport.body as ErrorJsonBody).errorCode).toBe(
+      'GROUP_ADMIN_REQUIRED',
+    );
     await request(http)
       .get(`/applications/${appAId}`)
       .set(apiKey)

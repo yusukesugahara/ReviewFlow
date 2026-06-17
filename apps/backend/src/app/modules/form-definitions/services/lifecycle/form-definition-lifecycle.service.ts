@@ -119,10 +119,11 @@ export class FormDefinitionLifecycleService {
     tenantId: string,
     definitionId: string,
   ): Promise<FormDefinition> {
-    const definition = await this.formDefinitionsRepository.findByIdWithFields(
-      tenantId,
-      definitionId,
-    );
+    const definition =
+      await this.formDefinitionsRepository.findByIdWithFieldsInTenant(
+        tenantId,
+        definitionId,
+      );
     if (!definition) {
       throw clientError(ClientErrorCodes.FORM_DEFINITION_NOT_FOUND);
     }

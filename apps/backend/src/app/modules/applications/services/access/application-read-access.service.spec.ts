@@ -32,7 +32,7 @@ const app = (overrides: Partial<Application> = {}): Application =>
 describe('ApplicationReadAccessService', () => {
   let queryRepository: {
     countApprovalsByActor: jest.Mock;
-    findById: jest.Mock;
+    findByIdInTenant: jest.Mock;
   };
   let spaceAccess: {
     actorCanManageGroup: jest.Mock;
@@ -44,7 +44,7 @@ describe('ApplicationReadAccessService', () => {
   beforeEach(() => {
     queryRepository = {
       countApprovalsByActor: jest.fn(),
-      findById: jest.fn(),
+      findByIdInTenant: jest.fn(),
     };
     spaceAccess = {
       actorCanManageGroup: jest.fn(),
@@ -60,13 +60,13 @@ describe('ApplicationReadAccessService', () => {
 
   it('loads tenant scoped applications and checks space access', async () => {
     const row = app({ applicantUserId: 'user-1' });
-    queryRepository.findById.mockResolvedValue(row);
+    queryRepository.findByIdInTenant.mockResolvedValue(row);
 
     await expect(
       service.loadReadable(actor(), 'app-1', { detail: true }),
     ).resolves.toBe(row);
 
-    expect(queryRepository.findById).toHaveBeenCalledWith({
+    expect(queryRepository.findByIdInTenant).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
       id: 'app-1',
       detail: true,
@@ -79,7 +79,7 @@ describe('ApplicationReadAccessService', () => {
 
   it('allows group managers to read setup applications without approval history', async () => {
     const row = app({ status: ApplicationStatus.PUBLISHED });
-    queryRepository.findById.mockResolvedValue(row);
+    queryRepository.findByIdInTenant.mockResolvedValue(row);
     spaceAccess.actorCanManageGroup.mockResolvedValue(true);
     queryRepository.countApprovalsByActor.mockResolvedValue(0);
 
@@ -99,7 +99,7 @@ describe('ApplicationReadAccessService', () => {
 
   it('uses approval history for non setup application reads', async () => {
     const row = app();
-    queryRepository.findById.mockResolvedValue(row);
+    queryRepository.findByIdInTenant.mockResolvedValue(row);
     queryRepository.countApprovalsByActor.mockResolvedValue(1);
 
     await expect(
@@ -113,7 +113,7 @@ describe('ApplicationReadAccessService', () => {
   });
 
   it('rejects missing applications', async () => {
-    queryRepository.findById.mockResolvedValue(null);
+    queryRepository.findByIdInTenant.mockResolvedValue(null);
 
     await expect(
       service.loadReadable(actor(), 'missing-app', { detail: false }),

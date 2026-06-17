@@ -17,7 +17,7 @@ describe('ApprovalFlowsService', () => {
   let approvalFlowsRepository: jest.Mocked<
     Pick<
       ApprovalFlowsRepository,
-      'listByGroup' | 'findOneById' | 'listActiveForApplicant'
+      'listByGroup' | 'findOneByIdInTenant' | 'listActiveForApplicant'
     >
   >;
   let spaceAccess: jest.Mocked<
@@ -36,7 +36,7 @@ describe('ApprovalFlowsService', () => {
   beforeEach(async () => {
     approvalFlowsRepository = {
       listByGroup: jest.fn(),
-      findOneById: jest.fn(),
+      findOneByIdInTenant: jest.fn(),
       listActiveForApplicant: jest.fn(),
     };
     spaceAccess = {
@@ -126,7 +126,7 @@ describe('ApprovalFlowsService', () => {
   });
 
   it('getOne rejects when the flow is not found in tenant scope', async () => {
-    approvalFlowsRepository.findOneById.mockResolvedValue(null);
+    approvalFlowsRepository.findOneByIdInTenant.mockResolvedValue(null);
 
     await expect(service.getOne('ten1', 'missing')).rejects.toMatchObject({
       errorCode: ClientErrorCodes.APPROVAL_FLOW_NOT_FOUND,

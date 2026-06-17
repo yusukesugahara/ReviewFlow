@@ -28,7 +28,7 @@ export class ApplicationQueryRepository {
     });
   }
 
-  async findById(
+  async findByIdInTenant(
     params: {
       tenantId: string;
       id: string;

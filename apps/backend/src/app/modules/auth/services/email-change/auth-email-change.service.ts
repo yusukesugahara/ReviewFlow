@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { randomBytes } from 'node:crypto';
+import { DataSource } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
 import { AuthRepository } from '../../../../../models/repositories/auth.repository';
 import {
@@ -12,7 +13,6 @@ import type {
   ConfirmEmailChangeDto,
   RequestMeEmailChangeDto,
 } from '../../dto/auth.dto';
-import { TransactionService } from '../../../../transaction';
 
 const EMAIL_CHANGE_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -26,7 +26,7 @@ export class AuthEmailChangeService {
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -101,7 +101,7 @@ export class AuthEmailChangeService {
 
     await this.assertEmailAvailable(row.newEmail, target.id);
 
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       const saved =
         await this.authRepository.updateEmailAndMarkEmailChangeTokenUsed(
           {

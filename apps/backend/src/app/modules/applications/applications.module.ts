@@ -55,7 +55,6 @@ import { ApplicationUserSubmissionUseCaseService } from './services/use-cases/ap
 import { ApplicationsController } from './controllers/applications.controller';
 import { ApplicationsService } from './services/facades/applications.service';
 import { PublicApplicationsController } from './controllers/public-applications.controller';
-import { TransactionService } from '../../transaction';
 
 @Module({
   imports: [
@@ -117,7 +116,6 @@ import { TransactionService } from '../../transaction';
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
     ApplicationUserSubmissionUseCaseService,
-    TransactionService,
   ],
 })
 export class ApplicationsModule {}

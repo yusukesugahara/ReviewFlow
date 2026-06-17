@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { DataSource } from 'typeorm';
 import { ClientErrorCodes, clientError } from '../../../../../common/errors';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import { UserRole } from '../../../../../models/constants/user-role';
@@ -18,7 +19,6 @@ import type {
   UpdateGroupMemberRoleDto,
 } from '../../dto/groups.dto';
 import { GroupMembersService } from '../members/group-members.service';
-import { TransactionService } from '../../../../transaction';
 
 /**
  * space CRUD と space member 操作の facade。
@@ -30,7 +30,7 @@ export class GroupsService {
     private readonly usersService: UsersService,
     private readonly groupMembers: GroupMembersService,
     private readonly auditLogs: BusinessAuditLogService,
-    private readonly transactions: TransactionService,
+    private readonly dataSource: DataSource,
   ) {}
 
   /**
@@ -81,7 +81,7 @@ export class GroupsService {
       throw clientError(ClientErrorCodes.TENANT_USER_NOT_FOUND);
     }
 
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const group = await this.groupsRepository.createGroupWithAdmins(
         {
           tenantId: actor.tenantId,
@@ -146,7 +146,7 @@ export class GroupsService {
 
     group.name = name;
     group.description = description;
-    return this.transactions.run(async (manager) => {
+    return this.dataSource.transaction(async (manager) => {
       const saved = await this.groupsRepository.saveGroup(group, manager);
 
       await this.auditLogs.recordSpaceEvent(
@@ -175,7 +175,7 @@ export class GroupsService {
    */
   async remove(groupId: string, actor: AuthUserPayload): Promise<void> {
     const group = await this.findGroupInTenant(groupId, actor.tenantId);
-    await this.transactions.run(async (manager) => {
+    await this.dataSource.transaction(async (manager) => {
       await this.auditLogs.recordSpaceEvent(
         {
           actionType: BusinessAuditAction.SPACE_DELETED,

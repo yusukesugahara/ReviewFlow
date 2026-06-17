@@ -46,7 +46,7 @@ const template = (overrides: Partial<FormDefinition> = {}): FormDefinition =>
 describe('ApplicationReturnEmailUseCaseService', () => {
   let applicationsRepository: {
     countApprovalsByActor: jest.Mock;
-    findById: jest.Mock;
+    findByIdInTenant: jest.Mock;
   };
   let spaceAccess: {
     assertCanUseGroup: jest.Mock;
@@ -71,7 +71,7 @@ describe('ApplicationReturnEmailUseCaseService', () => {
   beforeEach(() => {
     applicationsRepository = {
       countApprovalsByActor: jest.fn(),
-      findById: jest.fn(),
+      findByIdInTenant: jest.fn(),
     };
     spaceAccess = {
       assertCanUseGroup: jest.fn(),
@@ -110,7 +110,7 @@ describe('ApplicationReturnEmailUseCaseService', () => {
       fields: [{ fieldId: 'field-1', comment: 'Required' }],
     };
     const hydrated = app({ id: 'hydrated-app' });
-    applicationsRepository.findById.mockResolvedValue(row);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(row);
     correctionService.getReturnEmailContext.mockResolvedValue({
       template: form,
       dto,
@@ -119,7 +119,7 @@ describe('ApplicationReturnEmailUseCaseService', () => {
 
     await expect(service.resend(actor(), 'app-1')).resolves.toBe(hydrated);
 
-    expect(applicationsRepository.findById).toHaveBeenCalledWith({
+    expect(applicationsRepository.findByIdInTenant).toHaveBeenCalledWith({
       tenantId: 'tenant-1',
       id: 'app-1',
       detail: true,
@@ -147,7 +147,7 @@ describe('ApplicationReturnEmailUseCaseService', () => {
 
   it('uses approval participation lookup for read policy checks', async () => {
     const row = app();
-    applicationsRepository.findById.mockResolvedValue(row);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(row);
     applicationsRepository.countApprovalsByActor.mockResolvedValue(1);
     accessPolicy.assertCanRead.mockImplementation(
       async (
@@ -176,7 +176,7 @@ describe('ApplicationReturnEmailUseCaseService', () => {
   });
 
   it('rejects resend when the application is not found', async () => {
-    applicationsRepository.findById.mockResolvedValue(null);
+    applicationsRepository.findByIdInTenant.mockResolvedValue(null);
 
     await expect(service.resend(actor(), 'missing-app')).rejects.toThrow();
 
@@ -185,7 +185,7 @@ describe('ApplicationReturnEmailUseCaseService', () => {
   });
 
   it('does not send email when returned-state validation fails', async () => {
-    applicationsRepository.findById.mockResolvedValue(
+    applicationsRepository.findByIdInTenant.mockResolvedValue(
       app({ status: ApplicationStatus.IN_REVIEW }),
     );
     transitionPolicy.assertReturned.mockImplementation(() => {
