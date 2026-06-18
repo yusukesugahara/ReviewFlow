@@ -16,16 +16,20 @@ import type {
 import { isFormSetupStatus } from "@/components/applications/status/application-status-rules";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import {
   getMissingRequiredFields,
   isRelatedSubmittedApplication,
   isSetupApplicationForDefinition,
 } from "../_rules/application-detail-rules";
-import type {
-  ApplicationSummary,
-  FormDefinitionDetail,
-} from "../types";
+import type { ApplicationSummary, FormDefinitionDetail } from "../types";
+import {
+  getRelayApplication,
+  getRelayApplicationCorrections,
+  getRelayApplications,
+  getRelayOpenCorrectionItems,
+} from "@/lib/relay/applications";
+import { isApiFailure } from "@/lib/server/api-failure";
 
 type AuthHeaders = { Authorization: string };
 
@@ -70,11 +74,10 @@ export async function getSpaceApplicationDetailPageData({
   spaceId: string;
 }): Promise<SpaceApplicationDetailPageData> {
   const authHeaders = await authHeadersOrRedirect();
-  const applicationRaw = await client.GET("/applications/{id}", {
-    params: { path: { id: applicationId } },
-    headers: authHeaders,
+  const application = await getRelayApplication({
+    applicationId,
+    authHeaders,
   });
-  const application = unwrapResponseData<ApplicationDetailViewModel>(applicationRaw);
   const definitionId = application.formDefinitionId ?? queryDefinitionId;
 
   const [definition, corrections, openItems] = await Promise.all([
@@ -137,11 +140,11 @@ async function getFormDefinition({
   spaceId: string;
 }): Promise<FormDefinitionDetail | null> {
   const definitionRaw = definitionId
-    ? await client.GET("/form-definitions/{id}", {
+    ? await client.formDefinition( {
         params: { path: { id: definitionId } },
         headers: authHeaders,
       })
-    : await client.GET("/form-definitions", {
+    : await client.formDefinitions( {
         params: { query: { groupId: spaceId } },
         headers: authHeaders,
       });
@@ -163,14 +166,7 @@ async function getApplicationCorrections({
   applicationId: string;
   authHeaders: AuthHeaders;
 }): Promise<ApplicationCorrection[]> {
-  const correctionsRaw = await client.GET("/applications/{id}/corrections", {
-    params: { path: { id: applicationId } },
-    headers: authHeaders,
-  });
-  return (
-    unwrapResponseData<{ corrections?: ApplicationCorrection[] }>(correctionsRaw)
-      .corrections ?? []
-  );
+  return getRelayApplicationCorrections({ applicationId, authHeaders });
 }
 
 /**
@@ -183,18 +179,7 @@ async function getOpenCorrectionItems({
   applicationId: string;
   authHeaders: AuthHeaders;
 }): Promise<ApplicationCorrectionTargetItem[]> {
-  const correctionTargetsRaw = await client.GET(
-    "/applications/{id}/correction-targets",
-    {
-      params: { path: { id: applicationId } },
-      headers: authHeaders,
-    },
-  );
-  return (
-    unwrapResponseData<{
-      openCorrection?: { items?: ApplicationCorrectionTargetItem[] } | null;
-    }>(correctionTargetsRaw).openCorrection?.items ?? []
-  );
+  return getRelayOpenCorrectionItems({ applicationId, authHeaders });
 }
 
 /**
@@ -236,8 +221,9 @@ async function getFormDetailHref({
     spaceId,
   });
   const setupApplication =
-    applications.find((row) => isSetupApplicationForDefinition(row, definitionId)) ??
-    null;
+    applications.find((row) =>
+      isSetupApplicationForDefinition(row, definitionId),
+    ) ?? null;
 
   return setupApplication
     ? buildSpaceApplicationFormDetailHref({
@@ -258,14 +244,7 @@ async function getSpaceApplications({
   authHeaders: AuthHeaders;
   spaceId: string;
 }): Promise<ApplicationSummary[]> {
-  const applicationsRaw = await client.GET("/applications", {
-    params: { query: { groupId: spaceId } },
-    headers: authHeaders,
-  });
-  return (
-    unwrapResponseData<{ applications?: ApplicationSummary[] }>(applicationsRaw)
-      .applications ?? []
-  );
+  return getRelayApplications({ authHeaders, groupId: spaceId });
 }
 
 /**
@@ -278,15 +257,12 @@ async function getSpaceApplicationsIfAvailable({
   authHeaders: AuthHeaders;
   spaceId: string;
 }): Promise<ApplicationSummary[]> {
-  const applicationsRaw = await client.GET("/applications", {
-    params: { query: { groupId: spaceId } },
-    headers: authHeaders,
-  });
-  if (!applicationsRaw.response.ok || !applicationsRaw.data) {
-    return [];
+  try {
+    return await getRelayApplications({ authHeaders, groupId: spaceId });
+  } catch (error) {
+    if (isApiFailure(error)) {
+      return [];
+    }
+    throw error;
   }
-  return (
-    unwrapResponseData<{ applications?: ApplicationSummary[] }>(applicationsRaw)
-      .applications ?? []
-  );
 }

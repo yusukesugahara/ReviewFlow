@@ -8,7 +8,7 @@ import type {
 } from "@/lib/schema";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import type {
   SpaceUsersAvailableUser,
   SpaceUsersGroup,
@@ -78,7 +78,7 @@ export async function getSpaceUsersPageData({
  * 現在のユーザーが利用できるスペース一覧を取得します。
  */
 async function listSpaces(headers: AuthHeaders): Promise<SpaceUsersGroup[]> {
-  const response = await client.GET("/groups", { headers });
+  const response = await client.groups( { headers });
   return unwrapResponseData<GroupsListSuccessJson["data"]>(response).groups ?? [];
 }
 
@@ -89,7 +89,7 @@ async function listSpaceMembers(
   groupId: string,
   headers: AuthHeaders,
 ): Promise<SpaceUsersMember[]> {
-  const response = await client.GET("/groups/{groupId}/members", {
+  const response = await client.groupMembers( {
     params: { path: { groupId } },
     headers,
   });
@@ -105,7 +105,7 @@ async function listAvailableUsers(
   groupId: string,
   headers: AuthHeaders,
 ): Promise<SpaceUsersAvailableUser[]> {
-  const response = await client.GET("/groups/{groupId}/available-users", {
+  const response = await client.groupAvailableUsers( {
     params: { path: { groupId } },
     headers,
   });

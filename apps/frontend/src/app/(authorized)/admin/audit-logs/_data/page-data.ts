@@ -2,7 +2,7 @@ import "server-only";
 
 import type { AuditLogsListSuccessJson } from "@/lib/schema";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { AdminAuditLogsViewProps } from "../types";
 
@@ -103,7 +103,7 @@ async function fetchAuditLogsPage({
   total: number;
 }> {
   const offset = (page - 1) * AUDIT_LOG_PAGE_SIZE;
-  const response = await client.GET("/audit-logs", {
+  const response = await client.auditLogs( {
     params: {
       query: {
         limit: AUDIT_LOG_PAGE_SIZE,

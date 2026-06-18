@@ -1,4 +1,5 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { getRequestFromExecutionContext } from '../../common/context/request-from-execution-context';
 import { ClientErrorCodes, clientError } from '../../common/errors';
 import {
   AuthService,
@@ -23,9 +24,9 @@ export class ApplicantAccessGuard implements CanActivate {
   constructor(private readonly authService: AuthService) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context
-      .switchToHttp()
-      .getRequest<RequestWithApplicantSession>();
+    const request = getRequestFromExecutionContext<unknown>(
+      context,
+    ) as RequestWithApplicantSession;
     const rawToken = request.headers['x-applicant-access-token'];
     const token = Array.isArray(rawToken) ? rawToken[0] : rawToken;
     if (!token) {

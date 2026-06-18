@@ -13,7 +13,7 @@ import {
 } from "@/components/applications/status/application-status-rules";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import {
   toApprovalAssigneeOptions,
   toDraftFields,
@@ -71,7 +71,7 @@ export async function getSpaceApplicationEditPageData({
   spaceId: string;
 }): Promise<SpaceApplicationEditPageData> {
   const authHeaders = await authHeadersOrRedirect();
-  const appRaw = await client.GET("/applications/{id}", {
+  const appRaw = await client.application( {
     params: { path: { id: applicationId } },
     headers: authHeaders,
   });
@@ -152,11 +152,11 @@ async function getFormDefinition({
   spaceId: string;
 }): Promise<EditableFormDefinition | null> {
   const definitionRaw = definitionId
-    ? await client.GET("/form-definitions/{id}", {
+    ? await client.formDefinition( {
         params: { path: { id: definitionId } },
         headers: authHeaders,
       })
-    : await client.GET("/form-definitions", {
+    : await client.formDefinitions( {
         params: { query: { groupId: spaceId } },
         headers: authHeaders,
       });
@@ -181,8 +181,7 @@ async function getOpenCorrection({
   overallComment?: string | null;
   items?: CorrectionTargetItem[];
 } | null> {
-  const correctionTargetsRaw = await client.GET(
-    "/applications/{id}/correction-targets",
+  const correctionTargetsRaw = await client.applicationCorrectionTargets(
     {
       params: { path: { id: applicationId } },
       headers: authHeaders,
@@ -209,7 +208,7 @@ async function getSpaceMembers({
   authHeaders: AuthHeaders;
   spaceId: string;
 }): Promise<EditableGroupMember[]> {
-  const membersRaw = await client.GET("/groups/{groupId}/members", {
+  const membersRaw = await client.groupMembers( {
     params: { path: { groupId: spaceId } },
     headers: authHeaders,
   });
@@ -228,7 +227,7 @@ async function getApprovalFlows({
   authHeaders: AuthHeaders;
   spaceId: string;
 }): Promise<EditableApprovalFlow[]> {
-  const flowsRaw = await client.GET("/approval-flows", {
+  const flowsRaw = await client.approvalFlows( {
     params: { query: { groupId: spaceId } },
     headers: authHeaders,
   });

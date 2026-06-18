@@ -1,7 +1,7 @@
 import "server-only";
 
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { applicantHeaders } from "../../form/_utils/server";
 import type {
   PublicCorrectionFormDefinition,
@@ -25,8 +25,8 @@ export async function getPublicCorrectionPageData(
 }> {
   const headers = await applicantHeaders();
   const [definitionRaw, correctionRaw] = await Promise.all([
-    client.GET("/form-definitions/public/current", { headers }),
-    client.GET("/public/applications/returned/current", { headers }),
+    client.currentFormDefinitionForApplicant( { headers }),
+    client.returnedApplicationCorrectionTargetsForApplicant( { headers }),
   ]);
 
   return {

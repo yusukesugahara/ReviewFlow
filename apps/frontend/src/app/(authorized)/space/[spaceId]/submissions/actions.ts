@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { createExportJobSchema } from "@/lib/auth-schema";
 import { buildSpaceSubmissionsHref } from "@/components/applications/routing/application-routes";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { CreateExportJobBody, ExportJobResponse } from "@/lib/schema";
@@ -39,7 +39,7 @@ export async function createSubmissionCsvExportAction(
       groupId: parsed.data.groupId,
       formDefinitionId: parsed.data.formDefinitionId,
     };
-    const response = await client.POST("/export-jobs", {
+    const response = await client.createExportJob( {
       body,
       headers: { Authorization: `Bearer ${accessToken}` },
     });

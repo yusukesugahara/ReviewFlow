@@ -32,7 +32,7 @@ ReviewFlow は、単なる CRUD や管理画面テンプレートではなく、
 - 差し戻し時に、修正対象項目とコメントを保持し、再提出まで追跡できること
 - 重要操作が監査ログに残り、誰がいつ何をしたか確認できること
 - 監査ログで、申請だけでなくユーザー招待、ユーザー削除・復活、スペース更新、スペースメンバー変更などのユーザー操作も追跡できること
-- Next.js と NestJS の責務分離、OpenAPI による型安全な連携、テストしやすい業務ロジック分離が説明できること
+- Next.js と NestJS の責務分離、Relay / GraphQL による API 連携、テストしやすい業務ロジック分離が説明できること
 
 AI エージェントで作業する場合は、`.agents/skills/reviewflow-portfolio/SKILL.md` を入口にし、必要に応じて同 Skill の `references/` と本 `docs/` を参照する。
 
@@ -46,7 +46,7 @@ GitHub 上では Markdown の表と Mermaid 図がそのまま表示される。
 | 2 | [業務要件](01_business_requirements.md) | 利用者、業務フロー、制約 | MVPで扱う業務範囲 |
 | 3 | [ドメインモデル](02_domain_model.md) | 主要概念と責務 | テナント、スペース、申請、承認 |
 | 4 | [ER図](03_er_diagram.md) | テーブル定義と関係 | Mermaid ER図、インデックス方針 |
-| 5 | [API仕様](04_api_spec.md) | API契約と代表エンドポイント | OpenAPI連携、レスポンス方針 |
+| 5 | [API仕様](04_api_spec.md) | API契約と代表エンドポイント | GraphQL / Relay 連携、REST 参照スキーマ、レスポンス方針 |
 | 6 | [全体構成](05_architecture.md) | フロントエンド、バックエンド、DBの責務 | Mermaid構成図、非同期処理 |
 | 7 | [バックエンド設計](06_backend_design.md) | NestJS側の責務分離 | Module、Service、DTO、認可 |
 | 8 | [フロントエンド設計](07_frontend_design.md) | Next.js側の責務分離 | Server Components、BFF、UI構成 |
@@ -57,7 +57,7 @@ GitHub 上では Markdown の表と Mermaid 図がそのまま表示される。
 | 13 | [タスク](12_tasks.md) | 実装タスク管理 | 残タスクと進捗 |
 | 14 | [Codexプロンプト例](13_codex_prompt_examples.md) | エージェント作業例 | 依頼テンプレート |
 | 15 | [UIデザインルール](14_ui_design_rules.md) | UI実装時の設計ルール | shadcn/ui、Tailwind、状態表示、アクセシビリティ |
-| 16 | [開発ガイド](15_development_guide.md) | 環境構築と開発手順 | Docker、テスト、OpenAPI 型生成 |
+| 16 | [開発ガイド](15_development_guide.md) | 環境構築と開発手順 | Docker、テスト、GraphQL / Relay、REST 参照スキーマ |
 
 ## 管理画面（テナント向け）
 契約組織の **テナント管理者（tenant_admin）** が参照する画面。自組織ワークスペース内の利用状況を把握するためのものであり、プラットフォーム運営者専用のコンソールとは別とする。
@@ -120,7 +120,7 @@ GitHub 上では Markdown の表と Mermaid 図がそのまま表示される。
 - Tailwind CSS v4
 - Zod
 - Radix UI ベースの shadcn/ui 互換コンポーネント（手動実装）
-- openapi-fetch / openapi-typescript
+- relay-runtime
 - Jest、Testing Library
 - Playwright（最小構成）
 

@@ -51,7 +51,7 @@ export function errorMessageFromBody(
 }
 
 /**
- * backend-fetch の失敗レスポンスを例外用の API 失敗オブジェクトへ変換します。
+ * backend API client の失敗レスポンスを例外用の API 失敗オブジェクトへ変換します。
  */
 export function toApiFailure(response: ApiResponseLike): ApiFailure {
   return {
@@ -61,14 +61,14 @@ export function toApiFailure(response: ApiResponseLike): ApiFailure {
 }
 
 /**
- * backend-fetch の失敗レスポンスを API 失敗例外として送出します。
+ * backend API client の失敗レスポンスを API 失敗例外として送出します。
  */
 export function throwApiFailure(response: ApiResponseLike): never {
   throw toApiFailure(response);
 }
 
 /**
- * backend-fetch のレスポンスが失敗していれば API 失敗例外を送出します。
+ * backend API client のレスポンスが失敗していれば API 失敗例外を送出します。
  */
 export function throwIfApiResponseFailed(response: ApiResponseLike): void {
   if (!response.response.ok) {

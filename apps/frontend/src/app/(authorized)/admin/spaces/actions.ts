@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import {
   errorMessageFromBody,
@@ -114,7 +114,7 @@ export async function createSpaceAction(formData: FormData): Promise<void> {
   };
 
   try {
-    const response = await client.POST("/groups", {
+    const response = await client.createGroup( {
       body,
       headers: await authHeadersOrRedirect(),
     });
@@ -149,7 +149,7 @@ export async function updateSpaceAction(
   };
 
   try {
-    const response = await client.PATCH("/groups/{groupId}", {
+    const response = await client.updateGroup( {
       params: { path: { groupId } },
       body,
       headers: await authHeadersOrRedirect(),
@@ -182,7 +182,7 @@ export async function addMemberAction(
   const body: AddGroupMemberBody = parsed.data;
 
   try {
-    const response = await client.POST("/groups/{groupId}/members", {
+    const response = await client.addGroupMember( {
       params: { path: { groupId } },
       body,
       headers: await authHeadersOrRedirect(),
@@ -221,7 +221,7 @@ export async function inviteSpaceMemberAction(
   };
 
   try {
-    const response = await client.POST("/invitations", {
+    const response = await client.createInvitation( {
       body,
       headers: await authHeadersOrRedirect(),
     });
@@ -253,7 +253,7 @@ export async function updateMemberRoleAction(
   const body: UpdateGroupMemberRoleBody = parsed.data;
 
   try {
-    const response = await client.PATCH("/groups/{groupId}/members/{userId}/role", {
+    const response = await client.updateGroupMemberRole( {
       params: { path: { groupId, userId } },
       body,
       headers: await authHeadersOrRedirect(),
@@ -275,7 +275,7 @@ export async function removeMemberAction(
   userId: string,
 ): Promise<void> {
   try {
-    const response = await client.DELETE("/groups/{groupId}/members/{userId}", {
+    const response = await client.removeGroupMember( {
       params: { path: { groupId, userId } },
       headers: await authHeadersOrRedirect(),
     });
@@ -292,7 +292,7 @@ export async function removeMemberAction(
  */
 export async function leaveSpaceAction(groupId: string): Promise<void> {
   try {
-    const response = await client.DELETE("/groups/{groupId}/members/me", {
+    const response = await client.leaveGroup( {
       params: { path: { groupId } },
       headers: await authHeadersOrRedirect(),
     });
@@ -309,7 +309,7 @@ export async function leaveSpaceAction(groupId: string): Promise<void> {
  */
 export async function removeSpaceAction(groupId: string): Promise<void> {
   try {
-    const response = await client.DELETE("/groups/{groupId}", {
+    const response = await client.removeGroup( {
       params: { path: { groupId } },
       headers: await authHeadersOrRedirect(),
     });

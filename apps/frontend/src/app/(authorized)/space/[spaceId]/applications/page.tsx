@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { getSpaceApplicationsPageData } from "./_data/page-data";
 import type { SpaceApplicationsPageProps } from "./types";
@@ -27,6 +28,7 @@ export default async function SpaceApplicationsPage({
       />
     );
   } catch (error) {
+    unstable_rethrow(error);
     return (
       <SpaceApplicationsView
         applications={[]}

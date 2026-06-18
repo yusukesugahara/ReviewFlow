@@ -14,19 +14,25 @@ jest.mock("@/lib/server/action-auth", () => ({
   authHeadersOrRedirect: jest.fn(async () => ({ Authorization: "Bearer token" })),
 }));
 
-jest.mock("@/lib/server/backend-fetch", () => ({
+jest.mock("@/lib/relay/client", () => ({
   client: {
-    POST: jest.fn(),
-    PATCH: jest.fn(),
+    addFormField: jest.fn(),
+    createApprovalFlow: jest.fn(),
+    createFormDefinition: jest.fn(),
+    patchApplication: jest.fn(),
+    publishFormDefinition: jest.fn(),
   },
 }));
 
 import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { redirect } from "next/navigation";
 
-const mockedPost = client.POST as jest.Mock;
-const mockedPatch = client.PATCH as jest.Mock;
+const mockedAddFormField = client.addFormField as jest.Mock;
+const mockedCreateApprovalFlow = client.createApprovalFlow as jest.Mock;
+const mockedCreateFormDefinition = client.createFormDefinition as jest.Mock;
+const mockedPatchApplication = client.patchApplication as jest.Mock;
+const mockedPublishFormDefinition = client.publishFormDefinition as jest.Mock;
 const mockedRedirect = jest.mocked(redirect);
 
 function createSetupFormData(intent: "draft" | "publish"): FormData {
@@ -88,29 +94,31 @@ function createSetupFormDataWithInvalidSteps(): FormData {
 
 describe("updateApplicationSetupAction", () => {
   beforeEach(() => {
-    mockedPost.mockReset();
-    mockedPatch.mockReset();
+    mockedAddFormField.mockReset();
+    mockedCreateApprovalFlow.mockReset();
+    mockedCreateFormDefinition.mockReset();
+    mockedPatchApplication.mockReset();
+    mockedPublishFormDefinition.mockReset();
     mockedRedirect.mockClear();
   });
 
   // テスト内容: 詳細編集画面で公開を押した場合、編集後のフォーム定義と承認フローを作り直して申請フォーム管理レコードへ紐付けることを確認する
   it("recreates form definition and approval flow when publishing edited setup", async () => {
-    mockedPost
-      .mockResolvedValueOnce({
-        response: { ok: true, status: 201 },
-        data: { data: { id: "definition-new" } },
-      })
-      .mockResolvedValueOnce({
-        response: { ok: true, status: 201 },
-      })
-      .mockResolvedValueOnce({
-        response: { ok: true, status: 200 },
-      })
-      .mockResolvedValueOnce({
-        response: { ok: true, status: 201 },
-        data: { data: { id: "flow-new" } },
-      });
-    mockedPatch.mockResolvedValueOnce({
+    mockedCreateFormDefinition.mockResolvedValueOnce({
+      response: { ok: true, status: 201 },
+      data: { data: { id: "definition-new" } },
+    });
+    mockedAddFormField.mockResolvedValueOnce({
+      response: { ok: true, status: 201 },
+    });
+    mockedPublishFormDefinition.mockResolvedValueOnce({
+      response: { ok: true, status: 200 },
+    });
+    mockedCreateApprovalFlow.mockResolvedValueOnce({
+      response: { ok: true, status: 201 },
+      data: { data: { id: "flow-new" } },
+    });
+    mockedPatchApplication.mockResolvedValueOnce({
       response: { ok: true, status: 200 },
       data: { data: { id: "app-1" } },
     });
@@ -119,9 +127,7 @@ describe("updateApplicationSetupAction", () => {
       updateApplicationSetupAction("app-1", createSetupFormData("publish")),
     ).rejects.toThrow("NEXT_REDIRECT:");
 
-    expect(mockedPost).toHaveBeenNthCalledWith(
-      1,
-      "/form-definitions",
+    expect(mockedCreateFormDefinition).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
           groupId: "11111111-1111-1111-1111-111111111111",
@@ -129,9 +135,7 @@ describe("updateApplicationSetupAction", () => {
         }),
       }),
     );
-    expect(mockedPost).toHaveBeenNthCalledWith(
-      2,
-      "/form-definitions/{id}/fields",
+    expect(mockedAddFormField).toHaveBeenCalledWith(
       expect.objectContaining({
         params: { path: { id: "definition-new" } },
         body: expect.objectContaining({
@@ -140,24 +144,19 @@ describe("updateApplicationSetupAction", () => {
         }),
       }),
     );
-    expect(mockedPost).toHaveBeenNthCalledWith(
-      3,
-      "/form-definitions/{id}/publish",
+    expect(mockedPublishFormDefinition).toHaveBeenCalledWith(
       expect.objectContaining({
         params: { path: { id: "definition-new" } },
       }),
     );
-    expect(mockedPost).toHaveBeenNthCalledWith(
-      4,
-      "/approval-flows",
+    expect(mockedCreateApprovalFlow).toHaveBeenCalledWith(
       expect.objectContaining({
         body: expect.objectContaining({
           name: "稟議フォーム 承認フロー",
         }),
       }),
     );
-    expect(mockedPatch).toHaveBeenCalledWith(
-      "/applications/{id}",
+    expect(mockedPatchApplication).toHaveBeenCalledWith(
       expect.objectContaining({
         params: { path: { id: "app-1" } },
         body: expect.objectContaining({
@@ -182,8 +181,11 @@ describe("updateApplicationSetupAction", () => {
       updateApplicationSetupAction("app-1", createSetupFormDataWithInvalidSteps()),
     ).rejects.toThrow("NEXT_REDIRECT:");
 
-    expect(mockedPost).not.toHaveBeenCalled();
-    expect(mockedPatch).not.toHaveBeenCalled();
+    expect(mockedCreateFormDefinition).not.toHaveBeenCalled();
+    expect(mockedAddFormField).not.toHaveBeenCalled();
+    expect(mockedPublishFormDefinition).not.toHaveBeenCalled();
+    expect(mockedCreateApprovalFlow).not.toHaveBeenCalled();
+    expect(mockedPatchApplication).not.toHaveBeenCalled();
     expect(mockedRedirect.mock.calls.at(-1)?.[0]).toBe(
       "/space/11111111-1111-1111-1111-111111111111/applications/app-1/edit?definitionId=definition-current&setupError=invalid_steps",
     );

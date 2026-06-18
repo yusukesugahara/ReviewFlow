@@ -19,7 +19,7 @@ function unwrapData<T>(raw: unknown): T {
 }
 
 /**
- * backend-fetch のレスポンスから成功時の data を取り出します。
+ * backend API client のレスポンスから成功時の data を取り出します。
  */
 export function unwrapResponseData<T>(response: ApiResponseLike): T {
   if (
