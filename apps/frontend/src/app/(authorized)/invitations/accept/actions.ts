@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { acceptInvitationSchema } from "@/lib/auth-schema";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type { AcceptInvitationBody, AcceptInvitationSuccessJson } from "@/lib/schema";
 
@@ -31,7 +31,7 @@ export async function acceptInvitationAction(formData: FormData): Promise<void> 
   };
 
   try {
-    const response = await client.POST("/invitations/accept", { body });
+    const response = await client.acceptInvitation( { body });
     unwrapResponseData<AcceptInvitationSuccessJson["data"]>(response);
   } catch {
     const params = new URLSearchParams({

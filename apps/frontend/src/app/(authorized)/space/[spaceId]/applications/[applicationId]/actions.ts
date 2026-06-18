@@ -3,11 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
-import type { components } from "@/lib/api-schema";
 import type { ApplicationDetailViewModel } from "@/components/applications/detail/application-detail.types";
 import {
   appendQueryParams,
@@ -25,22 +24,32 @@ const optionalNonEmptyStringFormValueSchema = z
   .catch(undefined);
 const expectedStepOrderFormValueSchema = z.coerce.number().int().min(1);
 
-type ApproveApplicationBody = components["schemas"]["ApproveApplicationDto"];
-type RejectApplicationBody = components["schemas"]["RejectApplicationDto"];
-type ReturnApplicationBody = components["schemas"]["ReturnApplicationDto"];
+type ApproveApplicationBody = {
+  expectedStepOrder: number;
+  comment?: string;
+};
+type RejectApplicationBody = {
+  expectedStepOrder: number;
+  comment?: string;
+};
+type ReturnApplicationBody = {
+  expectedStepOrder: number;
+  overallComment?: string;
+  fields: { fieldId: string; comment?: string }[];
+};
 type ApplicationActionBody =
   | ApproveApplicationBody
   | RejectApplicationBody
   | ReturnApplicationBody;
 
-type ApplicationBodyActionPath =
-  | "/applications/{id}/approve"
-  | "/applications/{id}/reject"
-  | "/applications/{id}/return";
-type EmptyApplicationActionPath =
-  | "/applications/{id}/submit"
-  | "/applications/{id}/resubmit"
-  | "/applications/{id}/return-email/resend";
+type ApplicationBodyAction =
+  | "approveApplication"
+  | "rejectApplication"
+  | "returnApplication";
+type EmptyApplicationAction =
+  | "submitApplication"
+  | "resubmitApplication"
+  | "resendReturnEmail";
 
 /**
  * FormData から任意の文字列値を読み取ります。
@@ -73,11 +82,11 @@ function readExpectedStepOrder(formData: FormData): number | null {
  * ボディ付きの申請操作 API を呼び出し、更新後の申請詳細を返します。
  */
 async function postApplicationAction(
-  path: ApplicationBodyActionPath,
+  action: ApplicationBodyAction,
   applicationId: string,
   body: ApplicationActionBody,
 ): Promise<ApplicationDetailViewModel> {
-  const response = await client.POST(path, {
+  const response = await client[action]({
     params: { path: { id: applicationId } },
     body,
     headers: await authHeadersOrRedirect(),
@@ -89,10 +98,10 @@ async function postApplicationAction(
  * ボディなしの申請操作 API を呼び出し、更新後の申請詳細を返します。
  */
 async function postEmptyApplicationAction(
-  path: EmptyApplicationActionPath,
+  action: EmptyApplicationAction,
   applicationId: string,
 ): Promise<ApplicationDetailViewModel> {
-  const response = await client.POST(path, {
+  const response = await client[action]({
     params: { path: { id: applicationId } },
     headers: await authHeadersOrRedirect(),
   });
@@ -106,7 +115,7 @@ export async function submitAction(spaceId: string, applicationId: string): Prom
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postEmptyApplicationAction(
-      "/applications/{id}/submit",
+      "submitApplication",
       applicationId,
     );
   } catch (error) {
@@ -122,7 +131,7 @@ export async function resubmitAction(spaceId: string, applicationId: string): Pr
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postEmptyApplicationAction(
-      "/applications/{id}/resubmit",
+      "resubmitApplication",
       applicationId,
     );
   } catch (error) {
@@ -150,7 +159,7 @@ export async function approveAction(
   }
   let updated: ApplicationDetailViewModel;
   try {
-    updated = await postApplicationAction("/applications/{id}/approve", applicationId, {
+    updated = await postApplicationAction("approveApplication", applicationId, {
       comment,
       expectedStepOrder,
     });
@@ -179,7 +188,7 @@ export async function rejectAction(
   }
   let updated: ApplicationDetailViewModel;
   try {
-    updated = await postApplicationAction("/applications/{id}/reject", applicationId, {
+    updated = await postApplicationAction("rejectApplication", applicationId, {
       comment,
       expectedStepOrder,
     });
@@ -229,7 +238,7 @@ export async function returnAction(
 
   let updated: ApplicationDetailViewModel;
   try {
-    updated = await postApplicationAction("/applications/{id}/return", applicationId, {
+    updated = await postApplicationAction("returnApplication", applicationId, {
       overallComment,
       expectedStepOrder,
       fields,
@@ -250,7 +259,7 @@ export async function resendReturnEmailAction(
   let updated: ApplicationDetailViewModel;
   try {
     updated = await postEmptyApplicationAction(
-      "/applications/{id}/return-email/resend",
+      "resendReturnEmail",
       applicationId,
     );
   } catch (error) {
@@ -274,7 +283,7 @@ export async function updateDescriptionAction(
     definitionId,
     spaceId,
   });
-  const response = await client.PATCH("/form-definitions/{id}/description", {
+  const response = await client.updateFormDefinitionDescription( {
     params: { path: { id: definitionId } },
     body: {
       description,

@@ -1,6 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, SKIP_JWT_KEY } from '../../common/constants';
+import { getRequestFromExecutionContext } from '../../common/context/request-from-execution-context';
 import { ClientErrorCodes, clientError } from '../../common/errors';
 
 /**
@@ -30,9 +31,9 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const request = context
-      .switchToHttp()
-      .getRequest<{ user?: { roles?: string[] } }>();
+    const request = getRequestFromExecutionContext<{ roles?: string[] }>(
+      context,
+    );
     const user = request.user;
     if (!user?.roles?.length) {
       throw clientError(ClientErrorCodes.AUTH_FORBIDDEN_ROLE);

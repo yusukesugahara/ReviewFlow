@@ -163,6 +163,13 @@ export class AuditLogsRepository {
     const [rows, total] = await builder.getManyAndCount();
     return { rows, total, limit, offset };
   }
+
+  findOneByIdInTenant(tenantId: string, id: string): Promise<AuditLog | null> {
+    return this.auditLogs.findOne({
+      where: { id, tenantId },
+      relations: { actorUser: true },
+    });
+  }
 }
 
 function escapeLike(value: string): string {

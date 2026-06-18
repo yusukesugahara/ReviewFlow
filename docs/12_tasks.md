@@ -4,7 +4,7 @@
 
 ## 現状の改善候補
 
-- [ ] API 仕様と OpenAPI schema の差分確認手順を追加する
+- [ ] API 仕様、GraphQL / Relay operation、REST 参照 schema の差分確認手順を追加する
 - [ ] フロントエンド E2E（申請〜承認〜差し戻し）を拡充する
 - [ ] `ApprovalFlowSelector` を画面に統合する
 - [ ] ファイル添付フィールドを追加する

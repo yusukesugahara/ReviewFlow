@@ -1,8 +1,8 @@
 jest.mock("server-only", () => ({}));
 
-jest.mock("@/lib/server/backend-fetch", () => ({
+jest.mock("@/lib/relay/client", () => ({
   client: {
-    POST: jest.fn(),
+    login: jest.fn(),
   },
 }));
 
@@ -18,10 +18,10 @@ jest.mock("next/navigation", () => ({
   }),
 }));
 
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { login } from "@/app/login/actions";
 
-const mockedPost = jest.mocked(client.POST);
+const mockedLogin = jest.mocked(client.login);
 
 function createLoginFormData(password = "wrongpassword"): FormData {
   const formData = new FormData();
@@ -32,7 +32,7 @@ function createLoginFormData(password = "wrongpassword"): FormData {
 
 describe("login action", () => {
   beforeEach(() => {
-    mockedPost.mockReset();
+    mockedLogin.mockReset();
   });
 
   // テスト内容: パスワード未入力時に Zod の英語メッセージではなく日本語の項目エラーを返すことを確認する
@@ -42,12 +42,12 @@ describe("login action", () => {
         password: ["パスワードを入力してください。"],
       },
     });
-    expect(mockedPost).not.toHaveBeenCalled();
+    expect(mockedLogin).not.toHaveBeenCalled();
   });
 
   // テスト内容: 認証情報が不正な場合、API の英語メッセージではなく日本語のフォームエラーを返すことを確認する
   it("returns a Japanese form error for invalid credentials", async () => {
-    mockedPost.mockResolvedValue({
+    mockedLogin.mockResolvedValue({
       response: { ok: false, status: 401 },
       error: {
         statusCode: 401,
@@ -65,7 +65,7 @@ describe("login action", () => {
 
   // テスト内容: API 呼び出しが例外になっても production の Server Components エラー文を表示用に返さないことを確認する
   it("returns a Japanese fallback form error when the login request throws", async () => {
-    mockedPost.mockRejectedValue(
+    mockedLogin.mockRejectedValue(
       new Error(
         "An error occurred in the Server Components render. The specific message is omitted in production builds.",
       ),

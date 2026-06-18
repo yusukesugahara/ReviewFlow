@@ -6,7 +6,7 @@ import type { DynamicFormField } from "@/components/applications/dynamic-fields/
 import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-fields/dynamic-field-form-data";
 import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-fields/dynamic-field-schema";
 import { validateRequiredDynamicFields } from "@/components/applications/dynamic-fields/dynamic-field-validation";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type {
@@ -75,7 +75,7 @@ export async function submitPublicApplicationAction(
   }
 
   try {
-    const response = await client.POST("/public/applications", {
+    const response = await client.createPublicApplication( {
       body,
       headers: await applicantHeaders(),
     });

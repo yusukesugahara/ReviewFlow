@@ -10,6 +10,7 @@ import { AuthModule } from '../auth/auth.module';
 import { MailModule } from '../mail/mail.module';
 import { UsersModule } from '../users/users.module';
 import { InvitationsController } from './controllers/invitations.controller';
+import { InvitationsBusinessGraphqlResolver } from './graphql/invitations-business.graphql.resolver';
 import { InvitationsService } from './services/invitations.service';
 
 @Module({
@@ -21,6 +22,10 @@ import { InvitationsService } from './services/invitations.service';
     MailModule,
   ],
   controllers: [InvitationsController],
-  providers: [InvitationsService, InvitationsRepository],
+  providers: [
+    InvitationsService,
+    InvitationsBusinessGraphqlResolver,
+    InvitationsRepository,
+  ],
 })
 export class InvitationsModule {}

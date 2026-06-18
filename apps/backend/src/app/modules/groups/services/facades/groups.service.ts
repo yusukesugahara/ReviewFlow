@@ -53,6 +53,33 @@ export class GroupsService {
   }
 
   /**
+   * actor が閲覧できる tenant scope 内の space を取得する。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   * @returns space
+   */
+  async getOneForActor(
+    actor: AuthUserPayload,
+    groupId: string,
+  ): Promise<Group> {
+    const group = await this.findGroupInTenant(groupId, actor.tenantId);
+    if (this.isSystemAdmin(actor)) {
+      return group;
+    }
+
+    const member = await this.groupsRepository.findMember(
+      actor.tenantId,
+      group.id,
+      actor.id,
+    );
+    if (!member) {
+      throw clientError(ClientErrorCodes.APPLICATION_ACCESS_DENIED);
+    }
+
+    return Object.assign(group, { currentUserRole: member.role });
+  }
+
+  /**
    * tenant 内に space を作成し、初期管理者を登録する。
    * @param dto space 作成DTO
    * @param actor ログインユーザー

@@ -36,7 +36,7 @@ describe("api failure helpers", () => {
     expect(errorMessageFromBody("invalid", "fallback")).toBe("fallback");
   });
 
-  // テスト内容: openapi-fetch のレスポンス形状から API failure を作れることを確認する
+  // テスト内容: backend API client のレスポンス形状から API failure を作れることを確認する
   it("builds API failure from response-like objects", () => {
     expect(
       toApiFailure({

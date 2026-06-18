@@ -1,6 +1,6 @@
 "use server";
 
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { parseAuthMeSuccess } from "@/lib/server/auth-response-schema";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 
@@ -16,7 +16,7 @@ export type CurrentSessionUser = {
  * アクセストークンを使って現在の認証ユーザー情報を取得します。
  */
 async function getAuthMe(accessToken: string): Promise<CurrentSessionUser | null> {
-  const response = await client.POST("/auth/me", {
+  const response = await client.me( {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const data = parseAuthMeSuccess(response.data);

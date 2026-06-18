@@ -1,6 +1,6 @@
 import "server-only";
 
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { throwIfApiResponseFailed } from "@/lib/server/api-failure";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
@@ -40,7 +40,7 @@ export async function createApplicationSetup(
   const definition = await createPublishedFormDefinition(input, authHeaders);
   const flow = await createApprovalFlow(input, authHeaders);
 
-  const applicationResponse = await client.POST("/applications", {
+  const applicationResponse = await client.createApplication( {
     body: {
       groupId: input.spaceId,
       formDefinitionId: definition.id,
@@ -70,7 +70,7 @@ export async function updateApplicationSetup(
   const definition = await createPublishedFormDefinition(input, authHeaders);
   const flow = await createApprovalFlow(input, authHeaders);
 
-  const applicationResponse = await client.PATCH("/applications/{id}", {
+  const applicationResponse = await client.patchApplication( {
     params: { path: { id: applicationId } },
     body: {
       formDefinitionId: definition.id,
@@ -97,7 +97,7 @@ async function createPublishedFormDefinition(
 ): Promise<CreateDefinitionResponse> {
   const name = input.name.trim();
   const fieldPayloads = toFieldPayloads(input.fields);
-  const createdResponse = await client.POST("/form-definitions", {
+  const createdResponse = await client.createFormDefinition( {
     body: {
       groupId: input.spaceId,
       name,
@@ -108,7 +108,7 @@ async function createPublishedFormDefinition(
   const created = unwrapResponseData<CreateDefinitionResponse>(createdResponse);
 
   for (const field of fieldPayloads) {
-    const fieldResponse = await client.POST("/form-definitions/{id}/fields", {
+    const fieldResponse = await client.addFormField( {
       params: { path: { id: created.id } },
       body: toFieldRequest(field),
       headers: authHeaders,
@@ -116,7 +116,7 @@ async function createPublishedFormDefinition(
     throwIfApiResponseFailed(fieldResponse);
   }
 
-  const publishResponse = await client.POST("/form-definitions/{id}/publish", {
+  const publishResponse = await client.publishFormDefinition( {
     params: { path: { id: created.id } },
     headers: authHeaders,
   });
@@ -133,7 +133,7 @@ async function createApprovalFlow(
   authHeaders: AuthHeaders,
 ): Promise<CreateApprovalFlowResponse> {
   const name = input.name.trim();
-  const flowResponse = await client.POST("/approval-flows", {
+  const flowResponse = await client.createApprovalFlow( {
     body: {
       groupId: input.spaceId,
       name: `${name} 承認フロー`,

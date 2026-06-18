@@ -13,7 +13,7 @@ import {
   isApiFailure,
 } from "@/lib/server/api-failure";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { persistAccessTokenCookie } from "@/lib/server/session";
 import type {
   RequestMeEmailChangeBody,
@@ -145,7 +145,7 @@ export async function updateAccountProfileAction(
   };
 
   try {
-    const response = await client.PATCH("/auth/me/profile", {
+    const response = await client.updateMeProfile( {
       body,
       headers: await authHeadersOrRedirect(),
     });
@@ -182,7 +182,7 @@ export async function updateAccountEmailAction(
   };
 
   try {
-    const response = await client.POST("/auth/me/email-change/request", {
+    const response = await client.requestMeEmailChange( {
       body,
       headers: await authHeadersOrRedirect(),
     });
@@ -223,7 +223,7 @@ export async function updateAccountPasswordAction(
   };
 
   try {
-    const response = await client.PATCH("/auth/me/password", {
+    const response = await client.updateMePassword( {
       body,
       headers: await authHeadersOrRedirect(),
     });

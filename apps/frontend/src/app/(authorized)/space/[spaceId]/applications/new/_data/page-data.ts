@@ -8,7 +8,7 @@ import type {
 } from "@/lib/schema";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { redirect } from "next/navigation";
 import type {
   SpaceNewApplicationGroup,
@@ -32,7 +32,7 @@ export async function getSpaceNewApplicationPageData({
 }): Promise<SpaceNewApplicationPageData> {
   const authHeaders = await authHeadersOrRedirect();
   const [groupsRaw, me] = await Promise.all([
-    client.GET("/groups", { headers: authHeaders }),
+    client.groups( { headers: authHeaders }),
     getCurrentSessionUser(),
   ]);
 
@@ -69,7 +69,7 @@ async function listApprovalAssignees({
   headers: { Authorization: string };
   spaceId: string;
 }): Promise<ApprovalAssigneeOption[]> {
-  const membersRaw = await client.GET("/groups/{groupId}/members", {
+  const membersRaw = await client.groupMembers( {
     params: { path: { groupId: spaceId } },
     headers,
   });

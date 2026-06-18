@@ -34,7 +34,7 @@ export type ApprovalStepRequest = {
 };
 
 /**
- * フィールド保存用ペイロードを backend-fetch のリクエスト型に合わせます。
+ * フィールド保存用ペイロードを backend API client のリクエスト型に合わせます。
  */
 export function toFieldRequest(field: FieldPayload): FieldRequest {
   return {

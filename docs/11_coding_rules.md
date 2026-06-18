@@ -8,7 +8,7 @@ AI エージェントに作業させる場合は、`.agents/skills/reviewflow-po
 
 - ReviewFlow は単なる CRUD ではなく、申請・承認・差し戻し・再提出を扱う業務ワークフローとして実装する。
 - TypeScript strict 前提で書く。
-- `any` は避け、OpenAPI 生成型、DTO、domain type、Zod schema、`unknown` の narrow を使う。
+- `any` は避け、DTO、domain type、共有 API 型、Zod schema、`unknown` の narrow を使う。
 - 命名は業務意図が分かるものにする。
   - 良い例: `submitApplication`, `approveApplication`, `returnApplicationForCorrection`, `resubmitApplication`
   - 避ける例: `process`, `handle`, `update`, `execute`
@@ -49,7 +49,7 @@ ReviewFlow のコードや docs を変更するときは、以下の順で確認
    - business rule: Service / Policy / Validator / Workflow
    - persistence: Repository
 6. リスクの高い業務ルールにはテストを追加・更新する。
-7. API 契約が変わる場合は Swagger / OpenAPI と frontend generated types を更新する。
+7. API 契約が変わる場合は GraphQL / Relay operation と共有 DTO 型を更新する。REST 契約が変わる場合は Swagger / OpenAPI も更新する。
 8. 挙動、設計、セットアップ、ポートフォリオ説明に影響する場合は README / docs を更新する。
 9. まず狭い検証を行い、影響範囲が広い場合は `lint` / `typecheck` / `test` / `build` へ広げる。
 
@@ -74,7 +74,7 @@ ReviewFlow のコードや docs を変更するときは、以下の順で確認
 
 - fetch は `page.tsx`、Server Component、`actions.ts`、server-only utility に寄せる。
 - `INTERNAL_API_KEY`、JWT、HttpOnly cookie の値をブラウザに渡さない。
-- API レスポンスは OpenAPI 生成型または型付き wrapper で扱う。
+- API レスポンスは Relay operation helper または型付き wrapper で扱う。
 - React component 内で ad hoc な `unknown` parse や response shaping を増やさない。
 - page ごとに必要データを明確にする。
 
@@ -167,10 +167,11 @@ Controller に workflow logic や複雑な業務ルールを書かない。
 - Pino structured logging を operational log に使う。
 - password、JWT、applicant access token、API key、secret は log に出さない。
 
-## API / OpenAPI
+## API / GraphQL / OpenAPI
 
-- API contract が変わる場合は Swagger / OpenAPI decorator を更新する。
-- backend contract 変更後は frontend の API 型を再生成する。
+- フロントエンドの backend 呼び出しは Relay runtime 経由の GraphQL operation を基本とする。
+- API contract が変わる場合は GraphQL resolver / GraphQL type / Relay operation / 共有 DTO 型を更新する。
+- REST contract が変わる場合は Swagger / OpenAPI decorator と `apps/backend/schema.json` も更新する。
 - status code の使い分けを揃える。
   - `400`: invalid input / invalid transition
   - `401`: unauthenticated
@@ -227,7 +228,7 @@ ReviewFlow の変更は、以下を満たすまで完了扱いにしない。
 - invalid workflow transition が拒否される。
 - 重要な業務操作が audit log に残る。
 - 必要な data view に loading / error / empty state がある。
-- API contract 変更時に OpenAPI 生成型が更新されている。
+- API contract 変更時に GraphQL / Relay operation と共有 DTO 型が更新されている。
 - policy、workflow、validation、API behavior の変更に必要なテストがある。
 - portfolio 説明や利用者向け挙動が変わる場合、README / docs が更新されている。
 

@@ -24,6 +24,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 ENV NODE_ENV=production
+ENV NODE_PATH=/app/apps/backend/node_modules:/app/node_modules
 
 COPY package.json package-lock.json ./
 COPY apps/backend/package.json ./apps/backend/package.json

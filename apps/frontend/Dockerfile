@@ -5,7 +5,7 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/frontend/package.json ./apps/frontend/package.json
 COPY apps/backend/package.json ./apps/backend/package.json
-RUN npm ci --legacy-peer-deps
+RUN npm ci -w frontend --include-workspace-root=false --legacy-peer-deps
 
 FROM node:22-bookworm-slim AS builder
 WORKDIR /app

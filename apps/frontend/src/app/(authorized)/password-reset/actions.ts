@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { confirmPasswordResetSchema } from "@/lib/auth-schema";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import type {
   ConfirmPasswordResetBody,
@@ -28,7 +28,7 @@ export async function confirmPasswordResetAction(formData: FormData): Promise<vo
   const body: ConfirmPasswordResetBody = parsed.data;
 
   try {
-    const response = await client.POST("/auth/password-reset/confirm", { body });
+    const response = await client.confirmPasswordReset( { body });
     unwrapResponseData<ConfirmPasswordResetSuccessJson["data"]>(response);
   } catch {
     const params = new URLSearchParams({
