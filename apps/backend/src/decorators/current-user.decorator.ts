@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { getRequestFromExecutionContext } from '../common/context/request-from-execution-context';
 
 export type AuthUserPayload = {
   id: string;
@@ -16,7 +17,7 @@ export type AuthUserPayload = {
  */
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthUserPayload | undefined => {
-    const request = ctx.switchToHttp().getRequest<{ user?: AuthUserPayload }>();
+    const request = getRequestFromExecutionContext<AuthUserPayload>(ctx);
     return request.user;
   },
 );

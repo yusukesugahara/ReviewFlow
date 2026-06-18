@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import type { SpaceDashboardSuccessJson } from "@/lib/schema";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { SpaceDashboardSummary } from "../types";
 
@@ -34,7 +34,7 @@ export async function getAdminDashboardPageData({
 
   const authHeaders = { Authorization: `Bearer ${accessToken}` };
   const [dashboardRaw, me] = await Promise.all([
-    client.GET("/groups/dashboard", { headers: authHeaders }),
+    client.spaceDashboard( { headers: authHeaders }),
     getCurrentSessionUser(),
   ]);
   const spaces =

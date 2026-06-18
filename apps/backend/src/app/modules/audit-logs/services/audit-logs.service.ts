@@ -25,4 +25,18 @@ export class AuditLogsService {
       offset: result.offset,
     };
   }
+
+  /**
+   * tenant scope 内の監査ログを1件取得し、DTOへ変換する。
+   * @param tenantId テナントID
+   * @param id 監査ログID
+   * @returns 監査ログ。存在しなければ null。
+   */
+  async getOneByTenant(tenantId: string, id: string) {
+    const row = await this.auditLogsRepository.findOneByIdInTenant(
+      tenantId,
+      id,
+    );
+    return row ? mapAuditLogToDto(row) : null;
+  }
 }

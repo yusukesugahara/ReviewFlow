@@ -1,4 +1,4 @@
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 import { cookies } from "next/headers";
@@ -46,7 +46,7 @@ export async function getAdminSpacesPageData(): Promise<AdminSpacesViewData> {
   }
 
   const authHeaders = { Authorization: `Bearer ${accessToken}` };
-  const meResponse = await client.POST("/auth/me", { headers: authHeaders });
+  const meResponse = await client.me( { headers: authHeaders });
   if (!meResponse.response.ok || !meResponse.data) {
     redirect("/login");
   }
@@ -79,9 +79,9 @@ export async function getAdminSpacesViewData({
 
   try {
     const [groupsResponse, usersResponse] = await Promise.all([
-      client.GET("/groups", { headers: authHeaders }),
+      client.groups( { headers: authHeaders }),
       canCreateSpaceValue
-        ? client.GET("/users", { headers: authHeaders })
+        ? client.users( { headers: authHeaders })
         : Promise.resolve(null),
     ]);
 
@@ -157,11 +157,11 @@ async function getAdminSpaceMembersByGroup({
   const groupMemberships = await Promise.all(
     groups.map(async (group) => {
       const [membersResponse, availableUsersResponse] = await Promise.all([
-        client.GET("/groups/{groupId}/members", {
+        client.groupMembers( {
           params: { path: { groupId: group.id } },
           headers: authHeaders,
         }),
-        client.GET("/groups/{groupId}/available-users", {
+        client.groupAvailableUsers( {
           params: { path: { groupId: group.id } },
           headers: authHeaders,
         }),

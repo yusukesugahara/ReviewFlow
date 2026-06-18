@@ -65,7 +65,7 @@ CSV出力はテナント管理ではなく、スペース配下の申請一覧 `
 - `src/app/**/_utils`: ルート単位の表示整形、検索条件、payload 変換など
 - `src/app/**/_view-models`: 画面表示用モデルへの変換
 - `src/components/ui`: 機能非依存の再利用 UI
-- `src/lib`: fetch の共通ベース、定数、汎用ユーティリティなど横断基盤
+- `src/lib`: Relay client、共有 DTO 型、定数、汎用ユーティリティなど横断基盤
 
 `src/app/api` は置かない。バックエンド呼び出しはサーバー側の `page.tsx` / `actions.ts` から行い、`INTERNAL_API_KEY` はブラウザへ露出させない。
 
@@ -73,7 +73,7 @@ CSV出力はテナント管理ではなく、スペース配下の申請一覧 `
 - ページ単位で必要データを取得
 - バックエンド API 呼び出しは server component / server action / server-only helper に寄せる
 - ブラウザへ `INTERNAL_API_KEY`、JWT、HttpOnly cookie の値を渡さない
-- API レスポンスは OpenAPI 生成型または型付き wrapper で扱い、画面ごとの ad hoc な `unknown` パースを増やさない
+- API レスポンスは Relay operation helper または共有 DTO 型付き wrapper で扱い、画面ごとの ad hoc な `unknown` パースを増やさない
 - フォーム編集画面では以下を取得:
   - application
   - formDefinition

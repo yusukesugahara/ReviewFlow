@@ -43,7 +43,7 @@ export function getClientEnv(): z.infer<typeof publicEnvSchema> {
   return clientEnvCache;
 }
 
-/** `openapi-fetch` 等向け */
+/** backend API client 向け */
 export const env = {
   get NEXT_PUBLIC_API_URL() {
     return getClientEnv().NEXT_PUBLIC_API_URL;

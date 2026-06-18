@@ -1,8 +1,11 @@
 import { ExecutionContext, Module } from '@nestjs/common';
+import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import type { Request, Response } from 'express';
 import { LoggerModule } from 'nestjs-pino';
 import { AuthModule } from './modules/auth/auth.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
@@ -17,6 +20,13 @@ import { UsersModule } from './modules/users/users.module';
 import { buildTypeOrmOptions } from './typeorm-options.factory';
 import { MailModule } from './modules/mail/mail.module';
 import { validateEnv } from './config/validate-env';
+import { AppThrottlerGuard } from './guards/app-throttler.guard';
+import { RelayNodeResolver } from './graphql/relay-node.resolver';
+
+type GraphqlContextFactoryParams = {
+  req: Request;
+  res: Response;
+};
 
 const configModule = ConfigModule.forRoot({
   isGlobal: true,
@@ -82,12 +92,34 @@ const throttlerModule = ThrottlerModule.forRootAsync({
   inject: [ConfigService],
 });
 
+const graphqlModule = GraphQLModule.forRootAsync<ApolloDriverConfig>({
+  driver: ApolloDriver,
+  imports: [ConfigModule],
+  useFactory: (config: ConfigService): ApolloDriverConfig => {
+    const isProd = config.get<string>('NODE_ENV') === 'production';
+    return {
+      driver: ApolloDriver,
+      path: '/graphql',
+      autoSchemaFile: true,
+      sortSchema: true,
+      playground: false,
+      graphiql: !isProd,
+      context: ({ req, res }: GraphqlContextFactoryParams) => ({
+        req,
+        res,
+      }),
+    };
+  },
+  inject: [ConfigService],
+});
+
 @Module({
   imports: [
     configModule,
     loggerModule,
     dbModule,
     throttlerModule,
+    graphqlModule,
     HealthModule,
     UsersModule,
     AuthModule,
@@ -100,6 +132,9 @@ const throttlerModule = ThrottlerModule.forRootAsync({
     ApplicationsModule,
     ExportJobsModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: AppThrottlerGuard },
+    RelayNodeResolver,
+  ],
 })
 export class AppModule {}

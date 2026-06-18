@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { isApiFailure, throwIfApiResponseFailed } from "@/lib/server/api-failure";
 import {
@@ -74,7 +74,7 @@ export async function removeSpaceMemberAction(
   userId: string,
 ): Promise<void> {
   try {
-    const response = await client.DELETE("/groups/{groupId}/members/{userId}", {
+    const response = await client.removeGroupMember( {
       params: { path: { groupId, userId } },
       headers: await authHeadersOrRedirect(),
     });
@@ -118,7 +118,7 @@ export async function updateSpaceMemberRoleAction(
   const body: UpdateGroupMemberRoleBody = parsed.data;
 
   try {
-    const response = await client.PATCH("/groups/{groupId}/members/{userId}/role", {
+    const response = await client.updateGroupMemberRole( {
       params: { path: { groupId, userId } },
       body,
       headers: await authHeadersOrRedirect(),
@@ -162,7 +162,7 @@ export async function addSpaceMemberAction(
   const body: AddGroupMemberBody = parsed.data;
 
   try {
-    const response = await client.POST("/groups/{groupId}/members", {
+    const response = await client.addGroupMember( {
       params: { path: { groupId } },
       body,
       headers: await authHeadersOrRedirect(),

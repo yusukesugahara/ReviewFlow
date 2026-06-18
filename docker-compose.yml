@@ -38,6 +38,7 @@ services:
       DB_NAME: app_dev
       MAIL_FROM: noreply@example.com
       FRONTEND_BASE_URL: http://localhost:${FRONTEND_HOST_PORT:-3001}
+      NODE_PATH: /workspace/apps/backend/node_modules:/workspace/node_modules
     depends_on:
       postgres:
         condition: service_healthy
@@ -71,7 +72,7 @@ services:
       - .:/workspace
       - frontend-node-modules:/workspace/node_modules
     working_dir: /workspace
-    command: sh -c "npm ci --legacy-peer-deps && npm run dev -w frontend -- -p 3000"
+    command: sh -c "npm install -w frontend --include-workspace-root=false --legacy-peer-deps --no-audit --no-fund && npm run dev -w frontend -- -p 3000"
 
 volumes:
   backend-postgres:

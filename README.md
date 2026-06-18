@@ -275,14 +275,14 @@ ReviewFlow では、申請、承認、差し戻し、却下、ユーザー招待
 
 ---
 
-### 6-4. OpenAPI による型安全な API 連携
+### 6-4. Relay による API 連携
 
-ReviewFlow では、フロントエンドとバックエンドの連携ミスを減らすため、OpenAPI を用いた型安全な API 連携を採用しています。
+ReviewFlow では、フロントエンドとバックエンドの内部連携に Relay runtime を利用しています。
 
-バックエンドでは NestJS の Swagger 連携により OpenAPI スキーマを生成し、API 仕様を管理しています。  
-フロントエンドでは `openapi-typescript` により TypeScript 型を生成し、`openapi-fetch` のクライアントに適用しています。
+バックエンドでは NestJS GraphQL resolver により業務操作の query / mutation を公開しています。  
+フロントエンドでは `relay-runtime` の server-side Environment / Network を使い、Server Component や Server Action から GraphQL operation を実行しています。
 
-API 仕様をフロントエンドとバックエンドの共通契約として扱うことで、リクエストやレスポンスの型ずれを減らし、保守性を高めることを目指しました。
+REST パスをフロントエンドのクライアント API として扱わず、`client.login(...)` や `client.createApplication(...)` のような業務 operation 名で呼び出すことで、画面側の意図を明確にしています。
 
 ---
 
@@ -320,7 +320,7 @@ ReviewFlow では、画面を作るだけでなく、実際の申請業務で使
 - 申請状態、承認ステップ、担当者に応じて操作権限を判定すること
 - 主要操作を監査ログに残し、後から追跡できるようにすること
 - 状態遷移や認可ルールを単体で検証しやすい構成にすること
-- OpenAPI を利用し、フロントエンドとバックエンドの型ずれを減らすこと
+- Relay / GraphQL operation と共有 DTO 型により、フロントエンドとバックエンドの API 契約を明確にすること
 - UI の分かりやすさと、変更に強いバックエンド設計を両立すること
 
 ---

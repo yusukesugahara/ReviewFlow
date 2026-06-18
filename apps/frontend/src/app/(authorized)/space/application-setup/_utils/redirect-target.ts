@@ -3,7 +3,7 @@ import "server-only";
 import { buildSpaceApplicationNewHref } from "@/components/applications/routing/application-routes";
 import type { GroupsListSuccessJson } from "@/lib/schema";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import { redirect } from "next/navigation";
 import type { ApplicationSetupRedirectPageProps } from "../types";
@@ -23,7 +23,7 @@ export async function getApplicationSetupRedirectTarget(
     redirect("/login");
   }
 
-  const spacesRaw = await client.GET("/groups", {
+  const spacesRaw = await client.groups( {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
   const spaces =

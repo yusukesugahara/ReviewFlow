@@ -6,7 +6,7 @@ import type { DynamicFormField } from "@/components/applications/dynamic-fields/
 import { readDynamicValuesFromFormData } from "@/components/applications/dynamic-fields/dynamic-field-form-data";
 import { parseDynamicFormFieldsJson } from "@/components/applications/dynamic-fields/dynamic-field-schema";
 import { validateRequiredDynamicFields } from "@/components/applications/dynamic-fields/dynamic-field-validation";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { applicantHeaders } from "../form/_utils/server";
@@ -63,15 +63,14 @@ export async function submitPublicCorrectionAction(
 
   try {
     const headers = await applicantHeaders();
-    const patchResponse = await client.PATCH("/public/applications/{id}", {
+    const patchResponse = await client.patchReturnedApplication( {
       params: { path: { id: parsedForm.data.applicationId } },
       body: { values },
       headers,
     });
     unwrapResponseData<unknown>(patchResponse);
 
-    const resubmitResponse = await client.POST(
-      "/public/applications/{id}/resubmit",
+    const resubmitResponse = await client.resubmitReturnedApplication(
       {
         params: { path: { id: parsedForm.data.applicationId } },
         headers,

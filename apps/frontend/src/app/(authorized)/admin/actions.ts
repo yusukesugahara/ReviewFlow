@@ -1,6 +1,6 @@
 "use server";
 
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { AppSidebarSpace } from "@/components/layout/app-sidebar.types";
@@ -15,7 +15,7 @@ export async function getAdminLayoutSpaces(): Promise<AppSidebarSpace[]> {
     return [];
   }
   try {
-    const response = await client.GET("/groups", {
+    const response = await client.groups( {
       headers: { Authorization: `Bearer ${accessToken}` },
     });
     return unwrapResponseData<GroupsListSuccessJson["data"]>(response).groups ?? [];

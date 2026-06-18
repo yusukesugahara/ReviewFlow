@@ -131,19 +131,23 @@ GitHub Actions（`.github/workflows/ci.yml`）では PostgreSQL サービスと 
 | `npm run build` | 本番ビルド |
 | `npm run check` | lint + typecheck + test + build |
 
-## OpenAPI 型生成
+## API 契約更新
 
-バックエンド API 変更後:
+フロントエンドの backend 呼び出しは Relay runtime 経由の GraphQL operation として管理する。API 契約を変える場合は、以下を合わせて更新する。
+
+- GraphQL resolver / GraphQL object type / input type
+- フロントエンドの Relay operation: `apps/frontend/src/lib/relay/`
+- フロントエンド共有 DTO 型: `apps/frontend/src/lib/schema.ts`
+
+REST 参照スキーマを変える場合のみ、OpenAPI schema を更新する。
 
 ```bash
 npm run openapi:emit
-npm run generate:api-types
 npm run typecheck
 ```
 
-- スキーマ: `apps/backend/schema.json`
-- 生成型: `apps/frontend/src/lib/api-schema.d.ts`（手編集禁止）
-- ドメイン型の再エクスポート: `apps/frontend/src/lib/schema.ts`
+- REST 参照スキーマ: `apps/backend/schema.json`
+- Relay client: `apps/frontend/src/lib/relay/client.ts`
 
 ## マイグレーション
 

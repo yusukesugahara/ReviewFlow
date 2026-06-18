@@ -4,7 +4,7 @@ import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
 import type { TenantUsersListResponse } from "@/lib/schema";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { getAccessTokenFromCookie } from "@/lib/server/session";
 import type { AdminInvitationsViewProps } from "../types";
 
@@ -26,7 +26,7 @@ export async function getAdminInvitationsPageData(): Promise<
 
   try {
     const [response, me] = await Promise.all([
-      client.GET("/users", {
+      client.users( {
         headers: { Authorization: `Bearer ${accessToken}` },
       }),
       getCurrentSessionUser(),

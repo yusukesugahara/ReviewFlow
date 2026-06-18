@@ -14,8 +14,7 @@
     "test": "npm run test -w backend",
     "build": "npm run build -w backend && npm run build -w frontend",
     "check": "npm run lint && npm run typecheck && npm run test && npm run build",
-    "openapi:emit": "npm run openapi:emit -w backend",
-    "generate:api-types": "npm run generate:api-types -w frontend"
+    "openapi:emit": "npm run openapi:emit -w backend"
   },
   "overrides": {
     "typescript": "5.9.3"

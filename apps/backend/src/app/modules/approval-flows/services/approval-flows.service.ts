@@ -83,6 +83,21 @@ export class ApprovalFlowsService {
   }
 
   /**
+   * ログインユーザーが管理できる承認フローを取得する。
+   * @param actor ログインユーザー
+   * @param flowId 承認フローID
+   * @returns 承認フロー
+   */
+  async getOneForActor(
+    actor: AuthUserPayload,
+    flowId: string,
+  ): Promise<ApprovalFlow> {
+    const row = await this.getOne(actor.tenantId, flowId);
+    await this.spaceAccess.assertCanManageGroup(actor, row.groupId);
+    return row;
+  }
+
+  /**
    * 申請者トークンの scope で利用できる有効な承認フロー一覧を取得する。
    * @param actor 申請者トークン
    * @returns 有効な承認フロー一覧

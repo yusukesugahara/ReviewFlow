@@ -10,6 +10,8 @@ import { AuthModule } from '../auth/auth.module';
 import { GroupsModule } from '../groups/groups.module';
 import { MailModule } from '../mail/mail.module';
 import { FormDefinitionsController } from './controllers/form-definitions.controller';
+import { FormDefinitionsBusinessGraphqlResolver } from './graphql/form-definitions-business.graphql.resolver';
+import { FormDefinitionsRelayGraphqlResolver } from './graphql/form-definitions-relay.graphql.resolver';
 import { FormAccessRequestService } from './services/access-requests/form-access-request.service';
 import { FormDefinitionCreationService } from './services/creation/form-definition-creation.service';
 import { FormDefinitionFieldsService } from './services/fields/form-definition-fields.service';
@@ -28,6 +30,8 @@ import { FormDefinitionsService } from './services/facades/form-definitions.serv
   controllers: [FormDefinitionsController],
   providers: [
     FormDefinitionsService,
+    FormDefinitionsBusinessGraphqlResolver,
+    FormDefinitionsRelayGraphqlResolver,
     FormAccessRequestService,
     FormDefinitionCreationService,
     FormDefinitionFieldsService,

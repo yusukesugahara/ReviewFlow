@@ -17,6 +17,7 @@ import { Tenant } from '../../../models/entities/tenant.entity';
 import { User } from '../../../models/entities/user.entity';
 import { AuthRepository } from '../../../models/repositories/auth.repository';
 import { AuthController } from './controllers/auth.controller';
+import { AuthBusinessGraphqlResolver } from './graphql/auth-business.graphql.resolver';
 import { AuthEmailChangeService } from './services/email-change/auth-email-change.service';
 import { AuthPasswordResetService } from './services/password-reset/auth-password-reset.service';
 import { AuthService } from './services/facades/auth.service';
@@ -56,6 +57,7 @@ const passportModule = PassportModule.register({ defaultStrategy: 'jwt' });
     AuthEmailChangeService,
     AuthPasswordResetService,
     AuthRepository,
+    AuthBusinessGraphqlResolver,
     JwtStrategy,
     { provide: APP_GUARD, useClass: InternalApiKeyGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },

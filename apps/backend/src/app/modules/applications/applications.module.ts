@@ -55,6 +55,8 @@ import { ApplicationUserSubmissionUseCaseService } from './services/use-cases/ap
 import { ApplicationsController } from './controllers/applications.controller';
 import { ApplicationsService } from './services/facades/applications.service';
 import { PublicApplicationsController } from './controllers/public-applications.controller';
+import { ApplicationGraphqlLoader } from './graphql/application.graphql.loader';
+import { ApplicationsGraphqlResolver } from './graphql/applications.graphql.resolver';
 
 @Module({
   imports: [
@@ -116,6 +118,9 @@ import { PublicApplicationsController } from './controllers/public-applications.
     ApplicationSubmissionService,
     ApplicationTransitionPolicy,
     ApplicationUserSubmissionUseCaseService,
+    ApplicationGraphqlLoader,
+    ApplicationsGraphqlResolver,
   ],
+  exports: [ApplicationGraphqlLoader],
 })
 export class ApplicationsModule {}

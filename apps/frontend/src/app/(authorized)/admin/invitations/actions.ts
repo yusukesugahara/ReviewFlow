@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { createInvitationSchema } from "@/lib/auth-schema";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
@@ -117,7 +117,7 @@ export async function createInvitationAction(
   const body: CreateInvitationBody = parsed.data;
   let created: CreateInvitationSuccessJson["data"];
   try {
-    const response = await client.POST("/invitations", {
+    const response = await client.createInvitation( {
       body,
       headers: await authHeadersOrRedirect(),
     });
@@ -146,7 +146,7 @@ export async function createInvitationAction(
  */
 export async function deleteUserAction(userId: string): Promise<void> {
   try {
-    const response = await client.DELETE("/users/{id}", {
+    const response = await client.removeUser( {
       params: { path: { id: userId } },
       headers: await authHeadersOrRedirect(),
     });
@@ -172,7 +172,7 @@ export async function deleteUserAction(userId: string): Promise<void> {
  */
 export async function restoreUserAction(userId: string): Promise<void> {
   try {
-    const response = await client.PATCH("/users/{id}/restore", {
+    const response = await client.restoreUser( {
       params: { path: { id: userId } },
       headers: await authHeadersOrRedirect(),
     });

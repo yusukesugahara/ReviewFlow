@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { confirmEmailChangeSchema } from "@/lib/auth-schema";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { clearAccessTokenCookie } from "@/lib/server/session";
 import type {
@@ -29,7 +29,7 @@ export async function confirmAccountEmailChangeAction(
   const body: ConfirmEmailChangeBody = parsed.data;
 
   try {
-    const response = await client.POST("/auth/email-change/confirm", {
+    const response = await client.confirmEmailChange( {
       body,
     });
     unwrapResponseData<ConfirmEmailChangeSuccessJson["data"]>(response);

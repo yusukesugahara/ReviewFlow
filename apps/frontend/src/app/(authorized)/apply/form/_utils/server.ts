@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { APPLICANT_ACCESS_TOKEN_COOKIE_NAME } from "@/lib/constants/auth.constants";
 
 /**
- * 公開申請者用トークン Cookie から backend-fetch 用ヘッダーを作成します。
+ * 公開申請者用トークン Cookie から backend API client 用ヘッダーを作成します。
  */
 export async function applicantHeaders(): Promise<
   { "X-Applicant-Access-Token": string } | undefined

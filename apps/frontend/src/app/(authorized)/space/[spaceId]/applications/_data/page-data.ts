@@ -4,14 +4,12 @@ import type {
   ApplicationRow,
   FormDefinitionRow,
 } from "@/components/space/space-applications.types";
-import type {
-  ApplicationsListSuccessJson,
-  FormDefinitionsListSuccessJson,
-} from "@/lib/schema";
+import type { FormDefinitionsListSuccessJson } from "@/lib/schema";
+import { getRelayApplications } from "@/lib/relay/applications";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { isApiFailure } from "@/lib/server/api-failure";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 
 export type SpaceApplicationsPageData = {
   applications: ApplicationRow[];
@@ -29,18 +27,13 @@ export async function getSpaceApplicationsPageData({
   spaceId: string;
 }): Promise<SpaceApplicationsPageData> {
   const authHeaders = await authHeadersOrRedirect();
-  const [applicationsRaw, formDefinitions] = await Promise.all([
-    client.GET("/applications", {
-      params: { query: { groupId: spaceId } },
-      headers: authHeaders,
-    }),
+  const [applications, formDefinitions] = await Promise.all([
+    getRelayApplications({ authHeaders, groupId: spaceId }),
     fetchFormDefinitionsForList(spaceId, authHeaders, showArchived),
   ]);
 
   return {
-    applications: unwrapResponseData<ApplicationsListSuccessJson["data"]>(
-      applicationsRaw,
-    ).applications as ApplicationRow[],
+    applications: applications as ApplicationRow[],
     formDefinitions,
   };
 }
@@ -54,7 +47,7 @@ async function fetchFormDefinitionsForList(
   includeArchived: boolean,
 ): Promise<FormDefinitionRow[]> {
   try {
-    const definitionsRaw = await client.GET("/form-definitions", {
+    const definitionsRaw = await client.formDefinitions( {
       params: { query: { groupId: spaceId, includeArchived } },
       headers,
     });

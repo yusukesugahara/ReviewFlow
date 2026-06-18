@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 
 /**
@@ -31,11 +31,11 @@ async function updateArchivedState(
   const authHeaders = await authHeadersOrRedirect();
   const response =
     action === "archive"
-      ? await client.POST("/form-definitions/{id}/archive", {
+      ? await client.archiveFormDefinition( {
           params: { path: { id: definitionId } },
           headers: authHeaders,
         })
-      : await client.POST("/form-definitions/{id}/restore", {
+      : await client.restoreFormDefinition( {
           params: { path: { id: definitionId } },
           headers: authHeaders,
         });

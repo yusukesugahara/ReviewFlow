@@ -1,7 +1,7 @@
 import "server-only";
 
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import { applicantHeaders } from "../_utils/server";
 import type {
   PublicApplicationFormDefinition,
@@ -21,7 +21,7 @@ export async function getPublicApplicationFormPageData(
   definition: PublicApplicationFormDefinition;
   formError?: string;
 }> {
-  const response = await client.GET("/form-definitions/public/current", {
+  const response = await client.currentFormDefinitionForApplicant( {
     headers: await applicantHeaders(),
   });
 

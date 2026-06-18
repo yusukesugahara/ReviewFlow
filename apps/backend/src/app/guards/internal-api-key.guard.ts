@@ -8,6 +8,7 @@ import { Reflector } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import type { Request } from 'express';
 import { SKIP_INTERNAL_API_KEY } from '../../common/constants';
+import { getRequestFromExecutionContext } from '../../common/context/request-from-execution-context';
 import { ClientErrorCodes, clientError } from '../../common/errors';
 
 /**
@@ -24,7 +25,7 @@ export class InternalApiKeyGuard implements CanActivate {
   ) {}
 
   canActivate(context: ExecutionContext): boolean {
-    const request = context.switchToHttp().getRequest<Request>();
+    const request = getRequestFromExecutionContext(context) as Request;
     if (request.method === 'OPTIONS') {
       return true;
     }

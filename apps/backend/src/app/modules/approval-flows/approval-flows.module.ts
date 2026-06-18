@@ -7,6 +7,8 @@ import { User } from '../../../models/entities/user.entity';
 import { ApprovalFlowsRepository } from '../../../models/repositories/approval-flows.repository';
 import { GroupsModule } from '../groups/groups.module';
 import { ApprovalFlowsController } from './controllers/approval-flows.controller';
+import { ApprovalFlowsBusinessGraphqlResolver } from './graphql/approval-flows-business.graphql.resolver';
+import { ApprovalFlowsRelayGraphqlResolver } from './graphql/approval-flows-relay.graphql.resolver';
 import { ApprovalFlowMutationService } from './services/approval-flow-mutation.service';
 import { ApprovalFlowsService } from './services/approval-flows.service';
 
@@ -18,6 +20,8 @@ import { ApprovalFlowsService } from './services/approval-flows.service';
   controllers: [ApprovalFlowsController],
   providers: [
     ApprovalFlowsService,
+    ApprovalFlowsBusinessGraphqlResolver,
+    ApprovalFlowsRelayGraphqlResolver,
     ApprovalFlowMutationService,
     ApprovalFlowsRepository,
   ],

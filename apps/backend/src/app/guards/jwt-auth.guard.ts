@@ -1,7 +1,13 @@
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { AuthGuard } from '@nestjs/passport';
+import type { Response } from 'express';
 import { SKIP_JWT_KEY } from '../../common/constants';
+import {
+  getRequestFromExecutionContext,
+  getRequestResponseFromExecutionContext,
+  type RequestWithUser,
+} from '../../common/context/request-from-execution-context';
 import {
   ClientErrorCodes,
   ClientErrorMessages,
@@ -28,7 +34,19 @@ export class JwtAuthGuard extends AuthGuard('jwt') {
     if (skipJwt) {
       return true;
     }
+    const request = getRequestFromExecutionContext(context);
+    if (!request.headers.authorization) {
+      throw clientError(ClientErrorCodes.AUTH_JWT_UNAUTHORIZED);
+    }
     return super.canActivate(context);
+  }
+
+  override getRequest(context: ExecutionContext): RequestWithUser {
+    return getRequestFromExecutionContext(context);
+  }
+
+  getResponse(context: ExecutionContext): Response {
+    return getRequestResponseFromExecutionContext(context).res;
   }
 
   override handleRequest<TUser>(

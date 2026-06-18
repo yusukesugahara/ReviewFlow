@@ -4,7 +4,7 @@
 flowchart LR
   Browser["Browser"] --> Frontend["Next.js frontend"]
   Frontend -->|HttpOnly session cookie| Browser
-  Frontend -->|INTERNAL_API_KEY + JWT| Backend["NestJS backend"]
+  Frontend -->|GraphQL / REST + INTERNAL_API_KEY + JWT| Backend["NestJS backend"]
   Backend --> Database[("PostgreSQL")]
   Backend --> Audit["Audit logs"]
   Backend --> Jobs["export_jobs"]
@@ -37,12 +37,12 @@ ReviewFlow の変更では、以下を崩さないことを優先する。
 - 状態遷移、認可、入力検証、永続化、レスポンス整形、監査ログ記録を同じ関数や Controller に詰め込まない。
 - 複数テーブルを同時に更新する業務操作では、必要に応じて transaction を使う。
 - 重要な業務操作は audit log に残し、Pino のリクエストログとは目的を分ける。
-- API 契約を変えた場合は Swagger / OpenAPI とフロントエンド生成型を更新する。
+- API 契約を変えた場合は GraphQL / Relay operation と共有 DTO 型を更新する。REST 契約を変えた場合は Swagger / OpenAPI 参照スキーマも更新する。
 
 ## フロントエンド構成方針
 - App Router を採用
 - server component / client component を適切に分離
-- API呼び出しは型安全なクライアントを用意
+- API呼び出しは Relay runtime ベースの型付きクライアントを用意
 - 動的フォームは FormDefinition と FormField 定義から生成
 
 ## バックエンド構成方針

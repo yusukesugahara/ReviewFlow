@@ -7,7 +7,7 @@ import {
   isApiFailure,
 } from "@/lib/server/api-failure";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
-import { client } from "@/lib/server/backend-fetch";
+import { client } from "@/lib/relay/client";
 import type { RequestFormAccessBody } from "@/lib/schema";
 
 const REQUEST_ACCESS_FAILED_MESSAGE =
@@ -101,8 +101,7 @@ export async function requestAccessAction(formData: FormData): Promise<void> {
   let failureMessage: string | undefined;
 
   try {
-    const response = await client.POST(
-      "/form-definitions/groups/{groupId}/request-access",
+    const response = await client.requestFormAccess(
       {
         params: {
           path: { groupId: parsed.data.groupId },

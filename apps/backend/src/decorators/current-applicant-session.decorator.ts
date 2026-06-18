@@ -1,4 +1,5 @@
 import { createParamDecorator, ExecutionContext } from '@nestjs/common';
+import { getRequestFromExecutionContext } from '../common/context/request-from-execution-context';
 import type { ApplicantAccessTokenPayload } from '../app/modules/auth/services/facades/auth.service';
 
 /**
@@ -9,9 +10,9 @@ import type { ApplicantAccessTokenPayload } from '../app/modules/auth/services/f
  */
 export const CurrentApplicantSession = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): ApplicantAccessTokenPayload => {
-    const request = ctx.switchToHttp().getRequest<{
+    const request = getRequestFromExecutionContext(ctx) as {
       applicantSession?: ApplicantAccessTokenPayload;
-    }>();
+    };
     return request.applicantSession as ApplicantAccessTokenPayload;
   },
 );
