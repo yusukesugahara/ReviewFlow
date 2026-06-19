@@ -9,6 +9,7 @@ describe("graphql application client", () => {
     process.env = {
       ...originalEnv,
       INTERNAL_API_KEY: "internal-key",
+      INTERNAL_API_ORIGIN: "http://backend.test",
       NEXT_PUBLIC_API_URL: "http://backend.test",
     };
     global.fetch = jest.fn();
@@ -85,5 +86,21 @@ describe("graphql application client", () => {
         groupId: "space-1",
       }),
     ).rejects.toMatchObject({ status: 401 });
+  });
+
+  it("throws an API failure when the backend GraphQL endpoint is unreachable", async () => {
+    const { getRelayApplications } = await import("@/lib/relay/applications");
+
+    jest.mocked(global.fetch).mockRejectedValue(new TypeError("fetch failed"));
+
+    await expect(
+      getRelayApplications({
+        authHeaders: { Authorization: "Bearer token" },
+        groupId: "space-1",
+      }),
+    ).rejects.toEqual({
+      status: 503,
+      body: { message: "API サーバーに接続できません" },
+    });
   });
 });

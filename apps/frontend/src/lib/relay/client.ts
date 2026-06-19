@@ -505,19 +505,27 @@ async function fetchBackendGraphql(
   variables: Variables,
   headers: HeadersInit | undefined,
 ): Promise<GraphQLResponse> {
-  const response = await fetch(`${getServerApiBaseUrl()}/graphql`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-API-Key": getServerAuthEnv().INTERNAL_API_KEY,
-      ...headersToObject(headers),
-    },
-    body: JSON.stringify({
-      query: request.text,
-      variables,
-    }),
-    cache: "no-store",
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${getServerApiBaseUrl()}/graphql`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-API-Key": getServerAuthEnv().INTERNAL_API_KEY,
+        ...headersToObject(headers),
+      },
+      body: JSON.stringify({
+        query: request.text,
+        variables,
+      }),
+      cache: "no-store",
+    });
+  } catch {
+    throwApiFailure({
+      response: { ok: false, status: 503 },
+      error: { message: "API サーバーに接続できません" },
+    });
+  }
   const body = await response.json().catch(() => null);
 
   if (!response.ok) {
