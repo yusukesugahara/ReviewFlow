@@ -1,4 +1,3 @@
-import { getRelayApplications } from "@/lib/relay/applications";
 jest.mock("server-only", () => ({}));
 
 const originalFetch = global.fetch;
@@ -6,6 +5,7 @@ const originalEnv = process.env;
 
 describe("graphql application client", () => {
   beforeEach(() => {
+    jest.resetModules();
     process.env = {
       ...originalEnv,
       INTERNAL_API_KEY: "internal-key",
@@ -21,6 +21,8 @@ describe("graphql application client", () => {
   });
 
   it("posts application queries to the backend GraphQL endpoint with auth headers", async () => {
+    const { getRelayApplications } = await import("@/lib/relay/applications");
+
     jest.mocked(global.fetch).mockResolvedValue({
       ok: true,
       status: 200,
@@ -65,6 +67,8 @@ describe("graphql application client", () => {
   });
 
   it("throws an API failure for GraphQL errors", async () => {
+    const { getRelayApplications } = await import("@/lib/relay/applications");
+
     jest.mocked(global.fetch).mockResolvedValue({
       ok: true,
       status: 200,
