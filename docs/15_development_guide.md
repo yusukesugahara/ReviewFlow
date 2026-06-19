@@ -139,6 +139,19 @@ GitHub Actions（`.github/workflows/ci.yml`）では PostgreSQL サービスと 
 - フロントエンドの Relay operation: `apps/frontend/src/lib/relay/`
 - フロントエンド共有 DTO 型: `apps/frontend/src/lib/schema.ts`
 
+Relay compiler 対象の typed operation / fragment は `apps/frontend/src/lib/relay/application-operations.graphql.ts` に置く。GraphQL schema や operation を変更した場合は、以下の順で schema と生成 artifact を更新する。
+
+```bash
+npm run graphql:schema
+npm run relay
+npm run relay:validate
+npm run typecheck
+```
+
+- GraphQL schema: `apps/backend/schema.graphql`
+- Relay compiler config: `apps/frontend/relay.config.json`
+- Relay generated artifacts: `apps/frontend/src/lib/relay/__generated__/`
+
 REST 参照スキーマを変える場合のみ、OpenAPI schema を更新する。
 
 ```bash

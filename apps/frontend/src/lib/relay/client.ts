@@ -143,7 +143,7 @@ export const client = {
         variables: { id: options?.params?.path?.id },
       },
       options,
-    ),
+    ).then((response) => mapSuccessData(response, toDatabaseIdApplication)),
   applicationCorrectionTargets: (options?: RequestOptions) =>
     callRelayOperation(
       {
@@ -554,6 +554,50 @@ function success(data: unknown): ApiResponseLike {
   return {
     data: { status: 200, data },
     response: { ok: true, status: 200 },
+  };
+}
+
+function mapSuccessData(
+  response: ApiResponseLike,
+  mapper: (data: unknown) => unknown,
+): ApiResponseLike {
+  if (
+    !response.response.ok ||
+    !response.data ||
+    typeof response.data !== "object" ||
+    !("data" in response.data)
+  ) {
+    return response;
+  }
+
+  const envelope = response.data as { data: unknown; status?: unknown };
+  return {
+    ...response,
+    data: {
+      ...envelope,
+      data: mapper(envelope.data),
+    },
+  };
+}
+
+function toDatabaseIdApplication(data: unknown): unknown {
+  if (!data || typeof data !== "object" || !("databaseId" in data)) {
+    return data;
+  }
+
+  const application = data as {
+    databaseId?: unknown;
+    id?: unknown;
+    relayId?: unknown;
+  };
+  if (typeof application.databaseId !== "string") {
+    return data;
+  }
+
+  return {
+    ...application,
+    id: application.databaseId,
+    relayId: application.relayId ?? application.id,
   };
 }
 

@@ -275,12 +275,15 @@ ReviewFlow では、申請、承認、差し戻し、却下、ユーザー招待
 
 ---
 
-### 6-4. Relay による API 連携
+### 6-4. Relay compiler / Relay runtime による API 連携
 
-ReviewFlow では、フロントエンドとバックエンドの内部連携に Relay runtime を利用しています。
+ReviewFlow では、フロントエンドとバックエンドの内部連携に Relay compiler と Relay runtime を利用しています。
 
 バックエンドでは NestJS GraphQL resolver により業務操作の query / mutation を公開しています。  
-フロントエンドでは `relay-runtime` の server-side Environment / Network を使い、Server Component や Server Action から GraphQL operation を実行しています。
+フロントエンドでは `relay-compiler` で GraphQL schema と operation / fragment の整合性を検証し、生成された artifact の operation text を `relay-runtime` の server-side Environment / Network で実行しています。
+
+申請詳細などの複数画面で使う取得項目は Fragment として分け、`ApplicationSummaryFields`、`ApplicationDetailFields`、`ApplicationProgressStepFields` などを operation から参照しています。
+これにより、取得項目の変更時に GraphQL schema との不整合を compiler で検出できるようにしています。
 
 REST パスをフロントエンドのクライアント API として扱わず、`client.login(...)` や `client.createApplication(...)` のような業務 operation 名で呼び出すことで、画面側の意図を明確にしています。
 

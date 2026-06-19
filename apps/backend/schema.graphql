@@ -1,0 +1,427 @@
+type ApplicationCapabilities {
+  canApproveApplication: Boolean!
+  canEditApplication: Boolean!
+  canRejectApplication: Boolean!
+  canResubmitApplication: Boolean!
+  canReturnApplication: Boolean!
+  canSubmitApplication: Boolean!
+}
+
+type ApplicationCorrection {
+  createdAt: String!
+  id: ID!
+  items: [ApplicationCorrectionItem!]!
+  overallComment: String
+  resolvedAt: String
+  status: String!
+}
+
+type ApplicationCorrectionItem {
+  comment: String
+  createdAt: String!
+  fieldKey: String!
+  formFieldId: ID!
+  id: ID!
+  isResolved: Boolean!
+}
+
+type ApplicationCorrectionTargetItem {
+  comment: String
+  currentValue: JSON
+  fieldKey: String!
+  fieldType: String!
+  formFieldId: ID!
+  itemId: ID!
+  label: String!
+  required: Boolean!
+}
+
+type ApplicationCorrectionTargets {
+  applicationId: ID!
+  applicationStatus: String!
+  openCorrection: ApplicationOpenCorrectionTargets
+}
+
+type ApplicationDetail implements Node {
+  applicantEmail: String!
+  applicantUserId: ID
+  applicationName: String!
+  approvalFlowId: ID!
+  approvalProgress: [ApplicationProgressStep!]!
+  capabilities: ApplicationCapabilities!
+  createdAt: String!
+  currentStepAssigneeUserIds: [ID!]!
+  currentStepCanReturn: Boolean
+  currentStepOrder: Int
+  databaseId: ID!
+  formDefinitionId: ID!
+  formDefinitionName: String!
+  groupId: ID!
+  id: ID!
+  status: String!
+  submittedAt: String
+  updatedAt: String!
+  values: JSON!
+}
+
+type ApplicationOpenCorrectionTargets {
+  createdAt: String!
+  id: ID!
+  items: [ApplicationCorrectionTargetItem!]!
+  overallComment: String
+}
+
+type ApplicationProgressAction {
+  actedAt: String!
+  actedBy: ApplicationProgressUser!
+  action: String!
+  comment: String
+  id: ID!
+}
+
+type ApplicationProgressStep {
+  actions: [ApplicationProgressAction!]!
+  assignees: [ApplicationProgressUser!]!
+  canReturn: Boolean!
+  id: ID!
+  status: String!
+  stepName: String!
+  stepOrder: Int!
+}
+
+type ApplicationProgressUser {
+  email: String!
+  id: ID!
+  name: String
+}
+
+type ApplicationSummary {
+  applicantEmail: String!
+  applicantUserId: ID
+  applicationName: String!
+  approvalFlowId: ID!
+  createdAt: String!
+  currentStepAssigneeUserIds: [ID!]!
+  currentStepOrder: Int
+  databaseId: ID!
+  formDefinitionId: ID!
+  formDefinitionName: String!
+  groupId: ID!
+  id: ID!
+  status: String!
+  submittedAt: String
+  updatedAt: String!
+}
+
+type ApplicationSummaryConnection {
+  edges: [ApplicationSummaryEdge!]!
+  nodes: [ApplicationSummary!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ApplicationSummaryEdge {
+  cursor: String!
+  node: ApplicationSummary!
+}
+
+type ApprovalFlow implements Node {
+  createdAt: String!
+  databaseId: ID!
+  groupId: ID!
+  id: ID!
+  isActive: Boolean!
+  name: String!
+  steps: [ApprovalStep!]!
+  updatedAt: String!
+}
+
+type ApprovalFlowConnection {
+  edges: [ApprovalFlowEdge!]!
+  nodes: [ApprovalFlow!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type ApprovalFlowEdge {
+  cursor: String!
+  node: ApprovalFlow!
+}
+
+type ApprovalStep {
+  assigneeUserId: ID!
+  assigneeUserIds: [ID!]!
+  canReturn: Boolean!
+  createdAt: String!
+  id: ID!
+  stepName: String!
+  stepOrder: Int!
+}
+
+type AuditLog implements Node {
+  actionType: String!
+  actorEmail: String
+  actorEmailSnapshot: String
+  actorType: String!
+  actorUserId: ID
+  applicationId: ID
+  createdAt: String!
+  databaseId: ID!
+  groupId: ID
+  groupRoleFrom: String
+  groupRoleTo: String
+  id: ID!
+  metadataJson: JSON
+  roleFrom: String
+  roleTo: String
+  statusFrom: String
+  statusTo: String
+  stepOrderFrom: Int
+  stepOrderTo: Int
+  summary: String
+  targetEmailSnapshot: String
+  targetId: String
+  targetType: String!
+  targetUserId: ID
+}
+
+type AuditLogConnection {
+  edges: [AuditLogEdge!]!
+  nodes: [AuditLog!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type AuditLogEdge {
+  cursor: String!
+  node: AuditLog!
+}
+
+input AuditLogsFilterInput {
+  actionType: String
+  applicationId: ID
+  createdFrom: String
+  createdTo: String
+  groupId: ID
+  q: String
+  targetType: String
+  targetUserId: ID
+}
+
+type ExportJob implements Node {
+  createdAt: String!
+  databaseId: ID!
+  filePath: String
+  filterJson: JSON
+  finishedAt: String
+  groupId: ID!
+  id: ID!
+  startedAt: String
+  status: String!
+}
+
+type FormDefinition implements Node {
+  createdAt: String!
+  createdByUserId: ID!
+  databaseId: ID!
+  description: String
+  fields: [FormField!]!
+  groupId: ID!
+  id: ID!
+  name: String!
+  status: String!
+  updatedAt: String!
+}
+
+type FormDefinitionConnection {
+  edges: [FormDefinitionEdge!]!
+  nodes: [FormDefinition!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type FormDefinitionEdge {
+  cursor: String!
+  node: FormDefinition!
+}
+
+type FormField {
+  createdAt: String!
+  fieldKey: String!
+  fieldType: String!
+  helpText: String
+  id: ID!
+  label: String!
+  options: JSON
+  placeholder: String
+  required: Boolean!
+  sortOrder: Int!
+}
+
+type Group implements Node {
+  createdAt: String!
+  createdByUserId: ID!
+  currentUserRole: String
+  databaseId: ID!
+  description: String
+  id: ID!
+  name: String!
+  updatedAt: String!
+}
+
+type GroupConnection {
+  edges: [GroupEdge!]!
+  nodes: [Group!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type GroupEdge {
+  cursor: String!
+  node: Group!
+}
+
+"""
+The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+"""
+scalar JSON
+
+type Mutation {
+  acceptInvitation(input: JSON!): JSON!
+  addFormField(id: ID!, input: JSON!): JSON!
+  addGroupMember(groupId: ID!, input: JSON!): JSON!
+  approveApplication(id: ID!, input: JSON!): JSON!
+  archiveFormDefinition(id: ID!): JSON!
+  confirmEmailChange(input: JSON!): JSON!
+  confirmPasswordReset(input: JSON!): JSON!
+  createApplication(input: JSON!): JSON!
+  createApprovalFlow(input: JSON!): JSON!
+  createExportJob(input: JSON!): JSON!
+  createFormDefinition(input: JSON!): JSON!
+  createGroup(input: JSON!): JSON!
+  createInvitation(input: JSON!): JSON!
+  createPublicApplication(input: JSON!): JSON!
+  deleteFormField(fieldId: ID!, id: ID!): JSON!
+  leaveGroup(groupId: ID!): Boolean!
+  login(input: JSON!): JSON!
+  moveFormField(fieldId: ID!, id: ID!, input: JSON!): JSON!
+  patchApplication(id: ID!, input: JSON!): JSON!
+  patchReturnedApplication(id: ID!, input: JSON!): JSON!
+  publishFormDefinition(id: ID!): JSON!
+  register(input: JSON!): JSON!
+  rejectApplication(id: ID!, input: JSON!): JSON!
+  removeGroup(groupId: ID!): Boolean!
+  removeGroupMember(groupId: ID!, userId: ID!): Boolean!
+  removeUser(id: ID!): Boolean!
+  requestFormAccess(formDefinitionId: ID, groupId: ID!, input: JSON!): JSON!
+  requestMeEmailChange(input: JSON!): JSON!
+  requestPasswordReset(input: JSON!): JSON!
+  resendReturnEmail(id: ID!): JSON!
+  restoreFormDefinition(id: ID!): JSON!
+  restoreUser(id: ID!): JSON!
+  resubmitApplication(id: ID!): JSON!
+  resubmitReturnedApplication(id: ID!): JSON!
+  returnApplication(id: ID!, input: JSON!): JSON!
+  submitApplication(id: ID!): JSON!
+  updateApprovalFlow(id: ID!, input: JSON!): JSON!
+  updateFormDefinitionDescription(id: ID!, input: JSON!): JSON!
+  updateFormFieldSettings(fieldId: ID!, id: ID!, input: JSON!): JSON!
+  updateGroup(groupId: ID!, input: JSON!): JSON!
+  updateGroupMemberRole(groupId: ID!, input: JSON!, userId: ID!): JSON!
+  updateMePassword(input: JSON!): JSON!
+  updateMeProfile(input: JSON!): JSON!
+  updateUserRole(id: ID!, input: JSON!): JSON!
+}
+
+interface Node {
+  id: ID!
+}
+
+type PageInfo {
+  endCursor: String
+  hasNextPage: Boolean!
+  hasPreviousPage: Boolean!
+  startCursor: String
+}
+
+type Query {
+  adminPing: JSON!
+
+  """ログインユーザーが閲覧できる申請詳細を返す。"""
+  application(id: ID!): ApplicationDetail!
+
+  """ログインユーザーが閲覧できる申請の差し戻し修正対象を返す。"""
+  applicationCorrectionTargets(id: ID!): ApplicationCorrectionTargets!
+
+  """ログインユーザーが閲覧できる申請の差し戻し履歴を返す。"""
+  applicationCorrections(id: ID!): [ApplicationCorrection!]!
+
+  """ログインユーザーが閲覧できる申請一覧を返す。"""
+  applications(groupId: ID!): [ApplicationSummary!]!
+
+  """ログインユーザーが閲覧できる申請一覧をRelay Connection形式で返す。"""
+  applicationsConnection(after: String, first: Int! = 50, groupId: ID!): ApplicationSummaryConnection!
+
+  """承認フローをRelay Node型で返す。"""
+  approvalFlowNode(id: ID!): ApprovalFlow!
+  approvalFlows(groupId: ID!): JSON!
+
+  """space内の承認フロー一覧をRelay Connection形式で返す。"""
+  approvalFlowsConnection(after: String, first: Int! = 50, groupId: ID!): ApprovalFlowConnection!
+  auditLogs(input: JSON): JSON!
+
+  """tenant監査ログ一覧をRelay Connection形式で返す。"""
+  auditLogsConnection(after: String, first: Int! = 50, input: AuditLogsFilterInput): AuditLogConnection!
+  currentApprovalFlowsForApplicant: JSON!
+  currentFormDefinitionForApplicant: JSON!
+  exportJob(id: ID!): JSON!
+
+  """CSVエクスポートジョブをRelay Node型で返す。"""
+  exportJobNode(id: ID!): ExportJob!
+  formDefinition(id: ID!): JSON!
+
+  """フォーム定義をRelay Node型で返す。"""
+  formDefinitionNode(id: ID!): FormDefinition!
+  formDefinitions(groupId: ID!, includeArchived: Boolean): JSON!
+
+  """space内のフォーム定義一覧をRelay Connection形式で返す。"""
+  formDefinitionsConnection(after: String, first: Int! = 50, groupId: ID!, includeArchived: Boolean): FormDefinitionConnection!
+  groupAvailableUsers(groupId: ID!): JSON!
+  groupMembers(groupId: ID!): JSON!
+  groups: JSON!
+
+  """ログインユーザーが閲覧できるspace一覧をRelay Connection形式で返す。"""
+  groupsConnection(after: String, first: Int! = 50): GroupConnection!
+  me: JSON!
+
+  """Relay global IDからNodeを返す。"""
+  node(id: ID!): Node
+  returnedApplicationCorrectionTargetsForApplicant: JSON!
+  spaceDashboard: JSON!
+  users: JSON!
+
+  """tenant管理者が閲覧できるユーザー一覧をRelay Connection形式で返す。"""
+  usersConnection(after: String, first: Int! = 50): UserConnection!
+}
+
+type User implements Node {
+  createdAt: String!
+  databaseId: ID!
+  email: String!
+  id: ID!
+  isActive: Boolean!
+  name: String
+  role: String!
+}
+
+type UserConnection {
+  edges: [UserEdge!]!
+  nodes: [User!]!
+  pageInfo: PageInfo!
+  totalCount: Int!
+}
+
+type UserEdge {
+  cursor: String!
+  node: User!
+}

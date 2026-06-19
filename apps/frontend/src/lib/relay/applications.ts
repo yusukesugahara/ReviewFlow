@@ -20,14 +20,20 @@ type ApplicationProgressStep = NonNullable<
 >[number];
 export type RelayApplicationSummary = ApplicationSummary;
 
+type RelayIdPayload = {
+  databaseId?: string;
+  id: string;
+  relayId?: string;
+};
+
 type ApplicationsQuery = {
   applicationsConnection: {
-    nodes: RelayApplicationSummary[];
+    nodes: Array<RelayApplicationSummary & RelayIdPayload>;
   };
 };
 
 type ApplicationDetailQuery = {
-  application: ApplicationDetailViewModel;
+  application: ApplicationDetailViewModel & RelayIdPayload;
 };
 
 type ApplicationCorrectionsQuery = {
@@ -55,7 +61,9 @@ export function getRelayApplications({
     name: "Applications",
     text: APPLICATIONS_QUERY,
     variables: { groupId },
-  }).then((data) => data.applicationsConnection.nodes);
+  }).then((data) =>
+    data.applicationsConnection.nodes.map(toDatabaseIdApplication),
+  );
 }
 
 export function getRelayApplication({
@@ -71,7 +79,9 @@ export function getRelayApplication({
     name: "ApplicationDetail",
     text: APPLICATION_DETAIL_QUERY,
     variables: { id: applicationId },
-  }).then((data) => mapApplicationDetail(data.application));
+  }).then((data) =>
+    mapApplicationDetail(toDatabaseIdApplication(data.application)),
+  );
 }
 
 export function getRelayApplicationCorrections({
@@ -127,4 +137,18 @@ function toRecord(value: unknown): Record<string, unknown> {
   }
 
   return {};
+}
+
+function toDatabaseIdApplication<TApplication extends RelayIdPayload>(
+  application: TApplication,
+): TApplication {
+  if (!application.databaseId) {
+    return application;
+  }
+
+  return {
+    ...application,
+    id: application.databaseId,
+    relayId: application.relayId ?? application.id,
+  };
 }

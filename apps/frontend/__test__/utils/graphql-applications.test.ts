@@ -30,7 +30,8 @@ describe("graphql application client", () => {
             applicationsConnection: {
               nodes: [
                 {
-                  id: "app-1",
+                  id: "QXBwbGljYXRpb246YXBwLTE",
+                  databaseId: "app-1",
                   relayId: "QXBwbGljYXRpb246YXBwLTE",
                   groupId: "space-1",
                   status: "draft",
