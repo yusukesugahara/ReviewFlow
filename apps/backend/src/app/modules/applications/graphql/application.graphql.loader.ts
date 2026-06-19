@@ -4,6 +4,10 @@ import {
   APPLICATION_RELAY_NODE_TYPE,
   toRelayGlobalId,
 } from '../../../../common/graphql/relay-id';
+import {
+  connectionFromOffsetPage,
+  resolveOffsetPagination,
+} from '../../../../common/graphql/relay-pagination';
 import type { AuthUserPayload } from '../../../../decorators/current-user.decorator';
 import type {
   ApplicationDetailDto,
@@ -14,6 +18,7 @@ import type {
   ApplicationCorrectionGql,
   ApplicationCorrectionTargetsGql,
   ApplicationDetailGql,
+  ApplicationSummaryConnectionGql,
   ApplicationSummaryGql,
 } from './application.graphql.types';
 
@@ -72,6 +77,31 @@ export class ApplicationGraphqlLoader {
     groupId: string,
   ): Promise<ApplicationSummaryGql[]> {
     return this.summariesByGroup.load({ actor, groupId });
+  }
+
+  async listApplicationsConnection({
+    actor,
+    after,
+    first,
+    groupId,
+  }: {
+    actor: AuthUserPayload;
+    after?: string | null;
+    first: number;
+    groupId: string;
+  }): Promise<ApplicationSummaryConnectionGql> {
+    const page = await this.applications.listConnectionForActor(
+      actor,
+      groupId,
+      resolveOffsetPagination({ after, first }),
+    );
+    return connectionFromOffsetPage({
+      nodes: page.nodes.map((row) =>
+        this.toGraphqlSummary(this.applications.toSummary(row)),
+      ),
+      offset: page.offset,
+      totalCount: page.totalCount,
+    });
   }
 
   getApplication(

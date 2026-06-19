@@ -3,7 +3,6 @@ import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
 import GraphQLJSON from 'graphql-type-json';
 import { SKIP_JWT_KEY } from '../../../../common/constants';
 import { toValidatedInput } from '../../../../common/graphql/graphql-input';
-import { connectionFromNodes } from '../../../../common/graphql/relay-pagination';
 import { CurrentApplicantSession } from '../../../../decorators/current-applicant-session.decorator';
 import {
   CurrentUser,
@@ -63,11 +62,11 @@ export class ApplicationsGraphqlResolver {
     after: string | null,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<ApplicationSummaryConnectionGql> {
-    const allNodes = await this.loader.listApplications(actor, groupId);
-    return connectionFromNodes({
+    return this.loader.listApplicationsConnection({
+      actor,
       after,
       first,
-      nodes: allNodes,
+      groupId,
     });
   }
 

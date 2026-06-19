@@ -42,7 +42,9 @@ describe('ApplicationQueryService', () => {
     countApprovalsByActor: jest.Mock;
     findByIdInTenant: jest.Mock;
     listForGroup: jest.Mock;
+    listForTenantAdminPage: jest.Mock;
     listForTenantAdmin: jest.Mock;
+    listVisibleForActorPage: jest.Mock;
   };
   let spaceAccess: {
     actorCanManageGroup: jest.Mock;
@@ -70,7 +72,9 @@ describe('ApplicationQueryService', () => {
       countApprovalsByActor: jest.fn(),
       findByIdInTenant: jest.fn(),
       listForGroup: jest.fn(),
+      listForTenantAdminPage: jest.fn(),
       listForTenantAdmin: jest.fn(),
+      listVisibleForActorPage: jest.fn(),
     };
     spaceAccess = {
       actorCanManageGroup: jest.fn(),
@@ -164,6 +168,56 @@ describe('ApplicationQueryService', () => {
       own,
       assigned,
     ]);
+  });
+
+  it('loads tenant admin application pages through the repository', async () => {
+    const page = {
+      nodes: [app({ id: 'page-app' })],
+      offset: 10,
+      totalCount: 30,
+    };
+    applicationsRepository.listForTenantAdminPage.mockResolvedValue(page);
+
+    await expect(
+      service.listConnectionForActor(
+        actor({ roles: [UserRole.TENANT_ADMIN] }),
+        'group-1',
+        { offset: 10, limit: 20 },
+      ),
+    ).resolves.toEqual(page);
+
+    expect(spaceAccess.assertCanUseGroup).toHaveBeenCalledWith(
+      expect.objectContaining({ tenantId: 'tenant-1' }),
+      'group-1',
+    );
+    expect(applicationsRepository.listForTenantAdminPage).toHaveBeenCalledWith(
+      'tenant-1',
+      'group-1',
+      { offset: 10, limit: 20 },
+    );
+  });
+
+  it('loads regular user application pages with DB-level visibility conditions', async () => {
+    const page = { nodes: [app({ id: 'visible' })], offset: 0, totalCount: 1 };
+    applicationsRepository.listVisibleForActorPage.mockResolvedValue(page);
+    spaceAccess.actorCanManageGroup.mockResolvedValue(true);
+
+    await expect(
+      service.listConnectionForActor(actor(), 'group-1', {
+        offset: 0,
+        limit: 20,
+      }),
+    ).resolves.toEqual(page);
+
+    expect(applicationsRepository.listVisibleForActorPage).toHaveBeenCalledWith(
+      {
+        actorId: 'user-1',
+        canManageGroup: true,
+        groupId: 'group-1',
+        tenantId: 'tenant-1',
+      },
+      { offset: 0, limit: 20 },
+    );
   });
 
   it('loads detail applications through read access before hydrating progress', async () => {

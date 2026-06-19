@@ -28,6 +28,7 @@ describe('ApplicationGraphqlLoader', () => {
     getCorrectionsForActor: jest.Mock;
     getCorrectionTargetsForActor: jest.Mock;
     getOneForActor: jest.Mock;
+    listConnectionForActor: jest.Mock;
     listForActor: jest.Mock;
     toDetailForActor: jest.Mock;
     toSummary: jest.Mock;
@@ -39,6 +40,7 @@ describe('ApplicationGraphqlLoader', () => {
       getCorrectionsForActor: jest.fn(),
       getCorrectionTargetsForActor: jest.fn(),
       getOneForActor: jest.fn(),
+      listConnectionForActor: jest.fn(),
       listForActor: jest.fn(),
       toDetailForActor: jest.fn(),
       toSummary: jest.fn(),
@@ -107,6 +109,47 @@ describe('ApplicationGraphqlLoader', () => {
     expect(applications.toDetailForActor).toHaveBeenCalledWith(
       row,
       currentActor,
+    );
+  });
+
+  it('loads application connections from database pages', async () => {
+    const currentActor = actor();
+    const row = application();
+    const summary = {
+      id: 'app-1',
+      groupId: 'group-1',
+      status: 'draft',
+    };
+    applications.listConnectionForActor.mockResolvedValue({
+      nodes: [row],
+      offset: 3,
+      totalCount: 10,
+    });
+    applications.toSummary.mockReturnValue(summary);
+
+    await expect(
+      loader.listApplicationsConnection({
+        actor: currentActor,
+        after: 'YXJyYXljb25uZWN0aW9uOjI',
+        first: 1,
+        groupId: 'group-1',
+      }),
+    ).resolves.toMatchObject({
+      nodes: [
+        {
+          ...summary,
+          __typename: 'ApplicationSummary',
+          databaseId: 'app-1',
+          id: toRelayGlobalId(APPLICATION_RELAY_NODE_TYPE, 'app-1'),
+        },
+      ],
+      totalCount: 10,
+    });
+
+    expect(applications.listConnectionForActor).toHaveBeenCalledWith(
+      currentActor,
+      'group-1',
+      { offset: 3, limit: 1 },
     );
   });
 });

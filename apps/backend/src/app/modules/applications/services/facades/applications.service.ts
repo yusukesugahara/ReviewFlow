@@ -3,6 +3,10 @@ import type { AuthUserPayload } from '../../../../../decorators/current-user.dec
 import type { ApplicantAccessTokenPayload } from '../../../auth/services/facades/auth.service';
 import { Application } from '../../../../../models/entities/application.entity';
 import type {
+  ApplicationListPage,
+  ApplicationListPageOptions,
+} from '../../../../../models/repositories/application-query.repository';
+import type {
   ApplicationDetailDto,
   ApproveApplicationDto,
   CorrectionTargetsResponseDto,
@@ -52,6 +56,21 @@ export class ApplicationsService {
     groupId: string,
   ): Promise<Application[]> {
     return this.queryService.listForActor(actor, groupId);
+  }
+
+  /**
+   * ログインユーザーが閲覧できる申請一覧をページ単位で取得する。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   * @param page offset pagination
+   * @returns 申請ページ
+   */
+  async listConnectionForActor(
+    actor: AuthUserPayload,
+    groupId: string,
+    page: ApplicationListPageOptions,
+  ): Promise<ApplicationListPage> {
+    return this.queryService.listConnectionForActor(actor, groupId, page);
   }
 
   /**

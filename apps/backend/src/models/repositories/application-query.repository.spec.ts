@@ -9,10 +9,14 @@ import { ApplicationQueryRepository } from './application-query.repository';
 
 type ApplicationListQueryBuilderMock = {
   andWhere: jest.Mock;
+  getCount: jest.Mock;
   getMany: jest.Mock;
+  getManyAndCount: jest.Mock;
   leftJoinAndMapOne: jest.Mock;
   leftJoinAndSelect: jest.Mock;
   orderBy: jest.Mock;
+  skip: jest.Mock;
+  take: jest.Mock;
   where: jest.Mock;
 };
 
@@ -29,16 +33,22 @@ const step = (
 function createListQueryBuilderMock(): ApplicationListQueryBuilderMock {
   const builder: ApplicationListQueryBuilderMock = {
     andWhere: jest.fn(),
+    getCount: jest.fn(),
     getMany: jest.fn(),
+    getManyAndCount: jest.fn(),
     leftJoinAndMapOne: jest.fn(),
     leftJoinAndSelect: jest.fn(),
     orderBy: jest.fn(),
+    skip: jest.fn(),
+    take: jest.fn(),
     where: jest.fn(),
   };
   builder.andWhere.mockReturnValue(builder);
   builder.leftJoinAndMapOne.mockReturnValue(builder);
   builder.leftJoinAndSelect.mockReturnValue(builder);
   builder.orderBy.mockReturnValue(builder);
+  builder.skip.mockReturnValue(builder);
+  builder.take.mockReturnValue(builder);
   builder.where.mockReturnValue(builder);
   return builder;
 }
@@ -224,6 +234,75 @@ describe('ApplicationQueryRepository', () => {
       groupId: 'group-1',
     });
     expect(builder.orderBy).toHaveBeenCalledWith('app.createdAt', 'DESC');
+  });
+
+  it('loads tenant admin application pages at the database level', async () => {
+    const rows = [
+      {
+        id: 'app-1',
+        currentStepOrder: 1,
+        currentApprovalStep: step(1),
+      },
+    ] as Application[];
+    builder.getManyAndCount.mockResolvedValue([rows, 3]);
+
+    await expect(
+      repository.listForTenantAdminPage('tenant-1', 'group-1', {
+        offset: 2,
+        limit: 1,
+      }),
+    ).resolves.toEqual({
+      nodes: rows,
+      offset: 2,
+      totalCount: 3,
+    });
+
+    expect(builder.skip).toHaveBeenCalledWith(2);
+    expect(builder.take).toHaveBeenCalledWith(1);
+    expect(builder.getManyAndCount).toHaveBeenCalled();
+  });
+
+  it('applies actor visibility before loading a database page', async () => {
+    builder.getManyAndCount.mockResolvedValue([[], 0]);
+
+    await repository.listVisibleForActorPage(
+      {
+        actorId: 'user-1',
+        canManageGroup: true,
+        groupId: 'group-1',
+        tenantId: 'tenant-1',
+      },
+      { offset: 0, limit: 20 },
+    );
+
+    expect(builder.andWhere).toHaveBeenCalledWith(
+      expect.stringContaining('app.applicantUserId = :actorId'),
+      expect.objectContaining({
+        actorId: 'user-1',
+        actorIdJsonPattern: '%"user-1"%',
+        setupStatuses: ['draft', 'published'],
+      }),
+    );
+    expect(builder.skip).toHaveBeenCalledWith(0);
+    expect(builder.take).toHaveBeenCalledWith(20);
+  });
+
+  it('counts matching rows without loading entities for first zero pages', async () => {
+    builder.getCount.mockResolvedValue(4);
+
+    await expect(
+      repository.listForTenantAdminPage('tenant-1', 'group-1', {
+        offset: 0,
+        limit: 0,
+      }),
+    ).resolves.toEqual({
+      nodes: [],
+      offset: 0,
+      totalCount: 4,
+    });
+
+    expect(builder.getCount).toHaveBeenCalled();
+    expect(builder.getManyAndCount).not.toHaveBeenCalled();
   });
 
   it('finds applicant editable applications by user id when available', async () => {

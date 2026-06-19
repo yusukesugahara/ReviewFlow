@@ -2,7 +2,11 @@ import { Injectable } from '@nestjs/common';
 import type { AuthUserPayload } from '../../../../../decorators/current-user.decorator';
 import { UserRole } from '../../../../../models/constants/user-role';
 import type { Application } from '../../../../../models/entities/application.entity';
-import { ApplicationQueryRepository } from '../../../../../models/repositories/application-query.repository';
+import {
+  ApplicationQueryRepository,
+  type ApplicationListPage,
+  type ApplicationListPageOptions,
+} from '../../../../../models/repositories/application-query.repository';
 import { SpaceAccessService } from '../../../groups/services/access/space-access.service';
 import type { CorrectionTargetsResponseDto } from '../../dto/applications.dto';
 import { ApplicationAccessPolicy } from '../../policies/application-access.policy';
@@ -55,6 +59,41 @@ export class ApplicationQueryService {
       this.accessPolicy.canListForActor(actor, app, canManageGroup),
     );
     return visibleRows;
+  }
+
+  /**
+   * space 利用権限と申請閲覧条件に基づいて、申請一覧をDBページ単位で返す。
+   * @param actor ログインユーザー
+   * @param groupId スペースID
+   * @param page offset pagination
+   * @returns 閲覧可能な申請ページ
+   */
+  async listConnectionForActor(
+    actor: AuthUserPayload,
+    groupId: string,
+    page: ApplicationListPageOptions,
+  ): Promise<ApplicationListPage> {
+    await this.spaceAccess.assertCanUseGroup(actor, groupId);
+    if (actor.roles.includes(UserRole.TENANT_ADMIN)) {
+      return this.queryRepository.listForTenantAdminPage(
+        actor.tenantId,
+        groupId,
+        page,
+      );
+    }
+
+    return this.queryRepository.listVisibleForActorPage(
+      {
+        actorId: actor.id,
+        canManageGroup: await this.spaceAccess.actorCanManageGroup(
+          actor,
+          groupId,
+        ),
+        groupId,
+        tenantId: actor.tenantId,
+      },
+      page,
+    );
   }
 
   /**

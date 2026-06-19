@@ -114,6 +114,17 @@ npm run test:e2e -w frontend
 
 Playwright E2E はビルド済みフロントエンドの起動を前提とする。現状は認証クッキー検証など最小構成。
 
+### Storybook
+
+汎用UIと申請ワークフロー固有UIの確認には Storybook を使う。
+
+```bash
+npm run storybook -w frontend
+npm run storybook:build -w frontend
+```
+
+stories は `apps/frontend/src/stories/` に置く。グローバルCSSは `.storybook/preview.ts` から読み込む。
+
 ### CI
 
 GitHub Actions（`.github/workflows/ci.yml`）では PostgreSQL サービスと `TEST_DATABASE_URL` を設定し、`npm run check` を実行する。
@@ -127,9 +138,9 @@ GitHub Actions（`.github/workflows/ci.yml`）では PostgreSQL サービスと 
 | `npm run dev:backend` | バックエンドのみ |
 | `npm run lint` | フロント・バックエンド lint |
 | `npm run typecheck` | TypeScript 型チェック |
-| `npm run test` | バックエンドテスト |
+| `npm run test` | バックエンドテスト + フロントエンド Jest |
 | `npm run build` | 本番ビルド |
-| `npm run check` | lint + typecheck + test + build |
+| `npm run check` | lint + Relay validate + typecheck + test + build |
 
 ## API 契約更新
 
