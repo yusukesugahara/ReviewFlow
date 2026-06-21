@@ -150,6 +150,35 @@ GitHub Actions（`.github/workflows/ci.yml`）では PostgreSQL サービスと 
 - フロントエンドの Relay operation: `apps/frontend/src/lib/relay/`
 - フロントエンド共有 DTO 型: `apps/frontend/src/lib/schema.ts`
 
+### GraphQL / Relay と REST の使い分け
+
+認証後 UI の主要な業務画面では、GraphQL / Relay を正の API 契約とする。申請一覧、申請詳細、承認ステップ、差し戻し履歴、コメント、監査ログのように画面単位で必要なデータが変わる領域は、Relay operation / fragment でコンポーネントが必要な field を宣言する。
+
+REST が残っていること自体は問題ではない。ただし、新規追加や利用継続は用途で判断する。
+
+REST を残してよいもの:
+
+- `/health` / `/ready` などの運用 endpoint
+- CSV export の作成、状態確認、成果物 download など、ファイルや HTTP response header を扱う API
+- 申請者アクセストークンを使う公開申請・差し戻し修正など、認証後 UI と別境界の入口
+- 外部クライアント、既存クライアント、Swagger / OpenAPI 検証との互換が必要な API
+
+REST を増やさないもの:
+
+- 認証後 UI の通常画面で使う一覧・詳細・更新
+- Relay Connection / Fragment で表現できる画面データ
+- GraphQL と同じ業務操作を、別サービスや別バリデーションとして再実装する API
+
+GraphQL と REST が同じ操作を持つ移行期は、Controller / Resolver を薄く保つ。両方とも同じ Service / Use case に委譲し、認可、tenant / group scope、状態遷移、監査ログは backend service 層で一元化する。
+
+新しい認証後 UI を実装するときの判断順:
+
+1. 画面で使うデータ取得・更新は GraphQL / Relay に追加する。
+2. 一覧は Connection 形式にし、`first` / `after` を受ける。
+3. コンポーネント単位の data dependency は Relay Fragment として宣言する。
+4. Mutation は typed input / payload を基本にし、必要なら `clientMutationId` を持たせる。
+5. REST が必要な場合は、運用、ファイル、公開入口、外部互換のどれに該当するかを docs / PR に明記する。
+
 ### GraphQL / Relay の実行時の流れ
 
 ReviewFlow では、Next.js から NestJS backend への主要な内部 API 呼び出しを GraphQL operation として扱う。申請詳細・申請一覧など、取得項目が画面間で共有されやすい領域は Relay compiler 管理の operation / fragment を使う。

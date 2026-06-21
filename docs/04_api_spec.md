@@ -1,5 +1,7 @@
 # API基本方針
-- すべてJSON API
+- 認証後の主要画面で使う業務データ取得・更新は、GraphQL / Relay を正の API 契約とする。
+- REST API は互換、運用、外部入口、ファイルダウンロードなど用途を限定して残す。
+- REST の通常レスポンスは JSON API とし、CSV などの成果物ダウンロードだけ `text/csv` 等の非 JSON レスポンスを許容する。
 - 認証必須APIでは JWT 内の tenant_id と role を利用する
 - クライアントから tenant_id を受け取って信頼しない
 - テナントスコープはサーバー側で強制する
@@ -8,6 +10,22 @@
 - スペースロールは `group_members.role` でスペースごとに判定する。同じユーザーが A スペースでは `admin`、B スペースでは `user` になるケースを許容する。
 - 現段階では既存 path を維持する。次段階で `/groups/:groupId/form-definitions` / `/groups/:groupId/applications` のような nested path へ寄せる。
 - `audit_logs.group_id` は nullable。tenant-level event は `null`、space-level event は対象 `groupId` を保持する。
+
+## GraphQL / Relay と REST の位置づけ
+
+ReviewFlow の認証後 UI は、GraphQL schema と Relay operation / fragment を中心に設計する。申請一覧、申請詳細、承認ステップ、差し戻し履歴、監査ログなど、画面が必要なデータ構造を宣言して取得する領域は GraphQL / Relay を優先する。
+
+REST を残してよい用途は以下に限定する。
+
+- `/health` / `/ready` などの運用・死活監視 endpoint
+- CSV などのファイル作成、状態確認、ダウンロード
+- 申請者アクセストークンを使う公開申請・差し戻し修正など、認証後 UI とは別の入口
+- 外部クライアントや既存フロントエンドとの互換が必要な API
+- Swagger / OpenAPI で参照される管理・検証用 API
+
+REST と GraphQL が同じ業務操作を提供する場合でも、業務ロジックを Controller / Resolver に重複実装しない。両方とも同じ Service / Use case に委譲し、認可、状態遷移、バリデーション、監査ログの判断は backend service 層で一元化する。
+
+新しい認証後 UI の API を追加する場合は、原則として GraphQL / Relay で追加する。REST を追加する場合は、上記の用途に該当する理由を明確にし、OpenAPI 参照スキーマも更新する。
 
 ## Auth
 
