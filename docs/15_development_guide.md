@@ -112,7 +112,7 @@ npm run test -w frontend
 npm run test:e2e -w frontend
 ```
 
-Playwright E2E はビルド済みフロントエンドの起動を前提とする。現状は認証クッキー検証など最小構成。
+Playwright E2E はビルド済みフロントエンドの起動を前提とする。対象範囲と追加判断は [フロントエンド設計](07_frontend_design.md#テスト戦略) と `apps/frontend/e2e/README.md` を参照する。
 
 ### Storybook
 

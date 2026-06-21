@@ -86,3 +86,66 @@ field_type ごとにコンポーネントを分ける。入力値を保存する
 
 ### 編集可能判定
 申請詳細画面の操作ボタンは backend の `ApplicationDetailDto.capabilities` を表示制御として使う。frontend は未入力項目の案内や returned 項目の活性/非活性など UX 補助だけを行い、申請者本人判定、承認者判定、space 管理者判定、状態遷移可否は backend の policy / service で検証する。
+
+## テスト戦略
+
+フロントエンドのテストは、型・API契約・小さなUIロジック・主要業務フローを分けて確認する。backend が権限・状態遷移・監査ログの正とし、frontend のテストは表示制御、入力体験、API呼び出しの組み立て、ユーザー操作としての到達性を確認する。
+
+### レイヤー別の役割
+
+| レイヤー | 主な目的 | 実行コマンド |
+| --- | --- | --- |
+| 型・契約チェック | TypeScript 型、Relay operation、共有 DTO 型の破綻を早期に検出する | `npm run typecheck -w frontend`、`npm run relay:validate -w frontend` |
+| Jest | pure helper、表示用 mapper、入力 validation、Server Action 周辺の payload 変換を小さく検証する | `npm run test -w frontend` |
+| Playwright E2E | 認証、公開申請、承認フロー、テナント/スペース境界など、ユーザー操作として壊れてはいけない流れを検証する | `npm run test:e2e -w frontend` |
+| build / Storybook | Next.js build 時の破綻と、共有 UI・ワークフロー UI の表示確認を行う | `npm run build -w frontend`、`npm run storybook:build -w frontend` |
+
+### 重点的に守る画面・操作
+
+- 認証/セッション: ログイン、ログアウト、未認証リダイレクト、HttpOnly cookie、アカウント設定。
+- 申請フォーム設定: 動的フィールド、確認/承認ステップ、グループ確認/承認、公開済みフォーム編集時の制約。
+- 公開申請: applicant access token、各フィールド型の入力、申請送信、差し戻し修正、再提出。
+- 申請詳細/承認: 現在ステップ表示、操作ボタンの表示制御、承認、確認、差し戻し、却下、完了ステータス。
+- 境界チェック: tenant / space をまたいだ閲覧・操作不可、直接URLアクセス、直接APIアクセス。
+- 管理機能: スペース管理、招待、ユーザー管理、監査ログ、CSV出力。
+
+### 変更内容ごとの判断基準
+
+| 変更内容 | 最低限の確認 | 追加で必要になりやすい確認 |
+| --- | --- | --- |
+| 表示だけの軽微なUI変更 | `npm run typecheck -w frontend` | 共有 UI なら Storybook、重要画面なら対象 E2E の目視/実行 |
+| 入力 validation / mapper / 表示判定 | `npm run typecheck -w frontend`、対象 Jest | 業務フローに影響する場合は Playwright |
+| Server Action / API wrapper | `npm run typecheck -w frontend`、対象 Jest | 認証・権限・状態遷移に関わる場合は Playwright |
+| Relay / API 契約変更 | backend schema 更新、Relay 生成/検証、`npm run typecheck -w frontend` | 画面データが変わる主要フローの Playwright |
+| 認証、cookie、公開申請 token | `npm run typecheck -w frontend` | Playwright の auth / public application 系 |
+| 承認フロー、差し戻し、再提出 | `npm run typecheck -w frontend` | Playwright の workflow 系 |
+
+### Jest の方針
+
+Jest ではブラウザ全体の操作ではなく、壊れやすい frontend 固有ロジックを狭く検証する。
+
+- dynamic form の値変換、未入力判定、表示専用フィールドの扱い。
+- 申請詳細の表示用 view model、ステータス文言、現在ステップの表示整形。
+- Server Action や API helper が backend に渡す payload の形。
+- backend の権限判定そのものは Jest で再実装しない。frontend 側は `capabilities` や API response に基づく表示制御だけを確認する。
+
+### Playwright E2E の方針
+
+Playwright は、ユーザーにとって重要な一連の操作と境界条件を検証する。詳細な実行方法と環境変数は `apps/frontend/e2e/README.md` を参照する。
+
+- テストデータは E2E helper から API 経由で作成し、既存のローカルデータに依存しない。
+- メールアドレス、フォーム名、スペース名などはテストごとに一意にする。
+- UI でボタンが非表示になることだけを権限テストの根拠にしない。権限境界が重要な変更では、直接APIまたは直接URLアクセスの失敗も確認する。
+- 画面レイアウトだけの pixel-perfect な検証は増やさない。スクロールせずに操作できること、主要情報が欠けないことなど、業務上意味のある表示条件を検証する。
+- 新しい主要フローを追加した場合は、正常系を 1 本作り、権限または状態不一致の失敗系を必要最小限で追加する。
+
+### 実行順の目安
+
+普段の実装では、まず型チェックと対象 Jest を実行し、API契約や画面遷移を触った場合に Playwright を追加する。PR 前や大きめのUI変更では build まで確認する。
+
+```bash
+npm run typecheck -w frontend
+npm run test -w frontend
+npm run build -w frontend
+E2E_API_URL=http://127.0.0.1:3000 npm run test:e2e -w frontend
+```
