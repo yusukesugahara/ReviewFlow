@@ -2,6 +2,7 @@ import { BadRequestException } from '@nestjs/common';
 import {
   connectionFromNodes,
   fromOffsetCursor,
+  resolveOffsetPagination,
   toOffsetCursor,
 } from './relay-pagination';
 
@@ -53,5 +54,14 @@ describe('Relay pagination helpers', () => {
     expect(() => connectionFromNodes({ first: -1, nodes: [] })).toThrow(
       BadRequestException,
     );
+  });
+
+  it('resolves offset pagination without loading all nodes', () => {
+    expect(
+      resolveOffsetPagination({
+        after: toOffsetCursor(4),
+        first: 10,
+      }),
+    ).toEqual({ offset: 5, limit: 10 });
   });
 });

@@ -1,4 +1,3 @@
-import { getRelayApplications } from "@/lib/relay/applications";
 jest.mock("server-only", () => ({}));
 
 const originalFetch = global.fetch;
@@ -6,9 +5,11 @@ const originalEnv = process.env;
 
 describe("graphql application client", () => {
   beforeEach(() => {
+    jest.resetModules();
     process.env = {
       ...originalEnv,
       INTERNAL_API_KEY: "internal-key",
+      INTERNAL_API_ORIGIN: "http://backend.test",
       NEXT_PUBLIC_API_URL: "http://backend.test",
     };
     global.fetch = jest.fn();
@@ -21,6 +22,8 @@ describe("graphql application client", () => {
   });
 
   it("posts application queries to the backend GraphQL endpoint with auth headers", async () => {
+    const { getRelayApplications } = await import("@/lib/relay/applications");
+
     jest.mocked(global.fetch).mockResolvedValue({
       ok: true,
       status: 200,
@@ -30,7 +33,8 @@ describe("graphql application client", () => {
             applicationsConnection: {
               nodes: [
                 {
-                  id: "app-1",
+                  id: "QXBwbGljYXRpb246YXBwLTE",
+                  databaseId: "app-1",
                   relayId: "QXBwbGljYXRpb246YXBwLTE",
                   groupId: "space-1",
                   status: "draft",
@@ -64,6 +68,8 @@ describe("graphql application client", () => {
   });
 
   it("throws an API failure for GraphQL errors", async () => {
+    const { getRelayApplications } = await import("@/lib/relay/applications");
+
     jest.mocked(global.fetch).mockResolvedValue({
       ok: true,
       status: 200,
@@ -80,5 +86,21 @@ describe("graphql application client", () => {
         groupId: "space-1",
       }),
     ).rejects.toMatchObject({ status: 401 });
+  });
+
+  it("throws an API failure when the backend GraphQL endpoint is unreachable", async () => {
+    const { getRelayApplications } = await import("@/lib/relay/applications");
+
+    jest.mocked(global.fetch).mockRejectedValue(new TypeError("fetch failed"));
+
+    await expect(
+      getRelayApplications({
+        authHeaders: { Authorization: "Bearer token" },
+        groupId: "space-1",
+      }),
+    ).rejects.toEqual({
+      status: 503,
+      body: { message: "API サーバーに接続できません" },
+    });
   });
 });

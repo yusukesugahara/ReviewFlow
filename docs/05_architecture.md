@@ -4,7 +4,7 @@
 flowchart LR
   Browser["Browser"] --> Frontend["Next.js frontend"]
   Frontend -->|HttpOnly session cookie| Browser
-  Frontend -->|GraphQL / REST + INTERNAL_API_KEY + JWT| Backend["NestJS backend"]
+  Frontend -->|GraphQL / Relay + limited REST + INTERNAL_API_KEY + JWT| Backend["NestJS backend"]
   Backend --> Database[("PostgreSQL")]
   Backend --> Audit["Audit logs"]
   Backend --> Jobs["export_jobs"]
@@ -12,7 +12,7 @@ flowchart LR
   ExportLogic --> Database
 ```
 
-- Next.js: 画面表示、フォーム入力、認証後UI、Server Actions 経由の API 呼び出し
+- Next.js: 画面表示、フォーム入力、認証後UI、Relay / Server Actions / Route Handler 経由の API 呼び出し
 - NestJS: 認証、業務ロジック、認可、監査ログ、CSVジョブ管理
 - PostgreSQL: 永続化
 - CSV 生成: `export_jobs` テーブルでジョブ状態を管理し、現状は API リクエスト内で同期的に CSV を生成する
@@ -38,11 +38,14 @@ ReviewFlow の変更では、以下を崩さないことを優先する。
 - 複数テーブルを同時に更新する業務操作では、必要に応じて transaction を使う。
 - 重要な業務操作は audit log に残し、Pino のリクエストログとは目的を分ける。
 - API 契約を変えた場合は GraphQL / Relay operation と共有 DTO 型を更新する。REST 契約を変えた場合は Swagger / OpenAPI 参照スキーマも更新する。
+- 認証後 UI の主要な業務データ取得・更新は GraphQL / Relay を正とする。REST は運用、ファイル、公開入口、外部互換など用途を限定して残す。
+- REST と GraphQL の両方で同じ操作を公開する場合でも、Controller / Resolver は薄く保ち、同じ Service / Use case に委譲する。
 
 ## フロントエンド構成方針
 - App Router を採用
 - server component / client component を適切に分離
-- API呼び出しは Relay runtime ベースの型付きクライアントを用意
+- 認証後 UI の主要な API 呼び出しは Relay operation / fragment を優先する
+- Browser Relay は Next.js Route Handler 経由で backend に中継し、`INTERNAL_API_KEY` をブラウザへ出さない
 - 動的フォームは FormDefinition と FormField 定義から生成
 
 ## バックエンド構成方針
@@ -50,6 +53,7 @@ ReviewFlow の変更では、以下を崩さないことを優先する。
 - DTO + class-validator を利用
 - TypeORM をデータアクセス層に使う
 - 監査ログは重要操作のたびに明示的に記録
+- GraphQL resolver と REST controller は request / response の境界にとどめ、業務判断は service / policy / validator / workflow に置く
 
 ## 非同期処理方針
 MVPでは簡易的に DB ベースの export_jobs を利用する。

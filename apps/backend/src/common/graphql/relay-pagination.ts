@@ -38,6 +38,17 @@ export type RelayConnectionResult<TNode> = {
   totalCount: number;
 };
 
+export type RelayOffsetPaginationArgs = {
+  after?: string | null;
+  first: number;
+  maxFirst?: number;
+};
+
+export type RelayOffsetPagination = {
+  limit: number;
+  offset: number;
+};
+
 export function toOffsetCursor(offset: number): string {
   return Buffer.from(
     `${CURSOR_PREFIX}${CURSOR_SEPARATOR}${offset}`,
@@ -85,6 +96,21 @@ export function paginateByOffset<TNode>({
     startOffset,
     hasNextPage: startOffset + pageNodes.length < nodes.length,
     hasPreviousPage: startOffset > 0,
+  };
+}
+
+export function resolveOffsetPagination({
+  after,
+  first,
+  maxFirst = 100,
+}: RelayOffsetPaginationArgs): RelayOffsetPagination {
+  if (!Number.isInteger(first) || first < 0 || first > maxFirst) {
+    throw new BadRequestException(`first must be between 0 and ${maxFirst}.`);
+  }
+
+  return {
+    limit: first,
+    offset: after ? fromOffsetCursor(after) + 1 : 0,
   };
 }
 
