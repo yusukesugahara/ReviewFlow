@@ -22,6 +22,7 @@
     "test:cov": "jest --coverage --passWithNoTests --selectProjects unit && jest --coverage --passWithNoTests --selectProjects integration --runInBand",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./src/test/e2e/jest-e2e.json",
+    "graphql:schema": "ts-node -r tsconfig-paths/register src/tools/emit-graphql-schema.ts",
     "openapi:emit": "ts-node -r tsconfig-paths/register src/tools/emit-openapi.ts",
     "seed:demo": "ts-node -r tsconfig-paths/register src/scripts/seed-demo.ts"
   },

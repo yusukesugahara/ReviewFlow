@@ -1,0 +1,9 @@
+{
+  "schema": "../backend/schema.graphql",
+  "src": "./src",
+  "language": "typescript",
+  "customScalarTypes": {
+    "JSON": "unknown"
+  },
+  "useImportTypeSyntax": true
+}

@@ -1,9 +1,7 @@
-import type { ApplicationRow } from "@/components/space/space-applications.types";
 import type { ExportJobResponse } from "@/lib/schema";
-import { SpaceSubmissionsPageContent } from "./_components/space-submissions-page-content";
+import { SpaceSubmissionsRelayPageContent } from "./_components/space-submissions-relay-page-content";
 
 type SpaceSubmissionsViewProps = {
-  applications: ApplicationRow[];
   currentUserId: string | null;
   fetchErrorStatus?: number;
   filters: {
@@ -28,5 +26,5 @@ type SpaceSubmissionsViewProps = {
  * スペースの提出一覧画面を表示します。
  */
 export function SpaceSubmissionsView(props: SpaceSubmissionsViewProps) {
-  return <SpaceSubmissionsPageContent {...props} />;
+  return <SpaceSubmissionsRelayPageContent {...props} />;
 }

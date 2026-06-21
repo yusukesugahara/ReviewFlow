@@ -1,9 +1,18 @@
-import { ParseUUIDPipe, SetMetadata, UseGuards } from '@nestjs/common';
+import {
+  BadRequestException,
+  ParseUUIDPipe,
+  SetMetadata,
+  UseGuards,
+} from '@nestjs/common';
 import { Args, ID, Int, Mutation, Query, Resolver } from '@nestjs/graphql';
+import { isUUID } from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
 import { SKIP_JWT_KEY } from '../../../../common/constants';
 import { toValidatedInput } from '../../../../common/graphql/graphql-input';
-import { connectionFromNodes } from '../../../../common/graphql/relay-pagination';
+import {
+  APPLICATION_RELAY_NODE_TYPE,
+  fromRelayGlobalId,
+} from '../../../../common/graphql/relay-id';
 import { CurrentApplicantSession } from '../../../../decorators/current-applicant-session.decorator';
 import {
   CurrentUser,
@@ -24,12 +33,18 @@ import {
 import { ApplicationsService } from '../services/facades/applications.service';
 import { ApplicationGraphqlLoader } from './application.graphql.loader';
 import {
+  ApplicationMutationPayloadGql,
   ApplicationSummaryConnectionGql,
+  ApproveApplicationRelayInputGql,
   ApplicationCorrectionGql,
   ApplicationCorrectionTargetsGql,
   ApplicationDetailGql,
+  RejectApplicationRelayInputGql,
+  ResubmitApplicationRelayInputGql,
+  ReturnApplicationRelayInputGql,
   ApplicationSummaryGql,
 } from './application.graphql.types';
+import type { Application } from '../../../../models/entities/application.entity';
 
 @Resolver()
 export class ApplicationsGraphqlResolver {
@@ -63,11 +78,11 @@ export class ApplicationsGraphqlResolver {
     after: string | null,
     @CurrentUser() actor: AuthUserPayload,
   ): Promise<ApplicationSummaryConnectionGql> {
-    const allNodes = await this.loader.listApplications(actor, groupId);
-    return connectionFromNodes({
+    return this.loader.listApplicationsConnection({
+      actor,
       after,
       first,
-      nodes: allNodes,
+      groupId,
     });
   }
 
@@ -145,6 +160,28 @@ export class ApplicationsGraphqlResolver {
     return this.applications.toDetailForActor(row, actor);
   }
 
+  @Mutation(() => ApplicationMutationPayloadGql, {
+    name: 'approveApplicationRelay',
+  })
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
+  async approveApplicationRelay(
+    @Args('input', { type: () => ApproveApplicationRelayInputGql })
+    input: ApproveApplicationRelayInputGql,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<ApplicationMutationPayloadGql> {
+    const validated = toValidatedInput(ApproveApplicationRelayInputGql, input);
+    const row = await this.applications.approve(
+      actor,
+      this.toApplicationDatabaseId(validated.applicationId),
+      validated,
+    );
+    return this.toApplicationMutationPayload(
+      row,
+      actor,
+      validated.clientMutationId,
+    );
+  }
+
   @Mutation(() => GraphQLJSON, { name: 'returnApplication' })
   @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
   async returnApplication(
@@ -158,6 +195,28 @@ export class ApplicationsGraphqlResolver {
       toValidatedInput(ReturnApplicationDto, input),
     );
     return this.applications.toDetailForActor(row, actor);
+  }
+
+  @Mutation(() => ApplicationMutationPayloadGql, {
+    name: 'returnApplicationRelay',
+  })
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
+  async returnApplicationRelay(
+    @Args('input', { type: () => ReturnApplicationRelayInputGql })
+    input: ReturnApplicationRelayInputGql,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<ApplicationMutationPayloadGql> {
+    const validated = toValidatedInput(ReturnApplicationRelayInputGql, input);
+    const row = await this.applications.returnApplication(
+      actor,
+      this.toApplicationDatabaseId(validated.applicationId),
+      validated,
+    );
+    return this.toApplicationMutationPayload(
+      row,
+      actor,
+      validated.clientMutationId,
+    );
   }
 
   @Mutation(() => GraphQLJSON, { name: 'resendReturnEmail' })
@@ -185,6 +244,28 @@ export class ApplicationsGraphqlResolver {
     return this.applications.toDetailForActor(row, actor);
   }
 
+  @Mutation(() => ApplicationMutationPayloadGql, {
+    name: 'rejectApplicationRelay',
+  })
+  @Roles(UserRole.TENANT_USER, UserRole.TENANT_ADMIN)
+  async rejectApplicationRelay(
+    @Args('input', { type: () => RejectApplicationRelayInputGql })
+    input: RejectApplicationRelayInputGql,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<ApplicationMutationPayloadGql> {
+    const validated = toValidatedInput(RejectApplicationRelayInputGql, input);
+    const row = await this.applications.reject(
+      actor,
+      this.toApplicationDatabaseId(validated.applicationId),
+      validated,
+    );
+    return this.toApplicationMutationPayload(
+      row,
+      actor,
+      validated.clientMutationId,
+    );
+  }
+
   @Mutation(() => GraphQLJSON, { name: 'resubmitApplication' })
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   async resubmitApplication(
@@ -193,6 +274,27 @@ export class ApplicationsGraphqlResolver {
   ) {
     const row = await this.applications.resubmit(actor, id);
     return this.applications.toDetailForActor(row, actor);
+  }
+
+  @Mutation(() => ApplicationMutationPayloadGql, {
+    name: 'resubmitApplicationRelay',
+  })
+  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
+  async resubmitApplicationRelay(
+    @Args('input', { type: () => ResubmitApplicationRelayInputGql })
+    input: ResubmitApplicationRelayInputGql,
+    @CurrentUser() actor: AuthUserPayload,
+  ): Promise<ApplicationMutationPayloadGql> {
+    const validated = toValidatedInput(ResubmitApplicationRelayInputGql, input);
+    const row = await this.applications.resubmit(
+      actor,
+      this.toApplicationDatabaseId(validated.applicationId),
+    );
+    return this.toApplicationMutationPayload(
+      row,
+      actor,
+      validated.clientMutationId,
+    );
   }
 
   @Mutation(() => GraphQLJSON, { name: 'patchApplication' })
@@ -260,5 +362,28 @@ export class ApplicationsGraphqlResolver {
   ) {
     const row = await this.applications.resubmitForApplicant(actor, id);
     return this.applications.toDetailForApplicant(row, actor);
+  }
+
+  private async toApplicationMutationPayload(
+    row: Application,
+    actor: AuthUserPayload,
+    clientMutationId?: string | null,
+  ): Promise<ApplicationMutationPayloadGql> {
+    return {
+      application: await this.loader.toDetailForActor(row, actor),
+      clientMutationId: clientMutationId ?? null,
+    };
+  }
+
+  private toApplicationDatabaseId(applicationId: string): string {
+    if (isUUID(applicationId)) {
+      return applicationId;
+    }
+
+    const decoded = fromRelayGlobalId(applicationId);
+    if (decoded.type !== APPLICATION_RELAY_NODE_TYPE || !isUUID(decoded.id)) {
+      throw new BadRequestException('Invalid application ID.');
+    }
+    return decoded.id;
   }
 }

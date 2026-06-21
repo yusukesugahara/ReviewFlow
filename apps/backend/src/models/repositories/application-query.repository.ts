@@ -9,6 +9,18 @@ import {
 import { ApplicationApproval } from '../entities/application-approval.entity';
 import { Application } from '../entities/application.entity';
 import { ApprovalStep } from '../entities/approval-step.entity';
+import { ApplicationStatus } from '../constants/application-status';
+
+export type ApplicationListPageOptions = {
+  limit: number;
+  offset: number;
+};
+
+export type ApplicationListPage = {
+  nodes: Application[];
+  offset: number;
+  totalCount: number;
+};
 
 @Injectable()
 export class ApplicationQueryRepository {
@@ -52,12 +64,37 @@ export class ApplicationQueryRepository {
     return prepareApplicationRows(rows);
   }
 
+  async listForTenantAdminPage(
+    tenantId: string,
+    groupId: string,
+    page: ApplicationListPageOptions,
+  ): Promise<ApplicationListPage> {
+    return this.getApplicationPage(
+      this.createListQuery(tenantId, groupId),
+      page,
+    );
+  }
+
   async listForGroup(
     tenantId: string,
     groupId: string,
   ): Promise<Application[]> {
     const rows = await this.createListQuery(tenantId, groupId).getMany();
     return prepareApplicationRows(rows);
+  }
+
+  async listVisibleForActorPage(
+    params: {
+      actorId: string;
+      canManageGroup: boolean;
+      groupId: string;
+      tenantId: string;
+    },
+    page: ApplicationListPageOptions,
+  ): Promise<ApplicationListPage> {
+    const query = this.createListQuery(params.tenantId, params.groupId);
+    this.applyActorVisibilityFilter(query, params);
+    return this.getApplicationPage(query, page);
   }
 
   findApplicantEditable(
@@ -124,6 +161,60 @@ export class ApplicationQueryRepository {
       .where('app.tenantId = :tenantId', { tenantId })
       .andWhere('app.groupId = :groupId', { groupId })
       .orderBy('app.createdAt', 'DESC');
+  }
+
+  private applyActorVisibilityFilter(
+    query: SelectQueryBuilder<Application>,
+    params: {
+      actorId: string;
+      canManageGroup: boolean;
+    },
+  ): void {
+    const visibleConditions = [
+      'app.applicantUserId = :actorId',
+      [
+        'app.status = :inReviewStatus',
+        [
+          'currentStep.assigneeUserId = :actorId',
+          'currentStep.assigneeUserIds LIKE :actorIdJsonPattern',
+        ].join(' OR '),
+      ].join(' AND '),
+    ];
+
+    if (params.canManageGroup) {
+      visibleConditions.push('app.status IN (:...setupStatuses)');
+    }
+
+    query.andWhere(`(${visibleConditions.map((c) => `(${c})`).join(' OR ')})`, {
+      actorId: params.actorId,
+      actorIdJsonPattern: `%"${params.actorId}"%`,
+      inReviewStatus: ApplicationStatus.IN_REVIEW,
+      setupStatuses: [ApplicationStatus.DRAFT, ApplicationStatus.PUBLISHED],
+    });
+  }
+
+  private async getApplicationPage(
+    query: SelectQueryBuilder<Application>,
+    page: ApplicationListPageOptions,
+  ): Promise<ApplicationListPage> {
+    if (page.limit === 0) {
+      return {
+        nodes: [],
+        offset: page.offset,
+        totalCount: await query.getCount(),
+      };
+    }
+
+    const [rows, totalCount] = await query
+      .skip(page.offset)
+      .take(page.limit)
+      .getManyAndCount();
+
+    return {
+      nodes: prepareApplicationRows(rows),
+      offset: page.offset,
+      totalCount,
+    };
   }
 
   private findByIdRelations(detail: boolean): string[] {
