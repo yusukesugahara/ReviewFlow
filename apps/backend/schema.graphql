@@ -64,6 +64,11 @@ type ApplicationDetail implements Node {
   values: JSON!
 }
 
+type ApplicationMutationPayload {
+  application: ApplicationDetail!
+  clientMutationId: String
+}
+
 type ApplicationOpenCorrectionTargets {
   createdAt: String!
   id: ID!
@@ -156,6 +161,13 @@ type ApprovalStep {
   id: ID!
   stepName: String!
   stepOrder: Int!
+}
+
+input ApproveApplicationRelayInput {
+  applicationId: ID!
+  clientMutationId: String
+  comment: String
+  expectedStepOrder: Int!
 }
 
 type AuditLog implements Node {
@@ -291,6 +303,7 @@ type Mutation {
   addFormField(id: ID!, input: JSON!): JSON!
   addGroupMember(groupId: ID!, input: JSON!): JSON!
   approveApplication(id: ID!, input: JSON!): JSON!
+  approveApplicationRelay(input: ApproveApplicationRelayInput!): ApplicationMutationPayload!
   archiveFormDefinition(id: ID!): JSON!
   confirmEmailChange(input: JSON!): JSON!
   confirmPasswordReset(input: JSON!): JSON!
@@ -310,6 +323,7 @@ type Mutation {
   publishFormDefinition(id: ID!): JSON!
   register(input: JSON!): JSON!
   rejectApplication(id: ID!, input: JSON!): JSON!
+  rejectApplicationRelay(input: RejectApplicationRelayInput!): ApplicationMutationPayload!
   removeGroup(groupId: ID!): Boolean!
   removeGroupMember(groupId: ID!, userId: ID!): Boolean!
   removeUser(id: ID!): Boolean!
@@ -320,8 +334,10 @@ type Mutation {
   restoreFormDefinition(id: ID!): JSON!
   restoreUser(id: ID!): JSON!
   resubmitApplication(id: ID!): JSON!
+  resubmitApplicationRelay(input: ResubmitApplicationRelayInput!): ApplicationMutationPayload!
   resubmitReturnedApplication(id: ID!): JSON!
   returnApplication(id: ID!, input: JSON!): JSON!
+  returnApplicationRelay(input: ReturnApplicationRelayInput!): ApplicationMutationPayload!
   submitApplication(id: ID!): JSON!
   updateApprovalFlow(id: ID!, input: JSON!): JSON!
   updateFormDefinitionDescription(id: ID!, input: JSON!): JSON!
@@ -402,6 +418,31 @@ type Query {
 
   """tenant管理者が閲覧できるユーザー一覧をRelay Connection形式で返す。"""
   usersConnection(after: String, first: Int! = 50): UserConnection!
+}
+
+input RejectApplicationRelayInput {
+  applicationId: ID!
+  clientMutationId: String
+  comment: String
+  expectedStepOrder: Int!
+}
+
+input ResubmitApplicationRelayInput {
+  applicationId: ID!
+  clientMutationId: String
+}
+
+input ReturnApplicationFieldRelayInput {
+  comment: String
+  fieldId: ID!
+}
+
+input ReturnApplicationRelayInput {
+  applicationId: ID!
+  clientMutationId: String
+  expectedStepOrder: Int!
+  fields: [ReturnApplicationFieldRelayInput!]!
+  overallComment: String
 }
 
 type User implements Node {

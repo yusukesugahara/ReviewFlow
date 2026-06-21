@@ -16,11 +16,10 @@ export default async function SpaceSubmissionsPage({
   const { filters, jobId } = normalizeSubmissionSearchParams(query);
 
   try {
-    const data = await getSpaceSubmissionsPageData({ jobId, spaceId });
+    const data = await getSpaceSubmissionsPageData({ jobId });
 
     return (
       <SpaceSubmissionsView
-        applications={data.applications}
         filters={filters}
         latestExportJob={data.latestExportJob}
         currentUserId={data.currentUserId}
@@ -30,7 +29,6 @@ export default async function SpaceSubmissionsPage({
   } catch (error) {
     return (
       <SpaceSubmissionsView
-        applications={[]}
         fetchErrorStatus={isApiFailure(error) ? error.status : 500}
         filters={filters}
         latestExportJob={null}

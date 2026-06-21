@@ -8,6 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { ApplicationEmptyState } from "@/components/applications/list/application-empty-state";
 import { ApplicationListTable } from "@/components/applications/list/application-list-table";
 import { buildSpaceSubmissionDetailHref } from "@/components/applications/routing/application-routes";
+import type { ReactNode } from "react";
 import type { ExportJobResponse } from "@/lib/schema";
 import { SubmissionCsvExportControls } from "./submission-csv-export-controls";
 import { SubmissionFiltersForm } from "./submission-filters-form";
@@ -30,6 +31,7 @@ type SpaceSubmissionsPageContentProps = {
   fetchErrorStatus?: number;
   filters: SubmissionFilters;
   latestExportJob: ExportJobResponse | null;
+  paginationAction?: ReactNode;
   spaceId: string;
 };
 
@@ -42,6 +44,7 @@ export function SpaceSubmissionsPageContent({
   fetchErrorStatus,
   filters,
   latestExportJob,
+  paginationAction,
   spaceId,
 }: SpaceSubmissionsPageContentProps) {
   if (fetchErrorStatus !== undefined) {
@@ -119,6 +122,7 @@ export function SpaceSubmissionsPageContent({
                   totalCount={filteredApplications.length}
                   totalPages={totalPages}
                 />
+                {paginationAction}
               </>
             )}
           </div>

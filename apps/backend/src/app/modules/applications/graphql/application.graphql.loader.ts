@@ -13,6 +13,7 @@ import type {
   ApplicationDetailDto,
   ApplicationSummaryDto,
 } from '../dto/applications.dto';
+import type { Application } from '../../../../models/entities/application.entity';
 import { ApplicationsService } from '../services/facades/applications.service';
 import type {
   ApplicationCorrectionGql,
@@ -109,6 +110,15 @@ export class ApplicationGraphqlLoader {
     id: string,
   ): Promise<ApplicationDetailGql> {
     return this.detailById.load({ actor, id });
+  }
+
+  async toDetailForActor(
+    row: Application,
+    actor: AuthUserPayload,
+  ): Promise<ApplicationDetailGql> {
+    return this.toGraphqlDetail(
+      await this.applications.toDetailForActor(row, actor),
+    );
   }
 
   listCorrections(

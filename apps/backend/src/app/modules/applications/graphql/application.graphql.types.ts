@@ -1,4 +1,16 @@
-import { Field, ID, Int, ObjectType } from '@nestjs/graphql';
+import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsInt,
+  IsOptional,
+  IsString,
+  IsUUID,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import GraphQLJSON from 'graphql-type-json';
 import { RelayNodeGql } from '../../../../common/graphql/relay-node';
 import { PageInfoGql } from '../../../../common/graphql/relay-pagination';
@@ -142,6 +154,107 @@ export class ApplicationDetailGql extends ApplicationSummaryGql {
 
   @Field(() => GraphQLJSON)
   values!: Record<string, unknown>;
+}
+
+@InputType('ApplicationReviewDecisionInput')
+export class ApplicationReviewDecisionInputGql {
+  @Field(() => ID)
+  @IsString()
+  @MaxLength(512)
+  applicationId!: string;
+
+  @Field(() => Int)
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedStepOrder!: number;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  comment?: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  clientMutationId?: string | null;
+}
+
+@InputType('ApproveApplicationRelayInput')
+export class ApproveApplicationRelayInputGql extends ApplicationReviewDecisionInputGql {}
+
+@InputType('RejectApplicationRelayInput')
+export class RejectApplicationRelayInputGql extends ApplicationReviewDecisionInputGql {}
+
+@InputType('ReturnApplicationFieldRelayInput')
+export class ReturnApplicationFieldRelayInputGql {
+  @Field(() => ID)
+  @IsUUID()
+  fieldId!: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  comment?: string;
+}
+
+@InputType('ReturnApplicationRelayInput')
+export class ReturnApplicationRelayInputGql {
+  @Field(() => ID)
+  @IsString()
+  @MaxLength(512)
+  applicationId!: string;
+
+  @Field(() => Int)
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expectedStepOrder!: number;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  overallComment?: string;
+
+  @Field(() => [ReturnApplicationFieldRelayInputGql])
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => ReturnApplicationFieldRelayInputGql)
+  fields!: ReturnApplicationFieldRelayInputGql[];
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  clientMutationId?: string | null;
+}
+
+@InputType('ResubmitApplicationRelayInput')
+export class ResubmitApplicationRelayInputGql {
+  @Field(() => ID)
+  @IsString()
+  @MaxLength(512)
+  applicationId!: string;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
+  @MaxLength(512)
+  clientMutationId?: string | null;
+}
+
+@ObjectType('ApplicationMutationPayload')
+export class ApplicationMutationPayloadGql {
+  @Field(() => String, { nullable: true })
+  clientMutationId!: string | null;
+
+  @Field(() => ApplicationDetailGql)
+  application!: ApplicationDetailGql;
 }
 
 @ObjectType('ApplicationSummaryEdge')
