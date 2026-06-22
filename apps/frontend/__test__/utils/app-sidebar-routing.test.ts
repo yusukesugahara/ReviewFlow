@@ -20,6 +20,7 @@ describe("app sidebar routing", () => {
     expect(getPathSpaceId("/space/road%20space/submissions/submission-1")).toBe(
       "road space",
     );
+    expect(getPathSpaceId("/space/application-setup")).toBeNull();
     expect(getPathSpaceId("/space/users")).toBeNull();
     expect(getPathSpaceId("/admin/spaces")).toBeNull();
   });
@@ -109,12 +110,23 @@ describe("app sidebar routing", () => {
         pathname: "/space/citizen-space/applications/new",
         searchParams: new URLSearchParams(),
         fallbackSpaceId: "citizen-space",
-        href: "/space/applications/new",
+        href: "/space",
         spacePath: "applicationsNew",
       }),
     ).toEqual({
       scopedHref: "/space/citizen-space/applications/new",
       isActive: true,
+    });
+    expect(
+      buildSidebarLinkRoute({
+        pathname: "/space",
+        searchParams: new URLSearchParams(),
+        href: "/space",
+        spacePath: "applicationsNew",
+      }),
+    ).toEqual({
+      scopedHref: "/space",
+      isActive: false,
     });
   });
 

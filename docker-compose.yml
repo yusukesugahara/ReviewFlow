@@ -45,6 +45,8 @@ services:
     volumes:
       - .:/workspace
       - backend-node-modules:/workspace/node_modules
+      - backend-app-node-modules:/workspace/apps/backend/node_modules
+      - backend-frontend-node-modules:/workspace/apps/frontend/node_modules
     working_dir: /workspace
     command: sh -c "npm ci -w backend && npm run start:dev -w backend"
 
@@ -71,10 +73,15 @@ services:
     volumes:
       - .:/workspace
       - frontend-node-modules:/workspace/node_modules
+    tmpfs:
+      - /workspace/apps/backend/node_modules:uid=${UID:-1000},gid=${GID:-1000},mode=755
+      - /workspace/apps/frontend/node_modules:uid=${UID:-1000},gid=${GID:-1000},mode=755
     working_dir: /workspace
-    command: sh -c "npm install -w frontend --include-workspace-root=false --legacy-peer-deps --no-audit --no-fund && npm run dev -w frontend -- -p 3000"
+    command: sh -c "npm ci -w frontend --include-workspace-root=false --legacy-peer-deps --no-audit --no-fund && npm run dev -w frontend -- -p 3000"
 
 volumes:
   backend-postgres:
   backend-node-modules:
+  backend-app-node-modules:
+  backend-frontend-node-modules:
   frontend-node-modules:

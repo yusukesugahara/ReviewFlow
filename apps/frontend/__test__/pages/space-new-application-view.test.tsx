@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { SpaceNewApplicationView } from "@/app/(authorized)/space/[spaceId]/applications/new/view";
 import { APPLICATION_SETUP_STATUSES } from "@/lib/constants/application-setup";
 
-jest.mock("@/app/(authorized)/space/application-setup/actions", () => ({
+jest.mock("@/app/(authorized)/space/_application-setup/actions", () => ({
   submitApplicationSetupAction: jest.fn(),
 }));
 

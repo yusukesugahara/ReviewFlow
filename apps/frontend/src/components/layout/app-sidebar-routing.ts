@@ -1,3 +1,5 @@
+import { buildSpaceApplicationNewHref } from "@/components/applications/routing/application-routes";
+
 export type AppSidebarRouteSpace = {
   id: string;
   name: string;
@@ -158,8 +160,8 @@ function buildSidebarLinkHref({
   spacePath?: SidebarSpacePath;
   activeSpaceId: string | null;
 }): string {
-  if (spacePath === "applicationsNew" && activeSpaceId) {
-    return `/space/${encodeURIComponent(activeSpaceId)}/applications/new`;
+  if (spacePath === "applicationsNew") {
+    return activeSpaceId ? buildSpaceApplicationNewHref(activeSpaceId) : "/space";
   }
   if (spacePath === "submissions" && activeSpaceId) {
     return `/space/${encodeURIComponent(activeSpaceId)}/submissions`;
@@ -189,8 +191,7 @@ function isSidebarLinkActive({
 }): boolean {
   const isSectionRoot = href === "/admin" || href === "/space";
   const isApplicationNewActive =
-    spacePath === "applicationsNew" &&
-    (pathname === scopedHref || pathname === href);
+    spacePath === "applicationsNew" && pathname === scopedHref && scopedHref !== "/space";
   const isApplicationsActive =
     spacePath === "applications" &&
     (pathname === scopedHref ||
@@ -259,7 +260,6 @@ function buildSpaceBreadcrumbItems(
   }
 
   if (second === "application-setup") {
-    items.push({ href: "/space/application-setup", label: "申請フォーム設定" });
     return items;
   }
 
@@ -290,7 +290,7 @@ function buildSpaceBreadcrumbItems(
 
     if (fourth === "new") {
       items.push({
-        href: `/space/${encodedSpaceId}/applications/new`,
+        href: buildSpaceApplicationNewHref(spaceId),
         label: "申請フォーム作成",
       });
     } else if (fourth) {

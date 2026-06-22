@@ -2,6 +2,7 @@ import {
   APPLICATION_SETUP_ERRORS,
   APPLICATION_SETUP_ERROR_MESSAGES,
 } from "@/lib/constants/application-setup";
+import { buildSpaceApplicationNewHref } from "@/components/applications/routing/application-routes";
 import { errorMessageFromBody, isApiFailure } from "@/lib/server/api-failure";
 import type { ApplicationSetupApplicationStatus } from "./application-setup-action-input";
 
@@ -34,9 +35,18 @@ export function resolveCreateApplicationSetupRedirectBase(
   formData: FormData,
 ): string {
   const returnPath = formData.get("returnPath");
-  return typeof returnPath === "string" && returnPath.startsWith("/space/")
-    ? returnPath
-    : "/space/application-setup";
+  if (
+    typeof returnPath === "string" &&
+    returnPath.startsWith("/space/") &&
+    isSpaceApplicationNewPath(returnPath)
+  ) {
+    return returnPath;
+  }
+
+  const rawSpaceId = formData.get("spaceId");
+  return typeof rawSpaceId === "string" && rawSpaceId.length > 0
+    ? buildSpaceApplicationNewHref(rawSpaceId)
+    : "/space";
 }
 
 /**
@@ -82,6 +92,21 @@ export function setupErrorRedirectUrl(base: string, error: unknown): string {
  */
 export function buildApplicationSetupListPath(spaceId: string): string {
   return `/space/${encodeURIComponent(spaceId)}/applications`;
+}
+
+/**
+ * 新規申請フォーム作成の正規パスかを判定します。
+ */
+function isSpaceApplicationNewPath(path: string): boolean {
+  const pathname = path.split(/[?#]/, 1)[0] ?? "";
+  const segments = pathname.split("/").filter(Boolean);
+  return (
+    segments[0] === "space" &&
+    Boolean(segments[1]) &&
+    segments[2] === "applications" &&
+    segments[3] === "new" &&
+    segments.length === 4
+  );
 }
 
 /**
