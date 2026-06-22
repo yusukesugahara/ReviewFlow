@@ -1,3 +1,4 @@
+import { unstable_rethrow } from "next/navigation";
 import { isApiFailure } from "@/lib/server/api-failure";
 import { normalizeSubmissionSearchParams } from "./_utils/space-submissions.helpers";
 import { getSpaceSubmissionsPageData } from "./_data/page-data";
@@ -27,6 +28,7 @@ export default async function SpaceSubmissionsPage({
       />
     );
   } catch (error) {
+    unstable_rethrow(error);
     return (
       <SpaceSubmissionsView
         fetchErrorStatus={isApiFailure(error) ? error.status : 500}

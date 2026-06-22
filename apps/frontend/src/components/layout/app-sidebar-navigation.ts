@@ -32,7 +32,7 @@ const workspaceSidebarNavItems: SidebarNavItem[] = [
     spacePath: "submissions",
   },
   {
-    href: "/space/applications/new",
+    href: "/space",
     label: "申請フォーム作成",
     icon: FilePlusCorner,
     spacePath: "applicationsNew",
@@ -48,7 +48,7 @@ const applicantSidebarNavItems: SidebarNavItem[] = [
     spacePath: "applications",
   },
   {
-    href: "/space/applications/new",
+    href: "/space",
     label: "申請フォーム作成",
     icon: FilePlusCorner,
     spacePath: "applicationsNew",

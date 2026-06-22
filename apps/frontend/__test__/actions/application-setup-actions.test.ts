@@ -24,7 +24,7 @@ jest.mock("@/lib/relay/client", () => ({
   },
 }));
 
-import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
+import { updateApplicationSetupAction } from "@/app/(authorized)/space/_application-setup/actions";
 import { client } from "@/lib/relay/client";
 import { redirect } from "next/navigation";
 
