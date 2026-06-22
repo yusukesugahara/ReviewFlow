@@ -1,5 +1,5 @@
 import { createDefaultField } from "@/components/application-setup/fields/application-setup-fields";
-import { toFieldPayloads } from "@/app/(authorized)/space/application-setup/_utils/application-setup-payload";
+import { toFieldPayloads } from "@/app/(authorized)/space/_application-setup/_utils/application-setup-payload";
 
 describe("application setup payload", () => {
   // テスト内容: UI プレビューと送信 payload が同じ fieldKey / options 正規化を使うことを確認する

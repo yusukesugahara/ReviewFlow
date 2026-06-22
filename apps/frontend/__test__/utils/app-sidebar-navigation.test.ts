@@ -52,13 +52,18 @@ describe("app sidebar navigation", () => {
 
   // テスト内容: 申請者向け表示とテナント管理リンクの定義を確認する
   it("returns applicant and tenant admin navigation groups", () => {
+    const applicantItems = getPrimarySidebarNavItems({
+      activeSpace: adminSpace,
+      isTenantAdmin: false,
+      variant: "applicant",
+    });
+    expect(applicantItems.map((item) => item.label)).toEqual([
+      "申請フォーム一覧",
+      "申請フォーム作成",
+    ]);
     expect(
-      getPrimarySidebarNavItems({
-        activeSpace: adminSpace,
-        isTenantAdmin: false,
-        variant: "applicant",
-      }).map((item) => item.label),
-    ).toEqual(["申請フォーム一覧", "申請フォーム作成"]);
+      applicantItems.find((item) => item.spacePath === "applicationsNew"),
+    ).toMatchObject({ href: "/space" });
     expect(tenantAdminSidebarNavItems.map((item) => item.label)).toEqual([
       "スペース",
       "ユーザ",

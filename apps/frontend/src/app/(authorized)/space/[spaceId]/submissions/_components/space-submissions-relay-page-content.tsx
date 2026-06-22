@@ -138,12 +138,29 @@ function SpaceSubmissionsApplicationsList({
     SpaceSubmissionsApplicationsListPaginationQuery,
     SpaceSubmissionsApplicationsList_query$key
   >(SpaceSubmissionsApplicationsListFragment, queryRef);
-  const applicationRefs: SpaceSubmissionsApplicationRows_applications$key =
-    data.applicationsConnection.edges.map((edge) => edge.node);
+  const connection = data.applicationsConnection as
+    | typeof data.applicationsConnection
+    | null
+    | undefined;
+  const applicationRefs = (connection?.edges.map((edge) => edge.node) ??
+    []) as SpaceSubmissionsApplicationRows_applications$key;
   const applications = useFragment<SpaceSubmissionsApplicationRows_applications$key>(
     SpaceSubmissionsApplicationRowsFragment,
     applicationRefs,
   ).map(toApplicationRow);
+
+  if (!connection) {
+    return (
+      <SpaceSubmissionsPageContent
+        applications={[]}
+        currentUserId={currentUserId}
+        fetchErrorStatus={500}
+        filters={filters}
+        latestExportJob={latestExportJob}
+        spaceId={spaceId}
+      />
+    );
+  }
 
   return (
     <SpaceSubmissionsPageContent

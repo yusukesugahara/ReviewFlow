@@ -1,8 +1,8 @@
 import {
   parseSteps,
   readDraftFields,
-} from "@/app/(authorized)/space/application-setup/_utils/application-setup-form-parser";
-import { toApprovalStepRequest } from "@/app/(authorized)/space/application-setup/_utils/application-setup-payload";
+} from "@/app/(authorized)/space/_application-setup/_utils/application-setup-form-parser";
+import { toApprovalStepRequest } from "@/app/(authorized)/space/_application-setup/_utils/application-setup-payload";
 
 describe("application setup form parser", () => {
   // テスト内容: draft field JSON を読み取り、不正項目を除外し、未知 fieldType を text に戻すことを確認する

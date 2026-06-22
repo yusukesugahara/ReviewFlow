@@ -1,4 +1,4 @@
-import { updateApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
+import { updateApplicationSetupAction } from "@/app/(authorized)/space/_application-setup/actions";
 import { isApiFailure } from "@/lib/server/api-failure";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,

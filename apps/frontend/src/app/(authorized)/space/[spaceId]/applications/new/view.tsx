@@ -1,5 +1,5 @@
 import { ApplicationSetupDraftForm } from "@/components/application-setup/form-builder/application-setup-draft-form";
-import { submitApplicationSetupAction } from "@/app/(authorized)/space/application-setup/actions";
+import { submitApplicationSetupAction } from "@/app/(authorized)/space/_application-setup/actions";
 import {
   APPLICATION_SETUP_ERROR_MESSAGES,
   APPLICATION_SETUP_STATUS_MESSAGES,
