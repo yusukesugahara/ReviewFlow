@@ -15,12 +15,43 @@ import type { UserRoleValue } from '../constants/user-role';
 import type { GroupMemberRoleValue } from '../constants/group-member-role';
 
 export type AuditActorType = 'user' | 'applicant' | 'system';
+export type AuditOutcome = 'success' | 'failure';
+
+export type AuditEventActor = {
+  id: string | null;
+  type: string;
+  email?: string | null;
+  label?: string | null;
+};
+
+export type AuditEventResource = {
+  id: string | null;
+  type: string;
+  label?: string | null;
+};
+
+export type AuditEventChange = {
+  field: string;
+  from: unknown;
+  to: unknown;
+};
 
 @Entity('audit_logs')
 @Index('IDX_audit_logs_tenant_created', ['tenantId', 'createdAt'])
 @Index('IDX_audit_logs_tenant_group_created', [
   'tenantId',
   'groupId',
+  'createdAt',
+])
+@Index('IDX_audit_logs_tenant_resource_created', [
+  'tenantId',
+  'resourceType',
+  'createdAt',
+])
+@Index('IDX_audit_logs_tenant_scope_created', [
+  'tenantId',
+  'scopeType',
+  'scopeId',
   'createdAt',
 ])
 export class AuditLog {
@@ -71,6 +102,51 @@ export class AuditLog {
 
   @Column({ name: 'target_id', type: 'varchar', length: 128, nullable: true })
   targetId!: string | null;
+
+  @Column({ name: 'scope_type', type: 'varchar', length: 32, nullable: true })
+  scopeType!: string | null;
+
+  @Column({ name: 'scope_id', type: 'varchar', length: 128, nullable: true })
+  scopeId!: string | null;
+
+  @Column({
+    name: 'resource_type',
+    type: 'varchar',
+    length: 128,
+    nullable: true,
+  })
+  resourceType!: string | null;
+
+  @Column({ name: 'resource_id', type: 'varchar', length: 128, nullable: true })
+  resourceId!: string | null;
+
+  @Column({
+    name: 'resource_label_snapshot',
+    type: 'varchar',
+    length: 255,
+    nullable: true,
+  })
+  resourceLabelSnapshot!: string | null;
+
+  @Column({ name: 'operation', type: 'varchar', length: 64, nullable: true })
+  operation!: string | null;
+
+  @Column({
+    name: 'outcome',
+    type: 'varchar',
+    length: 32,
+    default: 'success',
+  })
+  outcome!: AuditOutcome;
+
+  @Column({ name: 'actor_json', type: 'json', nullable: true })
+  actorJson!: AuditEventActor | null;
+
+  @Column({ name: 'resource_json', type: 'json', nullable: true })
+  resourceJson!: AuditEventResource | null;
+
+  @Column({ name: 'changes_json', type: 'json', nullable: true })
+  changesJson!: AuditEventChange[] | null;
 
   @Column({ name: 'target_user_id', type: 'uuid', nullable: true })
   targetUserId!: string | null;
