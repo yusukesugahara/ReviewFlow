@@ -77,8 +77,9 @@ services:
     tmpfs:
       - /workspace/apps/backend/node_modules:uid=${UID:-1000},gid=${GID:-1000},mode=755
       - /workspace/apps/frontend/node_modules:uid=${UID:-1000},gid=${GID:-1000},mode=755
+      - /workspace/apps/frontend/.next:uid=${UID:-1000},gid=${GID:-1000},mode=755
     working_dir: /workspace
-    command: sh -c "npm ci -w frontend --include-workspace-root=false --legacy-peer-deps --no-audit --no-fund && npm run dev -w frontend -- -p 3000"
+    command: sh -c "npm ci -w frontend --include-workspace-root=false --legacy-peer-deps --no-audit --no-fund && rm -rf apps/frontend/.next/dev/cache/turbopack apps/frontend/.next/dev/lock && npm run dev -w frontend -- -p 3000"
 
 volumes:
   backend-postgres:
