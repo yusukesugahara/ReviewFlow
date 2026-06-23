@@ -20,9 +20,10 @@ ReviewFlow は、自治体における補助金申請、施設利用申請、各
 
 ## デモ環境
 
-以下の URL からデモ環境を確認できます。
+以下の URL からデモ環境のトップページを確認できます。
+利用シーンや実際の画面を見たうえで、右上の「ログイン」からデモアカウントで操作できます。
 
-https://review-flow-frontend.vercel.app/login
+https://review-flow-frontend.vercel.app/
 
 ### デモ用アカウント
 
