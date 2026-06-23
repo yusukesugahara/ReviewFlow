@@ -1,14 +1,22 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCurrentSessionUser } from "@/app/(authorized)/session/actions";
+import { MarketingHome } from "@/app/_components/marketing-home";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
+export const metadata: Metadata = {
+  title: "ReviewFlow | 申請承認ワークフロー SaaS",
+  description:
+    "項目ごとの修正依頼から再提出、承認判断、監査ログまでを一元管理する ReviewFlow の製品トップページです。",
+};
+
 /**
- * 現在ユーザーの権限に応じて初期表示先へリダイレクトします。
+ * 未ログインユーザーには製品トップを表示し、ログイン済みユーザーは権限別の初期画面へ送ります。
  */
-export default async function RootRedirectPage() {
+export default async function RootPage() {
   const me = await getCurrentSessionUser();
   if (!me) {
-    redirect("/login");
+    return <MarketingHome />;
   }
 
   if (me.roles.includes(TENANT_ROLES.admin)) {

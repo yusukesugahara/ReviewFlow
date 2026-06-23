@@ -21,16 +21,19 @@ describe("LoginView", () => {
     render(<LoginView apiReachable next="/space" />);
 
     expect(screen.getByRole("heading", { name: "ログイン" })).toBeInTheDocument();
-    expect(screen.getByText("申請受付から")).toBeInTheDocument();
-    expect(screen.getByText("承認まで一元管理")).toBeInTheDocument();
     expect(
       screen.getByText(
-        "ReviewFlow は、公開フォームで受け付けた申請をスペースごとに整理し、確認・差し戻し・承認履歴まで管理できる業務アプリです。",
+        "登録済みのメールアドレスとパスワードで ReviewFlow に入ります。",
       ),
     ).toBeInTheDocument();
-    expect(screen.getByText("・公開フォームで申請を受け付け")).toBeInTheDocument();
-    expect(screen.getByText("・担当者ごとの承認ステップを管理")).toBeInTheDocument();
-    expect(screen.getByText("・差し戻しと監査ログを記録")).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ReviewFlow" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    expect(screen.getByText("ワークスペース")).toBeInTheDocument();
+    expect(screen.queryByText("申請受付から")).not.toBeInTheDocument();
+    expect(screen.queryByText("差し戻し確認")).not.toBeInTheDocument();
+    expect(screen.queryByText("承認判断")).not.toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toHaveAttribute("type", "email");
     expect(screen.getByLabelText("パスワード")).toHaveAttribute(
       "autocomplete",
