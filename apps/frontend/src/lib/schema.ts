@@ -47,7 +47,8 @@ export type AuthMeSuccessJson = ApiSuccessJson<AuthMeResponse>;
 export type UpdateMeProfileBody = {
   name?: string | null;
 };
-export type UpdateMeProfileSuccessJson = ApiSuccessJson<AuthIssueTokensResponse>;
+export type UpdateMeProfileSuccessJson =
+  ApiSuccessJson<AuthIssueTokensResponse>;
 
 export type RequestMeEmailChangeBody = {
   email: string;
@@ -63,7 +64,8 @@ export type UpdateMePasswordBody = {
   currentPassword: string;
   newPassword: string;
 };
-export type UpdateMePasswordSuccessJson = ApiSuccessJson<AuthIssueTokensResponse>;
+export type UpdateMePasswordSuccessJson =
+  ApiSuccessJson<AuthIssueTokensResponse>;
 
 export type RequestPasswordResetBody = {
   email: string;
@@ -81,12 +83,15 @@ export type AcceptInvitationBody = {
   name?: string;
   password: string;
 };
-export type AcceptInvitationSuccessJson = ApiSuccessJson<AuthIssueTokensResponse>;
+export type AcceptInvitationSuccessJson =
+  ApiSuccessJson<AuthIssueTokensResponse>;
 
 export type RequestFormAccessBody = {
   email: string;
 };
-export type RequestFormAccessSuccessJson = ApiSuccessJson<{ accepted: boolean }>;
+export type RequestFormAccessSuccessJson = ApiSuccessJson<{
+  accepted: boolean;
+}>;
 
 export type FieldOption = {
   value: string;
@@ -265,6 +270,25 @@ export type ExportJobResponse = {
 export type CreateExportJobSuccessJson = ApiSuccessJson<ExportJobResponse>;
 export type GetExportJobSuccessJson = ApiSuccessJson<ExportJobResponse>;
 
+export type AuditEventActor = {
+  id?: string | null;
+  type?: string | null;
+  email?: string | null;
+  label?: string | null;
+};
+
+export type AuditEventResource = {
+  id?: string | null;
+  type?: string | null;
+  label?: string | null;
+};
+
+export type AuditEventChange = {
+  field: string;
+  from?: unknown;
+  to?: unknown;
+};
+
 export type AuditLogItem = {
   id: string;
   groupId?: string | null;
@@ -275,6 +299,16 @@ export type AuditLogItem = {
   actionType: string;
   targetType: string;
   targetId?: string | null;
+  scopeType?: string | null;
+  scopeId?: string | null;
+  resourceType?: string | null;
+  resourceId?: string | null;
+  resourceLabel?: string | null;
+  operation?: string | null;
+  outcome?: string | null;
+  actor?: AuditEventActor | null;
+  resource?: AuditEventResource | null;
+  changes?: AuditEventChange[] | null;
   targetUserId?: string | null;
   targetEmailSnapshot?: string | null;
   applicationId?: string | null;

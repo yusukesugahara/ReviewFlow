@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { ClipboardList, FileClock, UsersRound } from "lucide-react";
+import { FileClock, FileText, ShieldAlert, UsersRound } from "lucide-react";
 import type { AuditLogSummaryCounts } from "../_view-models/audit-log-view-model";
 
 type AuditLogSummaryCardsProps = {
@@ -9,7 +9,9 @@ type AuditLogSummaryCardsProps = {
 /**
  * 監査ログの概要件数カード群を表示します。
  */
-export function AuditLogSummaryCards({ summaryCounts }: AuditLogSummaryCardsProps) {
+export function AuditLogSummaryCards({
+  summaryCounts,
+}: AuditLogSummaryCardsProps) {
   return (
     <div className="grid gap-3 md:grid-cols-4">
       <AuditSummaryCard
@@ -19,22 +21,22 @@ export function AuditLogSummaryCards({ summaryCounts }: AuditLogSummaryCardsProp
         value={summaryCounts.total}
       />
       <AuditSummaryCard
-        icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
+        icon={<ShieldAlert className="h-5 w-5" aria-hidden="true" />}
+        label="重要操作"
+        tone="red"
+        value={summaryCounts.importantEvents}
+      />
+      <AuditSummaryCard
+        icon={<FileText className="h-5 w-5" aria-hidden="true" />}
         label="申請"
         tone="blue"
         value={summaryCounts.applicationEvents}
       />
       <AuditSummaryCard
         icon={<UsersRound className="h-5 w-5" aria-hidden="true" />}
-        label="ユーザ/招待"
+        label="ユーザー・スペース"
         tone="emerald"
-        value={summaryCounts.identityEvents}
-      />
-      <AuditSummaryCard
-        icon={<UsersRound className="h-5 w-5" aria-hidden="true" />}
-        label="スペース/メンバー"
-        tone="violet"
-        value={summaryCounts.spaceEvents}
+        value={summaryCounts.accessEvents}
       />
     </div>
   );
@@ -51,7 +53,7 @@ function AuditSummaryCard({
 }: {
   icon: ReactNode;
   label: string;
-  tone: "blue" | "emerald" | "slate" | "violet";
+  tone: "blue" | "emerald" | "red" | "slate";
   value: number;
 }) {
   const toneClassName =
@@ -59,8 +61,8 @@ function AuditSummaryCard({
       ? "border-sky-200 bg-sky-50 text-sky-950"
       : tone === "emerald"
         ? "border-emerald-200 bg-emerald-50 text-emerald-950"
-        : tone === "violet"
-          ? "border-violet-200 bg-violet-50 text-violet-950"
+        : tone === "red"
+          ? "border-red-200 bg-red-50 text-red-950"
           : "border-slate-200 bg-slate-50 text-slate-950";
 
   return (

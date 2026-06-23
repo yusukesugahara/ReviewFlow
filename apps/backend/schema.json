@@ -3615,6 +3615,67 @@
           "role"
         ]
       },
+      "AuditEventActorDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string"
+          },
+          "email": {
+            "type": "string",
+            "nullable": true
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "AuditEventResourceDto": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "nullable": true
+          },
+          "type": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "nullable": true
+          }
+        },
+        "required": [
+          "type"
+        ]
+      },
+      "AuditEventChangeDto": {
+        "type": "object",
+        "properties": {
+          "field": {
+            "type": "string"
+          },
+          "from": {
+            "type": "object",
+            "nullable": true
+          },
+          "to": {
+            "type": "object",
+            "nullable": true
+          }
+        },
+        "required": [
+          "field"
+        ]
+      },
       "AuditLogItemDto": {
         "type": "object",
         "properties": {
@@ -3649,6 +3710,58 @@
           "targetId": {
             "type": "string",
             "nullable": true
+          },
+          "scopeType": {
+            "type": "string",
+            "nullable": true
+          },
+          "scopeId": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceType": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceId": {
+            "type": "string",
+            "nullable": true
+          },
+          "resourceLabel": {
+            "type": "string",
+            "nullable": true
+          },
+          "operation": {
+            "type": "string",
+            "nullable": true
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "actor": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditEventActorDto"
+              }
+            ]
+          },
+          "resource": {
+            "nullable": true,
+            "type": "object",
+            "allOf": [
+              {
+                "$ref": "#/components/schemas/AuditEventResourceDto"
+              }
+            ]
+          },
+          "changes": {
+            "nullable": true,
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AuditEventChangeDto"
+            }
           },
           "targetUserId": {
             "type": "string",
@@ -3710,6 +3823,7 @@
           "actorType",
           "actionType",
           "targetType",
+          "outcome",
           "createdAt"
         ]
       },

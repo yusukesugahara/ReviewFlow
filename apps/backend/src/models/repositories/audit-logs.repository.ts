@@ -1,7 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-import { AuditLog, type AuditActorType } from '../entities/audit-log.entity';
+import {
+  AuditLog,
+  type AuditActorType,
+  type AuditEventActor,
+  type AuditEventChange,
+  type AuditEventResource,
+  type AuditOutcome,
+} from '../entities/audit-log.entity';
 import type { ApplicationStatusValue } from '../constants/application-status';
 import type { GroupMemberRoleValue } from '../constants/group-member-role';
 import type { UserRoleValue } from '../constants/user-role';
@@ -15,6 +22,16 @@ export type CreateAuditLogParams = {
   actionType: string;
   targetType: string;
   targetId: string | null;
+  scopeType?: string | null;
+  scopeId?: string | null;
+  resourceType?: string | null;
+  resourceId?: string | null;
+  resourceLabelSnapshot?: string | null;
+  operation?: string | null;
+  outcome?: AuditOutcome;
+  actorJson?: AuditEventActor | null;
+  resourceJson?: AuditEventResource | null;
+  changesJson?: AuditEventChange[] | null;
   targetUserId?: string | null;
   targetEmailSnapshot?: string | null;
   applicationId?: string | null;
@@ -72,6 +89,16 @@ export class AuditLogsRepository {
         actionType: params.actionType,
         targetType: params.targetType,
         targetId: params.targetId,
+        scopeType: params.scopeType ?? null,
+        scopeId: params.scopeId ?? null,
+        resourceType: params.resourceType ?? null,
+        resourceId: params.resourceId ?? null,
+        resourceLabelSnapshot: params.resourceLabelSnapshot ?? null,
+        operation: params.operation ?? null,
+        outcome: params.outcome ?? 'success',
+        actorJson: params.actorJson ?? null,
+        resourceJson: params.resourceJson ?? null,
+        changesJson: params.changesJson ?? null,
         targetUserId: params.targetUserId ?? null,
         targetEmailSnapshot: params.targetEmailSnapshot ?? null,
         applicationId: params.applicationId ?? null,
@@ -111,9 +138,12 @@ export class AuditLogsRepository {
       });
     }
     if (query.targetType?.trim()) {
-      builder.andWhere('auditLog.targetType = :targetType', {
-        targetType: query.targetType.trim(),
-      });
+      builder.andWhere(
+        '(auditLog.resourceType = :targetType OR auditLog.targetType = :targetType)',
+        {
+          targetType: query.targetType.trim(),
+        },
+      );
     }
     if (query.applicationId?.trim()) {
       builder.andWhere('auditLog.applicationId = :applicationId', {
@@ -135,8 +165,15 @@ export class AuditLogsRepository {
       builder.andWhere(
         `(${[
           'auditLog.actionType LIKE :q',
+          'auditLog.operation LIKE :q',
           'auditLog.targetType LIKE :q',
           'auditLog.targetId LIKE :q',
+          'auditLog.resourceType LIKE :q',
+          'auditLog.resourceId LIKE :q',
+          'auditLog.resourceLabelSnapshot LIKE :q',
+          'auditLog.scopeType LIKE :q',
+          'auditLog.scopeId LIKE :q',
+          'auditLog.outcome LIKE :q',
           'CAST(auditLog.actorUserId AS text) LIKE :q',
           'auditLog.actorEmailSnapshot LIKE :q',
           'CAST(auditLog.targetUserId AS text) LIKE :q',

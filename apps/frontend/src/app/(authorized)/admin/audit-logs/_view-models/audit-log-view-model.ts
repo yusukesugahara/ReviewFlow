@@ -4,6 +4,7 @@ import {
   describeActionLabel,
   describeTargetLabel,
   enrichAuditRow,
+  getAuditRowResourceType,
   type AuditDisplayInfo,
   type AuditLogDisplayEntry,
   type AuditLogSummaryCounts,
@@ -26,6 +27,7 @@ export {
   describeActionLabel,
   describeTargetLabel,
   enrichAuditRow,
+  getAuditRowResourceType,
 };
 
 export type AdminAuditLogsViewModel = {
@@ -38,7 +40,7 @@ export type AdminAuditLogsViewModel = {
 const TARGET_FILTER_LABELS: Record<AuditLogTargetTypeFilter, string> = {
   all: "すべて",
   application: "申請",
-  user: "ユーザ",
+  user: "ユーザー",
   invitation: "招待",
   space: "スペース",
   group_member: "スペースメンバー",
@@ -83,7 +85,9 @@ export function filterAuditRows(
   if (filters.targetType === "all") {
     return rows;
   }
-  return rows.filter((item) => item.row.targetType === filters.targetType);
+  return rows.filter(
+    (item) => getAuditRowResourceType(item.row) === filters.targetType,
+  );
 }
 
 /**

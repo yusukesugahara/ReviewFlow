@@ -49,13 +49,16 @@ export function AuditLogFiltersForm({
         <div className="space-y-2">
           <Label htmlFor="audit-target-type">対象</Label>
           <Select name="targetType" defaultValue={targetType}>
-            <SelectTrigger id="audit-target-type" className="h-10 rounded-lg bg-white text-[15px]">
+            <SelectTrigger
+              id="audit-target-type"
+              className="h-10 rounded-lg bg-white text-[15px]"
+            >
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">対象すべて</SelectItem>
               <SelectItem value="application">申請</SelectItem>
-              <SelectItem value="user">ユーザ</SelectItem>
+              <SelectItem value="user">ユーザー</SelectItem>
               <SelectItem value="invitation">招待</SelectItem>
               <SelectItem value="space">スペース</SelectItem>
               <SelectItem value="group_member">スペースメンバー</SelectItem>
