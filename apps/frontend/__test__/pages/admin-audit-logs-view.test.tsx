@@ -1,8 +1,10 @@
 import { render, screen, within } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import {
   AdminAuditLogsErrorView,
   AdminAuditLogsView,
 } from "@/app/(authorized)/admin/audit-logs/view";
+import { formatDateTimeJa } from "@/lib/date-format";
 import type { AuditLogItem } from "@/lib/schema";
 
 function metadata(value: Record<string, unknown>): Record<string, never> {
@@ -92,14 +94,18 @@ const baseProps = {
 
 describe("AdminAuditLogsView", () => {
   // テスト内容: 業務監査ログの集計、フィルタ、状態/権限変更が表示されることを確認する
-  it("renders summary counts, filters, and business audit rows", () => {
+  it("renders summary counts, filters, and business audit rows", async () => {
+    const user = userEvent.setup();
+
     render(<AdminAuditLogsView {...baseProps} />);
 
     expect(screen.getByText("全イベント")).toBeInTheDocument();
+    expect(screen.getByText("重要操作")).toBeInTheDocument();
     expect(screen.getAllByText("申請").length).toBeGreaterThan(0);
-    expect(screen.getByText("ユーザ/招待")).toBeInTheDocument();
-    expect(screen.getByText("スペース/メンバー")).toBeInTheDocument();
-    expect(screen.queryByRole("heading", { name: "監査ログ" })).not.toBeInTheDocument();
+    expect(screen.getByText("ユーザー・スペース")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("heading", { name: "監査ログ" }),
+    ).not.toBeInTheDocument();
     expect(
       screen.queryByText("誰が、いつ、どんな操作をしたかを確認できます。"),
     ).not.toBeInTheDocument();
@@ -134,52 +140,125 @@ describe("AdminAuditLogsView", () => {
     );
     expect(applicationTargetLink).toHaveAttribute("target", "_blank");
     expect(applicationTargetLink).toHaveAttribute("rel", "noopener noreferrer");
-    expect(within(applicationRow).getByText("状態: レビュー中 -> 承認済み")).toBeInTheDocument();
-    expect(within(applicationRow).getByText("ステップ: 1 -> -")).toBeInTheDocument();
+    expect(
+      within(applicationRow).getByText("状態: 審査中 → 承認済み"),
+    ).toBeInTheDocument();
+    expect(
+      within(applicationRow).getByText("承認ステップ: 1 → -"),
+    ).toBeInTheDocument();
     expect(within(applicationRow).getByText("詳細")).toBeInTheDocument();
+    expect(
+      screen.queryByRole("region", { name: "申請 applicat... の詳細" }),
+    ).not.toBeInTheDocument();
+
+    const detailButton = within(applicationRow).getByRole("button", {
+      name: "申請 applicat... の詳細を表示",
+    });
+    expect(detailButton).toHaveAttribute("aria-expanded", "false");
+
+    await user.click(detailButton);
+
+    const detailRegion = screen.getByRole("region", {
+      name: "申請 applicat... の詳細",
+    });
+    expect(detailButton).toHaveAttribute("aria-expanded", "true");
+    expect(detailRegion.closest("tr")?.previousElementSibling).toBe(
+      applicationRow,
+    );
+    expect(within(detailRegion).getByText("監査サマリー")).toBeInTheDocument();
+    expect(within(detailRegion).getByText("いつ")).toBeInTheDocument();
+    expect(
+      within(detailRegion).getByText(formatDateTimeJa(rows[0]?.createdAt ?? "")),
+    ).toBeInTheDocument();
+    expect(within(detailRegion).getByText("だれが")).toBeInTheDocument();
+    expect(
+      within(detailRegion).getByText("reviewer@example.com"),
+    ).toBeInTheDocument();
+    expect(within(detailRegion).getByText("どんな操作")).toBeInTheDocument();
+    expect(within(detailRegion).getByText("申請を承認")).toBeInTheDocument();
+    expect(
+      within(detailRegion).getByText("操作コード: application.approved"),
+    ).toBeInTheDocument();
+    expect(within(detailRegion).getByText("何に対して")).toBeInTheDocument();
+    expect(
+      within(detailRegion).getByRole("link", { name: "申請 applicat..." }),
+    ).toHaveAttribute(
+      "href",
+      "/space/group-1234567890/applications/application-1234567890?definitionId=form-1",
+    );
+    expect(within(detailRegion).getByText("変更内容")).toBeInTheDocument();
+    expect(
+      within(detailRegion).getByText("reviewer@example.com approved application"),
+    ).toBeInTheDocument();
+    expect(within(detailRegion).queryByText("追加情報")).not.toBeInTheDocument();
+    expect(within(detailRegion).queryByText("コメント")).not.toBeInTheDocument();
 
     const userRow = screen.getByRole("row", {
-      name: /admin@example.com.*member@example.com.*ユーザ権限を変更/,
+      name: /admin@example.com.*member@example.com.*ユーザー権限を変更/,
     });
-    expect(within(userRow).getByText("権限: テナントユーザ -> テナント管理者")).toBeInTheDocument();
+    expect(
+      within(userRow).getByText("テナント権限: 一般ユーザー → テナント管理者"),
+    ).toBeInTheDocument();
 
     const invitationRow = screen.getByRole("row", {
-      name: /admin@example.com.*new@example.com.*ユーザを招待/,
+      name: /admin@example.com.*new@example.com.*ユーザーを招待/,
     });
-    expect(within(invitationRow).getByText("権限: - -> テナントユーザ")).toBeInTheDocument();
-    expect(within(invitationRow).getByText("スペース権限: - -> スペースユーザ")).toBeInTheDocument();
+    expect(
+      within(invitationRow).getByText("テナント権限: - → 一般ユーザー"),
+    ).toBeInTheDocument();
+    expect(
+      within(invitationRow).getByText("スペース権限: - → スペースメンバー"),
+    ).toBeInTheDocument();
 
     const memberRow = screen.getByRole("row", {
       name: /space-admin@example.com.*removed@example.com.*スペースからメンバーを削除/,
     });
-    expect(within(memberRow).getByText("スペース権限: スペース管理者 -> -")).toBeInTheDocument();
+    expect(
+      within(memberRow).getByText("スペース権限: スペース管理者 → -"),
+    ).toBeInTheDocument();
   });
 
   // テスト内容: 対象種別フィルタで表示行が絞られることを確認する
   it("filters rows by target type", () => {
     render(<AdminAuditLogsView {...baseProps} targetType="user" />);
 
-    expect(screen.getByText("ユーザの監査ログを新しい順に表示しています")).toBeInTheDocument();
-    expect(screen.getByRole("row", { name: /ユーザ権限を変更/ })).toBeInTheDocument();
-    expect(screen.queryByRole("row", { name: /申請を承認/ })).not.toBeInTheDocument();
-    expect(screen.queryByRole("row", { name: /ユーザを招待/ })).not.toBeInTheDocument();
+    expect(
+      screen.getByText("ユーザーの監査ログを新しい順に表示しています"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("row", { name: /ユーザー権限を変更/ }),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByRole("row", { name: /申請を承認/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      screen.queryByRole("row", { name: /ユーザーを招待/ }),
+    ).not.toBeInTheDocument();
   });
 
   // テスト内容: 有効なフィルタで一致行がない場合の空状態を確認する
   it("renders an empty state for active filters with no matching rows", () => {
-    render(<AdminAuditLogsView {...baseProps} rows={[]} targetType="application" />);
+    render(
+      <AdminAuditLogsView {...baseProps} rows={[]} targetType="application" />,
+    );
 
-    expect(screen.getByText("条件に一致する監査ログはありません")).toBeInTheDocument();
+    expect(
+      screen.getByText("条件に一致する監査ログはありません"),
+    ).toBeInTheDocument();
   });
 
   // テスト内容: 取得エラーが表示されることを確認する
   it("renders fetch errors", () => {
     const { rerender } = render(<AdminAuditLogsErrorView status={500} />);
 
-    expect(screen.getByText("監査ログの取得に失敗しました（status: 500）")).toBeInTheDocument();
+    expect(
+      screen.getByText("監査ログの取得に失敗しました（status: 500）"),
+    ).toBeInTheDocument();
 
     rerender(<AdminAuditLogsErrorView />);
 
-    expect(screen.getByText("監査ログの取得に失敗しました")).toBeInTheDocument();
+    expect(
+      screen.getByText("監査ログの取得に失敗しました"),
+    ).toBeInTheDocument();
   });
 });

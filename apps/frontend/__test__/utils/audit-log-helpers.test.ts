@@ -45,10 +45,12 @@ describe("audit log helpers", () => {
       display: {
         actorLabel: "reviewer@example.com",
         actionLabel: "申請を承認",
+        categoryLabel: "申請",
+        sentence: "reviewer@example.com が「申請 applicat...」で 申請を承認しました",
         targetLabel: "申請 applicat...",
         targetHref:
           "/space/group-1234567890/applications/application-1234567890?definitionId=form-1",
-        changeItems: ["状態: レビュー中 -> 承認済み", "ステップ: 1 -> -"],
+        changeItems: ["状態: 審査中 → 承認済み", "承認ステップ: 1 → -"],
       },
     });
     expect(buildAuditDisplay(row).detailItems).toEqual(
@@ -76,10 +78,10 @@ describe("audit log helpers", () => {
       createdAt: "2026-06-06T00:00:00.000Z",
     };
 
-    expect(describeActionLabel(row)).toBe("ユーザ権限を変更");
+    expect(describeActionLabel(row)).toBe("ユーザー権限を変更");
     expect(describeTargetLabel(row)).toBe("member@example.com");
     expect(buildAuditDisplay(row).changeItems).toEqual([
-      "権限: テナントユーザ -> テナント管理者",
+      "テナント権限: 一般ユーザー → テナント管理者",
     ]);
   });
 
@@ -116,10 +118,10 @@ describe("audit log helpers", () => {
     };
 
     expect(buildAuditDisplay(profileRow)).toMatchObject({
-      actionLabel: "アカウント情報を更新",
+      actionLabel: "プロフィールを更新",
       changeItems: [
-        "メールアドレス: old@example.com -> new@example.com",
-        "名前: Old User -> New User",
+        "メールアドレス: old@example.com → new@example.com",
+        "名前: Old User → New User",
       ],
     });
     const passwordDisplay = buildAuditDisplay(passwordRow);
@@ -147,7 +149,7 @@ describe("audit log helpers", () => {
     };
 
     expect(buildAuditDisplay(row).changeItems).toEqual([
-      "スペース権限: スペースユーザ -> スペース管理者",
+      "スペース権限: スペースメンバー → スペース管理者",
     ]);
   });
 
@@ -210,16 +212,18 @@ describe("audit log helpers", () => {
       rows: [applicationRow, userRow, memberRow],
     });
 
-    expect(viewModel.filteredRows.map((item) => item.row.id)).toEqual(["audit-user"]);
+    expect(viewModel.filteredRows.map((item) => item.row.id)).toEqual([
+      "audit-user",
+    ]);
     expect(viewModel.summaryCounts).toEqual({
+      accessEvents: 2,
       applicationEvents: 1,
-      identityEvents: 1,
-      spaceEvents: 1,
+      importantEvents: 2,
       total: 3,
     });
     expect(viewModel.hasActiveFilters).toBe(true);
     expect(viewModel.listDescription).toBe(
-      "ユーザの監査ログを新しい順に表示しています",
+      "ユーザーの監査ログを新しい順に表示しています",
     );
   });
 

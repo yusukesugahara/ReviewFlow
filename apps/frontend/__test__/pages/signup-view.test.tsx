@@ -15,6 +15,11 @@ describe("SignupView", () => {
     render(<SignupView apiReachable />);
 
     expect(screen.getByRole("heading", { name: "新規登録" })).toBeInTheDocument();
+    expect(screen.getByRole("link", { name: "ReviewFlow" })).toHaveAttribute(
+      "href",
+      "/",
+    );
+    expect(screen.getByText("ワークスペース")).toBeInTheDocument();
     expect(screen.getByLabelText("メールアドレス")).toBeRequired();
     expect(screen.getByLabelText("パスワード")).toHaveAttribute(
       "autocomplete",

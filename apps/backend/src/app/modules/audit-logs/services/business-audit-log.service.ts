@@ -4,7 +4,12 @@ import type { ApplicationStatusValue } from '../../../../models/constants/applic
 import type { GroupMemberRoleValue } from '../../../../models/constants/group-member-role';
 import type { UserRoleValue } from '../../../../models/constants/user-role';
 import type { Application } from '../../../../models/entities/application.entity';
-import type { AuditActorType } from '../../../../models/entities/audit-log.entity';
+import type {
+  AuditActorType,
+  AuditEventActor,
+  AuditEventChange,
+  AuditEventResource,
+} from '../../../../models/entities/audit-log.entity';
 import type { Group } from '../../../../models/entities/group.entity';
 import type { GroupMember } from '../../../../models/entities/group-member.entity';
 import type { Invitation } from '../../../../models/entities/invitation.entity';
@@ -57,6 +62,24 @@ type ApplicationSnapshot = {
   status: ApplicationStatusValue | null;
   stepOrder: number | null;
 };
+
+type MetadataChangeKey = {
+  field: string;
+  fromKey: string;
+  toKey: string;
+};
+
+const metadataChangeKeys: MetadataChangeKey[] = [
+  { field: 'isActive', fromKey: 'isActiveFrom', toKey: 'isActiveTo' },
+  { field: 'email', fromKey: 'emailFrom', toKey: 'emailTo' },
+  { field: 'userName', fromKey: 'userNameFrom', toKey: 'userNameTo' },
+  { field: 'name', fromKey: 'nameFrom', toKey: 'nameTo' },
+  {
+    field: 'description',
+    fromKey: 'descriptionFrom',
+    toKey: 'descriptionTo',
+  },
+];
 
 /**
  * 申請・招待・ユーザー・スペース操作の業務監査ログを記録する service。
@@ -350,7 +373,71 @@ export class BusinessAuditLogService {
     params: CreateAuditLogParams,
     manager?: TransactionManager,
   ): Promise<void> {
-    await this.auditLogsRepository.create(params, manager);
+    await this.auditLogsRepository.create(
+      this.toGenericAuditLog(params),
+      manager,
+    );
+  }
+
+  /**
+   * 既存の業務監査パラメータを、画面・検索で使う汎用監査イベント形へ正規化する。
+   * @param params 旧形式を含む監査ログ作成パラメータ
+   * @returns 汎用フィールドを補完した監査ログ作成パラメータ
+   */
+  private toGenericAuditLog(
+    params: CreateAuditLogParams,
+  ): CreateAuditLogParams {
+    const scopeType = params.scopeType ?? (params.groupId ? 'space' : 'tenant');
+    const scopeId = params.scopeId ?? params.groupId ?? params.tenantId;
+    const resourceType = params.resourceType ?? params.targetType;
+    const resourceId = params.resourceId ?? params.targetId;
+    const resourceLabelSnapshot =
+      params.resourceLabelSnapshot ?? this.resourceLabelSnapshot(params);
+    const actorJson =
+      params.actorJson ??
+      ({
+        email: params.actorEmailSnapshot ?? null,
+        id: params.actorUserId,
+        label: params.actorEmailSnapshot ?? null,
+        type: params.actorType,
+      } satisfies AuditEventActor);
+    const resourceJson =
+      params.resourceJson ??
+      ({
+        id: resourceId,
+        label: resourceLabelSnapshot,
+        type: resourceType,
+      } satisfies AuditEventResource);
+
+    return {
+      ...params,
+      scopeType,
+      scopeId,
+      resourceType,
+      resourceId,
+      resourceLabelSnapshot,
+      operation: params.operation ?? operationFromActionType(params.actionType),
+      outcome: params.outcome ?? 'success',
+      actorJson,
+      resourceJson,
+      changesJson: params.changesJson ?? buildGenericChanges(params),
+    };
+  }
+
+  /**
+   * 対象リソースの表示用スナップショットを組み立てる。
+   * @param params 監査ログ作成パラメータ
+   * @returns 表示ラベル
+   */
+  private resourceLabelSnapshot(params: CreateAuditLogParams): string | null {
+    if (params.targetEmailSnapshot) {
+      return params.targetEmailSnapshot;
+    }
+    const metadata = params.metadataJson ?? {};
+    if (params.targetType === 'space') {
+      return stringValue(metadata.groupName) ?? params.targetId;
+    }
+    return params.targetId;
   }
 
   /**
@@ -402,4 +489,64 @@ export class BusinessAuditLogService {
   ): string {
     return `${actorEmail} ${actionType} ${targetLabel}`;
   }
+}
+
+function operationFromActionType(actionType: string): string {
+  const separatorIndex = actionType.indexOf('.');
+  return separatorIndex >= 0
+    ? actionType.slice(separatorIndex + 1)
+    : actionType;
+}
+
+function buildGenericChanges(params: CreateAuditLogParams): AuditEventChange[] {
+  const changes: AuditEventChange[] = [];
+
+  addChange(
+    changes,
+    'status',
+    params.statusFrom ?? null,
+    params.statusTo ?? null,
+  );
+  addChange(
+    changes,
+    'stepOrder',
+    params.stepOrderFrom ?? null,
+    params.stepOrderTo ?? null,
+  );
+  addChange(changes, 'role', params.roleFrom ?? null, params.roleTo ?? null);
+  addChange(
+    changes,
+    'groupRole',
+    params.groupRoleFrom ?? null,
+    params.groupRoleTo ?? null,
+  );
+
+  const metadata = params.metadataJson ?? {};
+  for (const key of metadataChangeKeys) {
+    if (key.fromKey in metadata || key.toKey in metadata) {
+      addChange(changes, key.field, metadata[key.fromKey], metadata[key.toKey]);
+    }
+  }
+
+  return changes;
+}
+
+function addChange(
+  changes: AuditEventChange[],
+  field: string,
+  from: unknown,
+  to: unknown,
+): void {
+  if (!hasChangeValue(from) && !hasChangeValue(to)) {
+    return;
+  }
+  changes.push({ field, from: from ?? null, to: to ?? null });
+}
+
+function hasChangeValue(value: unknown): boolean {
+  return value !== undefined && value !== null;
+}
+
+function stringValue(value: unknown): string | null {
+  return typeof value === 'string' && value.trim() ? value : null;
 }

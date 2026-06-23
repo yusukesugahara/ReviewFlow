@@ -2,6 +2,11 @@ import { Field, ID, InputType, Int, ObjectType } from '@nestjs/graphql';
 import GraphQLJSON from 'graphql-type-json';
 import { RelayNodeGql } from '../../../../common/graphql/relay-node';
 import { PageInfoGql } from '../../../../common/graphql/relay-pagination';
+import type {
+  AuditEventActorDto,
+  AuditEventChangeDto,
+  AuditEventResourceDto,
+} from '../dto/audit-logs.dto';
 
 @InputType('AuditLogsFilterInput')
 export class AuditLogsFilterInputGql {
@@ -63,6 +68,36 @@ export class AuditLogGql implements RelayNodeGql {
 
   @Field(() => String, { nullable: true })
   targetId!: string | null;
+
+  @Field(() => String, { nullable: true })
+  scopeType!: string | null;
+
+  @Field(() => String, { nullable: true })
+  scopeId!: string | null;
+
+  @Field(() => String, { nullable: true })
+  resourceType!: string | null;
+
+  @Field(() => String, { nullable: true })
+  resourceId!: string | null;
+
+  @Field(() => String, { nullable: true })
+  resourceLabel!: string | null;
+
+  @Field(() => String, { nullable: true })
+  operation!: string | null;
+
+  @Field()
+  outcome!: string;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  actor!: AuditEventActorDto | null;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  resource!: AuditEventResourceDto | null;
+
+  @Field(() => GraphQLJSON, { nullable: true })
+  changes!: AuditEventChangeDto[] | null;
 
   @Field(() => ID, { nullable: true })
   targetUserId!: string | null;

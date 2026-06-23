@@ -13,6 +13,7 @@ export const SignupView = ({ apiReachable }: SignupViewProps) => {
       apiReachable={apiReachable}
       title="新規登録"
       description="メールアドレスとパスワードを設定してアカウントを作成します。パスワードは 8 文字以上です。"
+      appGuide={null}
       submitLabel="アカウントを作成する"
       submittingLabel="登録処理中..."
       passwordAutoComplete="new-password"

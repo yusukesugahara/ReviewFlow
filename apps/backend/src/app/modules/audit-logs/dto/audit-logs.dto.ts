@@ -79,6 +79,42 @@ export class AuditLogsQueryDto {
   createdTo?: string;
 }
 
+export class AuditEventActorDto {
+  @ApiPropertyOptional({ type: String, nullable: true })
+  id!: string | null;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  email?: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  label?: string | null;
+}
+
+export class AuditEventResourceDto {
+  @ApiPropertyOptional({ type: String, nullable: true })
+  id!: string | null;
+
+  @ApiProperty()
+  type!: string;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  label?: string | null;
+}
+
+export class AuditEventChangeDto {
+  @ApiProperty()
+  field!: string;
+
+  @ApiPropertyOptional({ nullable: true })
+  from!: unknown;
+
+  @ApiPropertyOptional({ nullable: true })
+  to!: unknown;
+}
+
 export class AuditLogItemDto {
   @ApiProperty()
   id!: string;
@@ -106,6 +142,36 @@ export class AuditLogItemDto {
 
   @ApiPropertyOptional({ type: String, nullable: true })
   targetId!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  scopeType!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  scopeId!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  resourceType!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  resourceId!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  resourceLabel!: string | null;
+
+  @ApiPropertyOptional({ type: String, nullable: true })
+  operation!: string | null;
+
+  @ApiProperty()
+  outcome!: string;
+
+  @ApiPropertyOptional({ type: AuditEventActorDto, nullable: true })
+  actor!: AuditEventActorDto | null;
+
+  @ApiPropertyOptional({ type: AuditEventResourceDto, nullable: true })
+  resource!: AuditEventResourceDto | null;
+
+  @ApiPropertyOptional({ type: [AuditEventChangeDto], nullable: true })
+  changes!: AuditEventChangeDto[] | null;
 
   @ApiPropertyOptional({ type: String, nullable: true })
   targetUserId!: string | null;

@@ -8,7 +8,7 @@ type AuthFormProps = {
   apiReachable: boolean;
   title: string;
   description: string;
-  appGuide?: AuthFormAppGuide;
+  appGuide?: AuthFormAppGuide | null;
   submitLabel: string;
   submittingLabel: string;
   passwordAutoComplete: "current-password" | "new-password";
