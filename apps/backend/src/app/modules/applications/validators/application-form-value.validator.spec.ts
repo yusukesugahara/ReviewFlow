@@ -99,25 +99,6 @@ describe('ApplicationFormValueValidator', () => {
   });
 
   /**
-   * 修正対象外のフィールドに対する値を拒否すること
-   */
-  it('rejects patch values outside the open correction target fields', () => {
-    const fieldsByKey = validator.buildFieldsByKey([
-      field({ id: 'field-title', fieldKey: 'title' }),
-    ]);
-
-    expectErrorCode(
-      () =>
-        validator.assertPatchValuesMatchFields(
-          fieldsByKey,
-          { title: 'updated' },
-          new Set(['other-field']),
-        ),
-      ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
-    );
-  });
-
-  /**
    * 必須フィールドが未入力の場合に拒否すること
    */
   it('requires required fields before submit', () => {

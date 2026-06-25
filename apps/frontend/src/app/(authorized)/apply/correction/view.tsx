@@ -44,11 +44,7 @@ export function PublicCorrectionView({
   formError,
 }: PublicCorrectionViewProps) {
   const openCorrection = correction.openCorrection;
-  const targetKeys = new Set(
-    openCorrection?.items.map((item) => item.fieldKey) ?? [],
-  );
-  const formFields =
-    definition.fields?.filter((field) => targetKeys.has(field.fieldKey)) ?? [];
+  const formFields = definition.fields ?? [];
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-10">
@@ -61,11 +57,12 @@ export function PublicCorrectionView({
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {openCorrection && formFields.length > 0 ? (
+            {openCorrection && openCorrection.items.length > 0 && formFields.length > 0 ? (
               <PublicCorrectionForm
                 applicationId={correction.applicationId}
                 fields={openCorrection.items}
                 formFields={formFields}
+                values={correction.values}
                 initialFormError={formError}
                 openCorrection={openCorrection}
               />

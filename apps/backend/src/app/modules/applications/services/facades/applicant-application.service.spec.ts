@@ -197,6 +197,7 @@ describe('ApplicantApplicationService', () => {
     const response = {
       applicationId: 'app-1',
       applicationStatus: ApplicationStatus.RETURNED,
+      values: {},
       openCorrection: null,
     };
     applicationsRepository.findApplicantEditable.mockResolvedValue(row);

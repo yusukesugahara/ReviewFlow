@@ -24,6 +24,7 @@ export type PublicCorrectionTarget = {
 export type PublicCorrectionResponse = {
   applicationId: string;
   applicationStatus: string;
+  values: Record<string, unknown>;
   openCorrection: {
     id: string;
     overallComment: string | null;

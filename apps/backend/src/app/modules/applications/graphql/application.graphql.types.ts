@@ -373,6 +373,9 @@ export class ApplicationCorrectionTargetsGql {
   @Field(() => String)
   applicationStatus!: string;
 
+  @Field(() => GraphQLJSON)
+  values!: Record<string, unknown>;
+
   @Field(() => ApplicationOpenCorrectionTargetsGql, { nullable: true })
   openCorrection!: ApplicationOpenCorrectionTargetsGql | null;
 }

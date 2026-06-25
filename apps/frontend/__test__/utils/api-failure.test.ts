@@ -28,6 +28,14 @@ describe("api failure helpers", () => {
       "入力内容を確認してください",
     );
     expect(errorMessageFromBody({ message: ["a", "b"] })).toBe("a, b");
+    expect(
+      errorMessageFromBody([
+        { message: "Field value does not match the field type" },
+        { message: "Required fields must be filled before submit" },
+      ]),
+    ).toBe(
+      "Field value does not match the field type, Required fields must be filled before submit",
+    );
   });
 
   // テスト内容: message がない場合は fallback を返すことを確認する

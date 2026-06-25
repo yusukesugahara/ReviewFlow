@@ -97,10 +97,9 @@ describe('ApplicationPatchContextLoader', () => {
       onlyPublished: true,
     });
     expect(context.fieldsByKey.has('title')).toBe(true);
-    expect(context.allowedFieldIds).toBeUndefined();
   });
 
-  it('loads correction target field ids for returned applications', async () => {
+  it('requires open correction for returned applications', async () => {
     formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field()]),
     );
@@ -120,7 +119,7 @@ describe('ApplicationPatchContextLoader', () => {
       { tenantId: 'tenant-1', applicationId: 'app-1' },
       undefined,
     );
-    expect(context.allowedFieldIds).toEqual(new Set(['field-title']));
+    expect(context.fieldsByKey.has('title')).toBe(true);
   });
 
   it('rejects missing form definitions', async () => {

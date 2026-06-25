@@ -3,6 +3,7 @@ import { CorrectionRequestStatus } from '../../../../models/constants/correction
 import { FormFieldType } from '../../../../models/constants/form-field-type';
 import type { Application } from '../../../../models/entities/application.entity';
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
+import type { FormField } from '../../../../models/entities/form-field.entity';
 import {
   mapCorrectionTargetsResponse,
   mapCorrectionToReturnApplicationDto,
@@ -44,11 +45,14 @@ const correction = (
 
 describe('applications mapper correction helpers', () => {
   it('maps open correction targets with current application values', () => {
-    const response = mapCorrectionTargetsResponse(app(), correction());
+    const response = mapCorrectionTargetsResponse(app(), correction(), [
+      { id: 'field-title', fieldKey: 'title' },
+    ] as FormField[]);
 
     expect(response).toMatchObject({
       applicationId: 'app-1',
       applicationStatus: ApplicationStatus.RETURNED,
+      values: { title: 'Current' },
       openCorrection: {
         id: 'correction-1',
         overallComment: 'Fix fields',
@@ -66,11 +70,14 @@ describe('applications mapper correction helpers', () => {
   });
 
   it('maps missing open corrections to a null target', () => {
-    const response = mapCorrectionTargetsResponse(app(), null);
+    const response = mapCorrectionTargetsResponse(app(), null, [
+      { id: 'field-title', fieldKey: 'title' },
+    ] as FormField[]);
 
     expect(response).toEqual({
       applicationId: 'app-1',
       applicationStatus: ApplicationStatus.RETURNED,
+      values: { title: 'Current' },
       openCorrection: null,
     });
   });

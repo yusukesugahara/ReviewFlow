@@ -29,7 +29,6 @@ export class ApplicationFieldValuePatchBuilder {
     this.formValueValidator.assertPatchValuesMatchFields(
       context.fieldsByKey,
       values,
-      context.allowedFieldIds,
     );
 
     const existingByFieldId = new Map(

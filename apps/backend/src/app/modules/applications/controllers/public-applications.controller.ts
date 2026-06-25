@@ -67,7 +67,8 @@ export class PublicApplicationsController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({
     summary: '申請者向け差し戻し項目更新',
-    description: 'returned かつ open correction の対象項目だけ更新できる。',
+    description:
+      'returned かつ open correction がある申請のフォーム項目を更新できる。',
   })
   async patchReturned(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,

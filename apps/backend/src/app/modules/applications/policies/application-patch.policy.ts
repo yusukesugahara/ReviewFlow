@@ -7,7 +7,7 @@ import type { PatchApplicationDto } from '../dto/applications.dto';
 /**
  * 申請更新時にどの項目を変更できるかを判定する policy。
  *
- * 差し戻し中は修正対象 field だけ、下書き・公開済みは metadata 変更も許可する。
+ * 差し戻し中は field 値だけ、下書き・公開済みは metadata 変更も許可する。
  */
 @Injectable()
 export class ApplicationPatchPolicy {
@@ -17,7 +17,7 @@ export class ApplicationPatchPolicy {
    * 差し戻し修正では form / flow / status などの metadata 変更を禁止する。
    */
   assertPatchTargetEditable(app: Application, dto: PatchApplicationDto): void {
-    if (this.requiresCorrectionFieldScope(app) && this.changesMetadata(dto)) {
+    if (this.requiresOpenCorrection(app) && this.changesMetadata(dto)) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
 
@@ -41,9 +41,8 @@ export class ApplicationPatchPolicy {
   }
 
   /**
-   * 差し戻し修正時に field 単位の修正対象制限が必要かを返す。
+   * 差し戻し修正以外で field 値の patch が許可されるか検証する。
    * @param app 申請
-   * @returns 差し戻し修正時に field 単位の修正対象制限が必要か
    */
   assertFieldPatchAllowedWithoutCorrectionScope(app: Application): void {
     if (!this.isDraftOrPublished(app)) {
@@ -52,11 +51,11 @@ export class ApplicationPatchPolicy {
   }
 
   /**
-   * 差し戻し修正時に field 単位の修正対象制限が必要かを返す。
+   * 差し戻し修正時に open correction が必要かを返す。
    * @param app 申請
-   * @returns 差し戻し修正時に field 単位の修正対象制限が必要か
+   * @returns 差し戻し修正時に open correction が必要か
    */
-  requiresCorrectionFieldScope(app: Application): boolean {
+  requiresOpenCorrection(app: Application): boolean {
     return app.status === ApplicationStatus.RETURNED;
   }
 

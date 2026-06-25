@@ -26,6 +26,7 @@ jest.mock("@/app/(authorized)/apply/correction/_components/public-correction-for
 const correction = {
   applicationId: "application-1",
   applicationStatus: "returned",
+  values: { amount: 1000, memo: "提出時メモ" },
   openCorrection: {
     id: "correction-1",
     overallComment: null,
@@ -59,6 +60,13 @@ const definition = {
       fieldType: "number",
       required: true,
     },
+    {
+      id: "field-2",
+      fieldKey: "memo",
+      label: "メモ",
+      fieldType: "textarea",
+      required: false,
+    },
   ],
   createdAt: "2026-06-06T00:00:00.000Z",
   updatedAt: "2026-06-06T00:00:00.000Z",
@@ -85,7 +93,7 @@ describe("PublicCorrection views", () => {
 
     expect(screen.getByRole("heading", { name: "経費申請" })).toBeInTheDocument();
     expect(screen.getByTestId("public-correction-form")).toHaveTextContent(
-      "application-1:1:1:再提出エラー",
+      "application-1:1:2:再提出エラー",
     );
   });
 

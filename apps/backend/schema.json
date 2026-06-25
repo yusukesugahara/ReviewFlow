@@ -3273,7 +3273,7 @@
     },
     "/public/applications/{id}": {
       "patch": {
-        "description": "returned かつ open correction の対象項目だけ更新できる。",
+        "description": "returned かつ open correction がある申請のフォーム項目を更新できる。",
         "operationId": "PublicApplicationsController_patchReturned",
         "parameters": [
           {
@@ -5328,6 +5328,11 @@
           "applicationStatus": {
             "type": "string"
           },
+          "values": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "フォーム fieldKey ごとの現在値"
+          },
           "openCorrection": {
             "nullable": true,
             "description": "オープンな correction が無いとき null",
@@ -5341,7 +5346,8 @@
         },
         "required": [
           "applicationId",
-          "applicationStatus"
+          "applicationStatus",
+          "values"
         ]
       },
       "CorrectionRequestItemResponseDto": {
@@ -5447,7 +5453,7 @@
           "values": {
             "type": "object",
             "additionalProperties": true,
-            "description": "field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。"
+            "description": "field_key をキーにした値。draft は全項目可。returned はオープンな correction がある申請のフォーム項目のみ。"
           }
         }
       },
