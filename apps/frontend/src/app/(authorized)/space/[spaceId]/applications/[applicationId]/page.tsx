@@ -63,6 +63,7 @@ export default async function SpaceApplicationDetailPage({
         approveAction={approveAction.bind(null, spaceId, data.application.id)}
         capabilities={data.capabilities}
         corrections={data.corrections}
+        correctedFieldKeys={data.correctedFieldKeys}
         definitionId={data.definitionId}
         fields={data.fields}
         formDetailHref={data.formDetailHref}

@@ -20,6 +20,7 @@ type ApplicationDetailScreenProps = {
   approveAction: (formData: FormData) => Promise<void>;
   capabilities: ApplicationCapabilities;
   corrections: ApplicationCorrection[];
+  correctedFieldKeys: string[];
   definitionId?: string;
   fields: ApplicationFormField[];
   formDetailHref?: string | null;
@@ -43,6 +44,7 @@ export function ApplicationDetailScreen({
   approveAction,
   capabilities,
   corrections,
+  correctedFieldKeys,
   definitionId,
   fields,
   formDetailHref,
@@ -87,6 +89,7 @@ export function ApplicationDetailScreen({
       }
       openCorrectionItems={openItems}
       corrections={corrections}
+      correctedFieldKeys={correctedFieldKeys}
       formDetailHref={formDetailHref}
       showApplicantEmail
       showCurrentStep

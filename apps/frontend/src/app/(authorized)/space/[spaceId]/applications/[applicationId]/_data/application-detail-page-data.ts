@@ -13,10 +13,12 @@ import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
 } from "@/components/applications/detail/application-detail.types";
+import { getLatestCorrectionCycleFieldKeys } from "@/components/applications/detail/application-corrected-field-keys";
 import { isFormSetupStatus } from "@/components/applications/status/application-status-rules";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/relay/client";
+import type { AuditLogsListSuccessJson } from "@/lib/schema";
 import {
   getMissingRequiredFields,
   isRelatedSubmittedApplication,
@@ -51,6 +53,7 @@ export type ApplicationDetailPageData = ApplicationDetailBaseData & {
   kind: "application";
   capabilities: ApplicationCapabilities;
   corrections: ApplicationCorrection[];
+  correctedFieldKeys: string[];
   fieldMap: Array<{ id: string; key: string }>;
   formDetailHref: string | null;
   missingRequiredFields: ApplicationFormField[];
@@ -80,10 +83,11 @@ export async function getSpaceApplicationDetailPageData({
   });
   const definitionId = application.formDefinitionId ?? queryDefinitionId;
 
-  const [definition, corrections, openItems] = await Promise.all([
+  const [definition, corrections, openItems, correctedFieldKeys] = await Promise.all([
     getFormDefinition({ authHeaders, definitionId, spaceId }),
     getApplicationCorrections({ applicationId, authHeaders }),
     getOpenCorrectionItems({ applicationId, authHeaders }),
+    getCorrectedFieldKeys({ applicationId, authHeaders }),
   ]);
   const fields = definition?.fields ?? [];
 
@@ -114,6 +118,7 @@ export async function getSpaceApplicationDetailPageData({
     application,
     capabilities: getApplicationCapabilities(application),
     corrections,
+    correctedFieldKeys,
     definitionId,
     fieldMap: fields.map((field) => ({ id: field.id, key: field.fieldKey })),
     fields,
@@ -125,6 +130,39 @@ export async function getSpaceApplicationDetailPageData({
     missingRequiredFields: getMissingRequiredFields(fields, application.values),
     openItems,
   };
+}
+
+/**
+ * 最新の差戻し修正で保存された fieldKey を監査ログから取得します。
+ */
+async function getCorrectedFieldKeys({
+  applicationId,
+  authHeaders,
+}: {
+  applicationId: string;
+  authHeaders: AuthHeaders;
+}): Promise<string[]> {
+  try {
+    const logsRaw = await client.auditLogs( {
+      params: {
+        query: {
+          actionType: "application.",
+          applicationId,
+          limit: 200,
+        },
+      },
+      headers: authHeaders,
+    });
+    const logs = unwrapResponseData<AuditLogsListSuccessJson["data"]>(
+      logsRaw,
+    ).logs;
+    return getLatestCorrectionCycleFieldKeys(logs);
+  } catch (error) {
+    if (isApiFailure(error)) {
+      return [];
+    }
+    throw error;
+  }
 }
 
 /**

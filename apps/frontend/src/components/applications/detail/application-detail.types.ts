@@ -90,6 +90,7 @@ export type ApplicationDetailViewProps = {
   fieldsDescription?: string;
   openCorrectionItems?: ApplicationCorrectionTargetItem[];
   corrections?: ApplicationCorrection[];
+  correctedFieldKeys?: string[];
   actions?: ReactNode;
   reviewerActions?: ReactNode;
   formDetailHref?: string | null;
