@@ -40,6 +40,7 @@ export type ReturnedApplicationEditPageData = EditPageBaseData & {
   fields: EditableFormField[];
   overallComment?: string | null;
   targets: CorrectionTargetItem[];
+  values: Record<string, unknown>;
 };
 
 export type SetupApplicationEditPageData = EditPageBaseData & {
@@ -114,6 +115,7 @@ export async function getSpaceApplicationEditPageData({
       fields,
       overallComment: openCorrection?.overallComment,
       targets: openCorrection?.items ?? [],
+      values: app.values ?? {},
     };
   }
 

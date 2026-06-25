@@ -15,6 +15,7 @@ import type {
   PatchApplicationDto,
   RejectApplicationDto,
   ReturnApplicationDto,
+  ResubmitApplicationDto,
 } from '../../dto/applications.dto';
 import {
   mapApplicationToDetail,
@@ -201,8 +202,12 @@ export class ApplicationsService {
    * @param id 申請ID
    * @returns 再提出後の申請
    */
-  async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
-    return this.userSubmissionUseCaseService.resubmit(actor, id);
+  async resubmit(
+    actor: AuthUserPayload,
+    id: string,
+    dto: ResubmitApplicationDto = {},
+  ): Promise<Application> {
+    return this.userSubmissionUseCaseService.resubmit(actor, id, dto);
   }
 
   /**
@@ -240,8 +245,9 @@ export class ApplicationsService {
   async resubmitForApplicant(
     actor: ApplicantSession,
     id: string,
+    dto: ResubmitApplicationDto = {},
   ): Promise<Application> {
-    return this.applicantApplicationService.resubmit(actor, id);
+    return this.applicantApplicationService.resubmit(actor, id, dto);
   }
 
   /**

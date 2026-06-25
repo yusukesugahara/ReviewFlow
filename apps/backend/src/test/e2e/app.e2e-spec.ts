@@ -11,6 +11,7 @@ import { InvitationStatus } from '../../models/constants/invitation-status';
 import { UserRole } from '../../models/constants/user-role';
 import { Invitation } from '../../models/entities/invitation.entity';
 import { User } from '../../models/entities/user.entity';
+import { AuthService } from '../../app/modules/auth/services/facades/auth.service';
 import {
   preparePostgresTestDatabase,
   truncatePostgresTables,
@@ -20,7 +21,7 @@ jest.setTimeout(15_000);
 
 type ErrorJsonBody = { errorCode?: string };
 type LoginJsonBody = {
-  data?: { access_token?: string; user?: { id?: string } };
+  data?: { access_token?: string; user?: { id?: string; tenantId?: string } };
 };
 type RegisterJsonBody = { data?: { user?: { role?: string; id?: string } } };
 type MeJsonBody = {
@@ -81,6 +82,7 @@ type CorrectionsListBody = {
 type CorrectionTargetsBody = {
   data?: {
     applicationStatus?: string;
+    values?: Record<string, unknown>;
     openCorrection?: {
       id: string;
       items?: {
@@ -90,6 +92,10 @@ type CorrectionTargetsBody = {
       }[];
     } | null;
   };
+};
+type GraphqlJsonBody = {
+  data?: unknown;
+  errors?: unknown[];
 };
 
 async function fetchMeId(
@@ -142,6 +148,7 @@ type AuditLogsListBody = {
       id: string;
       groupId: string | null;
       actionType: string;
+      metadataJson?: Record<string, unknown> | null;
       targetType: string;
     }[];
   };
@@ -1118,7 +1125,6 @@ describe('App (e2e)', () => {
         options: [],
       })
       .expect(201);
-
     await request(http)
       .post(`/form-definitions/${tplId}/publish`)
       .set(apiKey)
@@ -1292,6 +1298,8 @@ describe('App (e2e)', () => {
       .expect(200);
     const adminTok =
       (adminLogin.body as LoginJsonBody).data?.access_token ?? '';
+    const adminTenantId =
+      (adminLogin.body as LoginJsonBody).data?.user?.tenantId ?? '';
     const adminId = await fetchMeId(http, apiKey, adminTok);
     const groupId = await createGroupForAdmin(
       http,
@@ -1318,6 +1326,19 @@ describe('App (e2e)', () => {
         label: '備考',
         fieldType: 'text',
         required: true,
+        sortOrder: 0,
+        options: [],
+      })
+      .expect(201);
+    await request(http)
+      .post(`/form-definitions/${tplId}/fields`)
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .send({
+        fieldKey: 'memo',
+        label: 'メモ',
+        fieldType: 'text',
+        required: false,
         sortOrder: 1,
         options: [],
       })
@@ -1338,6 +1359,10 @@ describe('App (e2e)', () => {
       tplDetail.body as FormDefinitionGetBody
     ).data?.fields?.find((f) => f.fieldKey === 'note')?.id;
     expect(typeof fieldId).toBe('string');
+    const memoFieldId = (
+      tplDetail.body as FormDefinitionGetBody
+    ).data?.fields?.find((f) => f.fieldKey === 'memo')?.id;
+    expect(typeof memoFieldId).toBe('string');
 
     await request(http)
       .post('/approval-flows')
@@ -1418,7 +1443,8 @@ describe('App (e2e)', () => {
       .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
       .send({
         groupId,
-        values: { note: 'v1' },
+        formDefinitionId: tplId,
+        values: { note: 'v1', memo: 'm1' },
       })
       .expect(201);
     const retAppId = (appCreate.body as ApplicationCreateBody).data?.id ?? '';
@@ -1459,19 +1485,80 @@ describe('App (e2e)', () => {
     expect(tgt.data?.openCorrection?.items?.length).toBe(1);
     expect(tgt.data?.openCorrection?.items?.[0]?.fieldKey).toBe('note');
     expect(tgt.data?.openCorrection?.items?.[0]?.currentValue).toBe('v1');
+    expect(tgt.data?.values?.memo).toBe('m1');
 
-    await request(http)
-      .patch(`/applications/${retAppId}`)
+    const applicantAccessToken = app
+      .get(AuthService)
+      .issueApplicantAccessToken({
+        tenantId: adminTenantId,
+        email: 'ret-app@e2e.test',
+        groupId,
+        formDefinitionId: tplId,
+        applicationId: retAppId,
+      });
+    const applicantTargets = await request(http)
+      .post('/graphql')
       .set(apiKey)
-      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
-      .send({ values: { note: 'v2-fixed' } })
+      .set('X-Applicant-Access-Token', applicantAccessToken)
+      .send({
+        query:
+          'query ReturnedTargets { returnedApplicationCorrectionTargetsForApplicant }',
+      })
       .expect(200);
+    expect((applicantTargets.body as GraphqlJsonBody).errors).toBeUndefined();
+    expect(
+      (
+        (applicantTargets.body as GraphqlJsonBody).data as {
+          returnedApplicationCorrectionTargetsForApplicant?: {
+            values?: Record<string, unknown>;
+          };
+        }
+      ).returnedApplicationCorrectionTargetsForApplicant?.values?.memo,
+    ).toBe('m1');
 
-    await request(http)
-      .post(`/applications/${retAppId}/resubmit`)
+    const patchReturned = await request(http)
+      .post('/graphql')
       .set(apiKey)
-      .set('Authorization', `Bearer ${appTok.data?.access_token ?? ''}`)
+      .set('X-Applicant-Access-Token', applicantAccessToken)
+      .send({
+        query:
+          'mutation PatchReturned($id: ID!, $input: JSON!) { patchReturnedApplication(id: $id, input: $input) }',
+        variables: {
+          id: retAppId,
+          input: { values: { note: 'v2-fixed', memo: 'm2-extra-fixed' } },
+        },
+      })
       .expect(200);
+    expect((patchReturned.body as GraphqlJsonBody).errors).toBeUndefined();
+
+    const resubmitReturned = await request(http)
+      .post('/graphql')
+      .set(apiKey)
+      .set('X-Applicant-Access-Token', applicantAccessToken)
+      .send({
+        query:
+          'mutation ResubmitReturned($id: ID!, $input: JSON) { resubmitReturnedApplication(id: $id, input: $input) }',
+        variables: {
+          id: retAppId,
+          input: { message: '補足して再提出します' },
+        },
+      })
+      .expect(200);
+    expect((resubmitReturned.body as GraphqlJsonBody).errors).toBeUndefined();
+
+    const auditLogs = await request(http)
+      .get('/audit-logs')
+      .query({
+        actionType: 'application.resubmitted',
+        applicationId: retAppId,
+      })
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    expect(
+      (auditLogs.body as AuditLogsListBody).data?.logs?.[0]?.metadataJson
+        ?.message,
+    ).toBe('補足して再提出します');
 
     const again = await request(http)
       .get(`/applications/${retAppId}`)
@@ -1483,6 +1570,9 @@ describe('App (e2e)', () => {
     );
     expect((again.body as ApplicationDetailBody).data?.values?.note).toBe(
       'v2-fixed',
+    );
+    expect((again.body as ApplicationDetailBody).data?.values?.memo).toBe(
+      'm2-extra-fixed',
     );
 
     const afterResubmit = await request(http)

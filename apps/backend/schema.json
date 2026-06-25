@@ -2081,52 +2081,6 @@
         ]
       }
     },
-    "/groups/dashboard": {
-      "get": {
-        "operationId": "GroupsController_dashboard",
-        "parameters": [],
-        "responses": {
-          "200": {
-            "description": "",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "required": [
-                    "status",
-                    "data"
-                  ],
-                  "properties": {
-                    "status": {
-                      "type": "number",
-                      "enum": [
-                        200
-                      ],
-                      "example": 200
-                    },
-                    "data": {
-                      "$ref": "#/components/schemas/SpaceDashboardResponseDto"
-                    }
-                  }
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "internal-api-key": []
-          },
-          {
-            "nest-jwt": []
-          }
-        ],
-        "summary": "スペースダッシュボード集計",
-        "tags": [
-          "spaces"
-        ]
-      }
-    },
     "/groups/{groupId}": {
       "patch": {
         "operationId": "GroupsController_update",
@@ -2970,6 +2924,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResubmitApplicationDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3319,7 +3283,7 @@
     },
     "/public/applications/{id}": {
       "patch": {
-        "description": "returned かつ open correction の対象項目だけ更新できる。",
+        "description": "returned かつ open correction がある申請のフォーム項目を更新できる。",
         "operationId": "PublicApplicationsController_patchReturned",
         "parameters": [
           {
@@ -3372,6 +3336,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResubmitApplicationDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": ""
@@ -4708,114 +4682,6 @@
           "groups"
         ]
       },
-      "SpaceDashboardSummaryDto": {
-        "type": "object",
-        "properties": {
-          "id": {
-            "type": "string",
-            "description": "スペースID。API では groupId として参照する。"
-          },
-          "name": {
-            "type": "string",
-            "description": "スペース名"
-          },
-          "description": {
-            "type": "string",
-            "description": "スペース説明",
-            "nullable": true
-          },
-          "currentUserRole": {
-            "type": "string",
-            "description": "ログインユーザのこのスペースでのロール。未参加の tenant_admin は null。",
-            "enum": [
-              "admin",
-              "user"
-            ],
-            "nullable": true
-          },
-          "memberCount": {
-            "type": "number",
-            "description": "スペースメンバー数"
-          },
-          "formCount": {
-            "type": "number",
-            "description": "アーカイブ済みを除くフォーム定義数"
-          },
-          "publishedFormCount": {
-            "type": "number",
-            "description": "公開中フォーム定義数"
-          },
-          "totalApplications": {
-            "type": "number",
-            "description": "閲覧可能な申請数"
-          },
-          "needsActionCount": {
-            "type": "number",
-            "description": "対応が必要な申請数"
-          },
-          "returnedCount": {
-            "type": "number",
-            "description": "差し戻し中の申請数"
-          },
-          "approvedCount": {
-            "type": "number",
-            "description": "承認済み申請数"
-          },
-          "rejectedCount": {
-            "type": "number",
-            "description": "却下済み申請数"
-          },
-          "correctionCount": {
-            "type": "number",
-            "description": "差し戻し履歴数"
-          },
-          "resubmitCount": {
-            "type": "number",
-            "description": "差し戻し後に再提出されレビュー中の申請数"
-          },
-          "avgReturns": {
-            "type": "string",
-            "description": "申請あたりの平均差し戻し回数"
-          },
-          "latestApplicationAt": {
-            "type": "string",
-            "description": "直近申請更新日時",
-            "nullable": true
-          }
-        },
-        "required": [
-          "id",
-          "name",
-          "description",
-          "memberCount",
-          "formCount",
-          "publishedFormCount",
-          "totalApplications",
-          "needsActionCount",
-          "returnedCount",
-          "approvedCount",
-          "rejectedCount",
-          "correctionCount",
-          "resubmitCount",
-          "avgReturns",
-          "latestApplicationAt"
-        ]
-      },
-      "SpaceDashboardResponseDto": {
-        "type": "object",
-        "properties": {
-          "spaces": {
-            "description": "スペースダッシュボード集計一覧",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/SpaceDashboardSummaryDto"
-            }
-          }
-        },
-        "required": [
-          "spaces"
-        ]
-      },
       "CreateGroupDto": {
         "type": "object",
         "properties": {
@@ -5391,6 +5257,15 @@
           "fields"
         ]
       },
+      "ResubmitApplicationDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "再提出時に申請者が任意で入力するメッセージ"
+          }
+        }
+      },
       "RejectApplicationDto": {
         "type": "object",
         "properties": {
@@ -5482,6 +5357,11 @@
           "applicationStatus": {
             "type": "string"
           },
+          "values": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "フォーム fieldKey ごとの現在値"
+          },
           "openCorrection": {
             "nullable": true,
             "description": "オープンな correction が無いとき null",
@@ -5495,7 +5375,8 @@
         },
         "required": [
           "applicationId",
-          "applicationStatus"
+          "applicationStatus",
+          "values"
         ]
       },
       "CorrectionRequestItemResponseDto": {
@@ -5601,7 +5482,7 @@
           "values": {
             "type": "object",
             "additionalProperties": true,
-            "description": "field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。"
+            "description": "field_key をキーにした値。draft は全項目可。returned はオープンな correction がある申請のフォーム項目のみ。"
           }
         }
       },

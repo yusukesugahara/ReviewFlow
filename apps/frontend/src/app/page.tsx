@@ -5,9 +5,9 @@ import { MarketingHome } from "@/app/_components/marketing-home";
 import { TENANT_ROLES } from "@/lib/constants/roles";
 
 export const metadata: Metadata = {
-  title: "ReviewFlow | 申請承認ワークフロー SaaS",
+  title: "ReviewFlow | 差し戻し・再提出まで追う業務ワークフロー SaaS",
   description:
-    "項目ごとの修正依頼から再提出、承認判断、監査ログまでを一元管理する ReviewFlow の製品トップページです。",
+    "提出受付から項目ごとの差し戻し、申請者の修正、再提出後の再確認、承認判断、監査ログまでを一元管理する ReviewFlow の製品トップページです。",
 };
 
 /**

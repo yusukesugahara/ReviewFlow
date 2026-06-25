@@ -79,6 +79,7 @@ export function DynamicFieldsTable({
   renderValue,
   getRowClassName,
   getFieldError,
+  headerAction,
 }: {
   fields: DynamicFormField[];
   values?: Record<string, unknown>;
@@ -87,11 +88,17 @@ export function DynamicFieldsTable({
   renderValue?: (field: DynamicFormField, value: unknown) => ReactNode;
   getRowClassName?: (field: DynamicFormField) => string | undefined;
   getFieldError?: (field: DynamicFormField) => string | undefined;
+  headerAction?: ReactNode;
 }) {
   return (
     <div className="overflow-hidden border border-slate-400 bg-white">
-      <div className="border-b border-slate-400 bg-slate-100 px-3 py-2 text-center text-sm font-semibold text-slate-900">
-        {title}
+      <div className="relative min-h-11 border-b border-slate-400 bg-slate-100 px-3 py-2 text-center text-sm font-semibold text-slate-900">
+        <span className="inline-flex min-h-7 items-center">{title}</span>
+        {headerAction ? (
+          <div className="absolute right-2 top-1/2 -translate-y-1/2">
+            {headerAction}
+          </div>
+        ) : null}
       </div>
       <div className="divide-y divide-slate-300">
         {fields.map((field, index) => {

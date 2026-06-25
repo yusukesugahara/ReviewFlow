@@ -48,6 +48,10 @@ describe("ApplicantApplicationActions", () => {
       "/edit",
     );
     expect(screen.getByRole("button", { name: "提出する" })).toBeInTheDocument();
+    expect(screen.getByLabelText("メッセージ（任意）")).toHaveAttribute(
+      "name",
+      "message",
+    );
     expect(screen.getByRole("button", { name: "再提出する" })).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "差し戻しメールを再送" }),

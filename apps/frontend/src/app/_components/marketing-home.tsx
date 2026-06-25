@@ -16,100 +16,103 @@ import Link from "next/link";
 
 const workflowHighlights = [
   {
-    icon: ClipboardCheck,
-    label: "申請受付",
-    description: "メールアドレス宛の案内リンクから申請を受け付け",
+    icon: MailCheck,
+    label: "提出依頼・受付",
+    description: "社外の相手にもメールリンクで依頼し、提出内容を受け付け",
   },
   {
     icon: Route,
-    label: "項目別コメント",
-    description: "確認すべき入力欄へ具体的なコメントを残す",
+    label: "確認・差し戻し",
+    description: "不備がある項目を指定し、理由と修正依頼を残す",
   },
   {
     icon: History,
-    label: "再提出の追跡",
-    description: "修正、再提出、再確認を同じ履歴で追える",
+    label: "修正・再提出",
+    description: "修正内容と申請者メッセージを履歴として追跡",
   },
   {
     icon: FileCheck2,
-    label: "受領判断",
-    description: "受け取れる状態かを進捗と変更内容から判断",
+    label: "再確認・完了",
+    description: "変更箇所を見ながら、最終判断まで同じ画面で進行",
   },
 ];
 
 const featureBlocks = [
   {
-    icon: ClipboardCheck,
-    title: "直す場所を明確に伝える",
+    icon: Route,
+    title: "差し戻し前提の進行管理",
     description:
-      "申請全体に大きなメモを残すだけでなく、修正が必要な項目ごとに理由を添えられます。申請者は何を直せばよいか迷いません。",
+      "最初の提出だけで完了しない業務でも、戻す項目、修正内容、再確認を一つの申請に集約します。",
   },
   {
-    icon: UsersRound,
-    title: "再提出までの流れを切らさない",
+    icon: ClipboardCheck,
+    title: "指摘を入力項目に紐づける",
     description:
-      "確認、修正依頼、再提出、再確認を同じ申請の履歴として扱い、担当者が次に見るべき状態を追いやすくします。",
+      "全体コメントだけでなく、修正してほしい項目ごとに理由を伝えられます。申請者は直す場所を迷いません。",
   },
   {
     icon: ShieldCheck,
-    title: "受け取れる状態を見極める",
+    title: "最後まで履歴が残る",
     description:
-      "承認前に残っている確認点や変更内容を整理し、最終的に受領できる申請かどうかを判断しやすくします。",
+      "提出、差し戻し、修正、再提出、承認の操作履歴を残し、後から誰がいつ何を判断したか確認できます。",
   },
 ];
 
 const useCases = [
   {
     icon: Building2,
-    title: "補助金・助成金の申請受付",
+    title: "補助金・助成金の確認業務",
     description:
-      "事業者や住民から届く申請を公開フォームで受け付け、金額、対象期間、連絡先などの確認点を項目ごとに整理できます。",
-    note: "再提出が多い制度でも、修正依頼から再確認まで同じ履歴で追えます。",
-  },
-  {
-    icon: MailCheck,
-    title: "施設利用・許可申請の確認",
-    description:
-      "利用日、利用目的、申請者情報など、受付後の確認が発生しやすい手続きをメールリンクから案内できます。",
-    note: "外部の申請者にログインやアカウント登録を求めず、必要な修正だけ進められます。",
+      "事業者や住民から届く書類を受け付け、金額、対象期間、添付資料などの不足を項目ごとに差し戻せます。",
+    note: "再提出が何度か発生しても、同じ履歴で追跡できます。",
   },
   {
     icon: UsersRound,
-    title: "取引先・社外メンバーからの提出依頼",
+    title: "取引先登録・契約前確認",
     description:
-      "登録情報、各種届出、確認書類など、組織外の相手から集める情報を承認担当者の確認フローに載せられます。",
-    note: "部署や業務ごとにスペースを分け、誰が確認中かを見える状態にできます。",
+      "登録情報、確認書類、社内チェックなど、相手先と確認者の往復が発生する業務を進められます。",
+    note: "社外メンバーにアカウント作成を求めず、メールリンクから修正してもらえます。",
+  },
+  {
+    icon: MailCheck,
+    title: "施設利用・許可手続き",
+    description:
+      "利用日、利用目的、連絡先、添付資料など、受付後の確認が多い手続きをフォーム化できます。",
+    note: "差し戻し対象だけを明示し、必要な修正を最短で依頼できます。",
   },
   {
     icon: FileSpreadsheet,
     title: "承認後の集計・問い合わせ対応",
     description:
-      "承認済みの申請を CSV で出力し、後から問い合わせがあったときは差し戻し、再提出、承認の履歴を確認できます。",
-    note: "集計や内部確認まで同じ申請データを起点に追跡できます。",
+      "完了した申請を CSV で出力し、問い合わせ時には差し戻しや再提出の経緯まで確認できます。",
+    note: "集計と監査対応を、同じ申請データから進められます。",
   },
 ];
 
-const productScreens = [
+const processSteps = [
   {
-    src: "/marketing/screen-form-setup.gif",
-    title: "申請フォームと承認フローをまとめて準備",
+    icon: MailCheck,
+    title: "提出を受け付ける",
     description:
-      "業務に必要な入力項目と確認ステップを、スペースごとに作成できます。",
-    alt: "ReviewFlow の申請フォーム作成画面",
+      "公開フォームやメールリンクで必要な情報を集め、担当者が確認できる状態にします。",
   },
   {
-    src: "/marketing/screen-public-access.gif",
-    title: "メールで届いたリンクから申請へ進む",
+    icon: Route,
+    title: "不備を差し戻す",
     description:
-      "申請者は専用アカウントを作らず、案内されたメールアドレスで申請画面へ進めます。",
-    alt: "ReviewFlow の公開申請アクセス画面",
+      "修正が必要な項目を選び、項目別コメントと全体コメントを添えて戻します。",
   },
   {
-    src: "/marketing/screen-public-form.gif",
-    title: "申請者が必要な項目を入力して提出",
+    icon: History,
+    title: "修正内容を確認する",
     description:
-      "受付側が設定した項目に沿って入力し、提出後の確認や修正依頼につなげられます。",
-    alt: "ReviewFlow の公開申請フォーム入力画面",
+      "申請者の修正、再提出メッセージ、変更箇所を見ながら再確認します。",
+  },
+  {
+    icon: FileCheck2,
+    title: "受領できる状態にする",
+    description:
+      "残っている確認点をなくし、承認・却下・完了判断まで同じ申請で扱います。",
   },
 ];
 
@@ -119,16 +122,16 @@ const productScreens = [
 export function MarketingHome() {
   return (
     <main className="min-h-screen bg-white text-slate-950">
-      <section className="relative isolate min-h-[78svh] overflow-hidden">
+      <section className="relative isolate min-h-[76svh] overflow-hidden">
         <Image
           src="/marketing/reviewflow-hero.png"
-          alt="ReviewFlow の申請承認ワークフローを表すダッシュボード"
+          alt="ReviewFlow の確認業務ワークフローを表す管理画面"
           fill
           priority
           sizes="100vw"
           className="object-cover object-center"
         />
-        <div className="absolute inset-0 bg-white/70" aria-hidden="true" />
+        <div className="absolute inset-0 bg-white/72" aria-hidden="true" />
 
         <header className="relative z-10 mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-5 sm:px-8">
           <Link href="/" className="text-lg font-semibold text-slate-950">
@@ -138,14 +141,14 @@ export function MarketingHome() {
             <a href="#use-cases" className="hover:text-slate-950">
               利用シーン
             </a>
-            <a href="#screens" className="hover:text-slate-950">
-              画面
+            <a href="#process" className="hover:text-slate-950">
+              進め方
             </a>
             <a href="#features" className="hover:text-slate-950">
               特長
             </a>
             <a href="#workflow" className="hover:text-slate-950">
-              業務フロー
+              流れ
             </a>
           </nav>
           <div className="flex items-center gap-2">
@@ -166,17 +169,17 @@ export function MarketingHome() {
           </div>
         </header>
 
-        <div className="relative z-10 mx-auto flex w-full max-w-6xl px-5 pb-14 pt-14 sm:px-8 lg:pb-20 lg:pt-20">
-          <div className="max-w-2xl">
-            <p className="mb-5 inline-flex items-center rounded-lg border border-teal-200 bg-white/75 px-3 py-1 text-sm font-medium text-teal-900">
-              修正が必要な申請を、迷わず受け取れる状態へ
+        <div className="relative z-10 mx-auto flex w-full max-w-6xl px-5 pb-12 pt-12 sm:px-8 lg:pb-16 lg:pt-20">
+          <div className="max-w-3xl">
+            <p className="mb-5 inline-flex items-center rounded-lg border border-teal-200 bg-white/78 px-3 py-1 text-sm font-medium text-teal-900">
+              差し戻しが前提の確認業務を、最後まで進める
             </p>
             <h1 className="text-5xl font-semibold leading-[1.05] text-slate-950 sm:text-6xl lg:text-7xl">
               ReviewFlow
             </h1>
-            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-700 sm:text-xl">
-              ReviewFlow は、確認時に気づいた不備を入力項目ごとに伝え、申請者の修正から再提出、最終確認までを同じ流れで進められる申請承認ワークフローです。
-              外部の申請者は、メールアドレス宛に届く案内リンクから申請できます。
+            <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-700 sm:text-xl">
+              ReviewFlow は、提出を受け付けるだけでなく、確認、項目別の差し戻し、申請者の修正、再提出後の再確認、最終判断までを同じ流れで進める業務ワークフローです。
+              手戻りが多く、完了まで人の確認が必要な業務を見失わずに進められます。
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
@@ -205,7 +208,10 @@ export function MarketingHome() {
               key={item.label}
               className="flex min-h-28 gap-3 rounded-lg border border-slate-200 bg-white p-4"
             >
-              <item.icon aria-hidden="true" className="mt-1 size-5 text-teal-700" />
+              <item.icon
+                aria-hidden="true"
+                className="mt-1 size-5 text-teal-700"
+              />
               <div>
                 <h2 className="text-sm font-semibold text-slate-950">
                   {item.label}
@@ -221,16 +227,15 @@ export function MarketingHome() {
 
       <section id="use-cases" className="bg-white">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 lg:py-20">
-          <div className="grid gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:items-start">
+          <div className="grid gap-8 lg:grid-cols-[0.78fr_1.22fr] lg:items-start">
             <div>
               <p className="text-sm font-semibold text-teal-800">Use Cases</p>
               <h2 className="mt-3 text-3xl font-semibold leading-tight text-slate-950 sm:text-4xl">
-                具体的な利用シーン
+                申請後の確認と手戻りに時間がかかる業務へ
               </h2>
               <p className="mt-4 text-base leading-8 text-slate-600">
-                補助金申請、施設利用申請、各種届出など、受付後に確認や修正依頼が発生する手続きで使えます。
-                申請者はログインやアカウント登録をしなくても、メールアドレス宛のリンクから申請できます。
-                承認者と管理者は同じ申請の状態を見ながら進められます。
+                一度提出して終わりではなく、担当者が確認し、必要な箇所を戻し、相手が修正し、もう一度確認して完了する業務で使えます。
+                外部の申請者や取引先は、アカウント登録なしでメールリンクから提出・修正できます。
               </p>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -239,7 +244,10 @@ export function MarketingHome() {
                   key={item.title}
                   className="rounded-lg border border-slate-200 bg-slate-50 p-5"
                 >
-                  <item.icon aria-hidden="true" className="size-6 text-teal-700" />
+                  <item.icon
+                    aria-hidden="true"
+                    className="size-6 text-teal-700"
+                  />
                   <h3 className="mt-5 text-lg font-semibold leading-7 text-slate-950">
                     {item.title}
                   </h3>
@@ -256,43 +264,58 @@ export function MarketingHome() {
         </div>
       </section>
 
-      <section id="screens" className="bg-slate-50">
+      <section id="process" className="bg-slate-50">
         <div className="mx-auto max-w-6xl px-5 py-16 sm:px-8 lg:py-20">
-          <div className="max-w-3xl">
-            <p className="text-sm font-semibold text-teal-800">
-              Product Screens
-            </p>
-            <h2 className="mt-3 text-3xl font-semibold leading-tight text-slate-950 sm:text-4xl">
-              実際の画面
-            </h2>
-            <p className="mt-4 text-base leading-8 text-slate-600">
-              フォーム作成からメールリンクでの申請、入力まで、実際の操作画面で流れを確認できます。
-            </p>
-          </div>
-          <div className="mt-10 grid gap-5 lg:grid-cols-3">
-            {productScreens.map((screen) => (
-              <figure
-                key={screen.title}
-                className="overflow-hidden rounded-lg border border-slate-200 bg-white"
-              >
-                <Image
-                  src={screen.src}
-                  alt={screen.alt}
-                  width={600}
-                  height={336}
-                  unoptimized
-                  className="aspect-[25/14] w-full border-b border-slate-200 object-cover"
-                />
-                <figcaption className="p-5">
-                  <h3 className="text-base font-semibold leading-7 text-slate-950">
-                    {screen.title}
-                  </h3>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">
-                    {screen.description}
-                  </p>
-                </figcaption>
-              </figure>
-            ))}
+          <div className="grid gap-10 lg:grid-cols-[0.92fr_1.08fr] lg:items-center">
+            <div>
+              <p className="text-sm font-semibold text-teal-800">
+                Work Process
+              </p>
+              <h2 className="mt-3 text-3xl font-semibold leading-tight text-slate-950 sm:text-4xl">
+                差し戻してから完了するまでを、同じ申請で追う
+              </h2>
+              <div className="mt-8 space-y-4">
+                {processSteps.map((step) => (
+                  <section
+                    key={step.title}
+                    className="flex gap-4 rounded-lg border border-slate-200 bg-white p-5"
+                  >
+                    <step.icon
+                      aria-hidden="true"
+                      className="mt-1 size-6 shrink-0 text-teal-700"
+                    />
+                    <div>
+                      <h3 className="text-base font-semibold text-slate-950">
+                        {step.title}
+                      </h3>
+                      <p className="mt-2 text-sm leading-7 text-slate-600">
+                        {step.description}
+                      </p>
+                    </div>
+                  </section>
+                ))}
+              </div>
+            </div>
+
+            <figure className="overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm">
+              <Image
+                src="/marketing/reviewflow-hero.png"
+                alt="ReviewFlow の差し戻しと再提出を確認する管理画面"
+                width={1200}
+                height={760}
+                priority={false}
+                sizes="(min-width: 1024px) 540px, 100vw"
+                className="aspect-[30/19] w-full object-cover"
+              />
+              <figcaption className="border-t border-slate-200 p-5">
+                <h3 className="text-base font-semibold leading-7 text-slate-950">
+                  途中で止まりやすい確認業務を、状態と履歴で追跡
+                </h3>
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  担当者は差し戻し対象、再提出後の変更、承認状況を同じ申請詳細から確認できます。
+                </p>
+              </figcaption>
+            </figure>
           </div>
         </div>
       </section>
@@ -304,8 +327,12 @@ export function MarketingHome() {
               Correction Workflow
             </p>
             <h2 className="mt-3 text-3xl font-semibold leading-tight text-slate-950 sm:text-4xl">
-              直す場所が伝われば、申請はもっと早く前に進む。
+              手戻りが多い業務ほど、どこで止まっているかが重要です
             </h2>
+            <p className="mt-4 text-base leading-8 text-slate-600">
+              ReviewFlow は、提出物を受け取るフォームだけではありません。
+              差し戻し後の修正、再提出、再確認までを業務の一部として扱います。
+            </p>
           </div>
           <div className="mt-10 grid gap-4 md:grid-cols-3">
             {featureBlocks.map((item) => (
@@ -313,7 +340,10 @@ export function MarketingHome() {
                 key={item.title}
                 className="rounded-lg border border-slate-200 bg-slate-50 p-5"
               >
-                <item.icon aria-hidden="true" className="size-6 text-teal-700" />
+                <item.icon
+                  aria-hidden="true"
+                  className="size-6 text-teal-700"
+                />
                 <h3 className="mt-5 text-lg font-semibold text-slate-950">
                   {item.title}
                 </h3>
@@ -323,25 +353,22 @@ export function MarketingHome() {
               </section>
             ))}
           </div>
-          <p className="mt-8 max-w-3xl text-sm leading-7 text-slate-500">
-            申請、差し戻し、再提出、承認の操作履歴も残るため、監査対応が必要な場面でも誰がいつ何をしたかをあとから確認できます。
-          </p>
         </div>
       </section>
 
-      <section className="bg-white">
+      <section className="bg-slate-950 text-white">
         <div className="mx-auto flex max-w-6xl flex-col gap-6 px-5 py-14 sm:px-8 md:flex-row md:items-center md:justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-slate-950">
-              申請を、受け取れる状態まで導く。
+            <h2 className="text-2xl font-semibold">
+              受付で終わらない業務を、完了まで進める。
             </h2>
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              項目ごとの指摘から再提出、承認判断まで、同じ場所で運用できます。
+            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-300">
+              項目ごとの指摘から再提出、承認判断、監査ログまで、同じ場所で運用できます。
             </p>
           </div>
           <Link
             href="/signup"
-            className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-slate-950 px-5 text-base font-medium text-white shadow-sm transition-colors hover:bg-slate-800"
+            className="inline-flex h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 text-base font-medium text-slate-950 shadow-sm transition-colors hover:bg-slate-100"
           >
             ReviewFlow を始める
             <ArrowRight aria-hidden="true" className="size-5" />
@@ -369,17 +396,29 @@ export function MarketingHome() {
                 Product
               </h2>
               <div className="mt-3 flex flex-col gap-2">
-                <a href="#use-cases" className="text-slate-600 hover:text-slate-950">
+                <a
+                  href="#use-cases"
+                  className="text-slate-600 hover:text-slate-950"
+                >
                   利用シーン
                 </a>
-                <a href="#workflow" className="text-slate-600 hover:text-slate-950">
-                  業務フロー
+                <a
+                  href="#process"
+                  className="text-slate-600 hover:text-slate-950"
+                >
+                  進め方
                 </a>
-                <a href="#screens" className="text-slate-600 hover:text-slate-950">
-                  画面
-                </a>
-                <a href="#features" className="text-slate-600 hover:text-slate-950">
+                <a
+                  href="#features"
+                  className="text-slate-600 hover:text-slate-950"
+                >
                   特長
+                </a>
+                <a
+                  href="#workflow"
+                  className="text-slate-600 hover:text-slate-950"
+                >
+                  流れ
                 </a>
               </div>
             </nav>
@@ -389,10 +428,16 @@ export function MarketingHome() {
                 Account
               </h2>
               <div className="mt-3 flex flex-col gap-2">
-                <Link href="/signup" className="text-slate-600 hover:text-slate-950">
+                <Link
+                  href="/signup"
+                  className="text-slate-600 hover:text-slate-950"
+                >
                   新規登録
                 </Link>
-                <Link href="/login" className="text-slate-600 hover:text-slate-950">
+                <Link
+                  href="/login"
+                  className="text-slate-600 hover:text-slate-950"
+                >
                   ログイン
                 </Link>
               </div>

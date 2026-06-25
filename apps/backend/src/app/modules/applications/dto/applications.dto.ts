@@ -116,7 +116,7 @@ export class PatchApplicationDto {
     type: 'object',
     additionalProperties: true,
     description:
-      'field_key をキーにした値。draft は全項目可。returned はオープンな correction の対象フィールドのみ。',
+      'field_key をキーにした値。draft は全項目可。returned はオープンな correction がある申請のフォーム項目のみ。',
   })
   @IsOptional()
   @IsObject()
@@ -172,6 +172,16 @@ export class ReturnApplicationDto extends ReviewStepExpectationDto {
   @ValidateNested({ each: true })
   @Type(() => ReturnFieldItemDto)
   fields!: ReturnFieldItemDto[];
+}
+
+export class ResubmitApplicationDto {
+  @ApiPropertyOptional({
+    description: '再提出時に申請者が任意で入力するメッセージ',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  message?: string;
 }
 
 export type ReturnApplicationEmailDto = {
@@ -273,6 +283,13 @@ export class CorrectionTargetsResponseDto {
 
   @ApiProperty()
   applicationStatus!: string;
+
+  @ApiProperty({
+    type: Object,
+    additionalProperties: true,
+    description: 'フォーム fieldKey ごとの現在値',
+  })
+  values!: Record<string, unknown>;
 
   @ApiPropertyOptional({
     type: OpenCorrectionTargetsDto,

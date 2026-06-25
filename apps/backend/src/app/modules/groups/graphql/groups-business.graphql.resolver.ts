@@ -16,28 +16,18 @@ import {
   UpdateGroupDto,
   UpdateGroupMemberRoleDto,
 } from '../dto/groups.dto';
-import { SpaceDashboardService } from '../services/dashboard/space-dashboard.service';
 import { GroupsService } from '../services/facades/groups.service';
 
 type GroupWithCurrentUserRole = Group & { currentUserRole?: string | null };
 
 @Resolver()
 export class GroupsBusinessGraphqlResolver {
-  constructor(
-    private readonly groupsService: GroupsService,
-    private readonly dashboardService: SpaceDashboardService,
-  ) {}
+  constructor(private readonly groupsService: GroupsService) {}
 
   @Query(() => GraphQLJSON, { name: 'groups' })
   async list(@CurrentUser() actor: AuthUserPayload) {
     const groups = await this.groupsService.list(actor);
     return { groups: groups.map(toGroupSummary) };
-  }
-
-  @Query(() => GraphQLJSON, { name: 'spaceDashboard' })
-  @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
-  async dashboard(@CurrentUser() actor: AuthUserPayload) {
-    return { spaces: await this.dashboardService.list(actor) };
   }
 
   @Mutation(() => GraphQLJSON, { name: 'createGroup' })

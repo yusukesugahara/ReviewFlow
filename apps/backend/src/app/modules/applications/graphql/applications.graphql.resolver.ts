@@ -29,6 +29,7 @@ import {
   PatchApplicationDto,
   RejectApplicationDto,
   ReturnApplicationDto,
+  ResubmitApplicationDto,
 } from '../dto/applications.dto';
 import { ApplicationsService } from '../services/facades/applications.service';
 import { ApplicationGraphqlLoader } from './application.graphql.loader';
@@ -270,9 +271,14 @@ export class ApplicationsGraphqlResolver {
   @Roles(UserRole.TENANT_ADMIN, UserRole.TENANT_USER)
   async resubmitApplication(
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
+    @Args('input', { type: () => GraphQLJSON, nullable: true }) input: unknown,
     @CurrentUser() actor: AuthUserPayload,
   ) {
-    const row = await this.applications.resubmit(actor, id);
+    const row = await this.applications.resubmit(
+      actor,
+      id,
+      toValidatedInput(ResubmitApplicationDto, input ?? {}),
+    );
     return this.applications.toDetailForActor(row, actor);
   }
 
@@ -289,6 +295,7 @@ export class ApplicationsGraphqlResolver {
     const row = await this.applications.resubmit(
       actor,
       this.toApplicationDatabaseId(validated.applicationId),
+      { message: validated.message ?? undefined },
     );
     return this.toApplicationMutationPayload(
       row,
@@ -359,8 +366,13 @@ export class ApplicationsGraphqlResolver {
   async resubmitReturnedApplication(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
     @Args('id', { type: () => ID }, ParseUUIDPipe) id: string,
+    @Args('input', { type: () => GraphQLJSON, nullable: true }) input: unknown,
   ) {
-    const row = await this.applications.resubmitForApplicant(actor, id);
+    const row = await this.applications.resubmitForApplicant(
+      actor,
+      id,
+      toValidatedInput(ResubmitApplicationDto, input ?? {}),
+    );
     return this.applications.toDetailForApplicant(row, actor);
   }
 

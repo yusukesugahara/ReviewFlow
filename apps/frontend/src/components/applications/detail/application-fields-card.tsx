@@ -22,6 +22,7 @@ type ApplicationFieldsCardProps = {
   canReturnApplication: boolean;
   decisionActions?: ReactNode;
   description: string;
+  correctedFieldKeys?: string[];
   fields: ApplicationFormField[];
   openCorrectionItems: ApplicationCorrectionTargetItem[];
   returnAction?: (formData: FormData) => Promise<void>;
@@ -36,6 +37,7 @@ export function ApplicationFieldsCard({
   fields,
   title,
   description,
+  correctedFieldKeys = [],
   openCorrectionItems,
   canReturnApplication,
   returnAction,
@@ -44,6 +46,8 @@ export function ApplicationFieldsCard({
   const correctionTargetKeys = new Set(
     openCorrectionItems.flatMap((item) => [item.formFieldId, item.fieldKey]),
   );
+  const correctedKeys = new Set(correctedFieldKeys);
+  const hasCorrectedKeys = correctedKeys.size > 0;
   const canReturn = canReturnApplication && !!returnAction;
   const returnFormId = `return-application-${application.id}`;
   const table = (
@@ -54,11 +58,21 @@ export function ApplicationFieldsCard({
       }))}
       values={application.values}
       title="申請書"
-      getRowClassName={(field) =>
-        correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey)
-          ? "bg-amber-50"
-          : undefined
-      }
+      getRowClassName={(field) => {
+        const isCorrectionTarget =
+          correctionTargetKeys.has(field.id) ||
+          correctionTargetKeys.has(field.fieldKey);
+        const isCorrected =
+          correctedKeys.has(field.id) || correctedKeys.has(field.fieldKey);
+
+        if (isCorrectionTarget) {
+          return "bg-amber-50";
+        }
+        if (hasCorrectedKeys && !isCorrected) {
+          return "bg-slate-50/70 opacity-60";
+        }
+        return undefined;
+      }}
       renderValue={(field, value) => {
         const isCorrectionTarget =
           correctionTargetKeys.has(field.id) || correctionTargetKeys.has(field.fieldKey);

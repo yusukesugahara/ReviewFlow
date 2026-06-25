@@ -13,10 +13,16 @@ import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
 } from "@/components/applications/detail/application-detail.types";
+import {
+  getApplicationResubmissionMessages,
+  getLatestCorrectionCycleFieldKeys,
+  type ApplicationResubmissionMessage,
+} from "@/components/applications/detail/application-corrected-field-keys";
 import { isFormSetupStatus } from "@/components/applications/status/application-status-rules";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
 import { client } from "@/lib/relay/client";
+import type { AuditLogsListSuccessJson } from "@/lib/schema";
 import {
   getMissingRequiredFields,
   isRelatedSubmittedApplication,
@@ -51,6 +57,8 @@ export type ApplicationDetailPageData = ApplicationDetailBaseData & {
   kind: "application";
   capabilities: ApplicationCapabilities;
   corrections: ApplicationCorrection[];
+  correctedFieldKeys: string[];
+  resubmissionMessages: ApplicationResubmissionMessage[];
   fieldMap: Array<{ id: string; key: string }>;
   formDetailHref: string | null;
   missingRequiredFields: ApplicationFormField[];
@@ -80,10 +88,11 @@ export async function getSpaceApplicationDetailPageData({
   });
   const definitionId = application.formDefinitionId ?? queryDefinitionId;
 
-  const [definition, corrections, openItems] = await Promise.all([
+  const [definition, corrections, openItems, correctionAudit] = await Promise.all([
     getFormDefinition({ authHeaders, definitionId, spaceId }),
     getApplicationCorrections({ applicationId, authHeaders }),
     getOpenCorrectionItems({ applicationId, authHeaders }),
+    getCorrectionAudit({ applicationId, authHeaders }),
   ]);
   const fields = definition?.fields ?? [];
 
@@ -114,6 +123,8 @@ export async function getSpaceApplicationDetailPageData({
     application,
     capabilities: getApplicationCapabilities(application),
     corrections,
+    correctedFieldKeys: correctionAudit.correctedFieldKeys,
+    resubmissionMessages: correctionAudit.resubmissionMessages,
     definitionId,
     fieldMap: fields.map((field) => ({ id: field.id, key: field.fieldKey })),
     fields,
@@ -125,6 +136,45 @@ export async function getSpaceApplicationDetailPageData({
     missingRequiredFields: getMissingRequiredFields(fields, application.values),
     openItems,
   };
+}
+
+/**
+ * 最新の差戻し修正 fieldKey と再提出メッセージを監査ログから取得します。
+ */
+async function getCorrectionAudit({
+  applicationId,
+  authHeaders,
+}: {
+  applicationId: string;
+  authHeaders: AuthHeaders;
+}): Promise<{
+  correctedFieldKeys: string[];
+  resubmissionMessages: ApplicationResubmissionMessage[];
+}> {
+  try {
+    const logsRaw = await client.auditLogs( {
+      params: {
+        query: {
+          actionType: "application.",
+          applicationId,
+          limit: 200,
+        },
+      },
+      headers: authHeaders,
+    });
+    const logs = unwrapResponseData<AuditLogsListSuccessJson["data"]>(
+      logsRaw,
+    ).logs;
+    return {
+      correctedFieldKeys: getLatestCorrectionCycleFieldKeys(logs),
+      resubmissionMessages: getApplicationResubmissionMessages(logs),
+    };
+  } catch (error) {
+    if (isApiFailure(error)) {
+      return { correctedFieldKeys: [], resubmissionMessages: [] };
+    }
+    throw error;
+  }
 }
 
 /**

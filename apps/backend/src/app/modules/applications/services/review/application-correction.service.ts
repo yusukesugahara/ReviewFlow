@@ -48,7 +48,13 @@ export class ApplicationCorrectionService {
     app: Application,
   ): Promise<CorrectionTargetsResponseDto> {
     const open = await this.findOpenCorrectionWithItems(app.tenantId, app.id);
-    return mapCorrectionTargetsResponse(app, open);
+    const template =
+      await this.formDefinitionsRepository.findTemplateByIdInGroup({
+        tenantId: app.tenantId,
+        groupId: app.groupId,
+        formDefinitionId: app.formDefinitionId,
+      });
+    return mapCorrectionTargetsResponse(app, open, template?.fields ?? []);
   }
 
   /**

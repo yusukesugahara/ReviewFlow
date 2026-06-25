@@ -22,7 +22,7 @@
 
 ## tenant_user / tenant_admin 共通
 - /account … ログイン中アカウントの詳細、プロフィール編集、メールアドレス変更、パスワード変更
-- /space … **使用状況ダッシュボード**（スペース横断の申請件数・平均差し戻し数・再提出件数）
+- /space … 既定スペースの `/space/[spaceId]/applications` へリダイレクトするスペース入口
 - /space/[spaceId] … `/space/[spaceId]/applications` へリダイレクトするスペース入口
 - /space/[spaceId]/applications
 - /space/[spaceId]/applications/new

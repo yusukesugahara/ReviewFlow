@@ -6,7 +6,7 @@ import type { FormField } from '../../../../models/entities/form-field.entity';
 import { ApplicationFieldValueTypeValidator } from './application-field-value-type.validator';
 
 /**
- * フォーム定義に対する申請入力値の存在・型・修正対象制限を検証する。
+ * フォーム定義に対する申請入力値の存在・型を検証する。
  *
  * DTO validation では分からない、動的 form field と申請状態に依存する検証を扱う。
  */
@@ -42,20 +42,14 @@ export class ApplicationFormValueValidator {
   }
 
   /**
-   * patch 入力値が既知 field に対応し、必要なら差し戻し修正対象 field に限定されているかを検証する。
+   * patch 入力値が既知 field に対応し、field type と整合するかを検証する。
    */
   assertPatchValuesMatchFields(
     fieldsByKey: ReadonlyMap<string, FormField>,
     values: Record<string, unknown>,
-    allowedFieldIds?: ReadonlySet<string>,
   ): void {
     for (const [key, value] of Object.entries(values)) {
       const field = this.getKnownField(fieldsByKey, key);
-      if (allowedFieldIds && !allowedFieldIds.has(field.id)) {
-        throw clientError(
-          ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
-        );
-      }
       this.fieldValueTypeValidator.assertValueMatchesFieldType(field, value);
     }
   }

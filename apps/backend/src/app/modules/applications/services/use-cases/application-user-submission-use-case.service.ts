@@ -10,7 +10,10 @@ import {
   BusinessAuditLogService,
 } from '../../../audit-logs/services/business-audit-log.service';
 import { SpaceAccessService } from '../../../groups/services/access/space-access.service';
-import type { PatchApplicationDto } from '../../dto/applications.dto';
+import type {
+  PatchApplicationDto,
+  ResubmitApplicationDto,
+} from '../../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../../resolvers/application-approval-flow.resolver';
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
 import { ApplicationQueryService } from '../query/application-query.service';
@@ -119,7 +122,11 @@ export class ApplicationUserSubmissionUseCaseService {
    * @param id 申請ID
    * @returns 再提出後に再取得した申請
    */
-  async resubmit(actor: AuthUserPayload, id: string): Promise<Application> {
+  async resubmit(
+    actor: AuthUserPayload,
+    id: string,
+    dto: ResubmitApplicationDto = {},
+  ): Promise<Application> {
     await this.dataSource.transaction(async (manager) => {
       const app = await this.loadApplicantEditableApplication(
         actor,
@@ -136,11 +143,17 @@ export class ApplicationUserSubmissionUseCaseService {
           app,
           before,
           after: this.snapshot(app),
+          metadataJson: { message: this.trimMessage(dto.message) },
         },
         manager,
       );
     });
     return this.queryService.getOneForActor(actor, id);
+  }
+
+  private trimMessage(message: string | undefined): string | null {
+    const trimmed = message?.trim();
+    return trimmed ? trimmed : null;
   }
 
   /**
