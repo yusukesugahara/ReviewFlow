@@ -136,4 +136,24 @@ describe("ApplicationFieldsCard", () => {
     expect(screen.getByText("住民票の写し")).toBeInTheDocument();
     expect(screen.queryByText("procedure_type:")).not.toBeInTheDocument();
   });
+
+  it("renders applicant messages in correction history", () => {
+    render(
+      <CorrectionHistory
+        corrections={[]}
+        fields={fields}
+        resubmissionMessages={[
+          {
+            id: "message-1",
+            createdAt: "2026-06-08T00:00:00.000Z",
+            message: "補足して再提出しました",
+          },
+        ]}
+        values={{}}
+      />,
+    );
+
+    expect(screen.getByText("申請者メッセージ")).toBeInTheDocument();
+    expect(screen.getByText("補足して再提出しました")).toBeInTheDocument();
+  });
 });

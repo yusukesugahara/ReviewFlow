@@ -22,6 +22,7 @@ import {
   CorrectionTargetsResponseDto,
   CreatePublicApplicationDto,
   PatchApplicationDto,
+  ResubmitApplicationDto,
 } from '../dto/applications.dto';
 import { ApplicationsService } from '../services/facades/applications.service';
 
@@ -91,8 +92,9 @@ export class PublicApplicationsController {
   async resubmitReturned(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ResubmitApplicationDto,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
-    const row = await this.applications.resubmitForApplicant(actor, id);
+    const row = await this.applications.resubmitForApplicant(actor, id, dto);
     return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 }

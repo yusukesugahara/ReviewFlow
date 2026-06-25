@@ -244,6 +244,12 @@ export class ResubmitApplicationRelayInputGql {
   @Field(() => String, { nullable: true })
   @IsOptional()
   @IsString()
+  @MaxLength(4000)
+  message?: string | null;
+
+  @Field(() => String, { nullable: true })
+  @IsOptional()
+  @IsString()
   @MaxLength(512)
   clientMutationId?: string | null;
 }

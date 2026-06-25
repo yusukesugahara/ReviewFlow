@@ -62,6 +62,8 @@ describe("correction all fields value display", () => {
       />,
     );
 
+    expect(screen.getByLabelText("メッセージ（任意）")).toBeInTheDocument();
+
     await user.click(screen.getByRole("button", { name: "すべて表示" }));
 
     const memo = screen.getByDisplayValue("提出時メモ");

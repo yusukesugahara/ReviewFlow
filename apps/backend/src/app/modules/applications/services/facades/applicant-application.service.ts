@@ -12,6 +12,7 @@ import type {
   CorrectionTargetsResponseDto,
   CreatePublicApplicationDto,
   PatchApplicationDto,
+  ResubmitApplicationDto,
 } from '../../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../../resolvers/application-approval-flow.resolver';
 import { ApplicantApplicationAccessService } from '../access/applicant-application-access.service';
@@ -171,7 +172,11 @@ export class ApplicantApplicationService {
    * @param id 申請ID
    * @returns 再提出後の申請
    */
-  async resubmit(actor: ApplicantSession, id: string): Promise<Application> {
+  async resubmit(
+    actor: ApplicantSession,
+    id: string,
+    dto: ResubmitApplicationDto = {},
+  ): Promise<Application> {
     await this.dataSource.transaction(async (manager) => {
       const app = await this.applicantAccess.loadEditableApplication(
         actor,
@@ -187,12 +192,18 @@ export class ApplicantApplicationService {
           app,
           before,
           after: this.snapshot(app),
+          metadataJson: { message: this.trimMessage(dto.message) },
         },
         manager,
       );
     });
     const updated = await this.applicantAccess.loadApplicationDetail(actor, id);
     return this.progressService.hydrate(updated);
+  }
+
+  private trimMessage(message: string | undefined): string | null {
+    const trimmed = message?.trim();
+    return trimmed ? trimmed : null;
   }
 
   /**

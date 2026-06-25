@@ -174,6 +174,16 @@ export class ReturnApplicationDto extends ReviewStepExpectationDto {
   fields!: ReturnFieldItemDto[];
 }
 
+export class ResubmitApplicationDto {
+  @ApiPropertyOptional({
+    description: '再提出時に申請者が任意で入力するメッセージ',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(4000)
+  message?: string;
+}
+
 export type ReturnApplicationEmailDto = {
   overallComment?: string;
   fields: ReturnFieldItemDto[];

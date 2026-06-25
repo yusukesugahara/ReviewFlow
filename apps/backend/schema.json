@@ -2924,6 +2924,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResubmitApplicationDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": "",
@@ -3326,6 +3336,16 @@
             }
           }
         ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResubmitApplicationDto"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
             "description": ""
@@ -5236,6 +5256,15 @@
           "expectedStepOrder",
           "fields"
         ]
+      },
+      "ResubmitApplicationDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "再提出時に申請者が任意で入力するメッセージ"
+          }
+        }
       },
       "RejectApplicationDto": {
         "type": "object",

@@ -274,7 +274,9 @@ describe('ApplicantApplicationService', () => {
     applicationsRepository.findApplicantEditable.mockResolvedValue(row);
     applicationsRepository.findByIdInTenant.mockResolvedValue(updated);
 
-    await expect(service.resubmit(applicant(), 'app-1')).resolves.toBe(updated);
+    await expect(
+      service.resubmit(applicant(), 'app-1', { message: ' 補足です ' }),
+    ).resolves.toBe(updated);
 
     expect(applicationsRepository.findApplicantEditable).toHaveBeenCalledWith(
       {
@@ -288,6 +290,13 @@ describe('ApplicantApplicationService', () => {
     expect(submissionService.resubmit).toHaveBeenCalledWith(
       'tenant-1',
       row,
+      transactionManager,
+    );
+    expect(auditLogs.recordApplicationEvent).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: 'application.resubmitted',
+        metadataJson: { message: '補足です' },
+      }),
       transactionManager,
     );
     expect(applicationsRepository.findByIdInTenant).toHaveBeenCalledWith({

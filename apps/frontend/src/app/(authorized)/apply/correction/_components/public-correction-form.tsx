@@ -4,6 +4,8 @@ import { useActionState, useMemo, useState } from "react";
 import { Pencil } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   ApplicationFormSubmitButton,
   type ApplicationFormClientValidationState,
@@ -213,6 +215,17 @@ export function PublicCorrectionForm({
           );
         }}
       />
+
+      <div className="space-y-2 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+        <Label htmlFor="public-correction-message">メッセージ（任意）</Label>
+        <Textarea
+          id="public-correction-message"
+          name="message"
+          placeholder="修正内容について補足があれば入力してください"
+          rows={4}
+          className="bg-white"
+        />
+      </div>
 
       <ApplicationFormSubmitButton
         formId={FORM_ID}

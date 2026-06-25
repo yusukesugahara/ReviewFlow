@@ -15,6 +15,7 @@ import type { PublicCorrectionSubmitState } from "./types";
 const publicCorrectionFormSchema = z.object({
   applicationId: z.string().min(1),
   fieldsJson: z.string().min(1),
+  message: z.string().trim().max(4000).optional().catch(undefined),
 });
 
 /**
@@ -38,6 +39,7 @@ export async function submitPublicCorrectionAction(
   const parsedForm = publicCorrectionFormSchema.safeParse({
     applicationId: formData.get("applicationId"),
     fieldsJson: formData.get("fieldsJson"),
+    message: formData.get("message") || undefined,
   });
   if (!parsedForm.success) {
     return { formError: "修正対象項目を取得できませんでした" };
@@ -73,6 +75,7 @@ export async function submitPublicCorrectionAction(
     const resubmitResponse = await client.resubmitReturnedApplication(
       {
         params: { path: { id: parsedForm.data.applicationId } },
+        body: { message: parsedForm.data.message },
         headers,
       },
     );

@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import type { ApplicationResubmissionMessage } from "./application-corrected-field-keys";
 
 export type ApplicationCapabilities = {
   canEditApplication: boolean;
@@ -91,6 +92,7 @@ export type ApplicationDetailViewProps = {
   openCorrectionItems?: ApplicationCorrectionTargetItem[];
   corrections?: ApplicationCorrection[];
   correctedFieldKeys?: string[];
+  resubmissionMessages?: ApplicationResubmissionMessage[];
   actions?: ReactNode;
   reviewerActions?: ReactNode;
   formDetailHref?: string | null;

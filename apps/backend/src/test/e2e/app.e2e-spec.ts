@@ -148,6 +148,7 @@ type AuditLogsListBody = {
       id: string;
       groupId: string | null;
       actionType: string;
+      metadataJson?: Record<string, unknown> | null;
       targetType: string;
     }[];
   };
@@ -1536,11 +1537,28 @@ describe('App (e2e)', () => {
       .set('X-Applicant-Access-Token', applicantAccessToken)
       .send({
         query:
-          'mutation ResubmitReturned($id: ID!) { resubmitReturnedApplication(id: $id) }',
-        variables: { id: retAppId },
+          'mutation ResubmitReturned($id: ID!, $input: JSON) { resubmitReturnedApplication(id: $id, input: $input) }',
+        variables: {
+          id: retAppId,
+          input: { message: '補足して再提出します' },
+        },
       })
       .expect(200);
     expect((resubmitReturned.body as GraphqlJsonBody).errors).toBeUndefined();
+
+    const auditLogs = await request(http)
+      .get('/audit-logs')
+      .query({
+        actionType: 'application.resubmitted',
+        applicationId: retAppId,
+      })
+      .set(apiKey)
+      .set('Authorization', `Bearer ${adminTok}`)
+      .expect(200);
+    expect(
+      (auditLogs.body as AuditLogsListBody).data?.logs?.[0]?.metadataJson
+        ?.message,
+    ).toBe('補足して再提出します');
 
     const again = await request(http)
       .get(`/applications/${retAppId}`)

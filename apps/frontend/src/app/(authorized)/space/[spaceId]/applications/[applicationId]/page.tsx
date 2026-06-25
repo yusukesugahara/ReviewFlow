@@ -76,6 +76,7 @@ export default async function SpaceApplicationDetailPage({
           spaceId,
           data.application.id,
         )}
+        resubmissionMessages={data.resubmissionMessages}
         resubmitAction={resubmitAction.bind(null, spaceId, data.application.id)}
         returnAction={returnAction.bind(
           null,

@@ -432,9 +432,12 @@ export const client = {
     ),
   resubmitApplication: (options?: RequestOptions) =>
     callRelayOperation(
-      mutationOperation("resubmitApplication", {
-        id: options?.params?.path?.id,
-      }),
+      mutationOperation(
+        "resubmitApplication",
+        options?.body
+          ? { id: options?.params?.path?.id, input: options.body }
+          : { id: options?.params?.path?.id },
+      ),
       options,
     ),
   patchApplication: (options?: RequestOptions) =>
@@ -462,9 +465,12 @@ export const client = {
     ),
   resubmitReturnedApplication: (options?: RequestOptions) =>
     callRelayOperation(
-      mutationOperation("resubmitReturnedApplication", {
-        id: options?.params?.path?.id,
-      }),
+      mutationOperation(
+        "resubmitReturnedApplication",
+        options?.body
+          ? { id: options?.params?.path?.id, input: options.body }
+          : { id: options?.params?.path?.id },
+      ),
       options,
     ),
   createExportJob: (options?: RequestOptions) =>

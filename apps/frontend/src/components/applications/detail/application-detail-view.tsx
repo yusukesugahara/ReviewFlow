@@ -26,6 +26,7 @@ export function ApplicationDetailView({
   openCorrectionItems = [],
   corrections = [],
   correctedFieldKeys = [],
+  resubmissionMessages = [],
   actions,
   reviewerActions,
   formDetailHref,
@@ -87,6 +88,7 @@ export function ApplicationDetailView({
             <CorrectionHistory
               corrections={corrections}
               fields={fields}
+              resubmissionMessages={resubmissionMessages}
               values={application.values}
             />
           ) : null}

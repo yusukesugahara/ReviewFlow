@@ -121,6 +121,7 @@ const DETAIL_LABELS: Record<string, string> = {
   groupName: "スペース名",
   isActiveFrom: "有効状態（変更前）",
   isActiveTo: "有効状態（変更後）",
+  message: "メッセージ",
   nameFrom: "スペース名（変更前）",
   nameTo: "スペース名（変更後）",
   operation: "操作",

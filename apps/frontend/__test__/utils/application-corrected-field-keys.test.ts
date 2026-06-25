@@ -1,4 +1,7 @@
-import { getLatestCorrectionCycleFieldKeys } from "@/components/applications/detail/application-corrected-field-keys";
+import {
+  getApplicationResubmissionMessages,
+  getLatestCorrectionCycleFieldKeys,
+} from "@/components/applications/detail/application-corrected-field-keys";
 import type { AuditLogItem } from "@/lib/schema";
 
 function log(
@@ -60,5 +63,18 @@ describe("application corrected field keys", () => {
     ]);
 
     expect(keys).toEqual(["amount"]);
+  });
+
+  // テスト内容: 再提出時の申請者メッセージを監査ログ metadata から取得することを確認する
+  it("collects resubmission messages from metadata", () => {
+    const messages = getApplicationResubmissionMessages([
+      log("application.resubmitted", { message: " 修正しました " }),
+      log("application.resubmitted", { message: "" }),
+      log("application.corrected", { message: "ignored" }),
+    ]);
+
+    expect(messages).toEqual([
+      expect.objectContaining({ message: "修正しました" }),
+    ]);
   });
 });

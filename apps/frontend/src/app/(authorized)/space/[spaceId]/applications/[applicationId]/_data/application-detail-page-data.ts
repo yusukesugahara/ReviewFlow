@@ -13,7 +13,11 @@ import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
 } from "@/components/applications/detail/application-detail.types";
-import { getLatestCorrectionCycleFieldKeys } from "@/components/applications/detail/application-corrected-field-keys";
+import {
+  getApplicationResubmissionMessages,
+  getLatestCorrectionCycleFieldKeys,
+  type ApplicationResubmissionMessage,
+} from "@/components/applications/detail/application-corrected-field-keys";
 import { isFormSetupStatus } from "@/components/applications/status/application-status-rules";
 import { authHeadersOrRedirect } from "@/lib/server/action-auth";
 import { unwrapResponseData } from "@/lib/server/api-envelope";
@@ -54,6 +58,7 @@ export type ApplicationDetailPageData = ApplicationDetailBaseData & {
   capabilities: ApplicationCapabilities;
   corrections: ApplicationCorrection[];
   correctedFieldKeys: string[];
+  resubmissionMessages: ApplicationResubmissionMessage[];
   fieldMap: Array<{ id: string; key: string }>;
   formDetailHref: string | null;
   missingRequiredFields: ApplicationFormField[];
@@ -83,11 +88,11 @@ export async function getSpaceApplicationDetailPageData({
   });
   const definitionId = application.formDefinitionId ?? queryDefinitionId;
 
-  const [definition, corrections, openItems, correctedFieldKeys] = await Promise.all([
+  const [definition, corrections, openItems, correctionAudit] = await Promise.all([
     getFormDefinition({ authHeaders, definitionId, spaceId }),
     getApplicationCorrections({ applicationId, authHeaders }),
     getOpenCorrectionItems({ applicationId, authHeaders }),
-    getCorrectedFieldKeys({ applicationId, authHeaders }),
+    getCorrectionAudit({ applicationId, authHeaders }),
   ]);
   const fields = definition?.fields ?? [];
 
@@ -118,7 +123,8 @@ export async function getSpaceApplicationDetailPageData({
     application,
     capabilities: getApplicationCapabilities(application),
     corrections,
-    correctedFieldKeys,
+    correctedFieldKeys: correctionAudit.correctedFieldKeys,
+    resubmissionMessages: correctionAudit.resubmissionMessages,
     definitionId,
     fieldMap: fields.map((field) => ({ id: field.id, key: field.fieldKey })),
     fields,
@@ -133,15 +139,18 @@ export async function getSpaceApplicationDetailPageData({
 }
 
 /**
- * 最新の差戻し修正で保存された fieldKey を監査ログから取得します。
+ * 最新の差戻し修正 fieldKey と再提出メッセージを監査ログから取得します。
  */
-async function getCorrectedFieldKeys({
+async function getCorrectionAudit({
   applicationId,
   authHeaders,
 }: {
   applicationId: string;
   authHeaders: AuthHeaders;
-}): Promise<string[]> {
+}): Promise<{
+  correctedFieldKeys: string[];
+  resubmissionMessages: ApplicationResubmissionMessage[];
+}> {
   try {
     const logsRaw = await client.auditLogs( {
       params: {
@@ -156,10 +165,13 @@ async function getCorrectedFieldKeys({
     const logs = unwrapResponseData<AuditLogsListSuccessJson["data"]>(
       logsRaw,
     ).logs;
-    return getLatestCorrectionCycleFieldKeys(logs);
+    return {
+      correctedFieldKeys: getLatestCorrectionCycleFieldKeys(logs),
+      resubmissionMessages: getApplicationResubmissionMessages(logs),
+    };
   } catch (error) {
     if (isApiFailure(error)) {
-      return [];
+      return { correctedFieldKeys: [], resubmissionMessages: [] };
     }
     throw error;
   }

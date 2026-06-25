@@ -344,9 +344,9 @@ type Mutation {
   resendReturnEmail(id: ID!): JSON!
   restoreFormDefinition(id: ID!): JSON!
   restoreUser(id: ID!): JSON!
-  resubmitApplication(id: ID!): JSON!
+  resubmitApplication(id: ID!, input: JSON): JSON!
   resubmitApplicationRelay(input: ResubmitApplicationRelayInput!): ApplicationMutationPayload!
-  resubmitReturnedApplication(id: ID!): JSON!
+  resubmitReturnedApplication(id: ID!, input: JSON): JSON!
   returnApplication(id: ID!, input: JSON!): JSON!
   returnApplicationRelay(input: ReturnApplicationRelayInput!): ApplicationMutationPayload!
   submitApplication(id: ID!): JSON!
@@ -440,6 +440,7 @@ input RejectApplicationRelayInput {
 input ResubmitApplicationRelayInput {
   applicationId: ID!
   clientMutationId: String
+  message: String
 }
 
 input ReturnApplicationFieldRelayInput {

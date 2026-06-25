@@ -37,18 +37,22 @@ type ReturnApplicationBody = {
   overallComment?: string;
   fields: { fieldId: string; comment?: string }[];
 };
+type ResubmitApplicationBody = {
+  message?: string;
+};
 type ApplicationActionBody =
   | ApproveApplicationBody
   | RejectApplicationBody
-  | ReturnApplicationBody;
+  | ReturnApplicationBody
+  | ResubmitApplicationBody;
 
 type ApplicationBodyAction =
   | "approveApplication"
   | "rejectApplication"
-  | "returnApplication";
+  | "returnApplication"
+  | "resubmitApplication";
 type EmptyApplicationAction =
   | "submitApplication"
-  | "resubmitApplication"
   | "resendReturnEmail";
 
 /**
@@ -127,12 +131,18 @@ export async function submitAction(spaceId: string, applicationId: string): Prom
 /**
  * 差戻し修正後の申請を再提出します。
  */
-export async function resubmitAction(spaceId: string, applicationId: string): Promise<void> {
+export async function resubmitAction(
+  spaceId: string,
+  applicationId: string,
+  formData: FormData,
+): Promise<void> {
+  const message = readOptionalNonEmptyString(formData, "message");
   let updated: ApplicationDetailViewModel;
   try {
-    updated = await postEmptyApplicationAction(
+    updated = await postApplicationAction(
       "resubmitApplication",
       applicationId,
+      { message },
     );
   } catch (error) {
     redirectToApplicationActionError(spaceId, applicationId, error);
