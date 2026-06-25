@@ -36,6 +36,7 @@ import {
   PatchApplicationDto,
   RejectApplicationDto,
   ReturnApplicationDto,
+  ResubmitApplicationDto,
 } from '../dto/applications.dto';
 import { ApplicationsService } from '../services/facades/applications.service';
 
@@ -186,8 +187,9 @@ export class ApplicationsController {
   async resubmit(
     @Param('id', ParseUUIDPipe) id: string,
     @CurrentUser() actor: AuthUserPayload,
+    @Body() dto: ResubmitApplicationDto,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
-    const row = await this.applications.resubmit(actor, id);
+    const row = await this.applications.resubmit(actor, id, dto);
     return successResponse(
       await this.applications.toDetailForActor(row, actor),
     );

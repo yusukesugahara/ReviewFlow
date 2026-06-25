@@ -21,6 +21,11 @@ const apiFailureSchema = z.object({
 const apiErrorBodySchema = z.object({
   message: z.union([z.string(), z.array(z.string())]).optional(),
 });
+const graphqlErrorListSchema = z.array(
+  z.object({
+    message: z.string().optional(),
+  }),
+);
 
 /**
  * unknown エラーが API 失敗オブジェクトかを判定します。
@@ -36,6 +41,15 @@ export function errorMessageFromBody(
   body: unknown,
   fallback = "unknown_error",
 ): string {
+  const graphqlErrors = graphqlErrorListSchema.safeParse(body);
+  if (graphqlErrors.success) {
+    const message = graphqlErrors.data
+      .map((error) => error.message)
+      .filter((item): item is string => !!item)
+      .join(", ");
+    return message || fallback;
+  }
+
   const parsed = apiErrorBodySchema.safeParse(body);
   if (!parsed.success) {
     return fallback;

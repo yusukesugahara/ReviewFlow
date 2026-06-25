@@ -45,10 +45,10 @@ describe('ApplicationPatchPolicy', () => {
     );
   });
 
-  it('allows returned applications to patch only correction-scoped fields', () => {
-    expect(
-      policy.requiresCorrectionFieldScope(app(ApplicationStatus.RETURNED)),
-    ).toBe(true);
+  it('requires open correction for returned field patches', () => {
+    expect(policy.requiresOpenCorrection(app(ApplicationStatus.RETURNED))).toBe(
+      true,
+    );
   });
 
   it('rejects field patches outside editable statuses', () => {

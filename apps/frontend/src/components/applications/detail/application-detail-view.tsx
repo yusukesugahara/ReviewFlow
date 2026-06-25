@@ -25,6 +25,8 @@ export function ApplicationDetailView({
   fieldsDescription = "入力された値を確認できます",
   openCorrectionItems = [],
   corrections = [],
+  correctedFieldKeys = [],
+  resubmissionMessages = [],
   actions,
   reviewerActions,
   formDetailHref,
@@ -65,6 +67,7 @@ export function ApplicationDetailView({
             title={fieldsTitle}
             description={descriptionForFields(fieldsDescription, fields.length)}
             openCorrectionItems={openCorrectionItems}
+            correctedFieldKeys={correctedFieldKeys}
             canReturnApplication={canReturnApplication}
             returnAction={returnAction}
             decisionActions={reviewerActions}
@@ -85,6 +88,7 @@ export function ApplicationDetailView({
             <CorrectionHistory
               corrections={corrections}
               fields={fields}
+              resubmissionMessages={resubmissionMessages}
               values={application.values}
             />
           ) : null}

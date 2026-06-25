@@ -1,6 +1,6 @@
 "use client";
 
-import { Component, Suspense, type ReactNode } from "react";
+import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Loader2 } from "lucide-react";
 import { graphql, useFragment, useLazyLoadQuery, usePaginationFragment } from "react-relay";
 import { Button } from "@/components/ui/button";
@@ -78,8 +78,13 @@ type SpaceSubmissionsRelayPageContentProps = {
 export function SpaceSubmissionsRelayPageContent(
   props: SpaceSubmissionsRelayPageContentProps,
 ) {
+  const mounted = useClientMounted();
+
   if (props.fetchErrorStatus !== undefined) {
     return <SpaceSubmissionsPageContent applications={[]} {...props} />;
+  }
+  if (!mounted) {
+    return <SpaceSubmissionsLoadingState />;
   }
 
   return (
@@ -100,6 +105,16 @@ export function SpaceSubmissionsRelayPageContent(
       </SpaceSubmissionsRelayErrorBoundary>
     </BrowserRelayProvider>
   );
+}
+
+function useClientMounted() {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  return mounted;
 }
 
 function SpaceSubmissionsRelayContent({

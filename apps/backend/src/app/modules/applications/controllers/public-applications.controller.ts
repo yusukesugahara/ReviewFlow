@@ -22,6 +22,7 @@ import {
   CorrectionTargetsResponseDto,
   CreatePublicApplicationDto,
   PatchApplicationDto,
+  ResubmitApplicationDto,
 } from '../dto/applications.dto';
 import { ApplicationsService } from '../services/facades/applications.service';
 
@@ -67,7 +68,8 @@ export class PublicApplicationsController {
   @ApiParam({ name: 'id', format: 'uuid' })
   @ApiOperation({
     summary: '申請者向け差し戻し項目更新',
-    description: 'returned かつ open correction の対象項目だけ更新できる。',
+    description:
+      'returned かつ open correction がある申請のフォーム項目を更新できる。',
   })
   async patchReturned(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
@@ -90,8 +92,9 @@ export class PublicApplicationsController {
   async resubmitReturned(
     @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
     @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ResubmitApplicationDto,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
-    const row = await this.applications.resubmitForApplicant(actor, id);
+    const row = await this.applications.resubmitForApplicant(actor, id, dto);
     return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 }

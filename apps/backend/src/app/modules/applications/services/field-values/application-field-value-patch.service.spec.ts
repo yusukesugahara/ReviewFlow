@@ -171,9 +171,9 @@ describe('ApplicationFieldValuePatchService', () => {
   });
 
   /**
-   * 差し戻し中は correction 対象外フィールドの更新を拒否すること
+   * 差し戻し中でも open correction があればフォーム項目の更新を許可すること
    */
-  it('rejects returned patches outside correction target fields', async () => {
+  it('allows returned patches for form fields when an open correction exists', async () => {
     formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue(
       template([field({ id: 'field-title' })]),
     );
@@ -182,15 +182,24 @@ describe('ApplicationFieldValuePatchService', () => {
       status: CorrectionRequestStatus.OPEN,
       items: [{ formFieldId: 'field-other' }],
     });
+    submissionRepository.findExistingFieldValues.mockResolvedValue([]);
 
-    await expectErrorCode(
-      () =>
-        service.applyPatch(
-          'tenant-1',
-          app({ status: ApplicationStatus.RETURNED }),
-          { values: { title: 'new' } },
-        ),
-      ClientErrorCodes.APPLICATION_PATCH_FIELD_NOT_IN_CORRECTION,
+    await service.applyPatch(
+      'tenant-1',
+      app({ status: ApplicationStatus.RETURNED }),
+      { values: { title: 'new' } },
+    );
+
+    expect(submissionRepository.saveApplicationPatch).toHaveBeenCalledWith(
+      expect.objectContaining({
+        values: [
+          expect.objectContaining({
+            formFieldId: 'field-title',
+            valueJson: 'new',
+          }),
+        ],
+      }),
+      undefined,
     );
   });
 

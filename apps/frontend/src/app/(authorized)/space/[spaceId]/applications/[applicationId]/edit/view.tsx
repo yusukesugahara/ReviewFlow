@@ -1,21 +1,16 @@
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  DynamicFieldInput,
-  DynamicFieldsTable,
-} from "@/components/applications/dynamic-fields/dynamic-fields";
 import {
   ApplicationSetupDraftForm,
   type ApprovalAssigneeOption,
 } from "@/components/application-setup/form-builder/application-setup-draft-form";
+import { ReturnedApplicationCorrectionForm } from "./_components/returned-application-correction-form";
 import type {
   CorrectionTargetItem,
   EditableApplicationInitialState,
   EditableFormField,
 } from "./types";
-import { buildReturnedCorrectionFormModel } from "./_view-models/returned-correction-view-model";
 
 type SpaceApplicationEditViewProps = EditableApplicationInitialState & {
   action: (formData: FormData) => Promise<void>;
@@ -82,6 +77,7 @@ type ReturnedApplicationCorrectionViewProps = {
   fields: EditableFormField[];
   overallComment?: string | null;
   targets: CorrectionTargetItem[];
+  values: Record<string, unknown>;
 };
 
 /**
@@ -94,10 +90,8 @@ export function ReturnedApplicationCorrectionView({
   fields,
   overallComment,
   targets,
+  values,
 }: ReturnedApplicationCorrectionViewProps) {
-  const { targetByFieldId, targetFields, values } =
-    buildReturnedCorrectionFormModel({ fields, targets });
-
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -113,71 +107,15 @@ export function ReturnedApplicationCorrectionView({
       </div>
 
       <Card>
-        <CardContent className="space-y-5 pt-6">
-          {correctionError ? (
-            <p className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-700">
-              {correctionError}
-            </p>
-          ) : null}
-          {overallComment ? (
-            <div className="space-y-2 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm font-semibold text-amber-900">
-                差し戻しコメント
-              </p>
-              <p className="whitespace-pre-wrap text-sm leading-6 text-amber-900">
-                {overallComment}
-              </p>
-            </div>
-          ) : null}
-          {targets.length > 0 ? (
-            <div className="space-y-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
-              <p className="text-sm font-semibold text-amber-900">
-                修正対象は {targets.length} 件です
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {targets.map((target) => (
-                  <Badge key={target.itemId} variant="outline" className="bg-white">
-                    {target.label}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {targetFields.length === 0 ? (
-            <p className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-muted-foreground">
-              現在修正できる項目はありません。
-            </p>
-          ) : (
-            <form action={action} className="space-y-5">
-              <input
-                type="hidden"
-                name="fieldsJson"
-                value={JSON.stringify(targetFields)}
-              />
-              <DynamicFieldsTable
-                fields={targetFields}
-                values={values}
-                title="修正内容"
-                renderValue={(field, value) => {
-                  const target = targetByFieldId.get(field.id);
-                  return (
-                    <div className="space-y-3">
-                      {target?.comment ? (
-                        <p className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm leading-6 text-amber-900">
-                          {target.comment}
-                        </p>
-                      ) : null}
-                      <DynamicFieldInput field={field} value={value} variant="table" />
-                    </div>
-                  );
-                }}
-              />
-              <div className="flex justify-end border-t border-slate-200 pt-4">
-                <Button type="submit">修正内容を保存</Button>
-              </div>
-            </form>
-          )}
+        <CardContent className="pt-6">
+          <ReturnedApplicationCorrectionForm
+            action={action}
+            correctionError={correctionError}
+            fields={fields}
+            overallComment={overallComment}
+            targets={targets}
+            values={values}
+          />
         </CardContent>
       </Card>
     </div>

@@ -70,6 +70,7 @@ export default async function SpaceApplicationEditPage({
           fields={data.fields}
           overallComment={data.overallComment}
           targets={data.targets}
+          values={data.values}
         />
       );
     }

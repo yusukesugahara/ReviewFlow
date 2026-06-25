@@ -104,6 +104,7 @@ describe("SpaceApplicationEditView", () => {
             comment: "金額を修正してください",
           },
         ]}
+        values={{ amount: 1000 }}
       />,
     );
 
@@ -119,6 +120,7 @@ describe("SpaceApplicationEditView", () => {
         detailPath="/detail"
         fields={[]}
         targets={[]}
+        values={{}}
       />,
     );
 

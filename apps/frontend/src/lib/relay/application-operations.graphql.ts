@@ -117,6 +117,7 @@ export const ApplicationCorrectionTargetsFieldsFragment = graphql`
   fragment ApplicationCorrectionTargetsFields on ApplicationCorrectionTargets {
     applicationId
     applicationStatus
+    values
     openCorrection {
       id
       overallComment

@@ -86,9 +86,14 @@ describe('ApplicationCorrectionService', () => {
     correctionRepository.findLatestOpenCorrectionWithItems.mockResolvedValue(
       correction(),
     );
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue({
+      id: 'template-1',
+      fields: [{ id: 'field-title', fieldKey: 'title' }],
+    });
 
     const out = await service.buildTargetsResponse(app());
 
+    expect(out.values).toEqual({ title: 'Current' });
     expect(out.openCorrection).toMatchObject({
       id: 'correction-1',
       overallComment: 'Fix fields',
@@ -108,9 +113,14 @@ describe('ApplicationCorrectionService', () => {
     correctionRepository.findLatestOpenCorrectionWithItems.mockResolvedValue(
       null,
     );
+    formDefinitionsRepository.findTemplateByIdInGroup.mockResolvedValue({
+      id: 'template-1',
+      fields: [{ id: 'field-title', fieldKey: 'title' }],
+    });
 
     await expect(service.buildTargetsResponse(app())).resolves.toMatchObject({
       applicationId: 'app-1',
+      values: { title: 'Current' },
       openCorrection: null,
     });
   });

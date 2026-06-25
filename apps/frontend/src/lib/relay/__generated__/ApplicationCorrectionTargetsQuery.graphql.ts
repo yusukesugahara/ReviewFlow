@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<439fc1ffb7147689e36b73336b141092>>
+ * @generated SignedSource<<653e431d886a546af9164fff7735bcad>>
  * @lightSyntaxTransform
  */
 
@@ -90,6 +90,13 @@ return {
             "args": null,
             "kind": "ScalarField",
             "name": "applicationStatus",
+            "storageKey": null
+          },
+          {
+            "alias": null,
+            "args": null,
+            "kind": "ScalarField",
+            "name": "values",
             "storageKey": null
           },
           {
@@ -197,12 +204,12 @@ return {
     ]
   },
   "params": {
-    "cacheID": "c594b5bc4da6c493fdc383a0c33111ea",
+    "cacheID": "3cfcb85f7a8c8cdd211f7f022c3b97e5",
     "id": null,
     "metadata": {},
     "name": "ApplicationCorrectionTargetsQuery",
     "operationKind": "query",
-    "text": "query ApplicationCorrectionTargetsQuery(\n  $id: ID!\n) {\n  applicationCorrectionTargets(id: $id) {\n    ...ApplicationCorrectionTargetsFields\n  }\n}\n\nfragment ApplicationCorrectionTargetsFields on ApplicationCorrectionTargets {\n  applicationId\n  applicationStatus\n  openCorrection {\n    id\n    overallComment\n    createdAt\n    items {\n      itemId\n      formFieldId\n      fieldKey\n      label\n      fieldType\n      required\n      comment\n      currentValue\n    }\n  }\n}\n"
+    "text": "query ApplicationCorrectionTargetsQuery(\n  $id: ID!\n) {\n  applicationCorrectionTargets(id: $id) {\n    ...ApplicationCorrectionTargetsFields\n  }\n}\n\nfragment ApplicationCorrectionTargetsFields on ApplicationCorrectionTargets {\n  applicationId\n  applicationStatus\n  values\n  openCorrection {\n    id\n    overallComment\n    createdAt\n    items {\n      itemId\n      formFieldId\n      fieldKey\n      label\n      fieldType\n      required\n      comment\n      currentValue\n    }\n  }\n}\n"
   }
 };
 })();

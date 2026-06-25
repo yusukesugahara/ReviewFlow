@@ -15,6 +15,7 @@ import type {
   ApplicationCorrectionTargetItem,
   ApplicationFormField,
 } from "../detail/application-detail.types";
+import type { ApplicationResubmissionMessage } from "../detail/application-corrected-field-keys";
 
 /**
  * 未解決の差戻し依頼概要を表示します。
@@ -54,18 +55,22 @@ export function OpenCorrectionSummary({
 export function CorrectionHistory({
   corrections,
   fields,
+  resubmissionMessages = [],
   values,
 }: {
   corrections: ApplicationCorrection[];
   fields: ApplicationFormField[];
+  resubmissionMessages?: ApplicationResubmissionMessage[];
   values: Record<string, unknown>;
 }) {
+  const hasResubmissionMessages = resubmissionMessages.length > 0;
+
   return (
     <Card>
       <CardHeader className="border-b border-slate-200">
         <CardHeading
           description={
-            corrections.length === 0
+            corrections.length === 0 && !hasResubmissionMessages
               ? "差し戻し履歴はありません"
               : "差し戻しの内容と日時を確認できます"
           }
@@ -73,12 +78,29 @@ export function CorrectionHistory({
         />
       </CardHeader>
       <CardContent className="pt-6">
-        {corrections.length === 0 ? (
+        {corrections.length === 0 && !hasResubmissionMessages ? (
           <p className="py-4 text-center text-muted-foreground">
             差し戻し履歴はありません
           </p>
         ) : (
           <div className="space-y-4">
+            {hasResubmissionMessages ? (
+              <div className="space-y-3 rounded-lg border border-blue-100 bg-blue-50/60 p-4">
+                <p className="text-sm font-semibold text-blue-950">
+                  申請者メッセージ
+                </p>
+                {resubmissionMessages.map((item) => (
+                  <div key={item.id} className="space-y-1">
+                    <p className="text-xs text-blue-700">
+                      {formatApplicationDateTime(item.createdAt)}
+                    </p>
+                    <p className="whitespace-pre-wrap text-sm leading-6 text-blue-950">
+                      {item.message}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            ) : null}
             {corrections.map((correction) => (
               <div
                 key={correction.id}

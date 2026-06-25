@@ -63,6 +63,7 @@ export default async function SpaceApplicationDetailPage({
         approveAction={approveAction.bind(null, spaceId, data.application.id)}
         capabilities={data.capabilities}
         corrections={data.corrections}
+        correctedFieldKeys={data.correctedFieldKeys}
         definitionId={data.definitionId}
         fields={data.fields}
         formDetailHref={data.formDetailHref}
@@ -75,6 +76,7 @@ export default async function SpaceApplicationDetailPage({
           spaceId,
           data.application.id,
         )}
+        resubmissionMessages={data.resubmissionMessages}
         resubmitAction={resubmitAction.bind(null, spaceId, data.application.id)}
         returnAction={returnAction.bind(
           null,

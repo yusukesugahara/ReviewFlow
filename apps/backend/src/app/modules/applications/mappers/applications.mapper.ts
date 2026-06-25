@@ -1,5 +1,6 @@
 import type { Application } from '../../../../models/entities/application.entity';
 import type { CorrectionRequest } from '../../../../models/entities/correction-request.entity';
+import type { FormField } from '../../../../models/entities/form-field.entity';
 import type {
   ApplicationCapabilitiesDto,
   ApplicationDetailDto,
@@ -84,13 +85,7 @@ export function mapApplicationToDetail(
   row: ApplicationWithProgress,
   capabilities: ApplicationCapabilitiesDto = disabledApplicationCapabilities(),
 ): ApplicationDetailDto {
-  const values: Record<string, unknown> = {};
-  for (const v of row.fieldValues ?? []) {
-    const key = v.formField?.fieldKey;
-    if (key) {
-      values[key] = v.valueJson;
-    }
-  }
+  const values = mapApplicationValuesByFieldKey(row);
   const currentStep = row.currentApprovalStep ?? null;
   return {
     ...mapApplicationToSummary(row),
@@ -161,11 +156,13 @@ export function mapCorrectionsList(
 export function mapCorrectionTargetsResponse(
   app: Application,
   openCorrection: CorrectionRequest | null,
+  fields: FormField[] = [],
 ): CorrectionTargetsResponseDto {
   if (!openCorrection) {
     return {
       applicationId: app.id,
       applicationStatus: app.status,
+      values: mapApplicationValuesByFieldKey(app, fields),
       openCorrection: null,
     };
   }
@@ -180,6 +177,7 @@ export function mapCorrectionTargetsResponse(
   return {
     applicationId: app.id,
     applicationStatus: app.status,
+    values: mapApplicationValuesByFieldKey(app, fields),
     openCorrection: {
       id: openCorrection.id,
       overallComment: openCorrection.overallComment,
@@ -201,6 +199,30 @@ export function mapCorrectionTargetsResponse(
       }),
     },
   };
+}
+
+/**
+ * 申請の保存済み値をフォーム fieldKey ごとの値に変換する。
+ * @param app 申請
+ * @param fields フォーム定義フィールド
+ * @returns fieldKey をキーにした申請値
+ */
+function mapApplicationValuesByFieldKey(
+  app: Application,
+  fields: FormField[] = [],
+): Record<string, unknown> {
+  const fieldKeyById = new Map(
+    fields.map((field) => [field.id, field.fieldKey]),
+  );
+  const values: Record<string, unknown> = {};
+  for (const value of app.fieldValues ?? []) {
+    const key =
+      value.formField?.fieldKey ?? fieldKeyById.get(value.formFieldId);
+    if (key) {
+      values[key] = value.valueJson;
+    }
+  }
+  return values;
 }
 
 /**

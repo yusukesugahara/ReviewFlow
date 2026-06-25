@@ -13,7 +13,6 @@ import { ApplicationFormValueValidator } from '../../validators/application-form
 export type ApplicationPatchContext = {
   app: Application;
   fieldsByKey: Map<string, FormField>;
-  allowedFieldIds?: Set<string>;
 };
 
 /**
@@ -62,32 +61,29 @@ export class ApplicationPatchContextLoader {
     const fieldsByKey = this.formValueValidator.buildFieldsByKey(
       template.fields ?? [],
     );
-    const allowedFieldIds = await this.resolveAllowedFieldIds(app, manager);
+    await this.assertFieldPatchAllowed(app, manager);
 
-    return { app, fieldsByKey, allowedFieldIds };
+    return { app, fieldsByKey };
   }
 
   /**
-   * 差し戻し済み申請では修正対象フィールドIDを返し、それ以外では通常編集可否を検証する。
+   * 差し戻し済み申請では open correction の存在を検証し、それ以外では通常編集可否を検証する。
    * @param app 申請
    * @param manager トランザクションマネージャー
-   * @returns 許可されたフィールドID
    */
-  private async resolveAllowedFieldIds(
+  private async assertFieldPatchAllowed(
     app: Application,
     manager?: TransactionManager,
-  ): Promise<Set<string> | undefined> {
-    if (!this.patchPolicy.requiresCorrectionFieldScope(app)) {
+  ): Promise<void> {
+    if (!this.patchPolicy.requiresOpenCorrection(app)) {
       this.patchPolicy.assertFieldPatchAllowedWithoutCorrectionScope(app);
-      return undefined;
+      return;
     }
 
     const open = await this.findOpenCorrection(app, manager);
     if (!open?.items?.length) {
       throw clientError(ClientErrorCodes.APPLICATION_NOT_EDITABLE);
     }
-
-    return new Set(open.items.map((item) => item.formFieldId));
   }
 
   /**

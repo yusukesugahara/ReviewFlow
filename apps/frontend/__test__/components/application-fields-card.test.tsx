@@ -85,6 +85,27 @@ describe("ApplicationFieldsCard", () => {
     expect(screen.getByText("差し戻し対象項目です")).toBeInTheDocument();
   });
 
+  it("dims fields that were not changed in the latest returned correction", () => {
+    render(
+      <ApplicationFieldsCard
+        application={application}
+        canReturnApplication={false}
+        correctedFieldKeys={["certificate_type"]}
+        description="入力された値を確認できます"
+        fields={fields}
+        openCorrectionItems={[]}
+        title="申請内容"
+      />,
+    );
+
+    expect(screen.getByText("住民票の写し").closest(".grid")).not.toHaveClass(
+      "opacity-60",
+    );
+    expect(screen.getByText("勤務先への提出").closest(".grid")).toHaveClass(
+      "opacity-60",
+    );
+  });
+
   it("renders correction history field labels instead of raw field keys", () => {
     const corrections: ApplicationCorrection[] = [
       {
@@ -114,5 +135,25 @@ describe("ApplicationFieldsCard", () => {
     expect(screen.getByText("申請内容")).toBeInTheDocument();
     expect(screen.getByText("住民票の写し")).toBeInTheDocument();
     expect(screen.queryByText("procedure_type:")).not.toBeInTheDocument();
+  });
+
+  it("renders applicant messages in correction history", () => {
+    render(
+      <CorrectionHistory
+        corrections={[]}
+        fields={fields}
+        resubmissionMessages={[
+          {
+            id: "message-1",
+            createdAt: "2026-06-08T00:00:00.000Z",
+            message: "補足して再提出しました",
+          },
+        ]}
+        values={{}}
+      />,
+    );
+
+    expect(screen.getByText("申請者メッセージ")).toBeInTheDocument();
+    expect(screen.getByText("補足して再提出しました")).toBeInTheDocument();
   });
 });

@@ -12,6 +12,7 @@ import type {
   ApplicationDetailViewModel,
   ApplicationFormField,
 } from "@/components/applications/detail/application-detail.types";
+import type { ApplicationResubmissionMessage } from "@/components/applications/detail/application-corrected-field-keys";
 import type { ApplicationCapabilities } from "@/components/applications/actions/application-capabilities";
 
 type ApplicationDetailScreenProps = {
@@ -20,6 +21,7 @@ type ApplicationDetailScreenProps = {
   approveAction: (formData: FormData) => Promise<void>;
   capabilities: ApplicationCapabilities;
   corrections: ApplicationCorrection[];
+  correctedFieldKeys: string[];
   definitionId?: string;
   fields: ApplicationFormField[];
   formDetailHref?: string | null;
@@ -28,7 +30,8 @@ type ApplicationDetailScreenProps = {
   openItems: ApplicationCorrectionTargetItem[];
   rejectAction: (formData: FormData) => Promise<void>;
   resendReturnEmailAction: () => Promise<void>;
-  resubmitAction: () => Promise<void>;
+  resubmissionMessages: ApplicationResubmissionMessage[];
+  resubmitAction: (formData: FormData) => Promise<void>;
   returnAction: (formData: FormData) => Promise<void>;
   spaceId: string;
   submitAction: () => Promise<void>;
@@ -43,6 +46,7 @@ export function ApplicationDetailScreen({
   approveAction,
   capabilities,
   corrections,
+  correctedFieldKeys,
   definitionId,
   fields,
   formDetailHref,
@@ -51,6 +55,7 @@ export function ApplicationDetailScreen({
   openItems,
   rejectAction,
   resendReturnEmailAction,
+  resubmissionMessages,
   resubmitAction,
   returnAction,
   spaceId,
@@ -87,6 +92,8 @@ export function ApplicationDetailScreen({
       }
       openCorrectionItems={openItems}
       corrections={corrections}
+      correctedFieldKeys={correctedFieldKeys}
+      resubmissionMessages={resubmissionMessages}
       formDetailHref={formDetailHref}
       showApplicantEmail
       showCurrentStep
@@ -102,16 +109,14 @@ export function ApplicationDetailScreen({
               <AlertDescription>{actionError}</AlertDescription>
             </Alert>
           ) : null}
-          <div className="flex flex-wrap gap-2">
-            <ApplicantApplicationActions
-              capabilities={actionCapabilities}
-              editHref={editHref}
-              canResendReturnEmail={canResendReturnEmail}
-              resendReturnEmailAction={resendReturnEmailAction}
-              submitAction={submitAction}
-              resubmitAction={resubmitAction}
-            />
-          </div>
+          <ApplicantApplicationActions
+            capabilities={actionCapabilities}
+            editHref={editHref}
+            canResendReturnEmail={canResendReturnEmail}
+            resendReturnEmailAction={resendReturnEmailAction}
+            submitAction={submitAction}
+            resubmitAction={resubmitAction}
+          />
           {capabilities.canSubmitApplication &&
           missingRequiredFields.length > 0 ? (
             <Alert variant="warning">

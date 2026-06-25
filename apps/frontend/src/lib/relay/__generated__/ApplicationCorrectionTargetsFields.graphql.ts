@@ -1,5 +1,5 @@
 /**
- * @generated SignedSource<<e9af928a32dd364ec71904db1c1b6e44>>
+ * @generated SignedSource<<e4e384f01c5ea4787b6c6152476f67bc>>
  * @lightSyntaxTransform
  */
 
@@ -27,6 +27,7 @@ export type ApplicationCorrectionTargetsFields$data = {
     }>;
     readonly overallComment: string | null | undefined;
   } | null | undefined;
+  readonly values: unknown;
   readonly " $fragmentType": "ApplicationCorrectionTargetsFields";
 };
 export type ApplicationCorrectionTargetsFields$key = {
@@ -52,6 +53,13 @@ const node: ReaderFragment = {
       "args": null,
       "kind": "ScalarField",
       "name": "applicationStatus",
+      "storageKey": null
+    },
+    {
+      "alias": null,
+      "args": null,
+      "kind": "ScalarField",
+      "name": "values",
       "storageKey": null
     },
     {
@@ -158,6 +166,6 @@ const node: ReaderFragment = {
   "abstractKey": null
 };
 
-(node as any).hash = "3fc9f46590f403a22c5bd78caf7ebe32";
+(node as any).hash = "bb01a7c2d3874b1f4c87bab63719e4be";
 
 export default node;

@@ -188,7 +188,9 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
     applicationsRepository.findApplicantEditable.mockResolvedValue(row);
     queryService.getOneForActor.mockResolvedValue(hydrated);
 
-    await expect(service.resubmit(actor(), 'app-1')).resolves.toBe(hydrated);
+    await expect(
+      service.resubmit(actor(), 'app-1', { message: ' 修正しました ' }),
+    ).resolves.toBe(hydrated);
 
     expect(submissionService.resubmit).toHaveBeenCalledWith(
       'tenant-1',
@@ -199,6 +201,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       expect.objectContaining({
         actionType: 'application.resubmitted',
         app: row,
+        metadataJson: { message: '修正しました' },
       }),
       transactionManager,
     );

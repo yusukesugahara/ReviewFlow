@@ -62,36 +62,42 @@ describe("RootPage", () => {
       screen.getByRole("heading", { level: 1, name: "ReviewFlow" }),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("修正が必要な申請を、迷わず受け取れる状態へ"),
+      screen.getByText("差し戻しが前提の確認業務を、最後まで進める"),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { level: 2, name: "具体的な利用シーン" }),
+      screen.getByRole("heading", {
+        level: 2,
+        name: "申請後の確認と手戻りに時間がかかる業務へ",
+      }),
     ).toBeInTheDocument();
     expect(
       screen.getByText(
-        /申請者はログインやアカウント登録をしなくても、メールアドレス宛のリンクから申請できます/,
+        /外部の申請者や取引先は、アカウント登録なしでメールリンクから提出・修正できます/,
       ),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         level: 3,
-        name: "補助金・助成金の申請受付",
+        name: "補助金・助成金の確認業務",
       }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("heading", {
         level: 3,
-        name: "施設利用・許可申請の確認",
+        name: "取引先登録・契約前確認",
       }),
     ).toBeInTheDocument();
     expect(
-      screen.getByRole("heading", { level: 2, name: "実際の画面" }),
+      screen.getByRole("heading", {
+        level: 2,
+        name: "差し戻してから完了するまでを、同じ申請で追う",
+      }),
     ).toBeInTheDocument();
     expect(
-      screen.getByAltText("ReviewFlow の公開申請フォーム入力画面"),
+      screen.getByAltText("ReviewFlow の差し戻しと再提出を確認する管理画面"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText(/監査対応が必要な場面でも誰がいつ何をしたか/),
+      screen.getByText(/後から誰がいつ何を判断したか確認できます/),
     ).toBeInTheDocument();
     expect(
       screen.queryByRole("link", { name: "監査対応" }),

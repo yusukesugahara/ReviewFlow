@@ -40,6 +40,7 @@ type ApplicationCorrectionTargets {
   applicationId: ID!
   applicationStatus: String!
   openCorrection: ApplicationOpenCorrectionTargets
+  values: JSON!
 }
 
 type ApplicationDetail implements Node {
@@ -172,11 +173,13 @@ input ApproveApplicationRelayInput {
 
 type AuditLog implements Node {
   actionType: String!
+  actor: JSON
   actorEmail: String
   actorEmailSnapshot: String
   actorType: String!
   actorUserId: ID
   applicationId: ID
+  changes: JSON
   createdAt: String!
   databaseId: ID!
   groupId: ID
@@ -184,8 +187,16 @@ type AuditLog implements Node {
   groupRoleTo: String
   id: ID!
   metadataJson: JSON
+  operation: String
+  outcome: String!
+  resource: JSON
+  resourceId: String
+  resourceLabel: String
+  resourceType: String
   roleFrom: String
   roleTo: String
+  scopeId: String
+  scopeType: String
   statusFrom: String
   statusTo: String
   stepOrderFrom: Int
@@ -333,9 +344,9 @@ type Mutation {
   resendReturnEmail(id: ID!): JSON!
   restoreFormDefinition(id: ID!): JSON!
   restoreUser(id: ID!): JSON!
-  resubmitApplication(id: ID!): JSON!
+  resubmitApplication(id: ID!, input: JSON): JSON!
   resubmitApplicationRelay(input: ResubmitApplicationRelayInput!): ApplicationMutationPayload!
-  resubmitReturnedApplication(id: ID!): JSON!
+  resubmitReturnedApplication(id: ID!, input: JSON): JSON!
   returnApplication(id: ID!, input: JSON!): JSON!
   returnApplicationRelay(input: ReturnApplicationRelayInput!): ApplicationMutationPayload!
   submitApplication(id: ID!): JSON!
@@ -413,7 +424,6 @@ type Query {
   """Relay global IDからNodeを返す。"""
   node(id: ID!): Node
   returnedApplicationCorrectionTargetsForApplicant: JSON!
-  spaceDashboard: JSON!
   users: JSON!
 
   """tenant管理者が閲覧できるユーザー一覧をRelay Connection形式で返す。"""
@@ -430,6 +440,7 @@ input RejectApplicationRelayInput {
 input ResubmitApplicationRelayInput {
   applicationId: ID!
   clientMutationId: String
+  message: String
 }
 
 input ReturnApplicationFieldRelayInput {
