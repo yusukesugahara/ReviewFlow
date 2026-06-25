@@ -1,40 +1,16 @@
-import { unstable_rethrow } from "next/navigation";
+import { redirect } from "next/navigation";
+import { buildSpaceApplicationsHref } from "@/components/applications/routing/application-routes";
 import { SpaceEmptyState } from "@/components/space/space-empty-state";
-import { isApiFailure } from "@/lib/server/api-failure";
-import { getAdminDashboardPageData } from "./_data/dashboard-page-data";
-import { AdminDashboardView } from "./view";
-import type { AdminDashboardPageProps } from "./types";
+import { getFallbackSpaceContext } from "./applications/_data/page-data";
 
 /**
- * スペースダッシュボード画面のデータを読み込んで表示します。
+ * スペース入口を既定スペースの申請フォーム一覧へリダイレクトします。
  */
-export default async function AdminDashboardPage({
-  searchParams,
-}: AdminDashboardPageProps) {
-  try {
-    const params = (await searchParams) ?? {};
-    const data = await getAdminDashboardPageData({
-      selectedSpaceId: params.spaceId,
-    });
-
-    if (data.kind === "empty") {
-      return <SpaceEmptyState userRoles={data.userRoles} />;
-    }
-
-    return (
-      <AdminDashboardView
-        selectedSpaceId={data.selectedSpaceId}
-        spaces={data.spaces}
-      />
-    );
-  } catch (error) {
-    unstable_rethrow(error);
-    return (
-      <AdminDashboardView
-        fetchErrorStatus={isApiFailure(error) ? error.status : 500}
-        selectedSpaceId=""
-        spaces={[]}
-      />
-    );
+export default async function SpaceEntryPage() {
+  const { spaceId, userRoles } = await getFallbackSpaceContext();
+  if (!spaceId) {
+    return <SpaceEmptyState userRoles={userRoles} />;
   }
+
+  redirect(buildSpaceApplicationsHref(spaceId));
 }

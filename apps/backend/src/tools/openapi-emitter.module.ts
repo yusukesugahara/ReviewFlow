@@ -18,7 +18,6 @@ import { ExportJobsService } from '../app/modules/export-jobs/services/facades/e
 import { FormDefinitionsController } from '../app/modules/form-definitions/controllers/form-definitions.controller';
 import { FormDefinitionsService } from '../app/modules/form-definitions/services/facades/form-definitions.service';
 import { GroupsController } from '../app/modules/groups/controllers/groups.controller';
-import { SpaceDashboardService } from '../app/modules/groups/services/dashboard/space-dashboard.service';
 import { GroupsService } from '../app/modules/groups/services/facades/groups.service';
 import { InvitationsController } from '../app/modules/invitations/controllers/invitations.controller';
 import { InvitationsService } from '../app/modules/invitations/services/invitations.service';
@@ -48,7 +47,6 @@ const openApiProviderStub = {};
     { provide: ExportJobsService, useValue: openApiProviderStub },
     { provide: FormDefinitionsService, useValue: openApiProviderStub },
     { provide: GroupsService, useValue: openApiProviderStub },
-    { provide: SpaceDashboardService, useValue: openApiProviderStub },
     { provide: InvitationsService, useValue: openApiProviderStub },
     { provide: UsersService, useValue: openApiProviderStub },
     { provide: ApplicantAccessGuard, useValue: openApiProviderStub },

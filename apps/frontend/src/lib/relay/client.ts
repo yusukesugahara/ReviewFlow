@@ -80,8 +80,6 @@ export async function executeRelayOperation<TData>({
 export const client = {
   groups: (options?: RequestOptions) =>
     callRelayOperation(queryOperation("groups"), options),
-  spaceDashboard: (options?: RequestOptions) =>
-    callRelayOperation(queryOperation("spaceDashboard"), options),
   groupMembers: (options?: RequestOptions) =>
     callRelayOperation(
       queryOperation("groupMembers", {

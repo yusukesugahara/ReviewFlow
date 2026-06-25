@@ -172,11 +172,13 @@ input ApproveApplicationRelayInput {
 
 type AuditLog implements Node {
   actionType: String!
+  actor: JSON
   actorEmail: String
   actorEmailSnapshot: String
   actorType: String!
   actorUserId: ID
   applicationId: ID
+  changes: JSON
   createdAt: String!
   databaseId: ID!
   groupId: ID
@@ -184,8 +186,16 @@ type AuditLog implements Node {
   groupRoleTo: String
   id: ID!
   metadataJson: JSON
+  operation: String
+  outcome: String!
+  resource: JSON
+  resourceId: String
+  resourceLabel: String
+  resourceType: String
   roleFrom: String
   roleTo: String
+  scopeId: String
+  scopeType: String
   statusFrom: String
   statusTo: String
   stepOrderFrom: Int
@@ -413,7 +423,6 @@ type Query {
   """Relay global IDからNodeを返す。"""
   node(id: ID!): Node
   returnedApplicationCorrectionTargetsForApplicant: JSON!
-  spaceDashboard: JSON!
   users: JSON!
 
   """tenant管理者が閲覧できるユーザー一覧をRelay Connection形式で返す。"""
