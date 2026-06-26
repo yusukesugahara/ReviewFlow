@@ -11,7 +11,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { Api, ApiSuccessResponseCreated, RateLimit } from '../../../decorators';
+import {
+  Api,
+  ApiSuccessResponse,
+  ApiSuccessResponseCreated,
+  RateLimit,
+} from '../../../decorators';
 import { ApplicantAccessGuard } from '../../../guards/applicant-access.guard';
 import { CurrentApplicantSession } from '../../../../decorators/current-applicant-session.decorator';
 import type { ApplicantAccessTokenPayload } from '../../auth/services/facades/auth.service';
@@ -43,6 +48,21 @@ export class PublicApplicationsController {
     @Body() dto: CreatePublicApplicationDto,
   ): Promise<SuccessResponse<ApplicationDetailDto>> {
     const row = await this.applications.createAndSubmitForApplicant(actor, dto);
+    return successResponse(this.applications.toDetailForApplicant(row, actor));
+  }
+
+  @RateLimit({ default: { limit: 60, ttl: 60_000 } })
+  @Get('current')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: '申請者向け申請詳細取得',
+    description: 'applicant access token に紐づく申請内容を返す。',
+  })
+  @ApiSuccessResponse(ApplicationDetailDto)
+  async getCurrent(
+    @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
+  ): Promise<SuccessResponse<ApplicationDetailDto>> {
+    const row = await this.applications.getCurrentForApplicant(actor);
     return successResponse(this.applications.toDetailForApplicant(row, actor));
   }
 

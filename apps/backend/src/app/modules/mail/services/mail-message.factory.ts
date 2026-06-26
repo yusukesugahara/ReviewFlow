@@ -36,6 +36,13 @@ export type ApplicationReturnedMailInput = {
   }>;
 };
 
+export type ApplicationSubmittedMailInput = {
+  to: string;
+  applicationId: string;
+  accessToken: string;
+  templateName: string;
+};
+
 export type PasswordResetMailInput = {
   to: string;
   resetToken: string;
@@ -160,6 +167,35 @@ export class MailMessageFactory {
         '<p>修正対象:</p>',
         `<ul>${escapedFieldItems.join('')}</ul>`,
         `<p><a href="${this.escapeHtml(correctionUrl)}">修正画面を開く</a></p>`,
+      ].join(''),
+    };
+  }
+
+  /**
+   * 申請受付通知メールを組み立てる。
+   * @param input 申請受付通知メール入力
+   * @returns メール送信入力
+   */
+  buildApplicationSubmittedEmail(
+    input: ApplicationSubmittedMailInput,
+  ): SendMailInput {
+    const detailUrl = this.buildFrontendUrl('/apply/access', {
+      token: input.accessToken,
+      next: '/apply/submission',
+    });
+
+    return {
+      to: input.to,
+      subject: `ReviewFlow ${input.templateName} の申請を受け付けました`,
+      text: [
+        `${input.templateName} の申請を受け付けました。`,
+        '以下のURLから申請内容を確認できます。',
+        `申請内容URL: ${detailUrl}`,
+      ].join('\n'),
+      html: [
+        `<p>${this.escapeHtml(input.templateName)} の申請を受け付けました。</p>`,
+        '<p>以下のURLから申請内容を確認できます。</p>',
+        `<p><a href="${this.escapeHtml(detailUrl)}">申請内容を確認する</a></p>`,
       ].join(''),
     };
   }

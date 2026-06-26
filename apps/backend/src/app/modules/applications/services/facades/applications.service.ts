@@ -88,6 +88,15 @@ export class ApplicationsService {
   }
 
   /**
+   * 申請者トークンに紐づく申請詳細を取得する。
+   * @param actor 申請者トークン
+   * @returns 申請詳細
+   */
+  async getCurrentForApplicant(actor: ApplicantSession): Promise<Application> {
+    return this.applicantApplicationService.getCurrentApplication(actor);
+  }
+
+  /**
    * ログインユーザーの申請を作成する。
    * @param actor ログインユーザー
    * @param dto 申請作成DTO

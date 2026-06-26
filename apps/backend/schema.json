@@ -3260,6 +3260,50 @@
         ]
       }
     },
+    "/public/applications/current": {
+      "get": {
+        "description": "applicant access token に紐づく申請内容を返す。",
+        "operationId": "PublicApplicationsController_getCurrent",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "description": "",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "status",
+                    "data"
+                  ],
+                  "properties": {
+                    "status": {
+                      "type": "number",
+                      "enum": [
+                        200
+                      ],
+                      "example": 200
+                    },
+                    "data": {
+                      "$ref": "#/components/schemas/ApplicationDetailDto"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "internal-api-key": []
+          }
+        ],
+        "summary": "申請者向け申請詳細取得",
+        "tags": [
+          "public-applications"
+        ]
+      }
+    },
     "/public/applications/returned/current": {
       "get": {
         "description": "差し戻しメールの applicant access token に紐づく申請の open correction を返す。",
@@ -5257,15 +5301,6 @@
           "fields"
         ]
       },
-      "ResubmitApplicationDto": {
-        "type": "object",
-        "properties": {
-          "message": {
-            "type": "string",
-            "description": "再提出時に申請者が任意で入力するメッセージ"
-          }
-        }
-      },
       "RejectApplicationDto": {
         "type": "object",
         "properties": {
@@ -5282,6 +5317,15 @@
         "required": [
           "expectedStepOrder"
         ]
+      },
+      "ResubmitApplicationDto": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string",
+            "description": "再提出時に申請者が任意で入力するメッセージ"
+          }
+        }
       },
       "CorrectionTargetItemResponseDto": {
         "type": "object",
