@@ -156,4 +156,38 @@ describe('MailService', () => {
     expect(sent?.text).toContain('備考: 詳細を追記してください');
     expect(sent?.html).toContain('修正画面を開く');
   });
+
+  it('sends generated application submitted email messages', async () => {
+    const config = new ConfigService({
+      NODE_ENV: 'test',
+      MAIL_ENABLED: '1',
+      MAIL_FROM: 'noreply@example.com',
+      MAIL_PROVIDER: 'smtp',
+      MAIL_SMTP_HOST: 'smtp.example.com',
+      MAIL_SMTP_USER: 'smtp-user',
+      MAIL_SMTP_PASSWORD: 'smtp-pass',
+      FRONTEND_BASE_URL: 'https://review.example.com',
+    });
+    const service = createService(config);
+
+    await service.sendApplicationSubmittedEmail({
+      to: 'applicant@example.com',
+      applicationId: 'app-1',
+      accessToken: 'submitted-token',
+      templateName: '経費申請',
+    });
+
+    type SentMail = {
+      to?: string;
+      subject?: string;
+      text?: string;
+      html?: string;
+    };
+    const calls = sendMail.mock.calls as Array<[SentMail]>;
+    const sent = calls[0]?.[0];
+    expect(sent?.to).toBe('applicant@example.com');
+    expect(sent?.subject).toBe('ReviewFlow 経費申請 の申請を受け付けました');
+    expect(sent?.text).toContain('申請内容を確認できます');
+    expect(sent?.html).toContain('申請内容を確認する');
+  });
 });

@@ -21,7 +21,7 @@ export function PublicApplicationSubmittedView() {
         <CardHeader>
           <CardTitle>申請を送信しました</CardTitle>
           <CardDescription>
-            入力内容を受け付けました。審査結果の案内をお待ちください。
+            入力内容を受け付けました。申請内容を確認できるURLをメールで送信しました。
           </CardDescription>
         </CardHeader>
       </Card>

@@ -119,6 +119,11 @@ export const client = {
       queryOperation("currentApprovalFlowsForApplicant"),
       options,
     ),
+  currentApplicationForApplicant: (options?: RequestOptions) =>
+    callRelayOperation(
+      queryOperation("currentApplicationForApplicant"),
+      options,
+    ),
   formDefinition: (options?: RequestOptions) =>
     callRelayOperation(
       queryOperation("formDefinition", { id: options?.params?.path?.id }),
