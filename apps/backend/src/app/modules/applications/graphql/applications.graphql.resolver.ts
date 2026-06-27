@@ -333,6 +333,16 @@ export class ApplicationsGraphqlResolver {
     return this.applications.toDetailForApplicant(row, actor);
   }
 
+  @Query(() => GraphQLJSON, { name: 'currentApplicationForApplicant' })
+  @SetMetadata(SKIP_JWT_KEY, true)
+  @UseGuards(ApplicantAccessGuard)
+  async getCurrentApplicationForApplicant(
+    @CurrentApplicantSession() actor: ApplicantAccessTokenPayload,
+  ) {
+    const row = await this.applications.getCurrentForApplicant(actor);
+    return this.applications.toDetailForApplicant(row, actor);
+  }
+
   @Query(() => GraphQLJSON, {
     name: 'returnedApplicationCorrectionTargetsForApplicant',
   })

@@ -16,6 +16,7 @@ import type {
 } from '../../dto/applications.dto';
 import { ApplicationApprovalFlowResolver } from '../../resolvers/application-approval-flow.resolver';
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
+import { ApplicationNotificationService } from '../notifications/application-notification.service';
 import { ApplicationQueryService } from '../query/application-query.service';
 import { ApplicationSubmissionService } from '../submission/application-submission.service';
 import type { TransactionManager } from '../../../../transaction';
@@ -30,6 +31,7 @@ export class ApplicationUserSubmissionUseCaseService {
     private readonly spaceAccess: SpaceAccessService,
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
     private readonly flowResolver: ApplicationApprovalFlowResolver,
+    private readonly notificationService: ApplicationNotificationService,
     private readonly queryService: ApplicationQueryService,
     private readonly submissionService: ApplicationSubmissionService,
     private readonly auditLogs: BusinessAuditLogService,
@@ -113,7 +115,9 @@ export class ApplicationUserSubmissionUseCaseService {
         manager,
       );
     });
-    return this.queryService.getOneForActor(actor, id);
+    const submitted = await this.queryService.getOneForActor(actor, id);
+    await this.notificationService.notifyApplicantOfSubmission(submitted);
+    return submitted;
   }
 
   /**

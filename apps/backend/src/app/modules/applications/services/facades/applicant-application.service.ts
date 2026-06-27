@@ -19,6 +19,7 @@ import { ApplicantApplicationAccessService } from '../access/applicant-applicati
 import { ApplicationCorrectionService } from '../review/application-correction.service';
 import { ApplicationCreationService } from '../creation/application-creation.service';
 import { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
+import { ApplicationNotificationService } from '../notifications/application-notification.service';
 import { ApplicationProgressService } from '../progress/application-progress.service';
 import { ApplicationSubmissionService } from '../submission/application-submission.service';
 
@@ -35,6 +36,7 @@ export class ApplicantApplicationService {
     private readonly creationService: ApplicationCreationService,
     private readonly fieldValuePatchService: ApplicationFieldValuePatchService,
     private readonly flowResolver: ApplicationApprovalFlowResolver,
+    private readonly notificationService: ApplicationNotificationService,
     private readonly progressService: ApplicationProgressService,
     private readonly submissionService: ApplicationSubmissionService,
     private readonly auditLogs: BusinessAuditLogService,
@@ -102,7 +104,24 @@ export class ApplicantApplicationService {
         detail: true,
       },
     );
-    return this.progressService.hydrate(submitted);
+    const hydrated = await this.progressService.hydrate(submitted);
+    await this.notificationService.notifyApplicantOfSubmission(hydrated);
+    return hydrated;
+  }
+
+  /**
+   * 申請者トークンに紐づく申請詳細を返す。
+   * @param actor 申請者トークン
+   * @returns 申請詳細
+   */
+  async getCurrentApplication(actor: ApplicantSession): Promise<Application> {
+    const applicationId =
+      this.applicantAccess.getTokenApplicationIdOrThrow(actor);
+    const app = await this.applicantAccess.loadApplicationDetail(
+      actor,
+      applicationId,
+    );
+    return this.progressService.hydrate(app);
   }
 
   /**

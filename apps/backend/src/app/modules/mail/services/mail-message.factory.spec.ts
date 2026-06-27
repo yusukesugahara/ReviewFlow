@@ -2,6 +2,29 @@ import { ConfigService } from '@nestjs/config';
 import { MailMessageFactory } from './mail-message.factory';
 
 describe('MailMessageFactory', () => {
+  it('builds an application submitted email with application detail URL', () => {
+    const factory = new MailMessageFactory(
+      new ConfigService({
+        FRONTEND_BASE_URL: 'https://review.example.com',
+      }),
+    );
+
+    const message = factory.buildApplicationSubmittedEmail({
+      to: 'applicant@example.com',
+      applicationId: 'app-1',
+      accessToken: 'submitted-token',
+      templateName: '経費申請',
+    });
+
+    expect(message.to).toBe('applicant@example.com');
+    expect(message.subject).toBe('ReviewFlow 経費申請 の申請を受け付けました');
+    expect(message.text).toContain('申請内容を確認できます');
+    expect(message.text).toContain(
+      'https://review.example.com/apply/access?token=submitted-token&next=%2Fapply%2Fsubmission',
+    );
+    expect(message.html).toContain('申請内容を確認する');
+  });
+
   it('builds an application returned email with correction details', () => {
     const factory = new MailMessageFactory(
       new ConfigService({

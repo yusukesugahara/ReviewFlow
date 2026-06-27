@@ -18,6 +18,35 @@ export class ApplicationNotificationService {
   ) {}
 
   /**
+   * 申請内容閲覧用の申請者アクセストークンを発行し、申請受付メールを送信する。
+   *
+   * 通知失敗で申請状態更新を巻き戻さないため、送信エラーは operational log に記録する。
+   * @param app 申請
+   */
+  async notifyApplicantOfSubmission(app: Application): Promise<void> {
+    const accessToken = this.authService.issueApplicantAccessToken({
+      tenantId: app.tenantId,
+      email: app.applicantEmail,
+      groupId: app.groupId,
+      formDefinitionId: app.formDefinitionId,
+      applicationId: app.id,
+    });
+    try {
+      await this.mailService.sendApplicationSubmittedEmail({
+        to: app.applicantEmail,
+        applicationId: app.id,
+        accessToken,
+        templateName: app.formDefinition?.name ?? '申請',
+      });
+    } catch (error) {
+      this.logger.error(
+        `failed to send application submission email for application ${app.id} to ${app.applicantEmail}`,
+        error instanceof Error ? error.stack : undefined,
+      );
+    }
+  }
+
+  /**
    * 差し戻し修正用の申請者アクセストークンを発行し、差し戻しメールを送信する。
    *
    * 通知失敗で申請状態更新を巻き戻さないため、送信エラーは operational log に記録する。

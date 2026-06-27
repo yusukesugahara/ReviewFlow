@@ -11,6 +11,9 @@ const app = (overrides: Partial<Application> = {}): Application =>
     groupId: 'group-1',
     applicantEmail: 'applicant@example.com',
     formDefinitionId: 'form-1',
+    formDefinition: {
+      name: 'Expense Form',
+    },
     ...overrides,
   }) as Application;
 
@@ -38,6 +41,7 @@ describe('ApplicationNotificationService', () => {
   };
   let mailService: {
     sendApplicationReturnedEmail: jest.Mock;
+    sendApplicationSubmittedEmail: jest.Mock;
   };
   let service: ApplicationNotificationService;
 
@@ -47,11 +51,40 @@ describe('ApplicationNotificationService', () => {
     };
     mailService = {
       sendApplicationReturnedEmail: jest.fn(),
+      sendApplicationSubmittedEmail: jest.fn(),
     };
     service = new ApplicationNotificationService(
       authService as unknown as AuthService,
       mailService as unknown as MailService,
     );
+  });
+
+  it('sends a submitted application email with applicant access token', async () => {
+    await service.notifyApplicantOfSubmission(app());
+
+    expect(authService.issueApplicantAccessToken).toHaveBeenCalledWith({
+      tenantId: 'tenant-1',
+      email: 'applicant@example.com',
+      groupId: 'group-1',
+      formDefinitionId: 'form-1',
+      applicationId: 'app-1',
+    });
+    expect(mailService.sendApplicationSubmittedEmail).toHaveBeenCalledWith({
+      to: 'applicant@example.com',
+      applicationId: 'app-1',
+      accessToken: 'access-token',
+      templateName: 'Expense Form',
+    });
+  });
+
+  it('does not fail the business action when submitted email sending fails', async () => {
+    mailService.sendApplicationSubmittedEmail.mockRejectedValue(
+      new Error('smtp unavailable'),
+    );
+
+    await expect(
+      service.notifyApplicantOfSubmission(app()),
+    ).resolves.toBeUndefined();
   });
 
   it('sends a returned application email with applicant access token', async () => {

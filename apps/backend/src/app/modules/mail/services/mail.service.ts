@@ -4,6 +4,7 @@ import * as nodemailer from 'nodemailer';
 import {
   type ApplicationAccessMailInput,
   type ApplicationReturnedMailInput,
+  type ApplicationSubmittedMailInput,
   type EmailChangeConfirmationMailInput,
   type InvitationMailInput,
   MailMessageFactory,
@@ -50,6 +51,16 @@ export class MailService {
     input: ApplicationReturnedMailInput,
   ): Promise<void> {
     await this.send(this.messageFactory.buildApplicationReturnedEmail(input));
+  }
+
+  /**
+   * 申請受付通知メールを送信する。
+   * @param input 申請受付通知メール入力
+   */
+  async sendApplicationSubmittedEmail(
+    input: ApplicationSubmittedMailInput,
+  ): Promise<void> {
+    await this.send(this.messageFactory.buildApplicationSubmittedEmail(input));
   }
 
   /**

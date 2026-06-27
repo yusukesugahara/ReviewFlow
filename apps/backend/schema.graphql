@@ -399,6 +399,7 @@ type Query {
 
   """tenant監査ログ一覧をRelay Connection形式で返す。"""
   auditLogsConnection(after: String, first: Int! = 50, input: AuditLogsFilterInput): AuditLogConnection!
+  currentApplicationForApplicant: JSON!
   currentApprovalFlowsForApplicant: JSON!
   currentFormDefinitionForApplicant: JSON!
   exportJob(id: ID!): JSON!

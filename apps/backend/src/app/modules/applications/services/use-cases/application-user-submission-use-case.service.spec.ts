@@ -7,6 +7,7 @@ import type { BusinessAuditLogService } from '../../../audit-logs/services/busin
 import type { SpaceAccessService } from '../../../groups/services/access/space-access.service';
 import type { ApplicationApprovalFlowResolver } from '../../resolvers/application-approval-flow.resolver';
 import type { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
+import type { ApplicationNotificationService } from '../notifications/application-notification.service';
 import type { ApplicationQueryService } from '../query/application-query.service';
 import type { ApplicationSubmissionService } from '../submission/application-submission.service';
 import type { TransactionManager } from '../../../../transaction';
@@ -49,6 +50,9 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
   let flowResolver: {
     resolveActiveFlow: jest.Mock;
   };
+  let notificationService: {
+    notifyApplicantOfSubmission: jest.Mock;
+  };
   let queryService: {
     getOneForActor: jest.Mock;
   };
@@ -76,6 +80,9 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
     flowResolver = {
       resolveActiveFlow: jest.fn(),
     };
+    notificationService = {
+      notifyApplicantOfSubmission: jest.fn(),
+    };
     queryService = {
       getOneForActor: jest.fn(),
     };
@@ -98,6 +105,7 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       spaceAccess as unknown as SpaceAccessService,
       fieldValuePatchService as unknown as ApplicationFieldValuePatchService,
       flowResolver as unknown as ApplicationApprovalFlowResolver,
+      notificationService as unknown as ApplicationNotificationService,
       queryService as unknown as ApplicationQueryService,
       submissionService as unknown as ApplicationSubmissionService,
       auditLogs as unknown as BusinessAuditLogService,
@@ -180,6 +188,9 @@ describe('ApplicationUserSubmissionUseCaseService', () => {
       }),
       transactionManager,
     );
+    expect(
+      notificationService.notifyApplicantOfSubmission,
+    ).toHaveBeenCalledWith(hydrated);
   });
 
   it('resubmits an editable returned application', async () => {

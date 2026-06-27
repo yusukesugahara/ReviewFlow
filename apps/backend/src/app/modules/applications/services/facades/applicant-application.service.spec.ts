@@ -9,6 +9,7 @@ import { ApplicantApplicationAccessService } from '../access/applicant-applicati
 import type { ApplicationCorrectionService } from '../review/application-correction.service';
 import type { ApplicationCreationService } from '../creation/application-creation.service';
 import type { ApplicationFieldValuePatchService } from '../field-values/application-field-value-patch.service';
+import type { ApplicationNotificationService } from '../notifications/application-notification.service';
 import type { ApplicationProgressService } from '../progress/application-progress.service';
 import type { ApplicationSubmissionService } from '../submission/application-submission.service';
 import type { TransactionManager } from '../../../../transaction';
@@ -60,6 +61,9 @@ describe('ApplicantApplicationService', () => {
   let flowResolver: {
     resolveDefaultActiveFlow: jest.Mock;
   };
+  let notificationService: {
+    notifyApplicantOfSubmission: jest.Mock;
+  };
   let progressService: {
     hydrate: jest.Mock;
   };
@@ -91,6 +95,9 @@ describe('ApplicantApplicationService', () => {
     flowResolver = {
       resolveDefaultActiveFlow: jest.fn(),
     };
+    notificationService = {
+      notifyApplicantOfSubmission: jest.fn(),
+    };
     progressService = {
       hydrate: jest.fn((row: Application) => Promise.resolve(row)),
     };
@@ -117,6 +124,7 @@ describe('ApplicantApplicationService', () => {
       creationService as unknown as ApplicationCreationService,
       fieldValuePatchService as unknown as ApplicationFieldValuePatchService,
       flowResolver as unknown as ApplicationApprovalFlowResolver,
+      notificationService as unknown as ApplicationNotificationService,
       progressService as unknown as ApplicationProgressService,
       submissionService as unknown as ApplicationSubmissionService,
       auditLogs as unknown as BusinessAuditLogService,
@@ -178,6 +186,23 @@ describe('ApplicantApplicationService', () => {
       id: 'created-app',
       detail: true,
     });
+    expect(
+      notificationService.notifyApplicantOfSubmission,
+    ).toHaveBeenCalledWith(submitted);
+  });
+
+  it('loads the current token application detail and hydrates it', async () => {
+    const row = app({ status: ApplicationStatus.IN_REVIEW });
+    applicationsRepository.findByIdInTenant.mockResolvedValue(row);
+
+    await expect(service.getCurrentApplication(applicant())).resolves.toBe(row);
+
+    expect(applicationsRepository.findByIdInTenant).toHaveBeenCalledWith({
+      id: 'app-1',
+      tenantId: 'tenant-1',
+      detail: true,
+    });
+    expect(progressService.hydrate).toHaveBeenCalledWith(row);
   });
 
   it('rejects public application creation outside the token group', async () => {
